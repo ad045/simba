@@ -47,11 +47,15 @@ def _generate_sequence_recall_dataset(
     recall_indices: List[int] = []
     idx_offset = 0
     for _ in range(n_trials):
+
+        # Generate random pattern
         pattern = rng.uniform(0.0, 1.0, size=L)
+
         # Fixation phase
         X_fix = np.zeros((L, 2), dtype=float)
         X_fix[:, 0] = pattern  # pattern presented on first input
         Y_fix = np.zeros((L, 1), dtype=float)
+
         # Recall phase
         X_rec = np.zeros((L, 2), dtype=float)
         X_rec[:, 1] = 1.0  # recall cue on second input
@@ -60,6 +64,7 @@ def _generate_sequence_recall_dataset(
         Y_trial = np.vstack([Y_fix, Y_rec])
         X_list.append(X_trial)
         Y_list.append(Y_trial)
+
         # Record recall indices (offset from start of sequence)
         recall_indices.extend(list(range(idx_offset + L, idx_offset + 2 * L)))
         idx_offset += 2 * L
@@ -109,14 +114,17 @@ def evaluate_sequence_recall(
         ``"r2_mean"`` and ``"r2_std"`` representing the average R²
         across runs and its standard deviation.
     """
+
     rng = np.random.default_rng(random_state)
     results: Dict[int, Dict[str, float]] = {}
     for L in pattern_lengths:
         r2_values: List[float] = []
         for _ in range(n_runs):
+
             # Generate dataset
             X_tr, Y_tr, recall_idx_tr = _generate_sequence_recall_dataset(L, train_trials, rng)
             X_te, Y_te, recall_idx_te = _generate_sequence_recall_dataset(L, test_trials, rng)
+
             # Instantiate ESN
             esn = ESNRegressor(
                 W=W.copy(),
@@ -127,17 +135,21 @@ def evaluate_sequence_recall(
                 bias=1.0,
                 regression_method="pinv",
             )
+
             # Fit and predict
             esn.fit(X_tr, Y_tr)
             Y_pred = esn.predict(X_te)
+
             # Evaluate R² on recall period only
             y_true = Y_te[recall_idx_te, 0]
             y_hat = Y_pred[recall_idx_te, 0]
-            # Compute R² manually
+
+            # Compute R² manually. 
             ss_res = np.sum((y_true - y_hat) ** 2)
             ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
             r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
             r2_values.append(r2)
+
         results[L] = {
             "r2_mean": float(np.mean(r2_values)),
             "r2_std": float(np.std(r2_values)),

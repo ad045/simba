@@ -1,14 +1,15 @@
 import numpy as np
 from typing import Iterable, List, Tuple, Dict
 import time
+from echoes.esn import ESNRegressor
 
 # Modelled after damicelli's work. 
 
 def _generate_mc_dataset(
-    train_len: int,
-    test_len: int,
-    n_lags: int,
-    rng: np.random.Generator,
+    train_len: int, #  = 4000,
+    test_len: int, #  = 1000,
+    n_lags: int, # = 50,
+    rng: np.random.Generator, # 
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Generate data for the memory capacity task.
 
@@ -42,7 +43,8 @@ def _generate_mc_dataset(
         Testing targets.
     """
     total_len = train_len + test_len + n_lags + 100  # extra for lagging and transient
-    seq = rng.uniform(0.0, 1.0, size=(total_len,))
+    # seq = rng.uniform(0.0, 1.0, size=(total_len,))
+    seq = rng.uniform(-0.5, 0.5, size=(total_len,))
     # Create delayed targets
     def build_targets(x: np.ndarray, lags: int) -> np.ndarray:
         T = len(x) - lags
@@ -112,9 +114,11 @@ def evaluate_memory_capacity(
     rng = np.random.default_rng(random_state)
     mc_values: List[float] = []
     for _ in range(n_runs):
+
         # Generate dataset
         X_tr, Y_tr, X_te, Y_te = _generate_mc_dataset(train_len, test_len, n_lags, rng)
-        # Instantiate ESN
+
+        # Instantiate ESN !!! 
         esn = ESNRegressor(
             W=W.copy(),
             spectral_radius=spectral_radius if spectral_radius is not None else 1.0,
@@ -124,10 +128,12 @@ def evaluate_memory_capacity(
             bias=1.0,
             regression_method="pinv",
         )
+
         # Fit on training data
         esn.fit(X_tr, Y_tr)
         # Predict on test data
         Y_pred = esn.predict(X_te)
+
         # Compute squared Pearson correlations for each lag
         mc = 0.0
         for col in range(n_lags):
@@ -140,6 +146,7 @@ def evaluate_memory_capacity(
                 corr = np.corrcoef(y_true, y_hat)[0, 1]
             mc += corr ** 2
         mc_values.append(mc)
+
     return {
         "mc_mean": float(np.mean(mc_values)),
         "mc_std": float(np.std(mc_values)),

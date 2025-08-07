@@ -1,18 +1,17 @@
 import numpy as np
 import pandas as pd  # noqa: F401  # pandas is imported for completeness but not used directly
 from typing import Iterable, List, Tuple, Dict
-from echoes.esn import ESNRegressor
 import time
 
 
-def build_reservoir_from_connectome(
+def build_weight_matrix_from_bin_conn(
     connectome: np.ndarray,
     *,
     spectral_radius: float = 0.99,
     rank: bool = False,
     random_state: int | None = None,
 ) -> np.ndarray:
-    """Construct a reservoir weight matrix from a binary connectome.
+    """Construct a reservoir weight matrix from a binary (or non-binary!) connectome.
 
     All connectome entries != 0 are treated as potential synapses, weights are set randomly (uniformly distributed in [-1, 1]).
     The diagonal is zeroed out to ensure removal of self-connections. The resulting weight matrix is then rescaled to have the desired spectral radius.
@@ -23,8 +22,8 @@ def build_reservoir_from_connectome(
         Binary or weighted adjacency matrix describing the reservoir
         topology.  Non‑zero entries indicate the presence of a synapse.
         The diagonal will be zeroed.
-    spectral_radius : float, default 0.99
-        Desired spectral radius of the reservoir weight matrix; was close to (but less than) 1 in Damicelli's work. 
+    spectral_radius : float, default 0.99 (not necessary, I assume, as ESN generator will rescale it?)
+        Desired spectral radius of the reservoir weight matrix; was close to (but less than) 1 in Damicelli's work.
     rank : bool, default False
         If True, weights are assigned to preserve the rank order of the
         original weights (Bio (rank) condition).  If False, weights are
