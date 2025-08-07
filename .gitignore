@@ -214,4 +214,11 @@ X_*
 OLD_*
 *.npy
 *.csv
+
+*.png 
+*.jpg
+*.jpeg
+*.svg 
+*.pdf 
+
 BCT/
