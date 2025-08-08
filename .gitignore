@@ -223,3 +223,8 @@ OLD_*
 *.pdf 
 
 BCT/
+conn2res/
+output/
+neonatal_generative_network_modeling-main/
+
+
