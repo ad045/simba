@@ -169,4 +169,4 @@ def analyze_connectomes(connectomes, distance_matrix,
             "richclub_avg_length": avg_rc_length,
         })
 
-    return pd.DataFrame(out)
+    return out # pd.DataFrame(out)

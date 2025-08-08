@@ -66,19 +66,65 @@ def build_weight_matrix_from_bin_conn(
     # Remove self‑connections
     np.fill_diagonal(W, 0.0)
 
-    # Rescale spectral radius if necessary
-    def _spectral_radius(matrix: np.ndarray, iterations: int = 100) -> float:
-        # Estimate largest eigenvalue magnitude using power iteration
-        vec = rng.normal(size=(matrix.shape[0],))
-        vec /= np.linalg.norm(vec)
-        for _ in range(iterations):
-            vec = matrix @ vec
-            norm = np.linalg.norm(vec)
-            vec /= norm
-        # Rayleigh quotient approximation
-        return float(np.linalg.norm(matrix @ vec) / np.linalg.norm(vec))
-    current_rho = _spectral_radius(W)
+    # # Rescale spectral radius if necessary
+    # def _spectral_radius(matrix: np.ndarray, iterations: int = 100) -> float:
+    #     # Estimate largest eigenvalue magnitude using power iteration
+    #     vec = rng.normal(size=(matrix.shape[0],))
+    #     vec /= np.linalg.norm(vec)
+    #     for _ in range(iterations):
+    #         vec = matrix @ vec
+    #         norm = np.linalg.norm(vec)
+    #         vec /= norm
+    #     # Rayleigh quotient approximation
+    #     return float(np.linalg.norm(matrix @ vec) / np.linalg.norm(vec))
+    
+    current_rho = _rho = np.max(np.abs(np.linalg.eigvalsh(W))) # spectral_radius(W)
+    # current_rho = _spectral_radius_stable(W) 
+
     if current_rho > 0:
         W *= spectral_radius / current_rho
     return W
 
+
+
+
+# def _spectral_radius_stable(matrix: np.ndarray,
+#                         iterations: int = 100,
+#                         rng: np.random.Generator | None = None,
+#                         *,
+#                         tol: float = 1e-12) -> float:
+#     """Power-iteration with overflow / div-by-0 protection.
+
+#     Returns 0.0 for (nearly) nilpotent matrices.
+#     """
+#     rng = np.random.default_rng() if rng is None else rng
+#     vec = rng.normal(size=matrix.shape[0]).astype(np.float64, copy=False)
+
+#     # ----- 1.  normalise the start vector safely
+#     norm = np.linalg.norm(vec)
+#     if norm < tol:
+#         raise ValueError("Random start vector had zero norm — try again.")
+#     vec /= norm
+
+#     # ----- 2.  iterate
+#     eps  = np.finfo(vec.dtype).eps        # machine epsilon
+#     for _ in range(iterations):
+#         vec = matrix @ vec
+
+#         # 2a.  protect against NaN / Inf early
+#         if not np.isfinite(vec).all():
+#             raise FloatingPointError("Matrix-vector product produced NaN/Inf.")
+
+#         norm = np.linalg.norm(vec)
+
+#         # 2b.  very small ⇒ nilpotent, very large ⇒ scale down
+#         if norm < tol:          # effectively zero → spectral radius is 0
+#             return 0.0
+#         if norm > 1e200:        # avoid overflow before the *next* multiply
+#             vec *= 1e-200
+#             norm *= 1e-200
+
+#         vec /= norm             # re-normalise for the next loop
+
+#     # ----- 3.  Rayleigh quotient ≈ last norm because vec is unit length
+#     return float(norm)
