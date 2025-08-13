@@ -49,9 +49,9 @@ from netneurotools.networks import threshold_network, struct_consensus
 
 # Local imports from your codebase
 from notebook_setup import setup
-from preprocessing.preprocess_distance_matrix import get_distance_matrix
-from preprocessing.preprocess_70_connectomes import get_individual_connectomes
-from structural_analysis.graph_measures import analyze_connectomes
+from src.preprocessing.preprocess_distance_matrix import get_distance_matrix
+from src.preprocessing.preprocess_70_connectomes import get_individual_connectomes
+from src.structural_analysis.graph_measures import analyze_connectomes
 
 
 # ----------------------------

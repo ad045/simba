@@ -29,6 +29,6 @@ def get_distance_matrix(raw_data_path, preprocessed_folder_path, plot=True):
     assert np.all(np.diag(dist_mat) == 0), "Diagonal of distance matrix is not zero!"
 
     # save distance matrix
-    np.save(preprocessed_folder_path / f"distance_matrix_{dist_mat.shape[0]}_{dist_mat.shape[1]}.npy", dist_mat)
+    np.save(preprocessed_folder_path / f"distance_matrix_{dist_mat.shape[0]}x{dist_mat.shape[1]}.npy", dist_mat)
     
     return dist_mat

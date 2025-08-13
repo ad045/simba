@@ -5,7 +5,7 @@ import pandas as pd
 import scipy.sparse as sp
 import matplotlib.pyplot as plt
 
-from src.utils.saving_and_finding_files import time_stamp_for_saving
+from utils.saving_and_finding_files import time_stamp_for_saving
 
 
 def plot_graph_measure_vs_simulated(graph_measures_empirical_connectomes, 

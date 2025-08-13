@@ -4,7 +4,7 @@ import pandas as pd
 import scipy.sparse as sp
 import matplotlib.pyplot as plt
 
-from src.utils.saving_and_finding_files import time_stamp_for_saving
+# from utils.saving_and_finding_files import time_stamp_for_saving
 
 def plot_energy_landscape(etas, gammas, energy_grid, df_best=None,
                           dot_color="blue", 
@@ -13,7 +13,23 @@ def plot_energy_landscape(etas, gammas, energy_grid, df_best=None,
                           vmin=None, vmax=None, savepath=None, show=True):
     """
     Plot a Figure-4-style heatmap with optional white dots for best-fit models.
+    
+    Args:
+        - etas (np.ndarray): 1D array of eta values (x-axis).
+        - gammas (np.ndarray): 1D array of gamma values (y-axis).
+        - energy_grid (np.ndarray): 2D array of energy values, shape (len(gammas), len(etas)).
+        - df_best (pd.DataFrame): DataFrame with columns 'eta' and 'gamma' for best-fit points (optional).
+        - dot_color (str): Color for the best-fit points.
+        - title (str): Title for the plot.
+        - interpolation (str): Interpolation method for the heatmap.
+        - vmin (float): Minimum value for the color scale.
+        - vmax (float): Maximum value for the color scale.
+        - savepath (str): Path to save the figure.
+        - show (bool): Whether to display the plot.
+    Returns:
+        - fig, ax: Matplotlib figure and axis objects.
     """
+    
     fig, ax = plt.subplots(figsize=(6.2, 5.2)) # , dpi=150)
 
     # Heatmap: black=low (good), yellow=high (bad) like Mousley; 'hot' does that.
@@ -45,10 +61,23 @@ def plot_energy_landscape(etas, gammas, energy_grid, df_best=None,
 
     return fig, ax
 
+
 def plot_energy_landscape_from_df(df, dot_color="blue", title="", interpolation="nearest", savepath=None, show=True):
     """
     Convenience function to plot energy landscape from a DataFrame with columns 'eta', 'gamma', and 'energy'.
+    
+    Args: 
+        - df (pd.DataFrame): DataFrame containing 'eta', 'gamma', and 'energy' columns.
+        - dot_color (str): Color for the best-fit points.
+        - title (str): Title for the plot.
+        - interpolation (str): Interpolation method for the heatmap.
+        - savepath (str): Path to save the figure.
+        - show (bool): Whether to display the plot.
+        
+    Returns:
+        - fig, ax: Matplotlib figure and axis objects.  
     """
+    
     # Ensure df has the required columns
     if not all(col in df.columns for col in ["eta", "gamma", "energy"]):
         raise ValueError("DataFrame must contain 'eta', 'gamma', and 'energy' columns.")
@@ -75,6 +104,8 @@ def plot_energy_landscape_from_df(df, dot_color="blue", title="", interpolation=
         .reset_index(drop=True)
     )
 
+    # Plot the energy landscape
+    # Note: df_best is optional, so we can pass None if not needed.
     fig, ax = plot_energy_landscape(
                 etas, gammas, energy_grid,
                 df_best=df_best,                 # comment out if not needed
