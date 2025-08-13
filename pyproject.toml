@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gnm-pipeline"
+version = "0.1.0"
+requires-python = ">=3.9"
+
+# (Optional) add dependencies here if you want pip to install them automatically
+# dependencies = [
+#   "numpy",
+#   "pandas",
+# ]
+
+[tool.setuptools]
+# We want to install the *package named 'src'*, which lives in the ./src folder.
+packages = ["src"]
