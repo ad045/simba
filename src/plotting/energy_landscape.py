@@ -4,8 +4,7 @@ import pandas as pd
 import scipy.sparse as sp
 import matplotlib.pyplot as plt
 
-from src.utils.saving_conventions import time_stamp_for_saving
-
+from src.utils.saving_and_finding_files import time_stamp_for_saving
 
 def plot_energy_landscape(etas, gammas, energy_grid, df_best=None,
                           dot_color="blue", 
@@ -78,10 +77,10 @@ def plot_energy_landscape_from_df(df, dot_color="blue", title="", interpolation=
 
     fig, ax = plot_energy_landscape(
                 etas, gammas, energy_grid,
-                df_best=df_best,                 # omit if you don’t want dots
+                df_best=df_best,                 # comment out if not needed
                 dot_color=dot_color,               # or any matplotlib-valid colour
                 title=title,
-                vmin=energy_grid.min(),          # or a fixed value for comparability
+                vmin=energy_grid.min(),         
                 vmax=energy_grid.max(), 
                 interpolation=interpolation,  # linear
                 savepath=savepath,

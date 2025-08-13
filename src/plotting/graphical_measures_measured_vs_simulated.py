@@ -13,8 +13,10 @@ def plot_graph_measure_vs_simulated(graph_measures_empirical_connectomes,
                                     variable_name, 
                                     color_metric=None, color_metric_name=None, 
                                     save_path=None):    
-    """ Plot a scatter plot of the empirical graph measure vs. the simulated one.
+    """ 
+    Plot a scatter plot of the empirical graph measure vs. the simulated one.
     """
+
     printable_name_dict = {
         "richclub_avg_length": "rich-club average length",
         "modularity": "modularity",

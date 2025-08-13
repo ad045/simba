@@ -1,51 +1,44 @@
 import numpy as np
-import pandas as pd  # noqa: F401  # pandas is imported for completeness but not used directly
 from typing import Iterable, List, Tuple, Dict
 from echoes.esn import ESNRegressor
-import time
 
 
 def _generate_sequence_recall_dataset(
-    L: int,
-    n_trials: int,
-    rng: np.random.Generator,
-) -> Tuple[np.ndarray, np.ndarray, List[int]]:
-    """Generate data for the sequence recall task.
-
-    Each trial consists of a fixation phase of length ``L`` during
-    which a random pattern of ``L`` numbers (uniformly drawn from
-    [0, 1]) is presented via the first input channel while the recall
-    channel is zero.  In the subsequent recall phase of length ``L``
-    the recall channel is set to one and the network must reproduce
-    the memorised pattern on its single output.  The second input
-    channel is otherwise zero.  The target is zero during fixation
-    (no recall) and equal to the pattern during recall.  All trials
-    are concatenated into a single sequence for training or testing.
-
-    Parameters
-    ----------
-    L : int
-        Pattern length; also controls trial duration (2*L steps).
-    n_trials : int
-        Number of independent trials to generate.
-    rng : np.random.Generator
-        Random number generator.
-
-    Returns
-    -------
-    X : np.ndarray, shape (n_trials * 2*L, 2)
-        Input matrix.  Column 0 carries the pattern, column 1 the
-        recall cue.
-    Y : np.ndarray, shape (n_trials * 2*L, 1)
-        Target output.
-    recall_indices : list of int
-        Indices of the time steps corresponding to the recall phase.
-        These indices are used to compute the performance metric.
+                                     L: int,
+                                     n_trials: int,
+                                     rng: np.random.Generator,
+                                     ) -> Tuple[np.ndarray, np.ndarray, List[int]]:
     """
+    Generate data for the sequence recall task.
+
+    Each trial consists of: 
+        - a fixation phase (length 'L'), where a random pattern of 'L' numbers (uniformly, [0, 1]) is presented. 
+            The input is via the first input channel while the recall channel is zero.  
+        - a recall phase (length 'L'), where the recall channel is set to one and the network must reproduce the memorised pattern on its single output.  
+            The second input channel is otherwise zero.
+
+    Thus, the target is zero during fixation (no recall) and equal to the pattern during recall. 
+    All trials are concatenated into a single sequence for training or testing.
+
+    Args: 
+        - L (int): Pattern length; also controls trial duration (2*L steps).
+        - n_trials (int): Number of independent trials to generate.
+        - rng (np.random.Generator): Random number generator.
+
+    Returns: 
+        - X (np.ndarray, shape (n_trials * 2*L, 2)): Input matrix.  Column 0 carries the pattern, column 1 the recall cue.
+        - Y (np.ndarray, shape (n_trials * 2*L, 1)): Target output.
+        - recall_indices (list of int): Indices of the time steps corresponding to the recall phase; are used to compute the performance metric.
+    """
+
+    # Initialize empty arrays
     X_list: List[np.ndarray] = []
     Y_list: List[np.ndarray] = []
     recall_indices: List[int] = []
+
     idx_offset = 0
+
+    # Looping over trials
     for _ in range(n_trials):
 
         # Generate random pattern
@@ -68,51 +61,41 @@ def _generate_sequence_recall_dataset(
         # Record recall indices (offset from start of sequence)
         recall_indices.extend(list(range(idx_offset + L, idx_offset + 2 * L)))
         idx_offset += 2 * L
+
+    # Stack to create X and Y
     X = np.vstack(X_list)
     Y = np.vstack(Y_list)
     return X, Y, recall_indices
 
-def evaluate_sequence_recall(
-    W: np.ndarray,
-    *,
-    pattern_lengths: Iterable[int] = range(5, 26),
-    train_trials: int = 800,
-    test_trials: int = 200,
-    n_runs: int = 5,
-    spectral_radius: float | None = None,
-    random_state: int | None = None,
-) -> Dict[int, Dict[str, float]]:
-    """Evaluate sequence recall performance for multiple pattern lengths.
 
-    For each pattern length in ``pattern_lengths`` and each run, an
-    independent dataset is generated and the ESN is reinitialised.
-    Performance is measured by the coefficient of determination (R²)
-    between the predicted and true outputs, computed over the recall
-    period only.  Results are aggregated by pattern length.
+def evaluate_sequence_recall(W: np.ndarray,
+                             *,
+                             pattern_lengths: Iterable[int] = range(5, 26),
+                             train_trials: int = 800,
+                             test_trials: int = 200,
+                             n_runs: int = 5,
+                             spectral_radius: float | None = None,
+                             random_state: int | None = None,
+                             ) -> Dict[int, Dict[str, float]]:
+    """
+    
+    Evaluate sequence recall performance for multiple pattern lengths.
 
-    Parameters
-    ----------
-    W : np.ndarray, shape (N, N)
-        Reservoir weight matrix.
-    pattern_lengths : iterable of int, default range(5, 26)
-        Pattern lengths (task difficulties) to evaluate.
-    train_trials : int, default 800
-        Number of trials for training per run.
-    test_trials : int, default 200
-        Number of trials for testing per run.
-    n_runs : int, default 5
-        Number of independent runs per pattern length.
-    spectral_radius : float or None, default None
-        Optional spectral radius to override the scaling of ``W``.
-    random_state : int or None, default None
-        Seed controlling the data generation and input weight initialisation.
+    For each pattern length in 'pattern_lengths' and each run, an independent dataset is generated and the ESN is reinitialized.
+    Performance is measured by the coefficient of determination (R²) between the predicted and true outputs, computed over the recall period only.  
+    Results are aggregated by pattern length.
 
-    Returns
-    -------
-    results : dict
-        Mapping from pattern length to a dictionary with keys
-        ``"r2_mean"`` and ``"r2_std"`` representing the average R²
-        across runs and its standard deviation.
+    Args: 
+        - W (np.ndarray, shape (N, N)): Reservoir weight matrix.
+        - pattern_lengths (iterable of int, default range(5, 26)): Pattern lengths (task difficulties) to evaluate.
+        - train_trials (int, default 800): Number of trials for training per run.
+        - test_trials (int, default 200): Number of trials for testing per run.
+        - n_runs (int, default 5): Number of independent runs per pattern length.
+        - spectral_radius (float or None, default None): Optional spectral radius to override the scaling of 'W'.
+        - random_state (int or None, default None): Seed controlling the data generation and input weight initialisation.
+
+    Returns: 
+        - results (dict): Mapping from pattern length to a dictionary with keys 'r2_mean' and 'r2_std' (i.e. average R² across runs and its standard deviation).
     """
 
     rng = np.random.default_rng(random_state)

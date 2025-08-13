@@ -5,7 +5,10 @@ import seaborn as sns
 
 
 def set_mystyle():
-    """Set context and a couple of defaults for nicer plots."""
+    """
+    Set context and a couple of defaults for nicer plots.
+    """
+    
     sns.set_theme(
         context="paper",
         style="whitegrid",
