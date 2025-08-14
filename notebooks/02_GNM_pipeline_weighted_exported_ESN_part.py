@@ -20,11 +20,13 @@ from src.utils.saving_and_finding_files import time_stamp_for_saving
 from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome
 from src.structural_analysis.graph_measures_optimized_weighted import analyze_connectomes
 
-# ----------------------------------------------------------------------------
-# 2. UTILITIES
-# ----------------------------------------------------------------------------
+
 
 def _append_rows_csv(rows, columns, path):
+    """
+    Utility function to append rows to a CSV file, creating the file if it does not exist.
+    """
+
     path = Path(path)
     if not rows:
         return
@@ -33,15 +35,17 @@ def _append_rows_csv(rows, columns, path):
     )
 
 
-# ----------------------------------------------------------------------------
-# 4. SUBJECT-LEVEL WORKER
-# ----------------------------------------------------------------------------
+
 def _subject_job(subj_idx: int,
                  A_obs: np.ndarray,
                  dist: np.ndarray,
                  esn_use_observed_real_weights: bool,
                  timing_flag: bool = True
                  ):
+    """
+    Subject-level job for processing a single subject's connectome.
+    """
+    
     # Start timer
     if timing_flag: 
         t0 = time.perf_counter()
@@ -107,15 +111,15 @@ def _subject_job(subj_idx: int,
 
     return mc_result_dict, timing
 
-# ----------------------------------------------------------------------------
-# 5. DRIVER
-# ----------------------------------------------------------------------------
 
 def run_gnm_full(conn: np.ndarray,
                  dist: np.ndarray,
                  timing_flag: bool = False, 
                  timestamp: str = None,
                  save_dir: str = None):
+    """
+    Run the GNM pipeline for all subjects in parallel. 
+    """
     
     # Paths 
     mc_values_csv_path = save_dir / f"gnm_mc_results_{timestamp}.csv"
