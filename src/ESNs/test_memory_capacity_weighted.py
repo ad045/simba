@@ -3,7 +3,7 @@
 import numpy as np
 from typing import List, Tuple, Dict, Optional
 from echoes.esn import ESNRegressor
-from .generate_weight_matrices_bio_no_rank_weighted import build_weight_matrix_from_connectome
+
 
 def _generate_mc_dataset(train_len: int, test_len: int, n_lags: int, rng: np.random.Generator) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     total_len = train_len + test_len + n_lags + 100
@@ -23,34 +23,72 @@ def _generate_mc_dataset(train_len: int, test_len: int, n_lags: int, rng: np.ran
     Y_test = Y_full[end_train : end_train + test_len]
     return X_train, Y_train, X_test, Y_test
 
-def evaluate_memory_capacity(W: np.ndarray, *, n_lags: int = 50, train_len: int = 4000, test_len: int = 1000, n_runs: int = 10, spectral_radius: float | None = None, random_state: int | None = None) -> Dict[str, float]:
+
+def evaluate_memory_capacity_from_connectome(connectome: np.ndarray, 
+                                             *, 
+                                             spectral_radius: float = 0.99, 
+                                             n_lags: int = 50, 
+                                             train_len: int = 4000, 
+                                             test_len: int = 1000, 
+                                             n_runs: int = 10, 
+                                             input_scaling: float = 1.0,
+                                             regression_method: str = "pinv",
+                                             n_transient: int = 0,
+                                             leak_rate: float = 1.0,
+                                             bias: float = 1.0,
+                                             random_state: Optional[int] = 42, 
+ ) -> Dict[str, float]:
+    
+    # Random generator to generate the input sequence
     rng = np.random.default_rng(random_state)
     mc_values: List[float] = []
+    
+    # Loop through the number of runs
     for _ in range(n_runs):
+        # Get data for training and testing
         X_tr, Y_tr, X_te, Y_te = _generate_mc_dataset(train_len, test_len, n_lags, rng)
+        
+        # Get esn regressor with the connectome as weight matrix
         esn = ESNRegressor(
-            W=W.copy(),
-            spectral_radius=spectral_radius if spectral_radius is not None else 1.0,
-            n_transient=0,
-            input_scaling=1.0,
-            leak_rate=1.0,
-            bias=1.0,
-            regression_method="pinv",
+            W=connectome.copy(),
+            spectral_radius=spectral_radius,
+            n_transient=n_transient,
+            input_scaling=input_scaling,
+            leak_rate=leak_rate,
+            bias=bias,
+            regression_method=regression_method,
         )
+        
         esn.fit(X_tr, Y_tr)
         Y_pred = esn.predict(X_te)
+        
         # Vectorised Pearson r per column
         Yt = Y_te - Y_te.mean(axis=0, keepdims=True)
         Yp = Y_pred - Y_pred.mean(axis=0, keepdims=True)
         denom = (Yt.std(axis=0, ddof=0) * Yp.std(axis=0, ddof=0))
-        with np.errstate(divide='ignore', invalid='ignore'):
-            r = (Yt * Yp).mean(axis=0) / denom
-            r = np.nan_to_num(r, nan=0.0, posinf=0.0, neginf=0.0)
+        # with np.errstate(divide='ignore', invalid='ignore'):
+        #     r = (Yt * Yp).mean(axis=0) / denom
+        #     r = np.nan_to_num(r, nan=0.0, posinf=0.0, neginf=0.0)
+        r = (Yt * Yp).mean(axis=0) / denom
+        r = np.nan_to_num(r, nan=0.0, posinf=0.0, neginf=0.0)
+        
         mc = float(np.sum(r**2))
         mc_values.append(mc)
-    return { "mc_mean": float(np.mean(mc_values)), "mc_std": float(np.std(mc_values)) }
-
-def evaluate_memory_capacity_from_connectome(connectome: np.ndarray, *, spectral_radius: float = 0.99, n_lags: int = 50, train_len: int = 4000, test_len: int = 1000, n_runs: int = 10, random_state: Optional[int] = None, symmetrize: bool = True) -> Dict[str, float]:
-    """Convenience: preserve weights from connectome when building W."""
-    W = build_weight_matrix_from_connectome(connectome, spectral_radius=spectral_radius, symmetrize=symmetrize, zero_diagonal=True)
-    return evaluate_memory_capacity(W, n_lags=n_lags, train_len=train_len, test_len=test_len, n_runs=n_runs, spectral_radius=1.0, random_state=random_state)
+        
+    return {"mc_mean": float(np.mean(mc_values)), 
+            "mc_std": float(np.std(mc_values)),
+            "mean_mc_of_individual_runs": mc_values,  
+            "hparams": {
+                "spectral_radius": spectral_radius,
+                "n_lags": n_lags,
+                "train_len": train_len,
+                "test_len": test_len,
+                "n_runs": n_runs,
+                "input_scaling": input_scaling,
+                "regression_method": regression_method,
+                "n_transient": n_transient,
+                "leak_rate": leak_rate,
+                "bias": bias,
+                "random_state": random_state,
+                }
+            }
