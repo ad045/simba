@@ -6,7 +6,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import networkx as nx
-from numba import njit
 from scipy.stats import ks_2samp
 
 import sys
@@ -18,8 +17,8 @@ print(f"Current working directory: {Path.cwd()}")
 from src.utils.saving_and_finding_files import time_stamp_for_saving
 
 # ESN + graph-measure imports
-from src.ESNs.generate_weight_matrices_bio_no_rank_weighted import build_weight_matrix_from_bin_conn, build_weight_matrix_from_connectome
-from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity, evaluate_memory_capacity_from_connectome
+# from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity, evaluate_memory_capacity_from_connectome
+from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome
 
 # SEQUENCE RECALL
 # from src.ESNs.test_sequence_recall_weighted import evaluate_sequence_recall
@@ -103,21 +102,27 @@ def _subject_job(subj_idx: int,
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
         np.seterr(over="ignore", divide="ignore", invalid="ignore")
-        mc = evaluate_memory_capacity_from_connectome(A_obs, 
+        
+        mc_result_dict = evaluate_memory_capacity_from_connectome(A_obs, 
                                                       spectral_radius=0.99, 
                                                       n_lags=50, 
                                                       train_len=4000, 
                                                       test_len=1000,
                                                       n_runs=10, 
-                                                      random_state=subj_idx, 
-                                                      symmetrize=False)
+                                                      random_state=subj_idx)
+            # return {"all_run_outputs": mc_values, 
+            # "mc_mean": float(np.mean(mc_values)), 
+            # "mc_std": float(np.std(mc_values)), 
+            # hparams: dict}
+            
     t_esn = time.perf_counter() - t_esn0
     
-    # best_row = (subj_idx, best_eta, best_gamma, best_energy, mc, sr, *gm_vals)
-    mc_value = (subj_idx, mc) #  *gm_vals)
-    timing = (subj_idx, t_metrics, t_esn, t_metrics + t_esn)
+    timing = {"subject": subj_idx, 
+              "time_metrics_sec": t_metrics, 
+              "time_esn_sec": t_esn, 
+              "time_total_sec": t_metrics + t_esn}
 
-    return mc_value, timing
+    return mc_result_dict, timing
 
 # ----------------------------------------------------------------------------
 # 5. DRIVER
@@ -127,19 +132,15 @@ def run_gnm_full(conn: np.ndarray,
                  dist: np.ndarray,
                  timing_flag: bool = False, 
                  timestamp: str = None,
-                 save_dir: str = None):
+                 save_preliminary_results: bool = True,
+                 save_preliminary_results_dir: str = None):
     
     # Paths 
     # partial file paths
-    grid_partial   = save_dir / f"gnm_grid_partial_{timestamp}.csv"
-    best_partial   = save_dir / f"gnm_best_partial_{timestamp}.csv"
-    timing_partial = save_dir / f"gnm_timing_partial_{timestamp}.csv"
-
-    # no grids needed 
-    grid8 = []
-    grid20 = []
-    include_subset = False
-    
+    if save_preliminary_results:
+        mc_values_partial = save_preliminary_results_dir / f"gnm_mc_results_partial_{timestamp}.csv"
+        timing_partial = save_preliminary_results_dir / f"gnm_timing_partial_{timestamp}.csv"
+        
     # Start timer 
     run_t0 = time.perf_counter()
 
@@ -152,42 +153,31 @@ def run_gnm_full(conn: np.ndarray,
     mc_values = []
     timing_list = []
 
-    # grid_rows_all, best_rows, timing_list = [], [], []
-    subset_rows_all = []
-    gm_labels_master = None
-
+    rows_to_save_mc = ["subject", "mc_mean", "mc_std", "mean_mc_of_individual_runs", "hparams"]
+    rows_to_save_timing = ["subject", "time_metrics_sec", "time_esn_sec", "time_total_sec"]
+    
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as pool:
         futures = [pool.submit(_subject_job, *t) for t in tasks]
-        
+
         for idx, fut in enumerate(as_completed(futures), 1):
-            mc_value, timing = fut.result()
-            mc_values.append(mc_value)
-            # grid_rows_all.extend(mc_value)
-            # best_rows.append(b_row)
-            timing_list.append(timing)
+            mc_result_dict, timing_dict = fut.result()
+            mc_values.append(mc_result_dict)
+            timing_list.append(timing_dict)
 
-            # if gm_labels_master is None:
-            #     gm_labels_master = gm_labels
-
-            # NEW: write freshly finished subject results immediately
-            # _append_rows_csv(g_rows,
-            #                  ["subject","eta","gamma","energy"],
-            #                  grid_partial)
-
-            _append_rows_csv([mc_value],
-                             ["subject","memory_capacity"],
-                             best_partial)
+            values_to_save_mc = [timing_dict["subject"]] + [mc_result_dict[row_name] for row_name in rows_to_save_mc[1:]]
+            _append_rows_csv([values_to_save_mc],
+                             rows_to_save_mc,
+                             mc_values_partial)
 
             # Save timings for this subject
-            _append_rows_csv([timing],
-                             ["subject","time_metrics_sec","time_esn_sec","time_total_sec"],
+            values_to_save_timing = [timing_dict[row_name] for row_name in rows_to_save_timing]
+            _append_rows_csv([values_to_save_timing],
+                             rows_to_save_timing,
                              timing_partial)
 
             # Print exactly when rows are flushed
             if timing_flag:
                 print(f"Finished now {idx}/{n_subj} subjects.") 
-                    #   f"Subject {mc_value[0]}: metrics={timing['metrics']:.3f}s, "
-                    #   f"grow={timing['grow']:.3f}s")
 
     total_sec = time.perf_counter() - run_t0
     if timing_flag:
@@ -200,19 +190,19 @@ def run_gnm_full(conn: np.ndarray,
         ["subject","time_metrics_sec","time_esn_sec","time_total_sec"],
         timing_partial
     )
+    _append_rows_csv(
+        ["COMPLETED"],
+        ["subject"],
+        mc_values_partial
+    )
 
     # return full dataframes (no final save)
-    df_mc = pd.DataFrame(mc_values, columns=["subject","memory_capacity"])
-    df_timing = pd.DataFrame(timing_list, columns=["subject","metrics_s","grow_s","total_s"])
-    # SEQUENCE RECALL
-    # df_best = pd.DataFrame(best_rows, columns=["subject","eta","gamma","energy","memory_capacity","sequence_recall",*gm_labels_master])
-    # df_best = pd.DataFrame(best_rows, columns=["subject","eta","gamma","energy","memory_capacity",*gm_labels_master])
-
+    df_mc = pd.DataFrame(mc_values, columns=rows_to_save_mc) 
+    df_timing = pd.DataFrame(timing_list, columns=rows_to_save_timing)
+    
     return df_mc, df_timing
 
-# ----------------------------------------------------------------------------
-# 6. MAIN
-# ----------------------------------------------------------------------------
+
 if __name__ == "__main__":
     # user-configurable flags/variables
     ROOT = Path("/Users/adrian/Documents/01_projects/14_4D_lab")
@@ -224,6 +214,7 @@ if __name__ == "__main__":
     DENSITY = 10
     
     TIMING_FLAG = True
+    SAVE_INTERMEDIATE_RESULTS = True
 
     # load data
     conn = np.load(os.path.join(ROOT, f"data/preprocessed/01_first_analysises/connectomes_weighted_{RESOLUTION}x{RESOLUTION}.npy")).T
@@ -242,10 +233,13 @@ if __name__ == "__main__":
         conn, dist,
         timing_flag=TIMING_FLAG,
         timestamp=timestamp,
-        save_dir=SAVE_DIR / folder_name / "preliminary_results"  # save in a subdirectory for clarity
+        save_preliminary_results=SAVE_INTERMEDIATE_RESULTS,
+        save_preliminary_results_dir=SAVE_DIR / folder_name / "preliminary_results"  # save in a subdirectory for clarity
     )
     # save results
-    df_mc.to_csv(os.path.join(SAVE_DIR / folder_name / "results", f"gnm_mc_results_{timestamp}.csv"), index=False)
-    df_timing.to_csv(os.path.join(SAVE_DIR / folder_name / "results", f"gnm_timing_results_{timestamp}.csv"), index=False)
+    df_mc.to_csv(os.path.join(SAVE_DIR / folder_name, f"gnm_mc_results_{timestamp}.csv"), index=False)
+    df_timing.to_csv(os.path.join(SAVE_DIR / folder_name, f"gnm_timing_results_{timestamp}.csv"), index=False)
 
-    print(f"Results saved to {SAVE_DIR / folder_name / 'results'} and {SAVE_DIR / folder_name / 'preliminary_results'}.")
+    print(f"Results saved to {SAVE_DIR / folder_name}.")
+    if SAVE_INTERMEDIATE_RESULTS: 
+        print(f"Intermediate results saved to {SAVE_DIR / folder_name / 'preliminary_results'}.")
