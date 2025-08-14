@@ -115,7 +115,7 @@ def _subject_job(subj_idx: int,
     
     # best_row = (subj_idx, best_eta, best_gamma, best_energy, mc, sr, *gm_vals)
     mc_value = (subj_idx, mc) #  *gm_vals)
-    timing = dict(metrics=t_metrics,grow=0.0, esn=t_esn)
+    timing = (subj_idx, t_metrics, t_esn, t_metrics + t_esn)
 
     return mc_value, timing
 
@@ -179,17 +179,15 @@ def run_gnm_full(conn: np.ndarray,
                              best_partial)
 
             # Save timings for this subject
-            _append_rows_csv([(timing["metrics"],
-                               timing["grow"],
-                               timing["metrics"] + timing["grow"])],
-                             ["subject","metrics_s","grow_s","total_s"],
+            _append_rows_csv([timing],
+                             ["subject","time_metrics_sec","time_esn_sec","time_total_sec"],
                              timing_partial)
 
             # Print exactly when rows are flushed
             if timing_flag:
-                print(f"Finished now {idx}/{n_subj} subjects. "
-                      f"Subject {mc_value['subject']}: metrics={timing['metrics']:.3f}s, "
-                      f"grow={timing['grow']:.3f}s")
+                print(f"Finished now {idx}/{n_subj} subjects.") 
+                    #   f"Subject {mc_value[0]}: metrics={timing['metrics']:.3f}s, "
+                    #   f"grow={timing['grow']:.3f}s")
 
     total_sec = time.perf_counter() - run_t0
     if timing_flag:
@@ -198,8 +196,8 @@ def run_gnm_full(conn: np.ndarray,
     
     # timing footer: put the total in 'total_s'
     _append_rows_csv(
-        [("COMPLETED", np.nan, np.nan, np.nan, f"{total_sec:.3f}")],
-        ["subject","metrics_s","grow_s","total_s"],
+        [("COMPLETED", np.nan, np.nan, f"{total_sec:.3f}")],
+        ["subject","time_metrics_sec","time_esn_sec","time_total_sec"],
         timing_partial
     )
 
