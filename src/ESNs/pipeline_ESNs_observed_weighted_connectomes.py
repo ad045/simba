@@ -10,7 +10,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import networkx as nx
-from scipy.stats import ks_2samp
 
 import sys
 print(sys.path)
@@ -89,13 +88,19 @@ def _subject_job(subj_idx: int,
         warnings.simplefilter("ignore", RuntimeWarning)
         np.seterr(over="ignore", divide="ignore", invalid="ignore")
         
-        mc_result_dict = evaluate_memory_capacity_from_connectome(A_obs, 
-                                                      spectral_radius=0.99, 
-                                                      n_lags=50, 
-                                                      train_len=4000, 
-                                                      test_len=1000,
-                                                      n_runs=10, 
-                                                      random_state=subj_idx)
+        mc_result_dict = evaluate_memory_capacity_from_connectome(connectome=A_obs, 
+                                                                    spectral_radius=0.99, 
+                                                                    n_lags=50, 
+                                                                    train_len=4000, 
+                                                                    test_len=1000,
+                                                                    n_runs=10, 
+                                                                    input_scaling=1.0,
+                                                                    regression_method="pinv",
+                                                                    n_transient=0,
+                                                                    leak_rate=1.0,
+                                                                    bias=1.0,
+                                                                    random_state=subj_idx)
+        
             # return {"all_run_outputs": mc_values, 
             # "mc_mean": float(np.mean(mc_values)), 
             # "mc_std": float(np.std(mc_values)), 
