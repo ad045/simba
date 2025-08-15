@@ -21,14 +21,15 @@ def run_esn_hyperparameter_sweep_example():
     
     # Create custom configuration
     esn_config = ESNConfig(
-        n_runs=100,  # High number of runs for better statistics
+        n_runs=10, # 100,  # High number of runs for better statistics
         input_length=4000,
         regularization_method="ridge"
     )
     
     data_config = DataConfig(
         resolution=68,
-        densities=[10, 12, 14, 16, 18, 20],  # All available densities
+        # densities=1[0, 12, 14, 16, 18, 20],  # All available densities
+        densities=[10, 16, 20],  # All available densities
         use_weighted=True
     )
     
@@ -44,8 +45,8 @@ def run_esn_hyperparameter_sweep_example():
     orchestrator = PipelineOrchestrator(config)
     
     # Define hyperparameter grid (similar to your original script)
-    HP_SPECTRAL_RADII = np.linspace(0.1, 2.5, 10)  # Extended range
-    HP_INPUT_LENGTHS = [1000, 2000, 4000, 8000]
+    HP_SPECTRAL_RADII = np.linspace(0.1, 2.5, 4) # 10)  # Extended range
+    HP_INPUT_LENGTHS = [1000] # , 2000, 4000, 8000]
     HP_INPUT_SCALINGS = [0.5, 1.0, 2.0]
     HP_REGULARIZATION_METHODS = ["pinv", "ridge"]
     
@@ -97,19 +98,17 @@ def run_gnm_parameter_fitting_example():
     
     # Create custom configuration for GNM fitting
     gnm_config = GNMConfig(
-        n_eta=100,      # High resolution grid
-        n_gamma=100,
+        n_eta=10, # 20,      # Reduced for quick test
+        n_gamma=10, # 20,
         eta_start=-3.0,
         eta_end=0.0,
         gamma_start=0.1,
-        gamma_end=0.6,
-        subset_size=8,
-        include_subset=True
+        gamma_end=0.6
     )
     
     data_config = DataConfig(
         resolution=68,
-        densities=[10, 12, 14, 16, 18, 20],
+        densities=[10, 16, 20],  # Reduced for quick test
         use_weighted=True
     )
     
@@ -126,28 +125,28 @@ def run_gnm_parameter_fitting_example():
     print("Starting GNM parameter fitting...")
     print(f"Parameter grid: {gnm_config.n_eta} eta × {gnm_config.n_gamma} gamma values")
     
-    # Run GNM fitting for each density
-    for density in data_config.densities:
-        print(f"\nFitting GNM for density {density}%...")
+    # Run GNM fitting for a representative density
+    density = 16
+    print(f"\nFitting GNM for density {density}%...")
+    
+    results = orchestrator.run_gnm_parameter_fitting(
+        density=density,
+        n_eta=gnm_config.n_eta,
+        n_gamma=gnm_config.n_gamma,
+        eta_range=(gnm_config.eta_start, gnm_config.eta_end),
+        gamma_range=(gnm_config.gamma_start, gnm_config.gamma_end),
+        experiment_name=f"gnm_fitting_density_{density}pct"
+    )
+    
+    if results["status"] == "success":
+        print(f"GNM fitting completed for density {density}%")
+        print(f"Results saved to: {results['experiment_dir']}")
         
-        results = orchestrator.run_gnm_parameter_fitting(
-            density=density,
-            esn_use_observed_weights=True,
-            experiment_name=f"gnm_fitting_density_{density}pct"
-        )
-        
-        if results["status"] == "success":
-            print(f"GNM fitting completed for density {density}%")
-            print(f"Results saved to: {results['experiment_dir']}")
-            
-            # Print summary statistics
-            best_params = results["results"]["best_parameters_summary"]
-            print(f"Average best parameters:")
-            print(f"  - Eta: {best_params['eta_mean']:.3f}")
-            print(f"  - Gamma: {best_params['gamma_mean']:.3f}")
-            print(f"  - Memory capacity: {best_params['memory_capacity_mean']:.4f}")
-        else:
-            print(f"GNM fitting failed for density {density}%: {results.get('error', 'Unknown error')}")
+        # Print summary statistics
+        print(f"Tested {results['n_subjects']} subjects")
+        print(f"Wiring rules: {results['wiring_rules_tested']}")
+    else:
+        print(f"GNM fitting failed for density {density}%: {results.get('error', 'Unknown error')}")
 
 
 # ==============================================================================
@@ -187,11 +186,7 @@ def run_complete_pipeline_example():
         print(f"  - Results directory: {results['esn']['experiment_dir']}")
     
     if results["gnm"] and results["gnm"]["status"] == "success":
-        gnm_results = results["gnm"]["results"]
         print(f"\nGNM Results:")
-        print(f"  - Average best eta: {gnm_results['best_parameters_summary']['eta_mean']:.3f}")
-        print(f"  - Average best gamma: {gnm_results['best_parameters_summary']['gamma_mean']:.3f}")
-        print(f"  - Average memory capacity: {gnm_results['best_parameters_summary']['memory_capacity_mean']:.4f}")
         print(f"  - Results directory: {results['gnm']['experiment_dir']}")
 
 
@@ -208,39 +203,55 @@ def run_quick_test_example():
     
     # Use quick test configuration
     config = get_quick_test_config()
-    print("got config")
-    orchestrator = PipelineOrchestrator(config)
+    print("Got config successfully")
+    
+    try:
+        orchestrator = PipelineOrchestrator(config)
+        print("Created PipelineOrchestrator successfully")
+    except Exception as e:
+        print(f"Failed to create PipelineOrchestrator: {e}")
+        import traceback
+        traceback.print_exc()
+        return
     
     print("Running quick test with reduced parameters...")
     
     # Quick ESN test
     print("\n--- Quick ESN Test ---")
-    esn_results = orchestrator.run_esn_hyperparameter_sweep(
-        # resolution=68,
-        densities=[10],
-        spectral_radii=[0.8, 0.99],
-        input_lengths=[1000, 2000],
-        input_scalings=[1.0],
-        regularization_methods=["pinv"],
-        n_runs_list=[3],
-        experiment_name="quick_esn_test"
-    )
-    
-    if esn_results["status"] == "success":
-        print(f"ESN test completed: {esn_results['experiment_dir']}")
+    try:
+        esn_results = orchestrator.run_esn_hyperparameter_sweep(
+            densities=[10],
+            spectral_radii=[0.8, 0.99],
+            input_lengths=[1000, 2000],
+            input_scalings=[1.0],
+            regularization_methods=["pinv"],
+            n_runs_list=[3],
+            experiment_name="quick_esn_test"
+        )
+        
+        if esn_results["status"] == "success":
+            print(f"ESN test completed: {esn_results['experiment_dir']}")
+        else:
+            print(f"ESN test failed: {esn_results.get('error', 'Unknown error')}")
+    except Exception as e:
+        print(f"ESN test failed with exception: {e}")
     
     # Quick GNM test
     print("\n--- Quick GNM Test ---")
-    gnm_results = orchestrator.run_gnm_parameter_fitting(
-        density=10,
-        n_eta=5,
-        n_gamma=5,
-        include_subset=False,
-        experiment_name="quick_gnm_test"
-    )
-    
-    if gnm_results["status"] == "success":
-        print(f"GNM test completed: {gnm_results['experiment_dir']}")
+    try:
+        gnm_results = orchestrator.run_gnm_parameter_fitting(
+            density=10,
+            n_eta=5,
+            n_gamma=5,
+            experiment_name="quick_gnm_test"
+        )
+        
+        if gnm_results["status"] == "success":
+            print(f"GNM test completed: {gnm_results['experiment_dir']}")
+        else:
+            print(f"GNM test failed: {gnm_results.get('error', 'Unknown error')}")
+    except Exception as e:
+        print(f"GNM test failed with exception: {e}")
 
 
 # ==============================================================================
@@ -253,7 +264,6 @@ def analyze_existing_results_example():
     """
     from pathlib import Path
     from esn_evaluation import create_esn_evaluator
-    from gnm_generation import create_gnm_generator
     from config import ConfigManager
     
     config = ConfigManager()
@@ -278,30 +288,43 @@ def analyze_existing_results_example():
             print(f"    Range: {mc_stats['min']:.4f} - {mc_stats['max']:.4f}")
         else:
             print(f"ESN analysis failed: {esn_analysis['error']}")
+    else:
+        print(f"ESN results directory not found: {esn_results_dir}")
+
+
+# ==============================================================================
+# SCRIPT 6: Data Summary Test
+# ==============================================================================
+
+def run_data_summary_test():
+    """
+    Test script to check data availability and summary.
+    """
+    from config import get_quick_test_config
+    from main_pipeline import PipelineOrchestrator
     
-    # Analyze GNM results
-    gnm_generator = create_gnm_generator(config_manager=config)
+    print("Testing data summary...")
     
-    # Specify the directory containing your GNM results
-    gnm_results_dir = Path("path/to/your/gnm/results")
-    
-    if gnm_results_dir.exists():
-        print("\nAnalyzing GNM results...")
-        gnm_analysis = gnm_generator.load_and_analyze_gnm_results(gnm_results_dir)
+    try:
+        config = get_quick_test_config()
+        orchestrator = PipelineOrchestrator(config)
         
-        if "error" not in gnm_analysis:
-            print(f"GNM Analysis Summary:")
-            print(f"  - Number of subjects: {gnm_analysis['n_subjects']}")
-            print(f"  - Best parameters (average):")
-            best_params = gnm_analysis['best_parameters']
-            print(f"    Eta: {best_params['eta_mean']:.3f} ± {best_params['eta_std']:.3f}")
-            print(f"    Gamma: {best_params['gamma_mean']:.3f} ± {best_params['gamma_std']:.3f}")
-            print(f"  - Memory capacity statistics:")
-            mc_stats = gnm_analysis['memory_capacity_stats']
-            print(f"    Mean: {mc_stats['mean']:.4f}, Std: {mc_stats['std']:.4f}")
-            print(f"    Range: {mc_stats['min']:.4f} - {mc_stats['max']:.4f}")
+        summary = orchestrator.get_data_summary()
+        
+        print("Data Summary:")
+        import json
+        print(json.dumps(summary, indent=2, default=str))
+        
+        if 'error' in summary:
+            print(f"\n⚠️  Data loading issues detected: {summary['error']}")
+            print("This is expected if data files don't exist yet.")
         else:
-            print(f"GNM analysis failed: {gnm_analysis['error']}")
+            print("\n✅ Data summary generated successfully!")
+            
+    except Exception as e:
+        print(f"❌ Data summary test failed: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 # ==============================================================================
@@ -311,12 +334,21 @@ def analyze_existing_results_example():
 if __name__ == "__main__":
     # Uncomment the function you want to run:
     
+    # Data summary test (recommended first step)
+    print("=" * 60)
+    print("RUNNING DATA SUMMARY TEST")
+    print("=" * 60)
+    run_data_summary_test()
+    
+    print("\n" + "=" * 60)
+    print("RUNNING QUICK TEST")
+    print("=" * 60)
     # Quick test (recommended for first run)
     run_quick_test_example()
     
     # Individual components
-    # run_esn_hyperparameter_sweep_example()
-    # run_gnm_parameter_fitting_example()
+    run_esn_hyperparameter_sweep_example()
+    run_gnm_parameter_fitting_example()
     
     # Complete pipeline
     # run_complete_pipeline_example()

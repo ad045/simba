@@ -75,34 +75,13 @@ class GNMNetworkGenerator:
     def _build_wiring_rule_map(self) -> Dict[WiringRule, Any]:
         """Build mapping from enum to GNM wiring rule objects."""
         try:
-            wiring_map = {}
-            
-            # Always available: MatchingIndex
-            wiring_map[WiringRule.MATCHING_INDEX] = generative_rules.MatchingIndex()
-            
-            # Try to add other wiring rules if they exist
-            if hasattr(generative_rules, 'Spatial'):
-                wiring_map[WiringRule.SPATIAL] = generative_rules.Spatial()
-            else:
-                wiring_map[WiringRule.SPATIAL] = generative_rules.MatchingIndex()
-            
-            if hasattr(generative_rules, 'DegreeProduct'):
-                wiring_map[WiringRule.DEGREE_BASED] = generative_rules.DegreeProduct()
-            else:
-                wiring_map[WiringRule.DEGREE_BASED] = generative_rules.MatchingIndex()
-            
-            if hasattr(generative_rules, 'ClusteringCoefficient'):
-                wiring_map[WiringRule.CLUSTERING_BASED] = generative_rules.ClusteringCoefficient()
-            else:
-                wiring_map[WiringRule.CLUSTERING_BASED] = generative_rules.MatchingIndex()
-            
-            if hasattr(generative_rules, 'Communicability'):
-                wiring_map[WiringRule.COMMUNICABILITY] = generative_rules.Communicability()
-            else:
-                wiring_map[WiringRule.COMMUNICABILITY] = generative_rules.MatchingIndex()
-            
-            return wiring_map
-            
+            return {
+                WiringRule.MATCHING_INDEX: generative_rules.MatchingIndex(),
+                WiringRule.SPATIAL: generative_rules.Spatial() if hasattr(generative_rules, 'Spatial') else generative_rules.MatchingIndex(),
+                WiringRule.DEGREE_BASED: generative_rules.DegreeProduct() if hasattr(generative_rules, 'DegreeProduct') else generative_rules.MatchingIndex(),
+                WiringRule.CLUSTERING_BASED: generative_rules.ClusteringCoefficient() if hasattr(generative_rules, 'ClusteringCoefficient') else generative_rules.MatchingIndex(),
+                WiringRule.COMMUNICABILITY: generative_rules.Communicability() if hasattr(generative_rules, 'Communicability') else generative_rules.MatchingIndex(),
+            }
         except Exception as e:
             warnings.warn(f"Could not build all wiring rules: {e}. Using MatchingIndex as fallback.")
             return {rule: generative_rules.MatchingIndex() for rule in WiringRule}

@@ -24,6 +24,8 @@ try:
     from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome
     from src.utils.saving_and_finding_files import time_stamp_for_saving
     from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
+    # Import the new GNM network generator
+    from gnm_network_generator import GNMNetworkGenerator, GNMParameters, WiringRule
 except ImportError as e:
     warnings.warn(f"Could not import ESN modules: {e}")
     # Define dummy functions for testing
@@ -40,6 +42,18 @@ except ImportError as e:
         with open(path, 'w') as f:
             for k, v in kwargs.items():
                 f.write(f"{k}: {v}\n")
+    
+    # Dummy GNM classes
+    class GNMNetworkGenerator:
+        def __init__(self): pass
+        def generate_matched_network(self, *args, **kwargs): return np.random.randint(0, 2, (68, 68))
+    
+    class GNMParameters:
+        def __init__(self, **kwargs): 
+            for k, v in kwargs.items(): setattr(self, k, v)
+    
+    class WiringRule:
+        MATCHING_INDEX = "matching_index"
 
 
 class ESNEvaluator:
