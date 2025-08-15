@@ -170,7 +170,28 @@ class ConfigManager:
         return cls(esn_config, gnm_config, data_config, compute_config, path_config)
 
 
-# Example usage and default configurations
+# # Example usage and default configurations
+# def get_quick_test_config() -> ConfigManager:
+#     """Get a configuration suitable for quick testing."""
+#     esn_config = ESNConfig(
+#         spectral_radius=0.99,
+#         input_length=1000,
+#         n_runs=3
+#     )
+    
+#     data_config = DataConfig(
+#         resolution=68,
+#         densities=[10, 20]  # Just two densities for quick test
+#     )
+    
+    
+#     compute_config = ComputeConfig(
+#         timing_flag=True,
+#         n_workers=2  # Limit workers for testing
+#     )
+    
+#     return ConfigManager(esn_config, data_config, compute_config)
+
 def get_quick_test_config() -> ConfigManager:
     """Get a configuration suitable for quick testing."""
     esn_config = ESNConfig(
@@ -188,8 +209,15 @@ def get_quick_test_config() -> ConfigManager:
         n_workers=2  # Limit workers for testing
     )
     
-    return ConfigManager(esn_config, data_config, compute_config)
-
+    # Fixed: proper parameter passing
+    return ConfigManager(
+        esn_config=esn_config, 
+        gnm_config=None,  # Will use default
+        data_config=data_config, 
+        compute_config=compute_config,
+        path_config=None  # Will use default
+    )
+    
 
 def get_production_config() -> ConfigManager:
     """Get a configuration suitable for production runs."""
