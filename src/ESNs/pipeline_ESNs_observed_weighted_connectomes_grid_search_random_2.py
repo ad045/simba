@@ -10,6 +10,9 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 
+from scipy.stats import gaussian_kde
+from typing import List, Dict, Tuple
+
 from itertools import product
 import random 
 
@@ -322,6 +325,172 @@ def _subject_job(subj_idx: int,
 #     )
 
 #     return f"Results saved to {save_dir}."
+def adaptive_random_search(conn,
+                          dist: np.ndarray,
+                          hparam_ranges: dict,
+                          n_iterations: int = 3,
+                          initial_samples: int = 100,
+                          samples_per_iter: int = 50,
+                          top_percent: float = 0.2,
+                          timing_flag: bool = False,
+                          timestamp: str = None,
+                          save_dir: str = None,
+                          random_seed: int = 42):
+    """
+    Adaptive random search that progressively focuses on promising regions.
+    
+    Args:
+        hparam_ranges: Dict with keys as param names and values as (min, max) or list of options
+        n_iterations: Number of refinement iterations (default 3)
+        initial_samples: Initial random samples (default 100)
+        samples_per_iter: Additional samples per iteration (default 50)
+        top_percent: Fraction of best results to focus on (default 0.2)
+    """
+    
+    np.random.seed(random_seed)
+    random.seed(random_seed)
+    
+    all_results = []
+    all_hparams = []
+    
+    # Helper function to sample from ranges
+    def sample_hparams(ranges, n_samples, focus_regions=None):
+        samples = []
+        
+        for _ in range(n_samples):
+            sample = {}
+            
+            if focus_regions and np.random.random() < 0.7:  # 70% from focus regions
+                # Sample from focused regions using KDE
+                idx = np.random.choice(len(focus_regions))
+                base_params = focus_regions[idx]
+                
+                for key, value in base_params.items():
+                    if key in ranges:
+                        if isinstance(ranges[key], tuple):  # Continuous parameter
+                            # Add Gaussian noise, bounded by range
+                            std = (ranges[key][1] - ranges[key][0]) * 0.1
+                            new_val = np.random.normal(value, std)
+                            new_val = np.clip(new_val, ranges[key][0], ranges[key][1])
+                            sample[key] = new_val
+                        elif isinstance(ranges[key], list):  # Discrete parameter
+                            # With some probability, keep the same value
+                            if np.random.random() < 0.7:
+                                sample[key] = value
+                            else:
+                                sample[key] = np.random.choice(ranges[key])
+                        else:
+                            sample[key] = value
+            else:
+                # Random sampling from full range
+                for key, range_val in ranges.items():
+                    if isinstance(range_val, tuple):  # Continuous parameter
+                        sample[key] = np.random.uniform(range_val[0], range_val[1])
+                    elif isinstance(range_val, list):  # Discrete parameter
+                        sample[key] = np.random.choice(range_val)
+                    else:
+                        sample[key] = range_val
+            
+            samples.append(sample)
+        
+        return samples
+    
+    # Iteration 0: Initial random sampling
+    print(f"\n=== Iteration 0: Initial {initial_samples} random samples ===")
+    initial_hparams = sample_hparams(hparam_ranges, initial_samples)
+    
+    # Run initial batch
+    results = run_gnm_full(
+        conn, dist,
+        hparam_grid=initial_hparams,
+        timing_flag=timing_flag,
+        timestamp=f"{timestamp}_iter0",
+        save_dir=save_dir,
+        search_mode="adaptive_random",
+        random_sample_size=initial_samples,
+        random_seed=random_seed
+    )
+    
+    # Read results from CSV to get MC values
+    mc_results_path = save_dir / f"gnm_mc_results_{timestamp}_iter0.csv"
+    df = pd.read_csv(mc_results_path)
+    df = df[df['subject'] != 'COMPLETED']  # Remove footer
+    
+    # Group by hyperparameters and get mean MC
+    grouped = df.groupby(['density_percent', 'spectral_radius', 'input_length', 
+                          'input_scaling', 'regularization_method'])['mc_mean'].mean()
+    
+    for hp_tuple, mc_mean in grouped.items():
+        hp_dict = {
+            'density_percent': hp_tuple[0],
+            'spectral_radius': hp_tuple[1],
+            'input_length': hp_tuple[2],
+            'input_scaling': hp_tuple[3],
+            'regularization_method': hp_tuple[4],
+            'n_runs': hparam_ranges.get('n_runs', [10])[0] if isinstance(hparam_ranges.get('n_runs', [10]), list) else hparam_ranges.get('n_runs', 10)
+        }
+        all_hparams.append(hp_dict)
+        all_results.append(mc_mean)
+    
+    # Subsequent iterations with focused sampling
+    for iteration in range(1, n_iterations + 1):
+        print(f"\n=== Iteration {iteration}: Focused sampling ===")
+        
+        # Identify top performing hyperparameters
+        n_top = max(1, int(len(all_results) * top_percent))
+        top_indices = np.argsort(all_results)[-n_top:]  # Higher MC is better
+        focus_regions = [all_hparams[i] for i in top_indices]
+        
+        print(f"Focusing on top {n_top} regions with MC values: {[all_results[i] for i in top_indices]}")
+        
+        # Sample new points, biased towards good regions
+        new_hparams = sample_hparams(hparam_ranges, samples_per_iter, focus_regions)
+        
+        # Run new batch
+        results = run_gnm_full(
+            conn, dist,
+            hparam_grid=new_hparams,
+            timing_flag=timing_flag,
+            timestamp=f"{timestamp}_iter{iteration}",
+            save_dir=save_dir,
+            search_mode="adaptive_random",
+            random_sample_size=samples_per_iter,
+            random_seed=random_seed + iteration
+        )
+        
+        # Read and update results
+        mc_results_path = save_dir / f"gnm_mc_results_{timestamp}_iter{iteration}.csv"
+        df = pd.read_csv(mc_results_path)
+        df = df[df['subject'] != 'COMPLETED']
+        
+        grouped = df.groupby(['density_percent', 'spectral_radius', 'input_length',
+                              'input_scaling', 'regularization_method'])['mc_mean'].mean()
+        
+        for hp_tuple, mc_mean in grouped.items():
+            hp_dict = {
+                'density_percent': hp_tuple[0],
+                'spectral_radius': hp_tuple[1],
+                'input_length': hp_tuple[2],
+                'input_scaling': hp_tuple[3],
+                'regularization_method': hp_tuple[4],
+                'n_runs': hparam_ranges.get('n_runs', [10])[0] if isinstance(hparam_ranges.get('n_runs', [10]), list) else hparam_ranges.get('n_runs', 10)
+            }
+            all_hparams.append(hp_dict)
+            all_results.append(mc_mean)
+    
+    # Save final summary
+    summary_df = pd.DataFrame(all_hparams)
+    summary_df['mc_mean'] = all_results
+    summary_df = summary_df.sort_values('mc_mean', ascending=False)
+    summary_path = save_dir / f"adaptive_search_summary_{timestamp}.csv"
+    summary_df.to_csv(summary_path, index=False)
+    
+    print(f"\n=== Adaptive Search Complete ===")
+    print(f"Best hyperparameters found:")
+    print(summary_df.head(5))
+    print(f"\nFull results saved to {summary_path}")
+    
+    return summary_df
 
 
 def run_gnm_full(conn,
@@ -511,7 +680,6 @@ def run_gnm_full(conn,
 
     return f"Results saved to {save_dir}."
 
-
 if __name__ == "__main__":
     # user-configurable flags/variables
     ROOT = Path("/Users/adrian/Documents/01_projects/14_4D_lab")
@@ -520,127 +688,87 @@ if __name__ == "__main__":
     
     # Flags and parameters
     RESOLUTION = 68
-    # DENSITY = 10
-    
     TIMING_FLAG = True
     
+    # Define hyperparameter ranges for adaptive search
+    HPARAM_RANGES = {
+        'density_percent': [10, 12, 14, 16, 18, 20],  # Discrete choices
+        'spectral_radius': (0.1, 2.5),  # Continuous range
+        'input_length': [500, 1000, 2000, 4000, 8000],  # Discrete choices
+        'input_scaling': (0.1, 2.0),  # Continuous range
+        'regularization_method': ['pinv', 'ridge'],  # Discrete choices
+        'n_runs': [10]  # Fixed for now
+    }
     
+    # Choose search mode: 'grid', 'random', or 'adaptive'
+    SEARCH_MODE = 'adaptive'  # <-- Change this to switch modes
     
-    # --- ADD: define your hyperparameter grid (or random sample of it) ---
-    # # Regular grid
-    # HP_SPECTRAL_RADII = [0.7, 0.8, 0.9, 0.99]
-    # HP_TRAIN_LENS     = [1000, 2000, 4000]
-    # HP_N_RUNS_LIST    = [3, 5, 10]
-
-    # input_length
-    # Input_scaling
-    # regularization_method
-    # (spectral radius from 0.1 to 2-3)
-    # --- NEW GRID: input_length, input_scaling, regularization_method, spectral_radius ---
-    
-    #################################
-    # # Available densities must match files on disk
-    # HP_DENSITIES = [10, 12, 14, 16, 18, 20]   # adjust if you have more/less
-
-    # # spectral radius extended up to ~3 (adjust resolution as needed)
-    # N_RUNS_FIXED             = [10] 
-    # # HP_SPECTRAL_RADII        = [0.99] # np.linspace(0.1, 2.5, 11)   # e.g., 0.1 … 2.5
-    # HP_SPECTRAL_RADII        = np.linspace(0.1, 2.5, 11)   # e.g., 0.1 … 2.5
-    # HP_INPUT_LENGTHS         = [500, 1000, 2000, 4000, 8000]          # was train_len
-    # HP_INPUT_SCALINGS        = [0.1, 0.5, 1.0]
-    # HP_REGULARIZATION_METHOD = ["pinv", "ridge"]           # keep in sync with your ESN impl
-    # # N_TRANSIENT              = 0  # keep this fixed for now, can be varied later
-
-    # # Took 79 minutes with current grid. 
-    #################################
-    
-    # HP_DENSITIES = [10]   # adjust if you have more/less
-    HP_DENSITIES = [10, 12, 14, 16, 18, 20]
-
-    # spectral radius extended up to ~3 (adjust resolution as needed)
-    N_RUNS_FIXED             = [100] 
-    # HP_SPECTRAL_RADII        = [0.99] # np.linspace(0.1, 2.5, 11)   # e.g., 0.1 … 2.5
-    HP_SPECTRAL_RADII        = np.linspace(0.1, 2.5, 10)   # e.g., 0.1 … 2.5
-    HP_INPUT_LENGTHS         = [1000]          # was train_len
-    HP_INPUT_SCALINGS        = [1.0]
-    HP_REGULARIZATION_METHOD = ["ridge"]           # keep in sync with your ESN impl
-    
-    
-    # Group by hyperparameters and calculate the mean of mc_mean
-    # density_percent spectral_radius input_length input_scaling regularization_method
-    # Best Hyperparameter Combination: (np.float64(10.0), np.float64(2.5), np.float64(1000.0), np.float64(1.0), 'ridge')
-    # Best MC Mean: 1.0486020406868306
-    #################################
-    
-# https://fabridamicelli.github.io/echoes/api/ESNGenerator/
-
-    hparam_grid = [
-        {
-            "spectral_radius": sr,
-            "input_length": ilen,
-            "input_scaling": iscale,
-            "regularization_method": reg,
-            # optional: keep compatibility if you want n_runs fixed or varied later
-            "n_runs": nr,
-            # "n_transient": n_transient, 
-            "density_percent": dens, 
-        }
-        for sr, ilen, iscale, reg, nr, dens in product(
-            HP_SPECTRAL_RADII, HP_INPUT_LENGTHS, HP_INPUT_SCALINGS, HP_REGULARIZATION_METHOD, N_RUNS_FIXED, HP_DENSITIES
-        )
-    ]
-
-    # Optional: randomly subsample the grid for quicker sweeps
-    HP_RANDOM_SAMPLE = None  # e.g., 24
-    search_mode = "grid"
-    random_sample_size = None
-    
-    if HP_RANDOM_SAMPLE:
-        search_mode = "random_sample"
-        random_sample_size = min(HP_RANDOM_SAMPLE, len(hparam_grid))
-        random.seed(0)
-        hparam_grid = random.sample(hparam_grid, random_sample_size)
-
-    # load data
-    # conn = np.load(os.path.join(ROOT, f"data/preprocessed/01_first_analysises/connectomes_weighted_{RESOLUTION}x{RESOLUTION}.npy")).T
-    
-     # Load one connectome cube per density and pass them as a dict. Is using weighted connectomes.
+    # Load data
     weighted_connectome = np.load(os.path.join(ROOT, f"data/preprocessed/01_first_analysises/connectomes_weighted_{RESOLUTION}x{RESOLUTION}.npy"))
     conn_by_density = {
         d: (np.load(os.path.join(
             ROOT,
             f"data/preprocessed/01_first_analysises/connectomes_binarized_{RESOLUTION}x{RESOLUTION}_density_{d}_percent.npy"
-        ))  * weighted_connectome).T.astype(np.float64, copy=False)
-
-        for d in HP_DENSITIES
+        )) * weighted_connectome).T.astype(np.float64, copy=False)
+        for d in HPARAM_RANGES['density_percent']
     }
     
     dist = np.load(os.path.join(ROOT, f"data/preprocessed/01_first_analysises/distance_matrix_{RESOLUTION}x{RESOLUTION}.npy"))
-
+    
     # timestamp for saving
     timestamp = time_stamp_for_saving()
     
     # create save directories
-    folder_name = f"esn_grid_resolution{RESOLUTION}_{timestamp}"
+    folder_name = f"esn_{SEARCH_MODE}_resolution{RESOLUTION}_{timestamp}"
     (SAVE_DIR / folder_name).mkdir(parents=True, exist_ok=True)
-
-    # final_message = run_gnm_full(
-    #     conn_by_density, dist,
-    #     hparam_grid=hparam_grid,
-    #     timing_flag=TIMING_FLAG,
-    #     timestamp=timestamp,
-    #     save_dir=SAVE_DIR / folder_name
-    # )
-
-    final_message = run_gnm_full(
-        conn_by_density, dist,
-        hparam_grid=hparam_grid,
-        timing_flag=TIMING_FLAG,
-        timestamp=timestamp,
-        save_dir=SAVE_DIR / folder_name,
-        search_mode=search_mode,
-        random_sample_size=random_sample_size,
-        random_seed=42
-    )
     
-    print(final_message)
+    if SEARCH_MODE == 'adaptive':
+        # Run adaptive random search
+        results_df = adaptive_random_search(
+            conn_by_density, dist,
+            hparam_ranges=HPARAM_RANGES,
+            n_iterations=3,
+            initial_samples=100,
+            samples_per_iter=50,
+            top_percent=0.2,
+            timing_flag=TIMING_FLAG,
+            timestamp=timestamp,
+            save_dir=SAVE_DIR / folder_name,
+            random_seed=42
+        )
+        print(f"\nAdaptive search completed. Results saved to {SAVE_DIR / folder_name}")
+        
+    elif SEARCH_MODE == 'grid':
+        # Original grid search code
+        HP_DENSITIES = [10, 12, 14, 16, 18, 20]
+        N_RUNS_FIXED = [10]
+        HP_SPECTRAL_RADII = np.linspace(0.1, 2.5, 10)
+        HP_INPUT_LENGTHS = [1000]
+        HP_INPUT_SCALINGS = [1.0]
+        HP_REGULARIZATION_METHOD = ["ridge"]
+        
+        hparam_grid = [
+            {
+                "spectral_radius": sr,
+                "input_length": ilen,
+                "input_scaling": iscale,
+                "regularization_method": reg,
+                "n_runs": nr,
+                "density_percent": dens,
+            }
+            for sr, ilen, iscale, reg, nr, dens in product(
+                HP_SPECTRAL_RADII, HP_INPUT_LENGTHS, HP_INPUT_SCALINGS, 
+                HP_REGULARIZATION_METHOD, N_RUNS_FIXED, HP_DENSITIES
+            )
+        ]
+        
+        final_message = run_gnm_full(
+            conn_by_density, dist,
+            hparam_grid=hparam_grid,
+            timing_flag=TIMING_FLAG,
+            timestamp=timestamp,
+            save_dir=SAVE_DIR / folder_name,
+            search_mode="grid",
+            random_seed=42
+        )
+        print(final_message)
