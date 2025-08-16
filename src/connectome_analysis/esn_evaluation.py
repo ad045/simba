@@ -25,7 +25,8 @@ try:
     from src.utils.saving_and_finding_files import time_stamp_for_saving
     from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
     # Import the new GNM network generator
-    from gnm_network_generator import GNMNetworkGenerator, GNMParameters, WiringRule
+    from gnm_network_generator import GNMGenerator, GNMParameters
+    from gnm_generation import WiringRule
 except ImportError as e:
     warnings.warn(f"Could not import ESN modules: {e}")
     # Define dummy functions for testing

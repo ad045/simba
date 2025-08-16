@@ -1,14 +1,16 @@
 """
-Configuration management for the connectome analysis pipeline.
-Centralizes all hyperparameters, paths, and experimental settings.
+Configuration management using GNM library structures.
 """
 
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 import numpy as np
-from itertools import product
+import torch
 import json
+
+# Import GNM configuration structures
+from gnm import fitting, generative_rules, evaluation, weight_criteria
 
 
 @dataclass
@@ -27,16 +29,123 @@ class ESNConfig:
 
 
 @dataclass
-class GNMConfig:
-    """GNM (Generative Network Model) configuration."""
+class GNMConfigOptimized:
+    """GNM configuration using library structures."""
+    # Use GNM's fitting structures directly
+    binary_sweep_params: Optional[fitting.BinarySweepParameters] = None
+    weighted_sweep_params: Optional[fitting.WeightedSweepParameters] = None
+    
+    # Default parameter ranges
+    eta_range: tuple = (-5.0, 0.0)
+    gamma_range: tuple = (0.0, 1.0)
+    lambda_range: tuple = (0.0, 0.0)
     n_eta: int = 20
     n_gamma: int = 20
-    eta_start: float = -3.0
-    eta_end: float = 0.0
-    gamma_start: float = 0.1
-    gamma_end: float = 0.6
-    subset_size: int = 8
-    include_subset: bool = True
+    n_lambda: int = 1
+    
+    # Generative rules to test
+    generative_rules_to_test: List[str] = field(default_factory=lambda: ["matching_index"])
+    
+    # Evaluation metrics
+    evaluation_metrics: List[str] = field(default_factory=lambda: [
+        "degree_ks", "clustering_ks", "edge_length_ks"
+    ])
+    
+    # Weight optimization
+    weight_criterion: str = "distance_weighted_communicability"
+    alpha: float = 0.01
+    
+    # Simulation parameters
+    num_simulations: int = 100
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    
+    def create_binary_sweep_parameters(self, 
+                                      distance_matrix: torch.Tensor,
+                                      num_iterations: int) -> fitting.BinarySweepParameters:
+        """Create GNM BinarySweepParameters from config."""
+        # Get generative rules
+        rules = []
+        for rule_name in self.generative_rules_to_test:
+            if rule_name == "matching_index":
+                rules.append(generative_rules.MatchingIndex())
+            elif rule_name == "neighbors":
+                rules.append(generative_rules.Neighbors())
+            elif rule_name == "degree_product":
+                rules.append(generative_rules.DegreeProduct())
+            elif rule_name == "clustering_coefficient":
+                rules.append(generative_rules.ClusteringCoefficient())
+            elif rule_name == "spatial":
+                rules.append(generative_rules.Spatial())
+            else:
+                # Default to matching index
+                rules.append(generative_rules.MatchingIndex())
+        
+        return fitting.BinarySweepParameters(
+            eta=torch.linspace(self.eta_range[0], self.eta_range[1], self.n_eta),
+            gamma=torch.linspace(self.gamma_range[0], self.gamma_range[1], self.n_gamma),
+            lambdah=torch.linspace(self.lambda_range[0], self.lambda_range[1], self.n_lambda),
+            distance_relationship_type=["powerlaw"],
+            preferential_relationship_type=["powerlaw"],
+            heterochronicity_relationship_type=["powerlaw"],
+            generative_rule=rules,
+            num_iterations=[num_iterations],
+        )
+    
+    def create_weighted_sweep_parameters(self, 
+                                        distance_matrix: torch.Tensor) -> fitting.WeightedSweepParameters:
+        """Create GNM WeightedSweepParameters from config."""
+        # Get weight criterion
+        if self.weight_criterion == "distance_weighted_communicability":
+            criterion = weight_criteria.DistanceWeightedCommunicability(distance_matrix)
+        elif self.weight_criterion == "communicability":
+            criterion = weight_criteria.Communicability()
+        elif self.weight_criterion == "flow":
+            criterion = weight_criteria.Flow()
+        else:
+            # Default
+            criterion = weight_criteria.DistanceWeightedCommunicability(distance_matrix)
+        
+        return fitting.WeightedSweepParameters(
+            alpha=[self.alpha],
+            optimisation_criterion=[criterion]
+        )
+    
+    def create_evaluation_criteria(self, distance_matrix: torch.Tensor) -> Any:
+        """Create evaluation criteria from config."""
+        criteria = []
+        
+        for metric in self.evaluation_metrics:
+            if metric == "degree_ks":
+                criteria.append(evaluation.DegreeKS())
+            elif metric == "clustering_ks":
+                criteria.append(evaluation.ClusteringKS())
+            elif metric == "betweenness_ks":
+                criteria.append(evaluation.BetweennessKS())
+            elif metric == "edge_length_ks":
+                criteria.append(evaluation.EdgeLengthKS(distance_matrix))
+            elif metric == "degree_js":
+                criteria.append(evaluation.DegreeJS())
+            elif metric == "clustering_js":
+                criteria.append(evaluation.ClusteringJS())
+            elif metric == "betweenness_js":
+                criteria.append(evaluation.BetweennessJS())
+            elif metric == "edge_length_js":
+                criteria.append(evaluation.EdgeLengthJS(distance_matrix))
+            elif metric == "frobenius":
+                criteria.append(evaluation.Frobenius())
+        
+        # Combine criteria
+        if len(criteria) > 1:
+            return evaluation.MaxCriteria(criteria)
+        elif len(criteria) == 1:
+            return criteria[0]
+        else:
+            # Default
+            return evaluation.MaxCriteria([
+                evaluation.DegreeKS(),
+                evaluation.ClusteringKS(),
+                evaluation.EdgeLengthKS(distance_matrix)
+            ])
 
 
 @dataclass
@@ -45,12 +154,13 @@ class DataConfig:
     resolution: int = 68
     densities: List[int] = field(default_factory=lambda: [10, 12, 14, 16, 18, 20])
     use_weighted: bool = True
+    use_gnm_defaults: bool = False  # Option to use GNM's default data
 
 
 @dataclass
 class ComputeConfig:
     """Computational settings."""
-    n_workers: Optional[int] = None  # None means use all available CPUs
+    n_workers: Optional[int] = None  
     timing_flag: bool = True
     append_interval: int = 10
     random_seed: int = 42
@@ -69,57 +179,65 @@ class PathConfig:
 
 
 class ConfigManager:
-    """Manages all configuration aspects of the pipeline."""
+    """Optimized configuration manager using GNM structures."""
     
     def __init__(self, 
                  esn_config: Optional[ESNConfig] = None,
-                 gnm_config: Optional[GNMConfig] = None,
+                 gnm_config: Optional[GNMConfigOptimized] = None,
                  data_config: Optional[DataConfig] = None,
                  compute_config: Optional[ComputeConfig] = None,
                  path_config: Optional[PathConfig] = None):
         
         self.esn = esn_config or ESNConfig()
-        self.gnm = gnm_config or GNMConfig()
+        self.gnm = gnm_config or GNMConfigOptimized()
         self.data = data_config or DataConfig()
         self.compute = compute_config or ComputeConfig()
         self.paths = path_config or PathConfig()
     
-    def generate_esn_hparam_grid(self, 
-                                spectral_radii: Optional[List[float]] = None,
-                                input_lengths: Optional[List[int]] = None,
-                                input_scalings: Optional[List[float]] = None,
-                                regularization_methods: Optional[List[str]] = None,
-                                n_runs_list: Optional[List[int]] = None,
-                                densities: Optional[List[int]] = None) -> List[Dict[str, Any]]:
-        """Generate hyperparameter grid for ESN experiments."""
+    def create_gnm_sweep_config(self, 
+                               distance_matrix: torch.Tensor,
+                               num_iterations: int,
+                               include_weights: bool = True) -> fitting.SweepConfig:
+        """Create complete GNM sweep configuration."""
         
-        # Use defaults if not provided
-        spectral_radii = spectral_radii or np.linspace(0.1, 2.5, 10).tolist()
-        input_lengths = input_lengths or [1000, 2000, 4000]
-        input_scalings = input_scalings or [0.5, 1.0, 2.0]
-        regularization_methods = regularization_methods or ["pinv", "ridge"]
-        n_runs_list = n_runs_list or [self.esn.n_runs]
-        densities = densities or self.data.densities
+        binary_params = self.gnm.create_binary_sweep_parameters(distance_matrix, num_iterations)
         
-        hparam_grid = [
-            {
-                "spectral_radius": sr,
-                "input_length": ilen,
-                "input_scaling": iscale,
-                "regularization_method": reg,
-                "n_runs": nr,
-                "density_percent": dens,
-            }
-            for sr, ilen, iscale, reg, nr, dens in product(
-                spectral_radii, input_lengths, input_scalings, 
-                regularization_methods, n_runs_list, densities
-            )
-        ]
+        weighted_params = None
+        if include_weights:
+            weighted_params = self.gnm.create_weighted_sweep_parameters(distance_matrix)
         
-        return hparam_grid
+        return fitting.SweepConfig(
+            binary_sweep_parameters=binary_params,
+            weighted_sweep_parameters=weighted_params,
+            num_simulations=self.gnm.num_simulations,
+            distance_matrix=[distance_matrix]
+        )
+    
+    def get_gnm_evaluation_criteria(self, distance_matrix: torch.Tensor) -> Any:
+        """Get evaluation criteria for GNM."""
+        return self.gnm.create_evaluation_criteria(distance_matrix)
+    
+    def load_gnm_defaults(self):
+        """Load default data from GNM library."""
+        from gnm import defaults
+        
+        device = torch.device(self.gnm.device)
+        
+        # Load default distance matrix and network from GNM
+        distance_matrix = defaults.get_distance_matrix(device=device)
+        binary_network = defaults.get_binary_network(device=device)
+        
+        return {
+            "distance_matrix": distance_matrix,
+            "binary_network": binary_network
+        }
     
     def get_data_paths(self):
-        """Get paths to data files based on current configuration."""
+        """Get paths to data files."""
+        if self.data.use_gnm_defaults:
+            # Use GNM's default data
+            return {"use_gnm_defaults": True}
+        
         resolution = self.data.resolution
         
         paths = {
@@ -134,115 +252,89 @@ class ConfigManager:
             )
         
         return paths
-    
-    def save_config(self, save_path: Path):
-        """Save current configuration to JSON file."""
-        config_dict = {
-            'esn': self.esn.__dict__,
-            'gnm': self.gnm.__dict__,
-            'data': self.data.__dict__,
-            'compute': self.compute.__dict__,
-            'paths': {
-                'root_dir': str(self.paths.root_dir),
-                'data_dir': str(self.paths.data_dir),
-                'output_dir': str(self.paths.output_dir),
-                'esn_output_dir': str(self.paths.esn_output_dir),
-                'gnm_output_dir': str(self.paths.gnm_output_dir),
-            }
-        }
-        
-        with open(save_path, 'w') as f:
-            json.dump(config_dict, f, indent=2, default=str)
-    
-    @classmethod
-    def load_config(cls, config_path: Path):
-        """Load configuration from JSON file."""
-        with open(config_path, 'r') as f:
-            config_dict = json.load(f)
-        
-        # Reconstruct the configuration objects
-        esn_config = ESNConfig(**config_dict['esn'])
-        gnm_config = GNMConfig(**config_dict['gnm'])
-        data_config = DataConfig(**config_dict['data'])
-        compute_config = ComputeConfig(**config_dict['compute'])
-        path_config = PathConfig(root_dir=Path(config_dict['paths']['root_dir']))
-        
-        return cls(esn_config, gnm_config, data_config, compute_config, path_config)
 
 
-# # Example usage and default configurations
-# def get_quick_test_config() -> ConfigManager:
-#     """Get a configuration suitable for quick testing."""
-#     esn_config = ESNConfig(
-#         spectral_radius=0.99,
-#         input_length=1000,
-#         n_runs=3
-#     )
-    
-#     data_config = DataConfig(
-#         resolution=68,
-#         densities=[10, 20]  # Just two densities for quick test
-#     )
-    
-    
-#     compute_config = ComputeConfig(
-#         timing_flag=True,
-#         n_workers=2  # Limit workers for testing
-#     )
-    
-#     return ConfigManager(esn_config, data_config, compute_config)
-
-def get_quick_test_config() -> ConfigManager:
-    """Get a configuration suitable for quick testing."""
-    esn_config = ESNConfig(
-        spectral_radius=0.99,
-        input_length=1000,
-        n_runs=3
+# Preset configurations optimized for GNM library
+def get_gnm_quick_test_config() -> ConfigManager:
+    """Quick test configuration using GNM defaults."""
+    gnm_config = GNMConfigOptimized(
+        n_eta=5,
+        n_gamma=5,
+        num_simulations=10,
+        generative_rules_to_test=["matching_index"],
+        evaluation_metrics=["degree_ks", "clustering_ks"]
     )
     
     data_config = DataConfig(
-        densities=[10, 20]  # Just two densities for quick test
+        densities=[10],
+        use_gnm_defaults=True  # Use GNM's default data for testing
     )
     
     compute_config = ComputeConfig(
         timing_flag=True,
-        n_workers=2  # Limit workers for testing
+        n_workers=2
     )
     
-    # Fixed: proper parameter passing
     return ConfigManager(
-        esn_config=esn_config, 
-        gnm_config=None,  # Will use default
-        data_config=data_config, 
-        compute_config=compute_config,
-        path_config=None  # Will use default
+        gnm_config=gnm_config,
+        data_config=data_config,
+        compute_config=compute_config
     )
-    
-
-def get_production_config() -> ConfigManager:
-    """Get a configuration suitable for production runs."""
-    esn_config = ESNConfig(
-        n_runs=100,  # More runs for better statistics
-        input_length=4000
-    )
-    
-    gnm_config = GNMConfig(
-        n_eta=100,
-        n_gamma=100
-    )
-    
-    return ConfigManager(esn_config, gnm_config)
 
 
-def get_hyperparameter_sweep_config() -> ConfigManager:
-    """Get a configuration for extensive hyperparameter sweeping."""
+def get_gnm_comprehensive_config() -> ConfigManager:
+    """Comprehensive GNM analysis configuration."""
+    gnm_config = GNMConfigOptimized(
+        n_eta=50,
+        n_gamma=50,
+        num_simulations=100,
+        generative_rules_to_test=[
+            "matching_index", 
+            "neighbors",
+            "degree_product",
+            "clustering_coefficient",
+            "spatial"
+        ],
+        evaluation_metrics=[
+            "degree_ks", 
+            "clustering_ks", 
+            "betweenness_ks",
+            "edge_length_ks"
+        ],
+        weight_criterion="distance_weighted_communicability",
+        alpha=0.01
+    )
+    
     data_config = DataConfig(
-        densities=[10, 12, 14, 16, 18, 20]
+        densities=[10, 12, 14, 16, 18, 20],
+        use_weighted=True
     )
     
-    compute_config = ComputeConfig(
-        timing_flag=True,
-        random_seed=42
+    return ConfigManager(gnm_config=gnm_config, data_config=data_config)
+
+
+def get_gnm_rule_comparison_config() -> ConfigManager:
+    """Configuration for comparing different generative rules."""
+    gnm_config = GNMConfigOptimized(
+        n_eta=20,
+        n_gamma=20,
+        num_simulations=50,
+        generative_rules_to_test=[
+            "matching_index",
+            "neighbors", 
+            "degree_product",
+            "degree_difference",
+            "clustering_coefficient",
+            "clustering_coefficient_zhang",
+            "clustering_coefficient_bu",
+            "spatial",
+            "communicability",
+            "adamic_adar",
+            "path_index_2",
+            "preferential_attachment",
+            "resource_allocation"
+        ],
+        evaluation_metrics=["degree_ks", "clustering_ks", "edge_length_ks", "frobenius"]
     )
     
-    return ConfigManager(data_config=data_config, compute_config=compute_config)
+    return ConfigManager(gnm_config=gnm_config)

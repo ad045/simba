@@ -1,0 +1,17 @@
+from src.imported_libraries.GenerativeNetworkModels_2.src.gnm.models import GNMBinary, GNMWeighted
+
+
+
+
+    
+#     # Quick test with GNM defaults
+# python main_pipeline.py test --config quick_test
+
+# # Comprehensive analysis
+# python main_pipeline.py comprehensive --compare-rules --fit-weights
+
+# # Parameter sweep
+# python main_pipeline.py sweep --config comprehensive
+
+# # Full pipeline
+# python main_pipeline.py full
