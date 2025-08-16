@@ -29,7 +29,7 @@ class ESNConfig:
 
 
 @dataclass
-class GNMConfigOptimized:
+class GNMConfig:
     """GNM configuration using library structures."""
     # Use GNM's fitting structures directly
     binary_sweep_params: Optional[fitting.BinarySweepParameters] = None
@@ -183,13 +183,13 @@ class ConfigManager:
     
     def __init__(self, 
                  esn_config: Optional[ESNConfig] = None,
-                 gnm_config: Optional[GNMConfigOptimized] = None,
+                 gnm_config: Optional[GNMConfig] = None,
                  data_config: Optional[DataConfig] = None,
                  compute_config: Optional[ComputeConfig] = None,
                  path_config: Optional[PathConfig] = None):
         
         self.esn = esn_config or ESNConfig()
-        self.gnm = gnm_config or GNMConfigOptimized()
+        self.gnm = gnm_config or GNMConfig()
         self.data = data_config or DataConfig()
         self.compute = compute_config or ComputeConfig()
         self.paths = path_config or PathConfig()
@@ -257,7 +257,7 @@ class ConfigManager:
 # Preset configurations optimized for GNM library
 def get_gnm_quick_test_config() -> ConfigManager:
     """Quick test configuration using GNM defaults."""
-    gnm_config = GNMConfigOptimized(
+    gnm_config = GNMConfig(
         n_eta=5,
         n_gamma=5,
         num_simulations=10,
@@ -284,7 +284,7 @@ def get_gnm_quick_test_config() -> ConfigManager:
 
 def get_gnm_comprehensive_config() -> ConfigManager:
     """Comprehensive GNM analysis configuration."""
-    gnm_config = GNMConfigOptimized(
+    gnm_config = GNMConfig(
         n_eta=50,
         n_gamma=50,
         num_simulations=100,
@@ -315,7 +315,7 @@ def get_gnm_comprehensive_config() -> ConfigManager:
 
 def get_gnm_rule_comparison_config() -> ConfigManager:
     """Configuration for comparing different generative rules."""
-    gnm_config = GNMConfigOptimized(
+    gnm_config = GNMConfig(
         n_eta=20,
         n_gamma=20,
         num_simulations=50,

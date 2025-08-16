@@ -17,7 +17,7 @@ def run_esn_hyperparameter_sweep_example():
     from itertools import product
     
     from config import ConfigManager, ESNConfig, DataConfig, ComputeConfig
-    from main_pipeline import PipelineOrchestrator
+    from main_pipeline import GNMPipelineOrchestrator
     
     # Create custom configuration
     esn_config = ESNConfig(
@@ -42,8 +42,8 @@ def run_esn_hyperparameter_sweep_example():
     config = ConfigManager(esn_config, data_config=data_config, compute_config=compute_config)
     
     # Create pipeline orchestrator
-    orchestrator = PipelineOrchestrator(config)
-    
+    orchestrator = GNMPipelineOrchestrator(config)
+
     # Define hyperparameter grid (similar to your original script)
     HP_SPECTRAL_RADII = np.linspace(0.1, 2.5, 4) # 10)  # Extended range
     HP_INPUT_LENGTHS = [1000] # , 2000, 4000, 8000]
@@ -54,7 +54,7 @@ def run_esn_hyperparameter_sweep_example():
     print(f"Grid size: {len(HP_SPECTRAL_RADII)} × {len(HP_INPUT_LENGTHS)} × {len(HP_INPUT_SCALINGS)} × {len(HP_REGULARIZATION_METHODS)} × {len(data_config.densities)}")
     
     # Run the sweep
-    results = orchestrator.run_esn_hyperparameter_sweep(
+    results = orchestrator.run_gnm_parameter_sweep( # OR full run? -> Previously run_esn_hyperparameter_sweep(
         densities=data_config.densities,
         spectral_radii=HP_SPECTRAL_RADII,
         input_lengths=HP_INPUT_LENGTHS,
@@ -94,7 +94,7 @@ def run_gnm_parameter_fitting_example():
     This replaces and improves upon the GNM part of your Script No 1.
     """
     from config import ConfigManager, GNMConfig, DataConfig, ComputeConfig
-    from main_pipeline import PipelineOrchestrator
+    from main_pipeline import GNMPipelineOrchestrator
     
     # Create custom configuration for GNM fitting
     gnm_config = GNMConfig(
@@ -120,8 +120,8 @@ def run_gnm_parameter_fitting_example():
     config = ConfigManager(gnm_config=gnm_config, data_config=data_config, compute_config=compute_config)
     
     # Create pipeline orchestrator
-    orchestrator = PipelineOrchestrator(config)
-    
+    orchestrator = GNMPipelineOrchestrator(config)
+
     print("Starting GNM parameter fitting...")
     print(f"Parameter grid: {gnm_config.n_eta} eta × {gnm_config.n_gamma} gamma values")
     
@@ -198,18 +198,18 @@ def run_quick_test_example():
     """
     Quick test script with reduced parameters for development and testing.
     """
-    from config import get_quick_test_config
-    from main_pipeline import PipelineOrchestrator
+    from config import get_gnm_quick_test_config
+    from main_pipeline import GNMPipelineOrchestrator
     
     # Use quick test configuration
-    config = get_quick_test_config()
+    config = get_gnm_quick_test_config()
     print("Got config successfully")
     
     try:
-        orchestrator = PipelineOrchestrator(config)
-        print("Created PipelineOrchestrator successfully")
+        orchestrator = GNMPipelineOrchestrator(config)
+        print("Created GNMPipelineOrchestrator successfully")
     except Exception as e:
-        print(f"Failed to create PipelineOrchestrator: {e}")
+        print(f"Failed to create GNMPipelineOrchestrator: {e}")
         import traceback
         traceback.print_exc()
         return
@@ -300,14 +300,14 @@ def run_data_summary_test():
     """
     Test script to check data availability and summary.
     """
-    from config import get_quick_test_config
-    from main_pipeline import PipelineOrchestrator
-    
+    from config import get_gnm_quick_test_config
+    from main_pipeline import GNMPipelineOrchestrator
+
     print("Testing data summary...")
     
     try:
-        config = get_quick_test_config()
-        orchestrator = PipelineOrchestrator(config)
+        config = get_gnm_quick_test_config()
+        orchestrator = GNMPipelineOrchestrator(config)
         
         summary = orchestrator.get_data_summary()
         

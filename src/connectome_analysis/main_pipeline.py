@@ -98,7 +98,7 @@ class GNMPipelineOrchestrator:
             "n_target_networks": len(target_networks),
             "generative_rules_tested": self.config.gnm.generative_rules_to_test,
             "evaluation_metrics": self.config.gnm.evaluation_metrics,
-            "network_results": []
+            "network_results": ["TESTING"]
         }
         
         # Process each target network
@@ -544,7 +544,8 @@ def main():
             results = orchestrator.run_full_pipeline(
                 gnm_experiment_name=args.experiment_name
             )
-            
+        print(f"\nResults: {results}")
+    
     except KeyboardInterrupt:
         print("\nOperation cancelled by user")
         sys.exit(1)
