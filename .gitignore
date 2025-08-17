@@ -210,12 +210,17 @@ __marimo__/
 .DS_*
 
 data/
-data_*
+# data_*
 X_*
 OLD_*
 *.npy
-*.csv
+# *.csv
 
+# Force the inclusion of the "sharing" directory - I know, not best practice. 
+!/Users/adrian/Documents/01_projects/14_4D_lab/sharing 
+# !/Users/adrian/Documents/01_projects/14_4D_lab/sharing/esn_adaptive_resolution68_2025-08-15_16-57-22
+
+wandb 
 *.png 
 *.jpg
 *.jpeg

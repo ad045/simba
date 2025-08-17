@@ -1,0 +1,24 @@
+=== ESN Grid/Random Search Run Info ===
+Started at:      2025-08-15T17:02:58
+Last updated:    2025-08-15T17:02:58
+Save dir:        /Users/adrian/Documents/01_projects/14_4D_lab/output/02_esns_on_observed_weighted_connectomes/esn_adaptive_resolution68_2025-08-15_16-57-22
+Timestamp:       2025-08-15_16-57-22_iter1
+
+Subjects:        70
+Total tasks:     3500
+Completed:       0  (0.00%)
+
+Search mode:     adaptive_random
+Densities:       10, 12, 14, 16, 18, 20
+
+Hyperparameter space (unique values):
+  - density_percent: [np.int64(10), 12.0, np.int64(14), 16.0, 18.0, np.int64(20)]
+  - input_length: [np.int64(500), np.int64(1000), np.int64(2000), 4000.0, 8000.0]
+  - input_scaling: [np.float64(0.1), np.float64(0.10008196235519673), 0.31020030021489375, np.float64(0.31657499101637676), np.float64(0.37240632042792443), np.float64(0.43890535505403283), 0.4541694748974738, np.float64(0.5007706465075507), np.float64(0.5196751937399116), 0.5699613933120755, 0.5838172440511513, np.float64(0.5860597428233394), 0.6391742210175765, np.float64(0.6428310315710704), np.float64(0.6489839026300032), np.float64(0.7229708528184289), np.float64(0.7534780877403429), np.float64(0.7692854368806294), np.float64(0.8148359930992687), 0.8536380437130785, '...']
+  - n_runs: [10]
+  - regularization_method: [np.str_('pinv'), 'ridge']
+  - spectral_radius: [np.float64(0.2295190979039588), np.float64(0.23698670307234104), np.float64(0.3021995060422155), 0.34427793428896897, 0.34699847378594806, 0.3756083793740885, np.float64(0.38496938380111934), np.float64(0.49042889225670216), 0.4927742628776908, np.float64(0.5306597360097285), np.float64(0.5718235335917584), np.float64(0.6791451798690666), np.float64(0.6863944881693393), 0.6864475731151708, np.float64(0.7173102284253017), 0.8151026837006811, np.float64(0.8685444645093274), np.float64(0.8981391125621823), np.float64(0.9231888920380108), np.float64(0.9484261392149878), '...']
+
+Notes:
+  - This file is overwritten as the run progresses.
+  - The CSVs contain per-task results and timings.
