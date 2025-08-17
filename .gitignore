@@ -210,7 +210,7 @@ __marimo__/
 .DS_*
 
 data/
-data_*
+# data_*
 X_*
 OLD_*
 *.npy

@@ -1,5 +1,6 @@
 """
-Main pipeline fully integrated with GNM library for comprehensive connectome analysis.
+Main pipeline fully integrated with GNM library and centralized logging.
+Clean version with proper logging integration.
 """
 
 import argparse
@@ -14,18 +15,18 @@ import pandas as pd
 
 # GNM library imports
 from gnm import fitting, evaluation, defaults, utils
-# from gnm.models import GNMBinary, GNMWeighted
-from src.imported_libraries.GenerativeNetworkModels_2.src.gnm.model import GenerativeNetworkModel, BinaryGenerativeParameters # GNMBinary, GNMWeighted
-# from src.imported_libraries.GenerativeNetworkModels_2.src.gnm.model 
+from src.imported_libraries.GenerativeNetworkModels_2.src.gnm.model import GenerativeNetworkModel, BinaryGenerativeParameters
+
 # Import our optimized modules
-from config import ConfigManager, get_gnm_quick_test_config, get_gnm_comprehensive_config
+from config import ConfigManager, get_gnm_quick_test_config, get_gnm_comprehensive_config, get_gnm_minimal_config
 from gnm_network_generator import GNMGenerator
 from data_loader import DataLoader
 from esn_evaluation import ESNEvaluator
+from run_logger import RunLogger, get_logger
 
 
 class GNMPipelineOrchestrator:
-    """Pipeline orchestrator fully integrated with GNM library."""
+    """Pipeline orchestrator with integrated logging."""
     
     def __init__(self, config: ConfigManager):
         self.config = config
@@ -36,6 +37,9 @@ class GNMPipelineOrchestrator:
         self.esn_evaluator = ESNEvaluator(config, self.data_loader) if self.data_loader else None
         self.gnm_generator = GNMGenerator(device=config.gnm.device)
         
+        # Initialize logger
+        self.logger = get_logger(config.paths.output_dir)
+        
         # Ensure output directories exist
         self.config.paths.esn_output_dir.mkdir(parents=True, exist_ok=True)
         self.config.paths.gnm_output_dir.mkdir(parents=True, exist_ok=True)
@@ -45,7 +49,7 @@ class GNMPipelineOrchestrator:
                                       compare_rules: bool = True,
                                       fit_weights: bool = True) -> Dict[str, Any]:
         """
-        Run comprehensive GNM analysis using all library features.
+        Run comprehensive GNM analysis with logging.
         
         Args:
             experiment_name: Custom experiment name
@@ -56,8 +60,12 @@ class GNMPipelineOrchestrator:
             Dictionary with comprehensive results
         """
         print("=" * 60)
-        print("COMPREHENSIVE GNM ANALYSIS USING LIBRARY")
+        print("COMPREHENSIVE GNM ANALYSIS")
         print("=" * 60)
+        
+        # Set experiment name
+        if not experiment_name:
+            experiment_name = f"gnm_comprehensive_{time.strftime('%Y%m%d_%H%M%S')}"
         
         # Load data
         if self.config.data.use_gnm_defaults:
@@ -79,26 +87,22 @@ class GNMPipelineOrchestrator:
             # Convert to list of torch tensors
             target_networks = []
             for density, conn_array in binary_connectomes.items():
-                for i in range(min(5, conn_array.shape[2])):  # Limit subjects for demo
+                for i in range(min(5, conn_array.shape[2])):  # Limit subjects
                     target_networks.append(
                         torch.tensor(conn_array[:, :, i], dtype=torch.float32, device=self.device)
                     )
         
         # Create experiment directory
-        if experiment_name:
-            exp_dir = self.config.paths.gnm_output_dir / experiment_name
-        else:
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            exp_dir = self.config.paths.gnm_output_dir / f"gnm_comprehensive_{timestamp}"
-        
+        exp_dir = self.config.paths.gnm_output_dir / experiment_name
         exp_dir.mkdir(parents=True, exist_ok=True)
         
         results = {
             "experiment_dir": str(exp_dir),
+            "experiment_name": experiment_name,
             "n_target_networks": len(target_networks),
             "generative_rules_tested": self.config.gnm.generative_rules_to_test,
             "evaluation_metrics": self.config.gnm.evaluation_metrics,
-            "network_results": ["TESTING"]
+            "network_results": []
         }
         
         # Process each target network
@@ -118,11 +122,32 @@ class GNMPipelineOrchestrator:
                     target_network=target_network,
                     distance_matrix=distance_matrix,
                     rules_to_test=self.config.gnm.generative_rules_to_test,
-                    n_simulations=min(20, self.config.gnm.num_simulations)  # Reduced for speed
+                    n_simulations=min(20, self.config.gnm.num_simulations)
                 )
                 network_result["rule_comparison"] = rule_comparison
                 best_rule = rule_comparison["best_rule"]
                 print(f"    Best rule: {best_rule}")
+                
+                # Log rule comparison results
+                for rule, rule_results in rule_comparison.items():
+                    if isinstance(rule_results, dict) and "best_energy" in rule_results:
+                        self.logger.log_run(
+                            run_type="gnm_rule_comparison",
+                            experiment_name=experiment_name,
+                            parameters={
+                                "network_index": idx,
+                                "generative_rule": rule,
+                                "eta": rule_results.get("best_eta"),
+                                "gamma": rule_results.get("best_gamma")
+                            },
+                            results={
+                                "energy": rule_results.get("best_energy")
+                            },
+                            metadata={
+                                "n_edges": network_result["n_edges"],
+                                "n_nodes": network_result["n_nodes"]
+                            }
+                        )
             else:
                 best_rule = self.config.gnm.generative_rules_to_test[0]
             
@@ -137,6 +162,7 @@ class GNMPipelineOrchestrator:
                 num_simulations=self.config.gnm.num_simulations,
                 evaluation_metrics=self.config.gnm.evaluation_metrics
             )
+            
             network_result["parameter_fitting"] = {
                 "best_eta": fit_result["best_eta"],
                 "best_gamma": fit_result["best_gamma"],
@@ -144,7 +170,27 @@ class GNMPipelineOrchestrator:
                 "generative_rule": best_rule
             }
             
-            # 3. Generate networks with fitted parameters
+            # Log parameter fitting result
+            self.logger.log_run(
+                run_type="gnm_parameter_fitting",
+                experiment_name=experiment_name,
+                parameters={
+                    "network_index": idx,
+                    "generative_rule": best_rule,
+                    "eta": fit_result["best_eta"],
+                    "gamma": fit_result["best_gamma"]
+                },
+                results={
+                    "energy": fit_result["best_energy"]
+                },
+                metadata={
+                    "n_eta_tested": self.config.gnm.n_eta,
+                    "n_gamma_tested": self.config.gnm.n_gamma,
+                    "num_simulations": self.config.gnm.num_simulations
+                }
+            )
+            
+            # 3. Generate and evaluate synthetic networks
             print("  Generating synthetic networks...")
             from gnm_network_generator import GNMParameters
             
@@ -191,18 +237,25 @@ class GNMPipelineOrchestrator:
             # 5. Optimize weights if requested
             if fit_weights:
                 print("  Optimizing edge weights...")
-                weighted_networks = self.gnm_generator.batch_generate_with_weights(
-                    binary_networks=[synthetic_networks[0]],  # Use first synthetic network
-                    distance_matrix=distance_matrix,
-                    binary_params=params,
-                    alpha=self.config.gnm.alpha
-                )
-                
-                if weighted_networks:
+                try:
+                    weighted_networks = self.gnm_generator.batch_generate_with_weights(
+                        binary_networks=[synthetic_networks[0]],
+                        distance_matrix=distance_matrix,
+                        binary_params=params,
+                        alpha=self.config.gnm.alpha
+                    )
+                    
+                    if weighted_networks:
+                        network_result["weight_optimization"] = {
+                            "alpha": self.config.gnm.alpha,
+                            "criterion": self.config.gnm.weight_criterion,
+                            "success": True
+                        }
+                except Exception as e:
+                    print(f"    Weight optimization failed: {e}")
                     network_result["weight_optimization"] = {
-                        "alpha": self.config.gnm.alpha,
-                        "criterion": self.config.gnm.weight_criterion,
-                        "success": True
+                        "success": False,
+                        "error": str(e)
                     }
             
             results["network_results"].append(network_result)
@@ -226,18 +279,22 @@ class GNMPipelineOrchestrator:
                                target_network: Optional[torch.Tensor] = None,
                                experiment_name: Optional[str] = None) -> Dict[str, Any]:
         """
-        Run parameter sweep using GNM library's fitting.perform_sweep.
+        Run parameter sweep with integrated logging.
         
         Args:
-            target_network: Optional specific target network (uses default if None)
+            target_network: Optional specific target network
             experiment_name: Custom experiment name
             
         Returns:
             Sweep results
         """
         print("=" * 60)
-        print("GNM PARAMETER SWEEP USING LIBRARY")
+        print("GNM PARAMETER SWEEP")
         print("=" * 60)
+        
+        # Set experiment name
+        if not experiment_name:
+            experiment_name = f"gnm_sweep_{time.strftime('%Y%m%d_%H%M%S')}"
         
         # Load data
         if target_network is None:
@@ -287,17 +344,43 @@ class GNMPipelineOrchestrator:
         print(f"  - Generative rules: {self.config.gnm.generative_rules_to_test}")
         print(f"  - Simulations per parameter set: {self.config.gnm.num_simulations}")
         
+        # Initialize wandb if requested
+        try:
+            import wandb
+            if not wandb.run:
+                wandb.init(
+                    project="GNM_Pipeline",
+                    name=experiment_name,
+                    config={
+                        "n_eta": self.config.gnm.n_eta,
+                        "n_gamma": self.config.gnm.n_gamma,
+                        "num_simulations": self.config.gnm.num_simulations,
+                        "generative_rules": self.config.gnm.generative_rules_to_test
+                    }
+                )
+        except:
+            pass  # Wandb not available or not needed
+        
         # Run the sweep using GNM library
         experiments = fitting.perform_sweep(
             sweep_config=sweep_config,
             binary_evaluations=[evaluation_criteria],
             real_binary_matrices=target_network,
-            method="bayesian", 
-            weighted_evaluations=None,  # Can add weighted evaluations if needed
+            method="bayesian",
+            weighted_evaluations=None,
             save_model=True,
             save_run_history=True,
             verbose=True,
-            wandb_logging=True # Enable Weights & Biases logging - otherwise, weird behaviour occurs currently 
+            wandb_logging=True,
+            device=self.device
+        )
+        
+        # Log all experiments using centralized logger
+        self.logger.log_gnm_sweep(
+            experiments=experiments,
+            evaluation_criteria=evaluation_criteria,
+            config=self.config,
+            experiment_name=experiment_name
         )
         
         # Find optimal parameters
@@ -307,16 +390,12 @@ class GNMPipelineOrchestrator:
         )
         
         # Create experiment directory
-        if experiment_name:
-            exp_dir = self.config.paths.gnm_output_dir / experiment_name
-        else:
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            exp_dir = self.config.paths.gnm_output_dir / f"gnm_sweep_{timestamp}"
-        
+        exp_dir = self.config.paths.gnm_output_dir / experiment_name
         exp_dir.mkdir(parents=True, exist_ok=True)
         
-        # Save results
+        # Save sweep results summary
         results = {
+            "experiment_name": experiment_name,
             "n_experiments": len(experiments),
             "optimal_parameters": [],
             "parameter_grid": {
@@ -327,7 +406,8 @@ class GNMPipelineOrchestrator:
             }
         }
         
-        for exp, energy in zip(optimal_experiments[:10], optimal_energies[:10]):  # Top 10
+        # Add top 10 optimal parameters
+        for exp, energy in zip(optimal_experiments[:10], optimal_energies[:10]):
             results["optimal_parameters"].append({
                 "eta": float(exp.run_config.binary_parameters.eta),
                 "gamma": float(exp.run_config.binary_parameters.gamma),
@@ -355,7 +435,7 @@ class GNMPipelineOrchestrator:
                          esn_experiment_name: Optional[str] = None,
                          gnm_experiment_name: Optional[str] = None) -> Dict[str, Any]:
         """
-        Run complete pipeline with ESN evaluation and GNM fitting.
+        Run complete pipeline with integrated logging.
         
         Args:
             esn_experiment_name: Custom ESN experiment name
@@ -375,34 +455,63 @@ class GNMPipelineOrchestrator:
             print("\nPhase 1: ESN Memory Capacity Evaluation")
             print("-" * 40)
             
+            # Set ESN experiment name
+            if not esn_experiment_name:
+                esn_experiment_name = f"esn_{time.strftime('%Y%m%d_%H%M%S')}"
+            
             try:
                 # Generate ESN hyperparameter grid
                 hparam_grid = self.config.generate_esn_hparam_grid(
-                    spectral_radii=np.linspace(0.5, 2.0, 5),
-                    input_lengths=[1000, 2000, 4000],
-                    input_scalings=[1.0],
+                    spectral_radii=np.linspace(0.1, 2.5, 25),
+                    input_lengths=[500, 1000, 2000, 3000, 4000],
+                    input_scalings=[1.0, 1.5],
                     regularization_methods=["pinv", "ridge"],
-                    densities=self.config.data.densities[:2]  # Limited for demo
+                    densities=[10, 12, 14, 16, 18, 20]
                 )
                 
                 # Load data
                 weighted_by_density = self.data_loader.load_weighted_by_density()
                 
                 # Create experiment directory
-                if esn_experiment_name:
-                    exp_dir = self.config.paths.esn_output_dir / esn_experiment_name
-                else:
-                    timestamp = time.strftime("%Y%m%d_%H%M%S")
-                    exp_dir = self.config.paths.esn_output_dir / f"esn_{timestamp}"
-                
+                exp_dir = self.config.paths.esn_output_dir / esn_experiment_name
                 exp_dir.mkdir(parents=True, exist_ok=True)
                 
+                # Run ESN sweep with enhanced logging
+                class ESNEvaluatorWithLogging(ESNEvaluator):
+                    """Extended ESN evaluator that logs to our centralized logger."""
+                    
+                    def __init__(self, evaluator, logger, experiment_name):
+                        self.__dict__.update(evaluator.__dict__)
+                        self.central_logger = logger
+                        self.exp_name = experiment_name
+                    
+                    def _subject_job(self, subj_idx, A_obs, hparams, timing_flag=True, random_seed=None):
+                        """Override to add logging."""
+                        mc_result_dict, timing_dict = super()._subject_job(
+                            subj_idx, A_obs, hparams, timing_flag, random_seed
+                        )
+                        
+                        # Log to centralized logger
+                        self.central_logger.log_esn_evaluation(
+                            subject_id=subj_idx,
+                            hyperparameters=hparams,
+                            mc_result=mc_result_dict,
+                            experiment_name=self.exp_name
+                        )
+                        
+                        return mc_result_dict, timing_dict
+                
+                # Create wrapped evaluator with logging
+                evaluator_with_logging = ESNEvaluatorWithLogging(
+                    self.esn_evaluator, self.logger, esn_experiment_name
+                )
+                
                 # Run ESN sweep
-                esn_message = self.esn_evaluator.run_hyperparameter_sweep(
+                esn_message = evaluator_with_logging.run_hyperparameter_sweep(
                     connectomes=weighted_by_density,
-                    hparam_grid=hparam_grid[:10],  # Limited for demo
+                    hparam_grid=hparam_grid,
                     save_dir=exp_dir,
-                    search_mode="grid"
+                    search_mode="random_sample"
                 )
                 
                 # Load and analyze results
@@ -449,13 +558,16 @@ class GNMPipelineOrchestrator:
         print("PIPELINE COMPLETED")
         print("=" * 60)
         
+        # Finalize logging session
+        self.logger.finalize()
+        
         return results
     
     def _generate_summary(self, results: Dict[str, Any]) -> Dict[str, Any]:
         """Generate summary statistics from results."""
         summary = {
-            "n_networks_analyzed": len(results["network_results"]),
-            "generative_rules_tested": results["generative_rules_tested"],
+            "n_networks_analyzed": len(results.get("network_results", [])),
+            "generative_rules_tested": results.get("generative_rules_tested", []),
             "best_parameters": {},
             "average_metrics": {}
         }
@@ -465,7 +577,7 @@ class GNMPipelineOrchestrator:
         all_gammas = []
         all_energies = []
         
-        for network_result in results["network_results"]:
+        for network_result in results.get("network_results", []):
             if "parameter_fitting" in network_result:
                 all_etas.append(network_result["parameter_fitting"]["best_eta"])
                 all_gammas.append(network_result["parameter_fitting"]["best_gamma"])
@@ -488,10 +600,10 @@ def main():
     """Main entry point with command-line interface."""
     parser = argparse.ArgumentParser(description="GNM-Optimized Connectome Analysis Pipeline")
     
-    parser.add_argument("command", choices=["sweep", "comprehensive", "full", "test"],
+    parser.add_argument("command", choices=["sweep", "comprehensive", "full", "test", "minimal_test"],
                        help="Command to run")
     
-    parser.add_argument("--config", choices=["quick_test", "comprehensive", "rule_comparison"],
+    parser.add_argument("--config", choices=["quick_test", "comprehensive", "rule_comparison", "minimal_test"],
                        default="quick_test", help="Configuration preset")
     
     parser.add_argument("--experiment-name", help="Custom experiment name")
@@ -502,6 +614,15 @@ def main():
     parser.add_argument("--fit-weights", action="store_true",
                        help="Optimize edge weights")
     
+    parser.add_argument("--wandb-project", default="GNM_Pipeline",
+                       help="Wandb project name")
+    
+    parser.add_argument("--no-wandb", action="store_true",
+                       help="Disable wandb logging")
+    
+    parser.add_argument("--default_wandb_project_name", default="GNMs",
+                       help="Default wandb project name")
+
     args = parser.parse_args()
     
     # Load configuration
@@ -515,6 +636,23 @@ def main():
     else:
         config = ConfigManager()
     
+    # Initialize wandb if not disabled
+    if not args.no_wandb:
+        try:
+            import wandb
+            wandb.init(
+                project=args.wandb_project,
+                name=args.experiment_name or f"{args.command}_{time.strftime('%Y%m%d_%H%M%S')}",
+                config={
+                    "command": args.command,
+                    "config_preset": args.config,
+                    "compare_rules": args.compare_rules,
+                    "fit_weights": args.fit_weights
+                }
+            )
+        except Exception as e:
+            print(f"Wandb initialization failed: {e}")
+    
     # Create orchestrator
     orchestrator = GNMPipelineOrchestrator(config)
     
@@ -525,6 +663,15 @@ def main():
             orchestrator = GNMPipelineOrchestrator(config)
             results = orchestrator.run_gnm_parameter_sweep(
                 experiment_name=args.experiment_name or "quick_test"
+            )
+            print(f"Test completed successfully!")
+            
+        elif args.command == "minimal_test":
+            print("Running minimal test with GNM defaults...")
+            config = get_gnm_minimal_config()
+            orchestrator = GNMPipelineOrchestrator(config)
+            results = orchestrator.run_gnm_parameter_sweep(
+                experiment_name=args.experiment_name or "minimal_test"
             )
             print(f"Test completed successfully!")
             
@@ -542,31 +689,55 @@ def main():
             
         elif args.command == "full":
             results = orchestrator.run_full_pipeline(
-                gnm_experiment_name=args.experiment_name
+                esn_experiment_name=f"esn_{args.experiment_name}" if args.experiment_name else None,
+                gnm_experiment_name=f"gnm_{args.experiment_name}" if args.experiment_name else None
             )
-        print(f"\nResults: {results}")
-    
+        
+        # Always finalize logger at the end
+        orchestrator.logger.finalize()
+        
     except KeyboardInterrupt:
         print("\nOperation cancelled by user")
+        orchestrator.logger.finalize()
         sys.exit(1)
     except Exception as e:
         print(f"Error: {e}")
         import traceback
         traceback.print_exc()
+        orchestrator.logger.finalize()
         sys.exit(1)
+    
+    finally:
+        # Close wandb run if active
+        try:
+            import wandb
+            if wandb.run:
+                wandb.finish()
+        except:
+            pass
 
 
 if __name__ == "__main__":
     main()
     
-
-    """ 
-        python src/connectome_analysis/main_pipeline.py test --config quick_test
-        
-        python src/connectome_analysis/main_pipeline.py sweep --experiment-name "first_sweep" 
-        
-        # Unklar ob das funktioniert: 
-        python src/connectome_analysis/main_pipeline.py sweep --experiment-name "first_sweep" --compare_rules --fit-weights
-    
-    
     """
+    Usage examples:
+    
+    # Quick test
+    python src/connectome_analysis/main_pipeline.py test --config quick_test
+    # Minimal test (only two runs)
+    python src/connectome_analysis/main_pipeline.py minimal_test --config minimal_test
+    
+    # Parameter sweep with custom name (all runs are logged automatically)
+    python src/connectome_analysis/main_pipeline.py sweep --experiment-name "my_sweep_experiment"
+    
+    # Comprehensive analysis with rule comparison 
+    python src/connectome_analysis/main_pipeline.py comprehensive --compare-rules --fit-weights
+    
+    # Full pipeline
+    python src/connectome_analysis/main_pipeline.py full --experiment-name "full_analysis"
+    
+    # Without wandb (local logging only)
+    python src/connectome_analysis/main_pipeline.py sweep --no-wandb --experiment-name "local_only"
+    """
+    
