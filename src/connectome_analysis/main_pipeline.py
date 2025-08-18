@@ -279,7 +279,7 @@ class GNMPipelineOrchestrator:
                                target_network: Optional[torch.Tensor] = None,
                                experiment_name: Optional[str] = None) -> Dict[str, Any]:
         """
-        Run parameter sweep with integrated logging.
+        Run parameter sweep with integrated logging.  # is used by "sweep". 
         
         Args:
             target_network: Optional specific target network
@@ -351,11 +351,12 @@ class GNMPipelineOrchestrator:
                 wandb.init(
                     project="GNM_Pipeline",
                     name=experiment_name,
+                    dir="/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/wandb", # TODO: Not hardcoded. 
                     config={
                         "n_eta": self.config.gnm.n_eta,
                         "n_gamma": self.config.gnm.n_gamma,
                         "num_simulations": self.config.gnm.num_simulations,
-                        "generative_rules": self.config.gnm.generative_rules_to_test
+                        "generative_rules": self.config.gnm.generative_rules_to_test, 
                     }
                 )
         except:
@@ -367,6 +368,7 @@ class GNMPipelineOrchestrator:
             binary_evaluations=[evaluation_criteria],
             real_binary_matrices=target_network,
             method="bayesian",
+            num_bayesian_runs=200, 
             weighted_evaluations=None,
             save_model=True,
             save_run_history=True,
@@ -516,6 +518,9 @@ class GNMPipelineOrchestrator:
                 
                 # Load and analyze results
                 esn_analysis = self.esn_evaluator.load_and_analyze_results(exp_dir)
+                print("Loaded and analyzed ESN results.")
+                
+                print(esn_analysis) # TODO: Remove again
                 
                 results["esn"] = {
                     "status": "success",
@@ -523,6 +528,7 @@ class GNMPipelineOrchestrator:
                     "analysis": esn_analysis,
                     "experiment_dir": str(exp_dir)
                 }
+                
                 
             except Exception as e:
                 results["esn"] = {
@@ -687,11 +693,11 @@ def main():
                 fit_weights=args.fit_weights
             )
             
-        elif args.command == "full":
-            results = orchestrator.run_full_pipeline(
-                esn_experiment_name=f"esn_{args.experiment_name}" if args.experiment_name else None,
-                gnm_experiment_name=f"gnm_{args.experiment_name}" if args.experiment_name else None
-            )
+        # elif args.command == "full":
+        #     results = orchestrator.run_full_pipeline(
+        #         esn_experiment_name=f"esn_{args.experiment_name}" if args.experiment_name else None,
+        #         gnm_experiment_name=f"gnm_{args.experiment_name}" if args.experiment_name else None
+        #     )
         
         # Always finalize logger at the end
         orchestrator.logger.finalize()
@@ -726,15 +732,15 @@ if __name__ == "__main__":
     # Quick test
     python src/connectome_analysis/main_pipeline.py test --config quick_test
     # Minimal test (only two runs)
-    python src/connectome_analysis/main_pipeline.py minimal_test --config minimal_test
+    python 14_4D_lab/src/connectome_analysis/main_pipeline.py minimal_test --config minimal_test
     
-    # Parameter sweep with custom name (all runs are logged automatically)
-    python src/connectome_analysis/main_pipeline.py sweep --experiment-name "my_sweep_experiment"
+    # Parameter sweep with custom name (all runs are logged automatically) !! Currently using this. !!
+    python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep --experiment-name "my_sweep_experiment"
     
     # Comprehensive analysis with rule comparison 
     python src/connectome_analysis/main_pipeline.py comprehensive --compare-rules --fit-weights
     
-    # Full pipeline
+    # Full pipeline (DONT RUN RIGHT NOW - IS ESN + GNM and not tested yet) 
     python src/connectome_analysis/main_pipeline.py full --experiment-name "full_analysis"
     
     # Without wandb (local logging only)

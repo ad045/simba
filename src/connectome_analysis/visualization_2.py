@@ -558,58 +558,68 @@ def visualize_pipeline_results(experiment_dir: Path,
 
 
 # Example usage functions
-def example_with_real_data():
+def visualize_gnm_results(df_path):
     """Example with real data: Visualize GNM parameter sweep results."""
 
     # esn_results_df = pd.read_csv("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_esns_on_observed_weighted_connectomes/comprehensive_esn_sweep/esn_mc_results_2025-08-15_16-18-45.csv")
     
-    # FOR GNM
-    gnm_results = 
+    # FOR GNM # THIS IS WRONG! 
+    gnm_results_df = pd.read_csv(df_path, index_col=False, sep=", ")
     
     # FOR REAL CONNECTOMES: 
         # subject,density_percent,spectral_radius,input_length,input_scaling,
         # regularization_method,n_runs,
         # mc_mean,mc_std,mean_mc_of_individual_runs,hyper_params
+    print(gnm_results_df.head())
+    df = gnm_results_df[["eta", "gamma", "MaxCriteria(DegreeKS_ClusteringKS)"]].copy() # "energy", "subject"]].copy()
+    df.columns = ["eta", "gamma", "energy"]  # Rename columns for consistency
+    
+    # Unwrap single-element lists
+    df["eta"] = [float(i) for i in df["eta"].str[1:-1]]  # Convert string representation of list to float
+    df["gamma"] = [float(i) for i in df["gamma"].str[1:-1]]  # Convert string representation of list to float
+    # Convert strings → floats
+    df["energy"] = [float(i[:-1]) for i in df["energy"]]  # -1 to remove trailing comma
 
-    df = gnm_results_df[["eta", "energy", "subject"]].copy()
-
+    # df = df[:5] 
     visualizer = PipelineVisualizer()
     
     # Compare visualization methods
     visualizer.compare_visualizations(df, title_prefix="GNM Parameter Sweep")
 
 
-def example_visualize_esn_results():
-    """Example: Visualize ESN hyperparameter optimization results."""
-    # Create sample data for ESN results
-    np.random.seed(42)
-    n_samples = 150
+# def example_visualize_esn_results():
+#     """Example: Visualize ESN hyperparameter optimization results."""
+#     # Create sample data for ESN results
+#     np.random.seed(42)
+#     n_samples = 150
     
-    spectral_radius = np.random.uniform(0.5, 2.0, n_samples)
-    input_length = np.random.choice([1000, 2000, 4000], n_samples)
-    # Simulate memory capacity with peak around sr=0.99
-    mc_values = np.exp(-2 * (spectral_radius - 0.99)**2) + np.random.normal(0, 0.05, n_samples)
+#     spectral_radius = np.random.uniform(0.5, 2.0, n_samples)
+#     input_length = np.random.choice([1000, 2000, 4000], n_samples)
+#     # Simulate memory capacity with peak around sr=0.99
+#     mc_values = np.exp(-2 * (spectral_radius - 0.99)**2) + np.random.normal(0, 0.05, n_samples)
     
-    df = pd.DataFrame({
-        'eta': spectral_radius,  # Using eta for x-axis
-        'gamma': input_length,    # Using gamma for y-axis
-        'energy': -mc_values,     # Negative MC as energy
-        'subject': np.random.randint(0, 20, n_samples)
-    })
+#     df = pd.DataFrame({
+#         'eta': spectral_radius,  # Using eta for x-axis
+#         'gamma': input_length,    # Using gamma for y-axis
+#         'energy': -mc_values,     # Negative MC as energy
+#         'subject': np.random.randint(0, 20, n_samples)
+#     })
     
-    visualizer = PipelineVisualizer()
+   
     
-    # Create Voronoi plot
-    fig, ax = visualizer.plot_energy_landscape_voronoi(
-        df, 
-        title="ESN Memory Capacity Landscape\n(Spectral Radius vs Input Length)",
-        cmap="coolwarm",
-        show_points=True
-    )
+    # visualizer = PipelineVisualizer()
     
-    # Adjust labels
-    ax.set_xlabel("Spectral Radius")
-    ax.set_ylabel("Input Length")
+    # # Create Voronoi plot
+    # fig, ax = visualizer.plot_energy_landscape_voronoi(
+    #     df, 
+    #     title="ESN Memory Capacity Landscape\n(Spectral Radius vs Input Length)",
+    #     cmap="coolwarm",
+    #     show_points=True
+    # )
+    
+    # # Adjust labels
+    # ax.set_xlabel("Spectral Radius")
+    # ax.set_ylabel("Input Length")
 
 
 if __name__ == "__main__":
@@ -617,9 +627,9 @@ if __name__ == "__main__":
     
     # Run examples
     print("\n1. Testing GNM visualization:")
-    example_visualize_gnm_sweep()
+    visualize_gnm_results("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv")
     
-    print("\n2. Testing ESN visualization:")
-    example_visualize_esn_results()
+    # print("\n2. Testing ESN visualization:")
+    # example_visualize_esn_results()
     
     print("\nVisualization tests completed!")

@@ -56,7 +56,7 @@ class GNMConfig:
     alpha: float = 0.01
     
     # Simulation parameters
-    num_simulations: int = 100
+    num_simulations: int = 10
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     
     def create_binary_sweep_parameters(self, 
@@ -174,8 +174,8 @@ class PathConfig:
     def __post_init__(self):
         self.data_dir = self.root_dir / "data/preprocessed/01_first_analysises"
         self.output_dir = self.root_dir / "output"
-        self.esn_output_dir = self.output_dir / "02_esns_on_observed_weighted_connectomes" 
-        self.gnm_output_dir = self.output_dir / "02_gnm_estimation"
+        self.esn_output_dir = self.output_dir / "02_esns_on_observed_weighted_connectomes"  # TODO: ESN path
+        self.gnm_output_dir = self.output_dir / "03_gnm_estimation" # TODO: GNM path
 
 
 class ConfigManager:
