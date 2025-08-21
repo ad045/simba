@@ -277,7 +277,8 @@ class GNMPipelineOrchestrator:
     
     def run_gnm_parameter_sweep(self,
                                target_network: Optional[torch.Tensor] = None,
-                               experiment_name: Optional[str] = None) -> Dict[str, Any]:
+                               experiment_name: Optional[str] = None, 
+                               no_wandb: Optional[bool] = False) -> Dict[str, Any]:
         """
         Run parameter sweep with integrated logging.  # is used by "sweep". 
         
@@ -345,22 +346,23 @@ class GNMPipelineOrchestrator:
         print(f"  - Simulations per parameter set: {self.config.gnm.num_simulations}")
         
         # Initialize wandb if requested
-        try:
-            import wandb
-            if not wandb.run:
-                wandb.init(
-                    project="GNM_Pipeline",
-                    name=experiment_name,
-                    dir="/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/wandb", # TODO: Not hardcoded. 
-                    config={
-                        "n_eta": self.config.gnm.n_eta,
-                        "n_gamma": self.config.gnm.n_gamma,
-                        "num_simulations": self.config.gnm.num_simulations,
-                        "generative_rules": self.config.gnm.generative_rules_to_test, 
-                    }
-                )
-        except:
-            pass  # Wandb not available or not needed
+        if not no_wandb: 
+            try:
+                import wandb
+                if not wandb.run:
+                    wandb.init(
+                        project="GNM_Pipeline",
+                        name=experiment_name,
+                        dir="/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/wandb", # TODO: Not hardcoded. 
+                        config={
+                            "n_eta": self.config.gnm.n_eta,
+                            "n_gamma": self.config.gnm.n_gamma,
+                            "num_simulations": self.config.gnm.num_simulations,
+                            "generative_rules": self.config.gnm.generative_rules_to_test, 
+                        }
+                    )
+            except:
+                pass  # Wandb not available or not needed
         
         # Run the sweep using GNM library
         experiments = fitting.perform_sweep(
@@ -374,6 +376,7 @@ class GNMPipelineOrchestrator:
             save_run_history=True,
             verbose=True,
             wandb_logging=True,
+            no_different_project_name=True,  # Use default project name
             device=self.device
         )
         
@@ -683,7 +686,8 @@ def main():
             
         elif args.command == "sweep":
             results = orchestrator.run_gnm_parameter_sweep(
-                experiment_name=args.experiment_name
+                experiment_name=args.experiment_name, 
+                no_wandb=args.no_wandb
             )
             
         elif args.command == "comprehensive":
@@ -734,9 +738,9 @@ if __name__ == "__main__":
     # Minimal test (only two runs)
     python 14_4D_lab/src/connectome_analysis/main_pipeline.py minimal_test --config minimal_test
     
-    # Parameter sweep with custom name (all runs are logged automatically) !! Currently using this. !!
+    # Parameter sweep with custom name (all runs are logged automatically) !! Currently using this. !! Project is automatically called "GNMs". (search for no_different_project_name in sweep.py)
     python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep --experiment-name "my_sweep_experiment"
-    
+    python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep
     # Comprehensive analysis with rule comparison 
     python src/connectome_analysis/main_pipeline.py comprehensive --compare-rules --fit-weights
     
@@ -744,6 +748,7 @@ if __name__ == "__main__":
     python src/connectome_analysis/main_pipeline.py full --experiment-name "full_analysis"
     
     # Without wandb (local logging only)
-    python src/connectome_analysis/main_pipeline.py sweep --no-wandb --experiment-name "local_only"
+    python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep --no-wandb --experiment-name "local_only"
     """
     
+
