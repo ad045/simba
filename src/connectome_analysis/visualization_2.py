@@ -148,6 +148,7 @@ class PipelineVisualizer:
         
         if show:
             plt.show()
+            
         
         return fig, ax
     
@@ -394,33 +395,37 @@ class PipelineVisualizer:
         vmin, vmax = grid_df["energy"].min(), grid_df["energy"].max()
         
         # 1. Voronoi diagram
-        plt.sca(axes[0])
-        self.plot_energy_landscape_voronoi(
-            df, title=f"{title_prefix} - Voronoi", 
-            show=False, vmin=vmin, vmax=vmax
-        )
+        # plt.sca(axes[0])
+        _, axes[0] = self.plot_energy_landscape_voronoi(
+                        df, title=f"{title_prefix} - Voronoi", 
+                        show=False, vmin=vmin, vmax=vmax,
+                        savepath=savepath / "voronoi.png" if savepath else None
+                    )
         
         # 2. Interpolated (cubic)
-        plt.sca(axes[1])
-        self.plot_energy_landscape_interpolated(
-            df, method='cubic', 
-            title=f"{title_prefix} - Cubic Interpolation",
-            show=False, vmin=vmin, vmax=vmax
-        )
+        # plt.sca(axes[1])
+        _, axes[1] = self.plot_energy_landscape_interpolated(
+                    df, method='cubic', 
+                    title=f"{title_prefix} - Cubic Interpolation",
+                    show=False, vmin=vmin, vmax=vmax,
+                    savepath=savepath / "cubic_interpolation.png" if savepath else None
+                 )   
         
         # 3. Interpolated (linear)
-        plt.sca(axes[2])
-        self.plot_energy_landscape_interpolated(
-            df, method='linear',
-            title=f"{title_prefix} - Linear Interpolation",
-            show=False, vmin=vmin, vmax=vmax
-        )
+        # plt.sca(axes[2])
+        _, axes[2] = self.plot_energy_landscape_interpolated(
+                    df, method='linear',
+                    title=f"{title_prefix} - Linear Interpolation",
+                    show=False, vmin=vmin, vmax=vmax, 
+                    savepath=savepath / "linear_interpolation.png" if savepath else None
+                )
         
+        # Set common properties        
         plt.tight_layout()
         
         if savepath:
-            fig.savefig(savepath, bbox_inches="tight", dpi=150)
-        
+            fig.savefig(savepath / "comparison.png", bbox_inches="tight", dpi=150)
+
         plt.show()
         
         return fig
@@ -558,7 +563,7 @@ def visualize_pipeline_results(experiment_dir: Path,
 
 
 # Example usage functions
-def visualize_gnm_results(df_path):
+def visualize_gnm_results(df_path, save_path: Optional[Path] = None):
     """Example with real data: Visualize GNM parameter sweep results."""
 
     # esn_results_df = pd.read_csv("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_esns_on_observed_weighted_connectomes/comprehensive_esn_sweep/esn_mc_results_2025-08-15_16-18-45.csv")
@@ -580,11 +585,11 @@ def visualize_gnm_results(df_path):
     # Convert strings → floats
     df["energy"] = [float(i[:-1]) for i in df["energy"]]  # -1 to remove trailing comma
 
-    # df = df[:5] 
+    # df = df[-100:]
     visualizer = PipelineVisualizer()
     
     # Compare visualization methods
-    visualizer.compare_visualizations(df, title_prefix="GNM Parameter Sweep")
+    visualizer.compare_visualizations(df, title_prefix="GNM Parameter Sweep", savepath=save_path) # +"/gnm_comprehensive_sweep.png")
 
 
 # def example_visualize_esn_results():
@@ -627,8 +632,13 @@ if __name__ == "__main__":
     
     # Run examples
     print("\n1. Testing GNM visualization:")
-    visualize_gnm_results("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv")
+    # visualize_gnm_results("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv", 
+    #                       save_path=Path("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation"))
     
+    # for both combined data grids:
+    visualize_gnm_results("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv", 
+                          # "/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/combined_energy_grids.csv", 
+                          save_path=Path("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation"))
     # print("\n2. Testing ESN visualization:")
     # example_visualize_esn_results()
     

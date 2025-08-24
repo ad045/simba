@@ -280,11 +280,12 @@ class GNMPipelineOrchestrator:
                                experiment_name: Optional[str] = None, 
                                no_wandb: Optional[bool] = False) -> Dict[str, Any]:
         """
-        Run parameter sweep with integrated logging.  # is used by "sweep". 
+        Run parameter sweep with integrated logging.
         
         Args:
             target_network: Optional specific target network
             experiment_name: Custom experiment name
+            no_wandb: If True, disable wandb logging
             
         Returns:
             Sweep results
@@ -327,13 +328,16 @@ class GNMPipelineOrchestrator:
                     device=self.device
                 )
         
-        # Number of edges to generate
-        num_iterations = int(target_network.sum().item() // 2)
+        # # Number of edges to generate (is this a correct labeling)? 
+        num_iterations = int(target_network.sum().item() // 2) # -> This is the number of iterations PER CONFIG... 
+        
+        num_simulations = 100
         
         # Create sweep configuration
         sweep_config = self.config.create_gnm_sweep_config(
             distance_matrix=distance_matrix,
             num_iterations=num_iterations,
+            num_simulations=num_simulations, 
             include_weights=True
         )
         
@@ -344,6 +348,7 @@ class GNMPipelineOrchestrator:
         print(f"  - Parameter grid: {self.config.gnm.n_eta} × {self.config.gnm.n_gamma}")
         print(f"  - Generative rules: {self.config.gnm.generative_rules_to_test}")
         print(f"  - Simulations per parameter set: {self.config.gnm.num_simulations}")
+        print(f"  - Wandb logging: {'DISABLED' if no_wandb else 'ENABLED'}")
         
         # Initialize wandb if requested
         if not no_wandb: 
@@ -364,18 +369,19 @@ class GNMPipelineOrchestrator:
             except:
                 pass  # Wandb not available or not needed
         
-        # Run the sweep using GNM library
+        # Run the sweep using GNM library - PASS no_wandb FLAG HERE
+        # FIXED: Use grid method when wandb is disabled
         experiments = fitting.perform_sweep(
             sweep_config=sweep_config,
             binary_evaluations=[evaluation_criteria],
             real_binary_matrices=target_network,
-            method="bayesian",
-            num_bayesian_runs=200, 
+            method="grid" if no_wandb else "bayesian",  # Use grid search when wandb disabled
+            num_bayesian_runs=200 if not no_wandb else None,  # Only for Bayesian
             weighted_evaluations=None,
             save_model=True,
             save_run_history=True,
             verbose=True,
-            wandb_logging=True,
+            wandb_logging=not no_wandb,  # FIXED: Use the no_wandb flag here
             no_different_project_name=True,  # Use default project name
             device=self.device
         )
@@ -671,7 +677,8 @@ def main():
             config = get_gnm_quick_test_config()
             orchestrator = GNMPipelineOrchestrator(config)
             results = orchestrator.run_gnm_parameter_sweep(
-                experiment_name=args.experiment_name or "quick_test"
+                experiment_name=args.experiment_name or "quick_test",
+                no_wandb=args.no_wandb  # FIXED: Pass no_wandb flag
             )
             print(f"Test completed successfully!")
             
@@ -680,7 +687,8 @@ def main():
             config = get_gnm_minimal_config()
             orchestrator = GNMPipelineOrchestrator(config)
             results = orchestrator.run_gnm_parameter_sweep(
-                experiment_name=args.experiment_name or "minimal_test"
+                experiment_name=args.experiment_name or "minimal_test",
+                no_wandb=args.no_wandb  # FIXED: Pass no_wandb flag
             )
             print(f"Test completed successfully!")
             
@@ -748,7 +756,5 @@ if __name__ == "__main__":
     python src/connectome_analysis/main_pipeline.py full --experiment-name "full_analysis"
     
     # Without wandb (local logging only)
-    python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep --no-wandb --experiment-name "local_only"
+    x
     """
-    
-

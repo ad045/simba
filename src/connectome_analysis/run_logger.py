@@ -28,7 +28,7 @@ class RunLogger:
     def __init__(self, output_dir: Optional[Path] = None):
         """Initialize the logger with output directory."""
         if not hasattr(self, 'initialized'):
-            self.output_dir = output_dir or Path("./output")
+            self.output_dir = output_dir # or Path("./output") TODO: ADD DEFAULT PATH HERE
             self.output_dir.mkdir(parents=True, exist_ok=True)
             
             # Create a session ID for this execution
