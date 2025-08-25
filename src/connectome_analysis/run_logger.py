@@ -35,10 +35,10 @@ class RunLogger:
             self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
             self.session_start = datetime.now().isoformat()
             
-            # Paths for different log files
-            self.all_runs_path = self.output_dir / f"all_runs_{self.session_id}.jsonl"
-            self.session_summary_path = self.output_dir / f"session_summary_{self.session_id}.json"
-            self.global_log_path = self.output_dir / "global_runs.jsonl"  # Persistent across sessions
+            # Paths for different log files 
+            # self.all_runs_path = self.output_dir / f"all_runs_{self.session_id}.jsonl"
+            # self.session_summary_path = self.output_dir / f"session_summary_{self.session_id}.json"
+            # self.global_log_path = self.output_dir / "global_runs.jsonl"  # Persistent across sessions
             
             # Initialize session summary
             self.session_summary = {

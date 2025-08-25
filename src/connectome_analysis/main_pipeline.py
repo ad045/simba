@@ -738,7 +738,21 @@ def main():
 if __name__ == "__main__":
     main()
     
-    """
+    
+    # parser = argparse.ArgumentParser(description='Run GNM Pipeline with config file')
+    # parser.add_argument(
+    #     '--config', 
+    #     type=str, 
+    #     default=None,
+    #     help='Path to config file (default: configs/default.yaml)'
+    # )
+    # args = parser.parse_args()
+    
+    # main(args.config)
+    
+    """ 
+    ALTERNATIVE USAGE FILES
+    
     Usage examples:
     
     # Quick test
@@ -756,5 +770,6 @@ if __name__ == "__main__":
     python src/connectome_analysis/main_pipeline.py full --experiment-name "full_analysis"
     
     # Without wandb (local logging only)
-    x
+    python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep --no-wandb --experiment-name "local_only"
+
     """

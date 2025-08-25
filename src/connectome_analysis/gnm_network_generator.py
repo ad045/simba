@@ -1,6 +1,7 @@
 """
 Optimized GNM-based network generation fully leveraging Edward's GNM library.
 """
+# Replaced by /Users/adrian/Documents/01_projects/14_4D_lab/src/models/gnm/generator.py
 
 import numpy as np
 import torch

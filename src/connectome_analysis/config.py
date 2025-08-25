@@ -36,11 +36,11 @@ class GNMConfig:
     weighted_sweep_params: Optional[fitting.WeightedSweepParameters] = None
     
     # Default parameter ranges
-    eta_range: tuple = (-5.0, 0.0)
-    gamma_range: tuple = (0.0, 1.0)
+    eta_range: tuple = (-3.0, 0) # (-5.0, 0.0)
+    gamma_range: tuple = (0.001, 0.6) # , 1.0)
     lambda_range: tuple = (0.0, 0.0)
-    n_eta: int = 20
-    n_gamma: int = 20
+    n_eta: int = 200    
+    n_gamma: int = 200
     n_lambda: int = 1
     
     # Generative rules to test
@@ -197,6 +197,7 @@ class ConfigManager:
     def create_gnm_sweep_config(self, 
                                distance_matrix: torch.Tensor,
                                num_iterations: int,
+                               num_simulations: int = 100, # TODO: check if this works 
                                include_weights: bool = True) -> fitting.SweepConfig:
         """Create complete GNM sweep configuration."""
         
@@ -258,8 +259,8 @@ class ConfigManager:
 def get_gnm_quick_test_config() -> ConfigManager:
     """Quick test configuration using GNM defaults."""
     gnm_config = GNMConfig(
-        n_eta=5,
-        n_gamma=5,
+        n_eta=50, # TODO: I seem to use this one here for the sweep... WHY THO? 
+        n_gamma=50,
         num_simulations=10,
         generative_rules_to_test=["matching_index"],
         evaluation_metrics=["degree_ks", "clustering_ks"]

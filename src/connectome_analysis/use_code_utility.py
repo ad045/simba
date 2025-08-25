@@ -64,111 +64,111 @@ class LogAnalyzer:
         
         return pd.json_normalize(runs)
     
-    def load_global_runs(self) -> pd.DataFrame:
-        """Load all runs from the global log."""
-        global_log = self.log_dir / "global_runs.jsonl"
+    # def load_global_runs(self) -> pd.DataFrame: # UNUSED I GUESS 
+    #     """Load all runs from the global log."""
+    #     global_log = self.log_dir / "global_runs.jsonl"
         
-        if not global_log.exists():
-            print("No global log found")
-            return pd.DataFrame()
+    #     if not global_log.exists():
+    #         print("No global log found")
+    #         return pd.DataFrame()
         
-        runs = []
-        with open(global_log, 'r') as f:
-            for line in f:
-                runs.append(json.loads(line))
+    #     runs = []
+    #     with open(global_log, 'r') as f:
+    #         for line in f:
+    #             runs.append(json.loads(line))
         
-        return pd.json_normalize(runs)
+    #     return pd.json_normalize(runs)
     
-    def analyze_gnm_sweep(self, session_id: Optional[str] = None) -> Dict[str, Any]:
-        """Analyze GNM parameter sweep results."""
-        if session_id:
-            df = self.load_session_runs(session_id)
-        else:
-            df = self.load_global_runs()
+    # def analyze_gnm_sweep(self, session_id: Optional[str] = None) -> Dict[str, Any]:
+    #     """Analyze GNM parameter sweep results."""
+    #     if session_id:
+    #         df = self.load_session_runs(session_id)
+    #     else:
+    #         df = self.load_global_runs()
         
-        # Filter for GNM sweep runs
-        gnm_df = df[df['run_type'] == 'gnm_sweep'].copy()
+    #     # Filter for GNM sweep runs
+    #     gnm_df = df[df['run_type'] == 'gnm_sweep'].copy()
         
-        if gnm_df.empty:
-            return {"error": "No GNM sweep runs found"}
+    #     if gnm_df.empty:
+    #         return {"error": "No GNM sweep runs found"}
         
-        # Extract parameters and results
-        gnm_df['eta'] = gnm_df['parameters.eta']
-        gnm_df['gamma'] = gnm_df['parameters.gamma']
-        gnm_df['energy'] = gnm_df['results.energy']
-        gnm_df['rule'] = gnm_df['parameters.generative_rule']
+    #     # Extract parameters and results
+    #     gnm_df['eta'] = gnm_df['parameters.eta']
+    #     gnm_df['gamma'] = gnm_df['parameters.gamma']
+    #     gnm_df['energy'] = gnm_df['results.energy']
+    #     gnm_df['rule'] = gnm_df['parameters.generative_rule']
         
-        # Find best parameters
-        best_idx = gnm_df['energy'].idxmin()
-        best_run = gnm_df.loc[best_idx]
+    #     # Find best parameters
+    #     best_idx = gnm_df['energy'].idxmin()
+    #     best_run = gnm_df.loc[best_idx]
         
-        analysis = {
-            'total_runs': len(gnm_df),
-            'best_parameters': {
-                'eta': best_run['eta'],
-                'gamma': best_run['gamma'],
-                'energy': best_run['energy'],
-                'generative_rule': best_run['rule']
-            },
-            'energy_stats': {
-                'mean': gnm_df['energy'].mean(),
-                'std': gnm_df['energy'].std(),
-                'min': gnm_df['energy'].min(),
-                'max': gnm_df['energy'].max()
-            },
-            'parameter_ranges': {
-                'eta': [gnm_df['eta'].min(), gnm_df['eta'].max()],
-                'gamma': [gnm_df['gamma'].min(), gnm_df['gamma'].max()]
-            },
-            'dataframe': gnm_df[['eta', 'gamma', 'energy', 'rule', 'experiment_name', 'timestamp']]
-        }
+    #     analysis = {
+    #         'total_runs': len(gnm_df),
+    #         'best_parameters': {
+    #             'eta': best_run['eta'],
+    #             'gamma': best_run['gamma'],
+    #             'energy': best_run['energy'],
+    #             'generative_rule': best_run['rule']
+    #         },
+    #         'energy_stats': {
+    #             'mean': gnm_df['energy'].mean(),
+    #             'std': gnm_df['energy'].std(),
+    #             'min': gnm_df['energy'].min(),
+    #             'max': gnm_df['energy'].max()
+    #         },
+    #         'parameter_ranges': {
+    #             'eta': [gnm_df['eta'].min(), gnm_df['eta'].max()],
+    #             'gamma': [gnm_df['gamma'].min(), gnm_df['gamma'].max()]
+    #         },
+    #         'dataframe': gnm_df[['eta', 'gamma', 'energy', 'rule', 'experiment_name', 'timestamp']]
+    #     }
         
-        return analysis
+    #     return analysis
     
-    def analyze_esn_evaluation(self, session_id: Optional[str] = None) -> Dict[str, Any]:
-        """Analyze ESN evaluation results."""
-        if session_id:
-            df = self.load_session_runs(session_id)
-        else:
-            df = self.load_global_runs()
+    # def analyze_esn_evaluation(self, session_id: Optional[str] = None) -> Dict[str, Any]:
+    #     """Analyze ESN evaluation results."""
+    #     if session_id:
+    #         df = self.load_session_runs(session_id)
+    #     else:
+    #         df = self.load_global_runs()
         
-        # Filter for ESN evaluation runs
-        esn_df = df[df['run_type'] == 'esn_evaluation'].copy()
+    #     # Filter for ESN evaluation runs
+    #     esn_df = df[df['run_type'] == 'esn_evaluation'].copy()
         
-        if esn_df.empty:
-            return {"error": "No ESN evaluation runs found"}
+    #     if esn_df.empty:
+    #         return {"error": "No ESN evaluation runs found"}
         
-        # Extract key metrics
-        esn_df['mc_mean'] = esn_df['results.mc_mean']
-        esn_df['mc_std'] = esn_df['results.mc_std']
-        esn_df['subject'] = esn_df['parameters.subject']
+    #     # Extract key metrics
+    #     esn_df['mc_mean'] = esn_df['results.mc_mean']
+    #     esn_df['mc_std'] = esn_df['results.mc_std']
+    #     esn_df['subject'] = esn_df['parameters.subject']
         
-        # Extract hyperparameters if available
-        param_cols = [col for col in esn_df.columns if col.startswith('parameters.') and col != 'parameters.subject']
+    #     # Extract hyperparameters if available
+    #     param_cols = [col for col in esn_df.columns if col.startswith('parameters.') and col != 'parameters.subject']
         
-        # Find best configuration
-        best_idx = esn_df['mc_mean'].idxmax()
-        best_run = esn_df.loc[best_idx]
+    #     # Find best configuration
+    #     best_idx = esn_df['mc_mean'].idxmax()
+    #     best_run = esn_df.loc[best_idx]
         
-        analysis = {
-            'total_runs': len(esn_df),
-            'n_subjects': esn_df['subject'].nunique(),
-            'best_configuration': {
-                'mc_mean': best_run['mc_mean'],
-                'mc_std': best_run['mc_std'],
-                'parameters': {col.replace('parameters.', ''): best_run[col] 
-                              for col in param_cols if pd.notna(best_run[col])}
-            },
-            'mc_stats': {
-                'mean': esn_df['mc_mean'].mean(),
-                'std': esn_df['mc_mean'].std(),
-                'min': esn_df['mc_mean'].min(),
-                'max': esn_df['mc_mean'].max()
-            },
-            'dataframe': esn_df[['subject', 'mc_mean', 'mc_std', 'experiment_name', 'timestamp'] + param_cols]
-        }
+    #     analysis = {
+    #         'total_runs': len(esn_df),
+    #         'n_subjects': esn_df['subject'].nunique(),
+    #         'best_configuration': {
+    #             'mc_mean': best_run['mc_mean'],
+    #             'mc_std': best_run['mc_std'],
+    #             'parameters': {col.replace('parameters.', ''): best_run[col] 
+    #                           for col in param_cols if pd.notna(best_run[col])}
+    #         },
+    #         'mc_stats': {
+    #             'mean': esn_df['mc_mean'].mean(),
+    #             'std': esn_df['mc_mean'].std(),
+    #             'min': esn_df['mc_mean'].min(),
+    #             'max': esn_df['mc_mean'].max()
+    #         },
+    #         'dataframe': esn_df[['subject', 'mc_mean', 'mc_std', 'experiment_name', 'timestamp'] + param_cols]
+    #     }
         
-        return analysis
+    #     return analysis
     
     def plot_gnm_landscape(self, session_id: Optional[str] = None, save_path: Optional[Path] = None):
         """Plot GNM parameter landscape."""

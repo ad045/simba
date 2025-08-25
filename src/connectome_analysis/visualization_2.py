@@ -30,7 +30,9 @@ class PipelineVisualizer:
     
     def plot_energy_landscape_voronoi(self, df, dot_color="white", title="", 
                                       cmap="hot", savepath=None, show=True,
-                                      show_points=True, point_size=8,
+                                    #   show_points=True,
+                                      show_points=False, 
+                                      point_size=8,
                                       vmin=None, vmax=None):
         """
         Plot energy landscape using Voronoi diagram for randomly sampled points.
@@ -374,19 +376,36 @@ class PipelineVisualizer:
         
         return fig, ax
     
+    # def compare_visualizations(self, df: pd.DataFrame, 
+    #                           title_prefix: str = "Energy Landscape",
+    #                           savepath: Optional[Path] = None) -> plt.Figure:
+    #     """
+    #     Create a comparison of different visualization methods.
+        
+    #     Args:
+    #         df: DataFrame with 'eta', 'gamma', 'energy' columns
+    #         title_prefix: Prefix for titles
+    #         savepath: Path to save figure
+            
+    #     Returns:
+    #         Figure object
+    #     """
+    #     fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+        
+    #     # Get data range for consistent coloring
+    #     grid_df = df.groupby(["eta", "gamma"], as_index=False)["energy"].mean()
+    #     vmin, vmax = grid_df["energy"].min(), grid_df["energy"].max()
+        
     def compare_visualizations(self, df: pd.DataFrame, 
-                              title_prefix: str = "Energy Landscape",
-                              savepath: Optional[Path] = None) -> plt.Figure:
+                          title_prefix: str = "Energy Landscape",
+                          savepath: Optional[Path] = None) -> plt.Figure:
         """
         Create a comparison of different visualization methods.
         
         Args:
             df: DataFrame with 'eta', 'gamma', 'energy' columns
             title_prefix: Prefix for titles
-            savepath: Path to save figure
-            
-        Returns:
-            Figure object
+            savepath: Base path for saving (without extension)
         """
         fig, axes = plt.subplots(1, 3, figsize=(18, 5))
         
@@ -394,6 +413,13 @@ class PipelineVisualizer:
         grid_df = df.groupby(["eta", "gamma"], as_index=False)["energy"].mean()
         vmin, vmax = grid_df["energy"].min(), grid_df["energy"].max()
         
+        # Create save directory if needed
+        if savepath:
+            savepath = Path(savepath)
+            save_dir = savepath.parent
+            save_dir.mkdir(parents=True, exist_ok=True)
+            base_name = savepath.stem
+            
         # 1. Voronoi diagram
         # plt.sca(axes[0])
         _, axes[0] = self.plot_energy_landscape_voronoi(
@@ -423,12 +449,25 @@ class PipelineVisualizer:
         # Set common properties        
         plt.tight_layout()
         
-        if savepath:
-            fig.savefig(savepath / "comparison.png", bbox_inches="tight", dpi=150)
+        # if savepath:
+        #     fig.savefig(savepath / "comparison.png", bbox_inches="tight", dpi=150)
 
+        # plt.show()
+        
+        # return fig
+        
+        
+        # Save the comparison figure
+        if savepath:
+            comparison_path = savepath.parent / f"{base_name}_comparison.png"
+            fig.savefig(comparison_path, bbox_inches="tight", dpi=150)
+            print(f"Saved comparison plot to: {comparison_path}")
+        
+        plt.tight_layout()
         plt.show()
         
         return fig
+
     
     def create_summary_plot(self, esn_results_file: Optional[Path] = None,
                            gnm_results_file: Optional[Path] = None,
@@ -527,104 +566,169 @@ def visualize_pipeline_results(experiment_dir: Path,
                 print(f"Failed to create ESN {viz_type} plot: {e}")
     
     # Find GNM results
-    gnm_files = list(experiment_dir.glob("gnm_comprehensive_results.json"))
-    if gnm_files:
-        for gnm_file in gnm_files:
-            for viz_type in visualization_types:
-                savepath = visualizer.output_dir / f"gnm_landscape_{viz_type}.png" if save_plots else None
+    # gnm_files = list(experiment_dir.glob("gnm_comprehensive_results.json"))
+    # if gnm_files:
+    #     for gnm_file in gnm_files:
+    #         for viz_type in visualization_types:
+    #             savepath = visualizer.output_dir / f"gnm_landscape.png" if save_plots else None 
                 
-                try:
-                    fig, ax = visualizer.plot_gnm_energy_landscape(
-                        gnm_file,
-                        visualization_type=viz_type,
-                        savepath=savepath,
-                        show=not save_plots
-                    )
-                    created_plots[f"gnm_{viz_type}"] = savepath
-                    plt.close(fig)
-                except Exception as e:
-                    print(f"Failed to create GNM {viz_type} plot: {e}")
+    #             try:
+    #                 fig, ax = visualizer.plot_gnm_energy_landscape(
+    #                     gnm_file,
+    #                     visualization_type=viz_type,
+    #                     savepath=savepath,
+    #                     show=not save_plots
+    #                 )
+    #                 created_plots[f"gnm_{viz_type}"] = savepath
+    #                 plt.close(fig)
+    #             except Exception as e:
+    #                 print(f"Failed to create GNM {viz_type} plot: {e}")
     
-    # Create summary plot if both results exist
-    if esn_files and gnm_files:
-        savepath = visualizer.output_dir / "summary_plot.png" if save_plots else None
-        try:
-            fig = visualizer.create_summary_plot(
-                esn_results_file=latest_esn if esn_files else None,
-                gnm_results_file=gnm_files[0] if gnm_files else None,
-                savepath=savepath
-            )
-            created_plots["summary"] = savepath
-            plt.close(fig)
-        except Exception as e:
-            print(f"Failed to create summary plot: {e}")
+    # # Create summary plot if both results exist
+    # if esn_files and gnm_files:
+    #     savepath = visualizer.output_dir / "summary_plot.png" if save_plots else None
+    #     try:
+    #         fig = visualizer.create_summary_plot(
+    #             esn_results_file=latest_esn if esn_files else None,
+    #             gnm_results_file=gnm_files[0] if gnm_files else None,
+    #             savepath=savepath
+    #         )
+    #         created_plots["summary"] = savepath
+    #         plt.close(fig)
+    #     except Exception as e:
+    #         print(f"Failed to create summary plot: {e}")
     
     return created_plots
 
 
-# Example usage functions
-def visualize_gnm_results(df_path, save_path: Optional[Path] = None):
-    """Example with real data: Visualize GNM parameter sweep results."""
-
-    # esn_results_df = pd.read_csv("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_esns_on_observed_weighted_connectomes/comprehensive_esn_sweep/esn_mc_results_2025-08-15_16-18-45.csv")
+def visualize_gnm_results(df_path, 
+                         name_of_energy_metric: Optional[str] = "MaxCriteria(DegreeKS_ClusteringKS)",
+                         save_dir: Optional[Path] = None,
+                         save_name: Optional[str] = None):
+    """
+    Visualize GNM parameter sweep results.
     
-    # FOR GNM # THIS IS WRONG! 
+    Args:
+        df_path: Path to the results CSV file
+        name_of_energy_metric: Name of the energy metric column
+        save_dir: Directory to save visualizations (None = don't save)
+        save_name: Base name for saved files (None = auto-generate)
+    """
+    from pathlib import Path
+    from datetime import datetime
+    
+    # Load data
     gnm_results_df = pd.read_csv(df_path, index_col=False, sep=", ")
     
-    # FOR REAL CONNECTOMES: 
-        # subject,density_percent,spectral_radius,input_length,input_scaling,
-        # regularization_method,n_runs,
-        # mc_mean,mc_std,mean_mc_of_individual_runs,hyper_params
-    print(gnm_results_df.head())
-    df = gnm_results_df[["eta", "gamma", "MaxCriteria(DegreeKS_ClusteringKS)"]].copy() # "energy", "subject"]].copy()
-    df.columns = ["eta", "gamma", "energy"]  # Rename columns for consistency
+    # Process data (your existing code)
+    df = gnm_results_df[["eta", "gamma", name_of_energy_metric]].copy()
+    df.columns = ["eta", "gamma", "energy"]
+    df["eta"] = pd.to_numeric(df["eta"], errors='coerce')
+    df["gamma"] = pd.to_numeric(df["gamma"], errors='coerce')
+    df["energy"] = pd.to_numeric([float(i[:-1]) for i in df["energy"]], errors='coerce')
     
-    # Unwrap single-element lists
-    df["eta"] = [float(i) for i in df["eta"].str[1:-1]]  # Convert string representation of list to float
-    df["gamma"] = [float(i) for i in df["gamma"].str[1:-1]]  # Convert string representation of list to float
-    # Convert strings → floats
-    df["energy"] = [float(i[:-1]) for i in df["energy"]]  # -1 to remove trailing comma
-
-    # df = df[-100:]
     visualizer = PipelineVisualizer()
     
-    # Compare visualization methods
-    visualizer.compare_visualizations(df, title_prefix="GNM Parameter Sweep", savepath=save_path) # +"/gnm_comprehensive_sweep.png")
+    # Handle save path
+    if save_dir is not None:
+        save_dir = Path(save_dir)
+        save_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate filename if not provided
+        if save_name is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # save_name = f"gnm_landscape_{timestamp}"
+            
+        
+        # Don't add extension - let the function handle it
+        # save_path = save_dir / save_name
+        save_path = save_dir 
+    else:
+        save_path = None
+    
+    # Create visualizations
+    visualizer.compare_visualizations(
+        df, 
+        title_prefix="GNM Parameter Sweep", 
+        savepath=save_path
+    )
+    
+    
+# # Example usage functions
+# def visualize_gnm_results(df_path, 
+#                           name_of_energy_metric: Optional[str] = "MaxCriteria(DegreeKS_ClusteringKS)",
+#                           save_path: Optional[Path] = None):
+#     """Example with real data: Visualize GNM parameter sweep results."""
+
+#     # esn_results_df = pd.read_csv("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_esns_on_observed_weighted_connectomes/comprehensive_esn_sweep/esn_mc_results_2025-08-15_16-18-45.csv")
+    
+#     # FOR GNM # THIS IS WRONG! 
+#     gnm_results_df = pd.read_csv(df_path, index_col=False, sep=", ")
+    
+#     # FOR REAL CONNECTOMES: 
+#         # subject,density_percent,spectral_radius,input_length,input_scaling,
+#         # regularization_method,n_runs,
+#         # mc_mean,mc_std,mean_mc_of_individual_runs,hyper_params
+#     print(gnm_results_df.head())
+    
+#     # TODO: THIS IS CURRENTLY HARDCODED 
+#     df = gnm_results_df[["eta", "gamma", name_of_energy_metric]].copy() # "energy", "subject"]].copy()
+#     df.columns = ["eta", "gamma", "energy"]  # Rename columns for consistency
+    
+#     # Unwrap single-element lists
+#     # df["eta"] = [float(i) for i in df["eta"].str[1:-1]]  # Convert string representation of list to float
+#     # df["gamma"] = [float(i) for i in df["gamma"].str[1:-1]]  # Convert string representation of list to float
+#     # # Convert strings → floats
+#     # df["energy"] = [float(i[:-1]) for i in df["energy"]]  # -1 to remove trailing comma
+    
+#     df["eta"] = pd.to_numeric(df["eta"], errors='coerce')
+#     df["gamma"] = pd.to_numeric(df["gamma"], errors='coerce')
+#     df["energy"] = pd.to_numeric([float(i[:-1]) for i in df["energy"]], errors='coerce')
+
+#     # df["eta"] = pd.to_numeric(df["eta"], errors='coerce')
+#     # df["gamma"] = pd.to_numeric(df["gamma"], errors='coerce')
+#     # df["energy"] = pd.to_numeric(df["energy"], errors='coerce')
+    
+#     # df = df[-100:]
+#     visualizer = PipelineVisualizer()
+    
+#     # Compare visualization methods
+#     visualizer.compare_visualizations(df, title_prefix="GNM Parameter Sweep", savepath=save_path) # +"/gnm_comprehensive_sweep.png")
 
 
-# def example_visualize_esn_results():
-#     """Example: Visualize ESN hyperparameter optimization results."""
-#     # Create sample data for ESN results
-#     np.random.seed(42)
-#     n_samples = 150
+# # def example_visualize_esn_results():
+# #     """Example: Visualize ESN hyperparameter optimization results."""
+# #     # Create sample data for ESN results
+# #     np.random.seed(42)
+# #     n_samples = 150
     
-#     spectral_radius = np.random.uniform(0.5, 2.0, n_samples)
-#     input_length = np.random.choice([1000, 2000, 4000], n_samples)
-#     # Simulate memory capacity with peak around sr=0.99
-#     mc_values = np.exp(-2 * (spectral_radius - 0.99)**2) + np.random.normal(0, 0.05, n_samples)
+# #     spectral_radius = np.random.uniform(0.5, 2.0, n_samples)
+# #     input_length = np.random.choice([1000, 2000, 4000], n_samples)
+# #     # Simulate memory capacity with peak around sr=0.99
+# #     mc_values = np.exp(-2 * (spectral_radius - 0.99)**2) + np.random.normal(0, 0.05, n_samples)
     
-#     df = pd.DataFrame({
-#         'eta': spectral_radius,  # Using eta for x-axis
-#         'gamma': input_length,    # Using gamma for y-axis
-#         'energy': -mc_values,     # Negative MC as energy
-#         'subject': np.random.randint(0, 20, n_samples)
-#     })
+# #     df = pd.DataFrame({
+# #         'eta': spectral_radius,  # Using eta for x-axis
+# #         'gamma': input_length,    # Using gamma for y-axis
+# #         'energy': -mc_values,     # Negative MC as energy
+# #         'subject': np.random.randint(0, 20, n_samples)
+# #     })
     
    
     
-    # visualizer = PipelineVisualizer()
+#     # visualizer = PipelineVisualizer()
     
-    # # Create Voronoi plot
-    # fig, ax = visualizer.plot_energy_landscape_voronoi(
-    #     df, 
-    #     title="ESN Memory Capacity Landscape\n(Spectral Radius vs Input Length)",
-    #     cmap="coolwarm",
-    #     show_points=True
-    # )
+#     # # Create Voronoi plot
+#     # fig, ax = visualizer.plot_energy_landscape_voronoi(
+#     #     df, 
+#     #     title="ESN Memory Capacity Landscape\n(Spectral Radius vs Input Length)",
+#     #     cmap="coolwarm",
+#     #     show_points=True
+#     # )
     
-    # # Adjust labels
-    # ax.set_xlabel("Spectral Radius")
-    # ax.set_ylabel("Input Length")
+#     # # Adjust labels
+#     # ax.set_xlabel("Spectral Radius")
+#     # ax.set_ylabel("Input Length")
 
 
 if __name__ == "__main__":
@@ -635,11 +739,26 @@ if __name__ == "__main__":
     # visualize_gnm_results("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv", 
     #                       save_path=Path("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation"))
     
+    name_of_energy_metric = "MaxCriteria(DegreeKS_ClusteringKS)"
+    print(f"Using energy metric: {name_of_energy_metric}")
     # for both combined data grids:
-    visualize_gnm_results("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv", 
-                          # "/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/combined_energy_grids.csv", 
-                          save_path=Path("/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation"))
+    
+    df_name = "/Users/adrian/Documents/01_projects/14_4D_lab/output/default_folder/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv"
+    # /Users/adrian/Documents/01_projects/14_4D_lab/output/default_folder/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv" 
+    # /Users/adrian/Documents/01_projects/14_4D_lab/output/None/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv"
+    folder_name = df_name.split("/")[-1].replace(".csv","")
+    import os 
+    os.makedirs("output/visualizations/"+folder_name, exist_ok=True)
+    visualize_gnm_results(
+        df_path=df_name,
+        name_of_energy_metric=name_of_energy_metric,
+        save_dir=Path("output/visualizations/"+folder_name),
+        # save_name=folder_name
+    )
+
     # print("\n2. Testing ESN visualization:")
     # example_visualize_esn_results()
     
     print("\nVisualization tests completed!")
+    
+    

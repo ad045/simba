@@ -532,7 +532,7 @@ if __name__ == "__main__":
                 search_mode="grid"
             )
             
-            print(result_message)
+            # print(result_message)
             
             # Analyze results
             analysis = evaluator.load_and_analyze_results(test_save_dir)
