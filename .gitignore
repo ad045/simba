@@ -239,3 +239,4 @@ wandb*.json
 *.txt
 *.wandb 
 sweep-*/ */
+config*.yaml
