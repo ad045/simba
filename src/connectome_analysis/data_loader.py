@@ -23,6 +23,7 @@ class DataLoader:
         missing_files = []
         
         # Check weighted connectome
+        print(self.paths.keys())
         if not self.paths['weighted_connectome'].exists():
             missing_files.append(str(self.paths['weighted_connectome']))
         

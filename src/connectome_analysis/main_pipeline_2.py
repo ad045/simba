@@ -289,6 +289,8 @@ class GNMPipelineOrchestrator:
             target_network: Optional specific target network
             experiment_name: Custom experiment name
             no_wandb: If True, disable wandb logging
+            random_sample: If True, use random sampling instead of grid search
+            n_random_samples: Number of random samples to use
             
         Returns:
             Sweep results
@@ -331,9 +333,8 @@ class GNMPipelineOrchestrator:
                     device=self.device
                 )
         
-        # # Number of edges to generate (is this a correct labeling)? 
-        num_iterations = int(target_network.sum().item() // 2) # -> This is the number of iterations PER CONFIG... 
-        
+        # Number of edges to generate (number of iterations per config)
+        num_iterations = int(target_network.sum().item() // 2)
         num_simulations = 100
         
         # Create sweep configuration based on sampling method
@@ -357,26 +358,34 @@ class GNMPipelineOrchestrator:
         evaluation_criteria = self.config.get_gnm_evaluation_criteria(distance_matrix)
         
         print(f"Running parameter sweep...")
-        print(f"  - Parameter grid: {self.config.gnm.n_eta} × {self.config.gnm.n_gamma}")
         print(f"  - Generative rules: {self.config.gnm.generative_rules_to_test}")
         print(f"  - Simulations per parameter set: {self.config.gnm.num_simulations}")
         print(f"  - Wandb logging: {'DISABLED' if no_wandb else 'ENABLED'}")
         
-        # Update the print statements (around line 465):
+        # Better print statements based on sampling method
         if no_wandb and random_sample:
             print(f"  - Random sampling: {n_random_samples} parameter combinations")
+            print(f"  - Eta range: {self.config.gnm.eta_range}")
+            print(f"  - Gamma range: {self.config.gnm.gamma_range}")
         else:
             print(f"  - Parameter grid: {self.config.gnm.n_eta} × {self.config.gnm.n_gamma}")
+            print(f"  - Eta range: {self.config.gnm.eta_range}")
+            print(f"  - Gamma range: {self.config.gnm.gamma_range}")
             
         # Initialize wandb if requested
         if not no_wandb: 
             try:
                 import wandb
                 if not wandb.run:
+                    
+                    # FIXED: Use dynamic wandb directory based on config
+                    wandb_dir = self.config.paths.output_dir / "wandb"
+                    wandb_dir.mkdir(parents=True, exist_ok=True)
+
                     wandb.init(
                         project="GNM_Pipeline",
                         name=experiment_name,
-                        dir="/Users/adrian/Documents/01_projects/14_4D_lab/output/02_gnm_estimation/wandb", # TODO: Not hardcoded. 
+                        dir=str(wandb_dir),  # Use config-based directory
                         config={
                             "n_eta": self.config.gnm.n_eta,
                             "n_gamma": self.config.gnm.n_gamma,
@@ -391,8 +400,6 @@ class GNMPipelineOrchestrator:
         if no_wandb:
             if random_sample:
                 method = "random"
-                # You'll need to modify sweep_config to use random sampling
-                # This requires creating a different parameter configuration
             else:
                 method = "grid"
         else:
@@ -440,7 +447,9 @@ class GNMPipelineOrchestrator:
                 "eta_range": self.config.gnm.eta_range,
                 "gamma_range": self.config.gnm.gamma_range,
                 "n_eta": self.config.gnm.n_eta,
-                "n_gamma": self.config.gnm.n_gamma
+                "n_gamma": self.config.gnm.n_gamma,
+                "sampling_method": "random" if (no_wandb and random_sample) else "grid" if no_wandb else "bayesian",
+                "n_random_samples": n_random_samples if (no_wandb and random_sample) else None
             }
         }
         
@@ -556,7 +565,7 @@ class GNMPipelineOrchestrator:
                 esn_analysis = self.esn_evaluator.load_and_analyze_results(exp_dir)
                 print("Loaded and analyzed ESN results.")
                 
-                print(esn_analysis) # TODO: Remove again
+                print(esn_analysis)  # TODO: Remove again
                 
                 results["esn"] = {
                     "status": "success",
@@ -638,12 +647,292 @@ class GNMPipelineOrchestrator:
         return summary
 
 
+    def run_esn_only_analysis(self,
+                            experiment_name: Optional[str] = None,
+                            search_mode: str = "random_sample") -> Dict[str, Any]:
+        """
+        Run ESN analysis only.
+        
+        Args:
+            experiment_name: Custom ESN experiment name
+            search_mode: "grid" or "random_sample"
+            
+        Returns:
+            ESN results
+        """
+        if not self.esn_evaluator:
+            raise ValueError("ESN evaluator not available. Check data configuration.")
+        
+        print("=" * 60)
+        print("ESN MEMORY CAPACITY ANALYSIS")
+        print("=" * 60)
+        
+        # Set ESN experiment name
+        if not experiment_name:
+            experiment_name = f"esn_only_{time.strftime('%Y%m%d_%H%M%S')}"
+        
+        try:
+            # Generate ESN hyperparameter grid
+            hparam_grid = self.config.generate_esn_hparam_grid(
+                spectral_radii=np.linspace(0.1, 2.5, 25),
+                input_lengths=[500, 1000, 2000, 3000, 4000],
+                input_scalings=[1.0, 1.5],
+                regularization_methods=["pinv", "ridge"],
+                densities=[10, 12, 14, 16, 18, 20]
+            )
+            
+            # Load data
+            weighted_by_density = self.data_loader.load_weighted_by_density()
+            
+            # Create experiment directory
+            exp_dir = self.config.paths.esn_output_dir / experiment_name
+            exp_dir.mkdir(parents=True, exist_ok=True)
+            
+            print(f"Running ESN hyperparameter sweep with {len(hparam_grid)} combinations...")
+            print(f"Search mode: {search_mode}")
+            
+            # Run ESN sweep
+            esn_message = self.esn_evaluator.run_hyperparameter_sweep(
+                connectomes=weighted_by_density,
+                hparam_grid=hparam_grid,
+                save_dir=exp_dir,
+                search_mode=search_mode
+            )
+            
+            # Load and analyze results
+            esn_analysis = self.esn_evaluator.load_and_analyze_results(exp_dir)
+            
+            results = {
+                "status": "success",
+                "message": esn_message,
+                "analysis": esn_analysis,
+                "experiment_dir": str(exp_dir),
+                "n_combinations_tested": len(hparam_grid),
+                "search_mode": search_mode
+            }
+            
+            print(f"\nESN analysis completed!")
+            if "best_overall_mc" in esn_analysis:
+                best = esn_analysis["best_overall_mc"]
+                print(f"Best memory capacity: {best['value']:.4f}")
+                best_hp = best["hyperparameters"]
+                print(f"Best hyperparameters:")
+                print(f"  - Density: {best_hp.get('density_percent')}%")
+                print(f"  - Spectral radius: {best_hp.get('spectral_radius'):.3f}")
+                print(f"  - Input length: {best_hp.get('input_length')}")
+            
+            print(f"Results saved to: {exp_dir}")
+            
+            return results
+            
+        except Exception as e:
+            return {
+                "status": "failed",
+                "error": str(e),
+                "experiment_name": experiment_name
+            }
+
+    def run_gnm_esn_grid_evaluation(self,
+                                    target_network: Optional[torch.Tensor] = None,
+                                    eta_range: tuple = (-8, 0),
+                                    gamma_range: tuple = (0.2, 8),
+                                    n_eta: int = 20,
+                                    n_gamma: int = 20,
+                                    experiment_name: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Generate GNM networks on a parameter grid and evaluate ESN memory capacity.
+        
+        Args:
+            target_network: Target connectome for determining n_edges
+            eta_range: Range for eta parameter
+            gamma_range: Range for gamma parameter
+            n_eta: Number of eta values
+            n_gamma: Number of gamma values
+            experiment_name: Name for the experiment
+            
+        Returns:
+            Dictionary with grid evaluation results
+        """
+        print("=" * 60)
+        print("GNM-ESN GRID EVALUATION")
+        print("=" * 60)
+        
+        if not experiment_name:
+            experiment_name = f"gnm_esn_grid_{time.strftime('%Y%m%d_%H%M%S')}"
+        
+        # Load data
+        if target_network is None:
+            if self.config.data.use_gnm_defaults:
+                data = self.config.load_gnm_defaults()
+                target_network = data["binary_network"]
+                distance_matrix = data["distance_matrix"]
+            else:
+                distance_matrix = torch.tensor(
+                    self.data_loader.load_distance_matrix(),
+                    dtype=torch.float32,
+                    device=self.device
+                )
+                binary_connectomes = self.data_loader.load_binary_connectomes()
+                first_density = sorted(binary_connectomes.keys())[0]
+                target_network = torch.tensor(
+                    binary_connectomes[first_density][:, :, 0],
+                    dtype=torch.float32,
+                    device=self.device
+                )
+        else:
+            distance_matrix = torch.tensor(
+                self.data_loader.load_distance_matrix(),
+                dtype=torch.float32,
+                device=self.device
+            )
+        
+        n_nodes = target_network.shape[0]
+        n_edges = int(target_network.sum().item() // 2)
+        
+        # Create parameter grid
+        eta_values = np.linspace(eta_range[0], eta_range[1], n_eta)
+        gamma_values = np.linspace(gamma_range[0], gamma_range[1], n_gamma)
+        
+        # Results storage
+        grid_results = []
+        
+        # Use matching index as default rule
+        from gnm_network_generator import GNMParameters
+        from gnm import generative_rules
+        
+        print(f"Evaluating {n_eta} x {n_gamma} = {n_eta * n_gamma} parameter combinations...")
+        
+        # Generate and evaluate networks for each parameter combination
+        for i, eta in enumerate(eta_values):
+            for j, gamma in enumerate(gamma_values):
+                print(f"  Processing η={eta:.3f}, γ={gamma:.3f} ({i*n_gamma + j + 1}/{n_eta*n_gamma})")
+                
+                # Generate GNM network
+                params = GNMParameters(
+                    eta=eta,
+                    gamma=gamma,
+                    generative_rule=generative_rules.MatchingIndex()
+                )
+                
+                try:
+                    # Generate network
+                    gnm_network = self.gnm_generator.generate_network(
+                        n_nodes=n_nodes,
+                        n_edges=n_edges,
+                        distance_matrix=distance_matrix,
+                        parameters=params
+                    )
+                    
+                    # Convert to numpy for ESN evaluation
+                    gnm_network_np = gnm_network.cpu().numpy()
+                    
+                    # Evaluate ESN memory capacity
+                    esn_result = self.esn_evaluator.evaluate_single_subject(
+                        subject_idx=0,
+                        connectome=gnm_network_np,
+                        hparams={
+                            "spectral_radius": self.config.esn.spectral_radius,
+                            "input_length": self.config.esn.input_length,
+                            "input_scaling": self.config.esn.input_scaling,
+                            "regularization_method": self.config.esn.regularization_method,
+                            "n_runs": 5  # Reduce for speed
+                        }
+                    )
+                    
+                    mc_mean = esn_result.get("mc_mean", 0.0)
+                    
+                except Exception as e:
+                    print(f"    Error: {e}")
+                    mc_mean = 0.0
+                
+                grid_results.append({
+                    "eta": eta,
+                    "gamma": gamma,
+                    "mc_mean": mc_mean
+                })
+        
+        # Also fit best parameters to empirical data
+        print("\nFitting to empirical connectomes...")
+        empirical_fits = []
+        
+        # Load empirical weighted connectomes
+        weighted_by_density = self.data_loader.load_weighted_by_density()
+        
+        for density, connectomes in weighted_by_density.items():
+            print(f"  Fitting density {density}%...")
+            # Use first subject as representative
+            empirical_conn = torch.tensor(
+                connectomes[:, :, 0],
+                dtype=torch.float32,
+                device=self.device
+            )
+            
+            # Binarize for GNM fitting
+            empirical_binary = (empirical_conn > 0).float()
+            
+            # Fit GNM parameters
+            fit_result = self.gnm_generator.fit_parameters(
+                target_network=empirical_binary,
+                distance_matrix=distance_matrix,
+                generative_rule_name="matching_index",
+                n_eta=20,
+                n_gamma=20,
+                num_simulations=10,
+                evaluation_metrics=["degree_ks", "clustering_ks"]
+            )
+            
+            empirical_fits.append({
+                "density": density,
+                "best_eta": fit_result["best_eta"],
+                "best_gamma": fit_result["best_gamma"],
+                "best_energy": fit_result["best_energy"]
+            })
+        
+        # Save results
+        exp_dir = self.config.paths.output_dir / experiment_name
+        exp_dir.mkdir(parents=True, exist_ok=True)
+        
+        results = {
+            "experiment_name": experiment_name,
+            "eta_range": eta_range,
+            "gamma_range": gamma_range,
+            "n_eta": n_eta,
+            "n_gamma": n_gamma,
+            "grid_results": grid_results,
+            "empirical_fits": empirical_fits
+        }
+        
+        results_file = exp_dir / "gnm_esn_grid_results.json"
+        with open(results_file, 'w') as f:
+            json.dump(results, f, indent=2)
+        
+        print(f"\nResults saved to: {results_file}")
+        
+        # Create visualization
+        from visualization import PipelineVisualizer
+        visualizer = PipelineVisualizer(output_dir=exp_dir)
+        
+        # Convert to DataFrame for visualization
+        df = pd.DataFrame(grid_results)
+        
+        # Plot memory capacity landscape
+        fig, ax = visualizer.plot_gnm_esn_landscape(
+            df=df,
+            empirical_fits=empirical_fits,
+            title="Memory Capacity Landscape",
+            savepath=exp_dir / "mc_landscape.png"
+        )
+        
+        return results
+
+
+
 def main():
     """Main entry point with command-line interface."""
     parser = argparse.ArgumentParser(description="GNM-Optimized Connectome Analysis Pipeline")
     
-    parser.add_argument("command", choices=["sweep", "comprehensive", "full", "test", "minimal_test"],
-                       help="Command to run")
+    parser.add_argument("command", choices=["sweep", "comprehensive", "full", "test", "minimal_test", "esn"],
+                   help="Command to run")
     
     parser.add_argument("--config", choices=["quick_test", "comprehensive", "rule_comparison", "minimal_test"],
                        default="quick_test", help="Configuration preset")
@@ -672,10 +961,17 @@ def main():
     parser.add_argument("--n-random-samples", type=int, default=30,
                     help="Number of random samples for parameter sweep (default: 30)")
 
+    # ESN-specific arguments
+    parser.add_argument("--esn-search-mode", choices=["grid", "random_sample"], 
+                    default="random_sample", help="ESN search mode")
+    
+    parser.add_argument("--esn-random-sample-size", type=int, 
+                    help="Number of random samples for ESN random search")
+    
     args = parser.parse_args()
     
+    
     # Load configuration
-
     if args.config == "quick_test":
         config = get_gnm_quick_test_config()
     elif args.config == "comprehensive":
@@ -685,15 +981,6 @@ def main():
         config = get_gnm_rule_comparison_config()
     else:
         config = ConfigManager()
-    
-        # Override n_eta and n_gamma for random sampling
-    if args.command == "sweep" and args.random_sample and args.no_wandb:
-        # Override the grid size to 1x1 when using random sampling
-        # This prevents creating unnecessary grid points
-        # config.gnm.
-        config.gnm.n_eta = 1
-        config.gnm.n_gamma = 1
-        
         
     # Initialize wandb if not disabled
     if not args.no_wandb:
@@ -716,7 +1003,6 @@ def main():
     orchestrator = GNMPipelineOrchestrator(config)
     
     try:
-    
         if args.command == "sweep":
             results = orchestrator.run_gnm_parameter_sweep(
                 experiment_name=args.experiment_name, 
@@ -731,7 +1017,9 @@ def main():
             orchestrator = GNMPipelineOrchestrator(config)
             results = orchestrator.run_gnm_parameter_sweep(
                 experiment_name=args.experiment_name or "quick_test",
-                no_wandb=args.no_wandb  # FIXED: Pass no_wandb flag
+                no_wandb=args.no_wandb,
+                random_sample=args.random_sample,
+                n_random_samples=args.n_random_samples
             )
             print(f"Test completed successfully!")
     
@@ -741,15 +1029,11 @@ def main():
             orchestrator = GNMPipelineOrchestrator(config)
             results = orchestrator.run_gnm_parameter_sweep(
                 experiment_name=args.experiment_name or "minimal_test",
-                no_wandb=args.no_wandb  # FIXED: Pass no_wandb flag
+                no_wandb=args.no_wandb,
+                random_sample=args.random_sample,
+                n_random_samples=args.n_random_samples
             )
             print(f"Test completed successfully!")
-            
-        elif args.command == "sweep":
-            results = orchestrator.run_gnm_parameter_sweep(
-                experiment_name=args.experiment_name, 
-                no_wandb=args.no_wandb
-            )
             
         elif args.command == "comprehensive":
             results = orchestrator.run_gnm_comprehensive_analysis(
@@ -757,13 +1041,36 @@ def main():
                 compare_rules=args.compare_rules,
                 fit_weights=args.fit_weights
             )
-        
-        # elif args.command == "full":
-        #     results = orchestrator.run_full_pipeline(
-        #         esn_experiment_name=f"esn_{args.experiment_name}" if args.experiment_name else None,
-        #         gnm_experiment_name=f"gnm_{args.experiment_name}" if args.experiment_name else None
-        #     )
-        
+  
+        elif args.command == "esn":
+            
+            # Use ESN-specific configuration
+            from config import get_esn_config
+            esn_config = get_esn_config()
+          
+            # Create ESN evaluator directly
+            from esn_evaluation import create_esn_evaluator
+            esn_evaluator = create_esn_evaluator(config_manager=esn_config)
+            
+            # Generate hyperparameter grid
+            hparam_grid = esn_config.generate_esn_hparam_grid()
+
+            # Load data
+            from data_loader import DataLoader
+            data_loader = DataLoader(esn_config)
+            weighted_by_density = data_loader.load_weighted_by_density()
+            
+            # Run ESN sweep
+            exp_dir = esn_config.paths.esn_output_dir / (args.experiment_name or f"esn_{time.strftime('%Y%m%d_%H%M%S')}")
+            esn_message = esn_evaluator.run_hyperparameter_sweep(
+                connectomes=weighted_by_density,
+                hparam_grid=hparam_grid,
+                save_dir=exp_dir,
+                search_mode=args.esn_search_mode,
+                random_sample_size=args.esn_random_sample_size
+            )
+            print(esn_message)
+            
         # Always finalize logger at the end
         orchestrator.logger.finalize()
         
@@ -776,73 +1083,22 @@ def main():
         import traceback
         traceback.print_exc()
         orchestrator.logger.finalize()
-        sys.exit(1)
-    
-    finally:
-        # Close wandb run if active
-        try:
-            import wandb
-            if wandb.run:
-                wandb.finish()
-        except:
-            pass
-
-
+        
+        
 if __name__ == "__main__":
+    # main(argparse)
     main()
     
-    # TODO: Make the following command work directly when running this file. 
-    # python src/connectome_analysis/main_pipeline.py sweep --no-wandb --random-sample --experiment-name "random_local"
     
-    
-    # parser = argparse.ArgumentParser(description='Run GNM Pipeline with config file')
-    # parser.add_argument(
-    #     '--config', 
-    #     type=str, 
-    #     default=None,
-    #     help='Path to config file (default: configs/default.yaml)'
-    # )
-    # args = parser.parse_args()
-    
-    # main(args.config)
-    
-    """ 
-    ALTERNATIVE USAGE FILES
-    
-    Usage examples:
-    
-    # Quick test
-    python src/connectome_analysis/main_pipeline.py test --config quick_test
-    # Minimal test (only two runs)
-    python 14_4D_lab/src/connectome_analysis/main_pipeline.py minimal_test --config minimal_test
-    
-    # Parameter sweep with custom name (all runs are logged automatically) !! Currently using this. !! Project is automatically called "GNMs". (search for no_different_project_name in sweep.py)
-    python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep --experiment-name "my_sweep_experiment"
-    python src/connectome_analysis/main_pipeline.py sweep 
-    python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep
-    # Comprehensive analysis with rule comparison 
-    python src/connectome_analysis/main_pipeline.py comprehensive --compare-rules --fit-weights
-    
-    # Full pipeline (DONT RUN RIGHT NOW - IS ESN + GNM and not tested yet) 
-    python src/connectome_analysis/main_pipeline.py full --experiment-name "full_analysis"
-    
-    # Without wandb (local logging only)
-    python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep --no-wandb --experiment-name "local_only"
-
-
-    ################################################################################
-
-    # Random sampling without wandb (30 samples by default)
-    python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep --no-wandb --random-sample --experiment-name "random_local"
-    python src/connectome_analysis/main_pipeline.py sweep --no-wandb --random-sample --experiment-name "random_local"
-
-    # Random sampling with custom number of samples
-    python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep --no-wandb --random-sample --n-random-samples 50 --experiment-name "random_50"
-
-    # Grid search without wandb (existing behavior)
-    python 14_4D_lab/src/connectome_analysis/main_pipeline.py sweep --no-wandb --experiment-name "grid_local"
-
-
-python src/connectome_analysis/main_pipeline.py sweep --no-wandb 
-
+        
+    """
+        ### ESN ONLY
+        python src/connectome_analysis/main_pipeline_2.py esn --experiment-name "my_esn_analysis"
+        python src/connectome_analysis/main_pipeline_2.py esn --esn-search-mode grid --no-wandb
+        
+        ### RANDOM SEARCH
+        python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb --random-sample --experiment-name "random_local"
+        
+        ### GRID SEARCH 
+        python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb 
     """

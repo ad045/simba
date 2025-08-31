@@ -9,7 +9,7 @@ from echoes.esn import ESNRegressor
 
 def _generate_mc_dataset(train_len: int, test_len: int, n_lags: int, rng: np.random.Generator) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     total_len = int(train_len + test_len + n_lags + 100)
-    print("REMOVE AGAIN, in test_memory_capacity_weighted.py: total_len", total_len)
+    # print("REMOVE AGAIN, in test_memory_capacity_weighted.py: total_len", total_len) -> THIS IS USED.
     seq = rng.uniform(-0.5, 0.5, size=(total_len,))
     def build_targets(x: np.ndarray, lags: int) -> np.ndarray:
         T = len(x) - lags

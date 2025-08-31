@@ -3,6 +3,7 @@ Configuration management using GNM library structures.
 """
 
 from pathlib import Path
+from itertools import product
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 import numpy as np
@@ -174,8 +175,8 @@ class PathConfig:
     def __post_init__(self):
         self.data_dir = self.root_dir / "data/preprocessed/01_first_analysises"
         self.output_dir = self.root_dir / "output"
-        self.esn_output_dir = self.output_dir / "02_esns_on_observed_weighted_connectomes"  # TODO: ESN path
-        self.gnm_output_dir = self.output_dir / "03_gnm_estimation" # TODO: GNM path
+        self.esn_output_dir = self.output_dir / "esn"  # TODO: ESN path. previously: 02_esns_on_observed_weighted_connectomes
+        self.gnm_output_dir = self.output_dir / "gnm" # TODO: GNM path. previously: 03_gnm_estimation
 
 
 class ConfigManager:
@@ -194,6 +195,61 @@ class ConfigManager:
         self.compute = compute_config or ComputeConfig()
         self.paths = path_config or PathConfig()
     
+    # Add this method to the ConfigManager class
+    def create_gnm_random_sweep_config(self,
+                                    distance_matrix: torch.Tensor,
+                                    num_iterations: int,
+                                    num_simulations: int = 100,
+                                    n_random_samples: int = 30,
+                                    include_weights: bool = True) -> fitting.SweepConfig:
+        """Create GNM sweep configuration with random parameter sampling."""
+        
+        # Generate random parameter values
+        eta_values = torch.empty(n_random_samples)
+        gamma_values = torch.empty(n_random_samples)
+        
+        for i in range(n_random_samples):
+            eta_values[i] = torch.rand(1) * (self.gnm.eta_range[1] - self.gnm.eta_range[0]) + self.gnm.eta_range[0]
+            gamma_values[i] = torch.rand(1) * (self.gnm.gamma_range[1] - self.gnm.gamma_range[0]) + self.gnm.gamma_range[0]
+
+        # Get generative rules
+        rules = []
+        for rule_name in self.gnm.generative_rules_to_test:
+            if rule_name == "matching_index":
+                rules.append(generative_rules.MatchingIndex())
+            elif rule_name == "neighbors":
+                rules.append(generative_rules.Neighbors())
+            elif rule_name == "degree_product":
+                rules.append(generative_rules.DegreeProduct())
+            elif rule_name == "clustering_coefficient":
+                rules.append(generative_rules.ClusteringCoefficient())
+            elif rule_name == "spatial":
+                rules.append(generative_rules.Spatial())
+            else:
+                rules.append(generative_rules.MatchingIndex())
+        
+        binary_params = fitting.BinarySweepParameters(
+            eta=eta_values,
+            gamma=gamma_values,
+            lambdah=torch.tensor([0.0]),  # Single lambda value
+            distance_relationship_type=["powerlaw"],
+            preferential_relationship_type=["powerlaw"],
+            heterochronicity_relationship_type=["powerlaw"],
+            generative_rule=rules,
+            num_iterations=[num_iterations],
+        )
+        
+        weighted_params = None
+        if include_weights:
+            weighted_params = self.gnm.create_weighted_sweep_parameters(distance_matrix)
+
+        return fitting.SweepConfig(
+            binary_sweep_parameters=binary_params,
+            weighted_sweep_parameters=weighted_params,
+            num_simulations=num_simulations,
+            distance_matrix=[distance_matrix]
+        )
+        
     def create_gnm_sweep_config(self, 
                                distance_matrix: torch.Tensor,
                                num_iterations: int,
@@ -253,6 +309,62 @@ class ConfigManager:
             )
         
         return paths
+    
+    def generate_esn_hparam_grid(self,
+                           spectral_radii: Optional[List[float]] = None,
+                           input_lengths: Optional[List[int]] = None,
+                           input_scalings: Optional[List[float]] = None,
+                           regularization_methods: Optional[List[str]] = None,
+                           n_runs_list: Optional[List[int]] = None,
+                           densities: Optional[List[int]] = None) -> List[Dict[str, Any]]:
+        """
+        Generate hyperparameter grid for ESN evaluation.
+        
+        Args:
+            spectral_radii: List of spectral radius values
+            input_lengths: List of input sequence lengths
+            input_scalings: List of input scaling factors
+            regularization_methods: List of regularization methods
+            n_runs_list: List of number of runs per evaluation
+            densities: List of connectivity densities
+            
+        Returns:
+            List of hyperparameter dictionaries
+        """
+        from itertools import product
+        
+        # Use defaults if not provided
+        spectral_radii = spectral_radii or [0.1, 0.5, 0.8, 0.99, 1.2, 1.5, 2.0]
+        input_lengths = input_lengths or [500, 1000, 2000, 4000]
+        input_scalings = input_scalings or [0.5, 1.0, 1.5, 2.0]
+        regularization_methods = regularization_methods or ["pinv", "ridge"]
+        n_runs_list = n_runs_list or [self.esn.n_runs]
+        densities = densities or self.data.densities
+        
+        # Generate all combinations
+        hparam_grid = []
+        for spec_rad, input_len, input_scale, reg_method, n_runs, density in product(
+            spectral_radii, input_lengths, input_scalings, 
+            regularization_methods, n_runs_list, densities
+        ):
+            hparam_grid.append({
+                "spectral_radius": spec_rad,
+                "input_length": input_len,
+                "input_scaling": input_scale,
+                "regularization_method": reg_method,
+                "n_runs": n_runs,
+                "density_percent": density
+            })
+        
+        return hparam_grid
+        
+        
+def get_esn_config():
+    """Get configuration specifically for ESN analysis."""
+    config = ConfigManager()
+    # Ensure we use actual data paths, not GNM defaults
+    config.data.use_gnm_defaults = False
+    return config
 
 
 # Preset configurations optimized for GNM library

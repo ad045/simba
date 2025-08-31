@@ -11,8 +11,9 @@ from matplotlib import cm
 from matplotlib.colors import Normalize
 import matplotlib.patches as patches
 from pathlib import Path
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any, List, Union, Tuple
 import json
+from datetime import datetime
 
 
 class PipelineVisualizer:
@@ -28,44 +29,56 @@ class PipelineVisualizer:
         self.output_dir = Path(output_dir) if output_dir else Path("./visualizations")
         self.output_dir.mkdir(parents=True, exist_ok=True)
     
-    def plot_energy_landscape_voronoi(self, df, dot_color="white", title="", 
-                                      cmap="hot", savepath=None, show=True,
-                                      show_points=True, point_size=8,
-                                      vmin=None, vmax=None):
+    def plot_energy_landscape_voronoi(self, df: pd.DataFrame, 
+                                      dot_color: str = "white", 
+                                      title: str = "", 
+                                      cmap: str = "hot", 
+                                      savepath: Optional[Path] = None, 
+                                      show: bool = True,
+                                      show_points: bool = False, 
+                                      point_size: int = 8,
+                                      vmin: Optional[float] = None, 
+                                      vmax: Optional[float] = None,
+                                      ax: Optional[plt.Axes] = None) -> Tuple[plt.Figure, plt.Axes]:
         """
         Plot energy landscape using Voronoi diagram for randomly sampled points.
         
         Args:
-            - df (pd.DataFrame): DataFrame containing 'eta', 'gamma', and 'energy' columns.
-            - dot_color (str): Color for the sample points.
-            - title (str): Title for the plot.
-            - cmap (str): Colormap for the energy values.
-            - savepath (str): Path to save the figure.
-            - show (bool): Whether to display the plot.
-            - show_points (bool): Whether to show the actual sample points.
-            - point_size (int): Size of the sample points if shown.
-            - vmin (float): Minimum value for color scale.
-            - vmax (float): Maximum value for color scale.
+            df: DataFrame containing 'eta', 'gamma', and 'energy' columns.
+            dot_color: Color for the sample points.
+            title: Title for the plot.
+            cmap: Colormap for the energy values.
+            savepath: Path to save the figure.
+            show: Whether to display the plot.
+            show_points: Whether to show the actual sample points.
+            point_size: Size of the sample points if shown.
+            vmin: Minimum value for color scale.
+            vmax: Maximum value for color scale.
+            ax: Existing axis to plot on (if None, creates new figure).
             
         Returns:
-            - fig, ax: Matplotlib figure and axis objects.
+            fig, ax: Matplotlib figure and axis objects.
         """
         
-        # Ensure df has the required columns
-        if not all(col in df.columns for col in ["eta", "gamma", "energy"]):
-            raise ValueError("DataFrame must contain 'eta', 'gamma', and 'energy' columns.")
+        # Validate input
+        required_cols = ["eta", "gamma", "energy"]
+        if not all(col in df.columns for col in required_cols):
+            raise ValueError(f"DataFrame must contain columns: {required_cols}")
         
-        # For each unique (eta, gamma) pair, average the energy
+        # Average energy for each unique (eta, gamma) pair
         grid_df = df.groupby(["eta", "gamma"], as_index=False)["energy"].mean()
         
         # Extract points and values
         points = grid_df[["eta", "gamma"]].values
         energies = grid_df["energy"].values
         
-        # Create figure
-        fig, ax = plt.subplots(figsize=(6.2, 5.2))
+        # Create or use provided axis
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(6.2, 5.2))
+        else:
+            fig = ax.get_figure()
         
-        # Determine plot bounds with some padding
+        # Determine plot bounds with padding
         eta_min, eta_max = points[:, 0].min(), points[:, 0].max()
         gamma_min, gamma_max = points[:, 1].min(), points[:, 1].max()
         eta_range = eta_max - eta_min
@@ -75,37 +88,22 @@ class PipelineVisualizer:
         xlim = [eta_min - padding * eta_range, eta_max + padding * eta_range]
         ylim = [gamma_min - padding * gamma_range, gamma_max + padding * gamma_range]
         
-        # Add boundary points to ensure complete Voronoi cells
-        boundary_points = []
-        n_boundary = 20
-        
-        # Add points along the boundaries
-        for i in range(n_boundary):
-            # Bottom and top
-            boundary_points.append([xlim[0] + i * (xlim[1] - xlim[0]) / (n_boundary - 1), ylim[0] - 1])
-            boundary_points.append([xlim[0] + i * (xlim[1] - xlim[0]) / (n_boundary - 1), ylim[1] + 1])
-            # Left and right
-            boundary_points.append([xlim[0] - 1, ylim[0] + i * (ylim[1] - ylim[0]) / (n_boundary - 1)])
-            boundary_points.append([xlim[1] + 1, ylim[0] + i * (ylim[1] - ylim[0]) / (n_boundary - 1)])
-        
-        # Combine actual points with boundary points
+        # Create boundary points for complete Voronoi cells
+        boundary_points = self._create_boundary_points(xlim, ylim, n_boundary=20)
         all_points = np.vstack([points, boundary_points])
         
         # Create Voronoi diagram
         vor = Voronoi(all_points)
         
-        # Set up color normalization
-        if vmin is None:
-            vmin = energies.min()
-        if vmax is None:
-            vmax = energies.max()
-        
+        # Setup color normalization
+        vmin = vmin if vmin is not None else energies.min()
+        vmax = vmax if vmax is not None else energies.max()
         norm = Normalize(vmin=vmin, vmax=vmax)
         colormap = cm.get_cmap(cmap)
         
-        # Color each Voronoi region
-        for i, point_idx in enumerate(range(len(points))):  # Only color regions for actual data points
-            region_idx = vor.point_region[point_idx]
+        # Color each Voronoi region (only for actual data points)
+        for i in range(len(points)):
+            region_idx = vor.point_region[i]
             region = vor.regions[region_idx]
             
             if -1 not in region and len(region) > 0:
@@ -121,14 +119,14 @@ class PipelineVisualizer:
         cbar = plt.colorbar(sm, ax=ax)
         cbar.set_label("Energy", rotation=270, labelpad=12)
         
-        # Optionally show the actual sample points
+        # Show sample points if requested
         if show_points:
             ax.scatter(points[:, 0], points[:, 1], 
                       s=point_size, c=dot_color, 
                       edgecolors='black', linewidths=0.5,
                       alpha=0.8, zorder=5)
         
-        # If best points per subject are needed
+        # Show best points per subject if available
         if "subject" in df.columns:
             df_best = df.loc[df.groupby("subject")["energy"].idxmin()].reset_index(drop=True)
             ax.scatter(df_best["eta"].values, df_best["gamma"].values,
@@ -143,43 +141,52 @@ class PipelineVisualizer:
         ax.set_title(title)
         ax.set_aspect('auto')
         
+        # Save if path provided
         if savepath is not None:
             fig.savefig(savepath, bbox_inches="tight", dpi=150)
-        
-        if show:
+        elif show and ax is None:  # Only show if not part of subplot
             plt.show()
         
         return fig, ax
     
-    def plot_energy_landscape_interpolated(self, df, method='cubic', resolution=100,
-                                           dot_color="white", title="", 
-                                           cmap="hot", savepath=None, show=True,
-                                           vmin=None, vmax=None):
+    def plot_energy_landscape_interpolated(self, df: pd.DataFrame, 
+                                          method: str = 'cubic', 
+                                          resolution: int = 100,
+                                          dot_color: str = "white", 
+                                          title: str = "", 
+                                          cmap: str = "hot", 
+                                          savepath: Optional[Path] = None, 
+                                          show: bool = True,
+                                          vmin: Optional[float] = None, 
+                                          vmax: Optional[float] = None,
+                                          ax: Optional[plt.Axes] = None) -> Tuple[plt.Figure, plt.Axes]:
         """
         Plot energy landscape using interpolation for randomly sampled points.
         
         Args:
-            - df (pd.DataFrame): DataFrame containing 'eta', 'gamma', and 'energy' columns.
-            - method (str): Interpolation method ('linear', 'cubic', 'nearest').
-            - resolution (int): Grid resolution for interpolation.
-            - dot_color (str): Color for the best-fit points.
-            - title (str): Title for the plot.
-            - cmap (str): Colormap for the energy values.
-            - savepath (str): Path to save the figure.
-            - show (bool): Whether to display the plot.
-            - vmin (float): Minimum value for color scale.
-            - vmax (float): Maximum value for color scale.
+            df: DataFrame containing 'eta', 'gamma', and 'energy' columns.
+            method: Interpolation method ('linear', 'cubic', 'nearest').
+            resolution: Grid resolution for interpolation.
+            dot_color: Color for the best-fit points.
+            title: Title for the plot.
+            cmap: Colormap for the energy values.
+            savepath: Path to save the figure.
+            show: Whether to display the plot.
+            vmin: Minimum value for color scale.
+            vmax: Maximum value for color scale.
+            ax: Existing axis to plot on (if None, creates new figure).
             
         Returns:
-            - fig, ax: Matplotlib figure and axis objects.
+            fig, ax: Matplotlib figure and axis objects.
         """
         from scipy.interpolate import griddata
         
-        # Ensure df has the required columns
-        if not all(col in df.columns for col in ["eta", "gamma", "energy"]):
-            raise ValueError("DataFrame must contain 'eta', 'gamma', and 'energy' columns.")
+        # Validate input
+        required_cols = ["eta", "gamma", "energy"]
+        if not all(col in df.columns for col in required_cols):
+            raise ValueError(f"DataFrame must contain columns: {required_cols}")
         
-        # For each unique (eta, gamma) pair, average the energy
+        # Average energy for each unique (eta, gamma) pair
         grid_df = df.groupby(["eta", "gamma"], as_index=False)["energy"].mean()
         
         # Create regular grid for interpolation
@@ -193,20 +200,25 @@ class PipelineVisualizer:
         # Interpolate
         points = grid_df[["eta", "gamma"]].values
         values = grid_df["energy"].values
-        
         energy_interp = griddata(points, values, (eta_mesh, gamma_mesh), method=method)
         
-        # Create figure
-        fig, ax = plt.subplots(figsize=(6.2, 5.2))
+        # Create or use provided axis
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(6.2, 5.2))
+        else:
+            fig = ax.get_figure()
         
         # Plot interpolated surface
+        vmin = vmin if vmin is not None else values.min()
+        vmax = vmax if vmax is not None else values.max()
+        
         im = ax.imshow(energy_interp,
-                       origin="lower",
-                       extent=[eta_min, eta_max, gamma_min, gamma_max],
-                       aspect="auto",
-                       cmap=cmap,
-                       vmin=vmin if vmin is not None else values.min(),
-                       vmax=vmax if vmax is not None else values.max())
+                      origin="lower",
+                      extent=[eta_min, eta_max, gamma_min, gamma_max],
+                      aspect="auto",
+                      cmap=cmap,
+                      vmin=vmin,
+                      vmax=vmax)
         
         cbar = plt.colorbar(im, ax=ax)
         cbar.set_label("Energy", rotation=270, labelpad=12)
@@ -216,7 +228,7 @@ class PipelineVisualizer:
                   s=8, c=dot_color, edgecolors='black', 
                   linewidths=0.5, alpha=0.7, zorder=5)
         
-        # If best points per subject are needed
+        # Show best points per subject if available
         if "subject" in df.columns:
             df_best = df.loc[df.groupby("subject")["energy"].idxmin()].reset_index(drop=True)
             ax.scatter(df_best["eta"].values, df_best["gamma"].values,
@@ -227,19 +239,162 @@ class PipelineVisualizer:
         ax.set_ylabel("γ")
         ax.set_title(title)
         
+        # Save if path provided
         if savepath is not None:
             fig.savefig(savepath, bbox_inches="tight", dpi=150)
-        
-        if show:
+        elif show and ax is None:  # Only show if not part of subplot
             plt.show()
         
         return fig, ax
+    
+    
+    def compare_visualizations(self, df: pd.DataFrame, 
+                          title_prefix: str = "Energy Landscape",
+                          savepath: Optional[Path] = None,
+                          save_individual: bool = True,
+                          save_format: str = "png") -> plt.Figure:
+        """
+        Create a comparison of different visualization methods.
+        
+        Args:
+            df: DataFrame with 'eta', 'gamma', 'energy' columns
+            title_prefix: Prefix for titles
+            savepath: Base path for saving (without extension)
+            save_individual: Whether to save individual plots
+        
+        Returns:
+            Figure object with comparison plots
+        """
+        # Create comparison figure
+        fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+        
+        # Get data range for consistent coloring
+        grid_df = df.groupby(["eta", "gamma"], as_index=False)["energy"].mean()
+        vmin, vmax = grid_df["energy"].min(), grid_df["energy"].max()
+        
+        # Setup save paths
+        individual_paths = {}
+        if savepath:
+            savepath = Path(savepath)
+            save_dir = savepath.parent
+            save_dir.mkdir(parents=True, exist_ok=True)
+            base_name = savepath.stem
+            
+            if save_individual:
+                individual_paths = {
+                    'voronoi': save_dir / f"{base_name}_voronoi.{save_format}",
+                    'cubic': save_dir / f"{base_name}_cubic.{save_format}",
+                    'linear': save_dir / f"{base_name}_linear.{save_format}"
+                }
+        
+        # 1. Voronoi diagram - DO NOT save individual here
+        self.plot_energy_landscape_voronoi(
+            df, 
+            title=f"{title_prefix} - Voronoi", 
+            show=False, 
+            vmin=vmin, 
+            vmax=vmax,
+            ax=axes[0],
+            savepath=None  # Don't save individual plot here
+        )
+        
+        # 2. Interpolated (cubic) - DO NOT save individual here
+        self.plot_energy_landscape_interpolated(
+            df, 
+            method='cubic', 
+            title=f"{title_prefix} - Cubic Interpolation",
+            show=False, 
+            vmin=vmin, 
+            vmax=vmax,
+            ax=axes[1],
+            savepath=None  # Don't save individual plot here
+        )
+        
+        # 3. Interpolated (linear) - DO NOT save individual here
+        self.plot_energy_landscape_interpolated(
+            df, 
+            method='linear',
+            title=f"{title_prefix} - Linear Interpolation",
+            show=False, 
+            vmin=vmin, 
+            vmax=vmax,
+            ax=axes[2],
+            savepath=None  # Don't save individual plot here
+        )
+        
+        plt.tight_layout()
+        
+        # Save individual plots if requested (create separate figures for this)
+        if save_individual and savepath:
+            for method, path in individual_paths.items():
+                if method == 'voronoi':
+                    fig_ind, _ = self.plot_energy_landscape_voronoi(
+                        df, title=f"{title_prefix} - Voronoi", 
+                        show=False, vmin=vmin, vmax=vmax,
+                        savepath=path
+                    )
+                elif method == 'cubic':
+                    fig_ind, _ = self.plot_energy_landscape_interpolated(
+                        df, method='cubic',
+                        title=f"{title_prefix} - Cubic Interpolation",
+                        show=False, vmin=vmin, vmax=vmax,
+                        savepath=path
+                    )
+                elif method == 'linear':
+                    fig_ind, _ = self.plot_energy_landscape_interpolated(
+                        df, method='linear',
+                        title=f"{title_prefix} - Linear Interpolation",
+                        show=False, vmin=vmin, vmax=vmax,
+                        savepath=path
+                    )
+                plt.close(fig_ind)
+            print(f"Saved individual plots to: {save_dir}")
+        
+        # Save comparison figure
+        if savepath:
+            comparison_path = savepath.parent / f"{base_name}_comparison.{save_format}"
+            fig.savefig(comparison_path, bbox_inches="tight", dpi=150)
+            print(f"Saved comparison plot to: {comparison_path}")
+        
+        plt.show()
+        
+        return fig
+
+
+
+    def _create_boundary_points(self, xlim: List[float], ylim: List[float],
+                                n_boundary: int = 20) -> np.ndarray:
+        """
+        Create boundary points for Voronoi diagram.
+        
+        Args:
+            xlim: X-axis limits [min, max]
+            ylim: Y-axis limits [min, max]
+            n_boundary: Number of boundary points per edge
+            
+        Returns:
+            Array of boundary points
+        """
+        boundary_points = []
+        
+        for i in range(n_boundary):
+            # Bottom and top edges
+            x_pos = xlim[0] + i * (xlim[1] - xlim[0]) / (n_boundary - 1)
+            boundary_points.append([x_pos, ylim[0] - 1])
+            boundary_points.append([x_pos, ylim[1] + 1])
+            
+            # Left and right edges
+            y_pos = ylim[0] + i * (ylim[1] - ylim[0]) / (n_boundary - 1)
+            boundary_points.append([xlim[0] - 1, y_pos])
+            boundary_points.append([xlim[1] + 1, y_pos])
+        
+        return np.array(boundary_points)
     
     def plot_gnm_energy_landscape(self, gnm_results_file: Path, 
                                   visualization_type: str = "voronoi",
                                   density: Optional[int] = None,
                                   savepath: Optional[Path] = None,
-                                  show: bool = True) -> tuple:
+                                  show: bool = True) -> Tuple[plt.Figure, plt.Axes]:
         """
         Plot GNM energy landscape from pipeline results.
         
@@ -276,11 +431,8 @@ class PipelineVisualizer:
         # Create DataFrame
         df = pd.DataFrame(energy_data)
         
-        # Add density information if available
-        if density is not None:
-            title = f"GNM Energy Landscape (Density {density}%)"
-        else:
-            title = "GNM Energy Landscape"
+        # Build title
+        title = f"GNM Energy Landscape (Density {density}%)" if density else "GNM Energy Landscape"
         
         # Plot based on visualization type
         if visualization_type == "voronoi":
@@ -297,12 +449,12 @@ class PipelineVisualizer:
         return fig, ax
     
     def plot_esn_memory_capacity_landscape(self, esn_results_file: Path,
-                                           param1: str = "spectral_radius",
-                                           param2: str = "input_length",
-                                           visualization_type: str = "voronoi",
-                                           density: Optional[int] = None,
-                                           savepath: Optional[Path] = None,
-                                           show: bool = True) -> tuple:
+                                          param1: str = "spectral_radius",
+                                          param2: str = "input_length",
+                                          visualization_type: str = "voronoi",
+                                          density: Optional[int] = None,
+                                          savepath: Optional[Path] = None,
+                                          show: bool = True) -> Tuple[plt.Figure, plt.Axes]:
         """
         Plot ESN memory capacity landscape from pipeline results.
         
@@ -318,7 +470,7 @@ class PipelineVisualizer:
         Returns:
             fig, ax objects
         """
-        # Load ESN results
+        # Load and process ESN results
         df_results = pd.read_csv(esn_results_file)
         
         # Filter out non-data rows
@@ -335,8 +487,7 @@ class PipelineVisualizer:
         if density is not None:
             df_results = df_results[df_results['density_percent'] == density]
         
-        # Create energy landscape data
-        # Note: We use negative memory capacity as "energy" (lower is better)
+        # Create energy landscape data (negative MC as "energy")
         df_landscape = pd.DataFrame({
             "eta": df_results[param1],
             "gamma": df_results[param2],
@@ -347,10 +498,12 @@ class PipelineVisualizer:
         # Drop NaN values
         df_landscape = df_landscape.dropna()
         
+        # Build title
+        title_parts = ["ESN Memory Capacity Landscape"]
         if density is not None:
-            title = f"ESN Memory Capacity Landscape (Density {density}%)\n{param1} vs {param2}"
-        else:
-            title = f"ESN Memory Capacity Landscape\n{param1} vs {param2}"
+            title_parts[0] += f" (Density {density}%)"
+        title_parts.append(f"{param1} vs {param2}")
+        title = "\n".join(title_parts)
         
         # Plot based on visualization type
         if visualization_type == "voronoi":
@@ -364,66 +517,13 @@ class PipelineVisualizer:
                 savepath=savepath, show=show, cmap="coolwarm"
             )
         
-        # Adjust colorbar label for memory capacity
+        # Update colorbar label for memory capacity
         if fig.axes:
             for ax_item in fig.axes:
-                if hasattr(ax_item, 'get_ylabel'):
-                    if ax_item.get_ylabel() == "Energy":
-                        ax_item.set_ylabel("Memory Capacity", rotation=270, labelpad=12)
+                if hasattr(ax_item, 'get_ylabel') and ax_item.get_ylabel() == "Energy":
+                    ax_item.set_ylabel("Memory Capacity", rotation=270, labelpad=12)
         
         return fig, ax
-    
-    def compare_visualizations(self, df: pd.DataFrame, 
-                              title_prefix: str = "Energy Landscape",
-                              savepath: Optional[Path] = None) -> plt.Figure:
-        """
-        Create a comparison of different visualization methods.
-        
-        Args:
-            df: DataFrame with 'eta', 'gamma', 'energy' columns
-            title_prefix: Prefix for titles
-            savepath: Path to save figure
-            
-        Returns:
-            Figure object
-        """
-        fig, axes = plt.subplots(1, 3, figsize=(18, 5))
-        
-        # Get data range for consistent coloring
-        grid_df = df.groupby(["eta", "gamma"], as_index=False)["energy"].mean()
-        vmin, vmax = grid_df["energy"].min(), grid_df["energy"].max()
-        
-        # 1. Voronoi diagram
-        plt.sca(axes[0])
-        self.plot_energy_landscape_voronoi(
-            df, title=f"{title_prefix} - Voronoi", 
-            show=False, vmin=vmin, vmax=vmax
-        )
-        
-        # 2. Interpolated (cubic)
-        plt.sca(axes[1])
-        self.plot_energy_landscape_interpolated(
-            df, method='cubic', 
-            title=f"{title_prefix} - Cubic Interpolation",
-            show=False, vmin=vmin, vmax=vmax
-        )
-        
-        # 3. Interpolated (linear)
-        plt.sca(axes[2])
-        self.plot_energy_landscape_interpolated(
-            df, method='linear',
-            title=f"{title_prefix} - Linear Interpolation",
-            show=False, vmin=vmin, vmax=vmax
-        )
-        
-        plt.tight_layout()
-        
-        if savepath:
-            fig.savefig(savepath, bbox_inches="tight", dpi=150)
-        
-        plt.show()
-        
-        return fig
     
     def create_summary_plot(self, esn_results_file: Optional[Path] = None,
                            gnm_results_file: Optional[Path] = None,
@@ -453,22 +553,24 @@ class PipelineVisualizer:
         
         # Plot ESN results if available
         if esn_results_file and esn_results_file.exists():
-            plt.sca(axes[plot_idx])
+            print("Processing ESN results...")
             self.plot_esn_memory_capacity_landscape(
                 esn_results_file,
                 visualization_type="voronoi",
-                show=False
+                show=False,
+                ax=axes[plot_idx]
             )
             axes[plot_idx].set_title("ESN Memory Capacity")
             plot_idx += 1
         
         # Plot GNM results if available
         if gnm_results_file and gnm_results_file.exists():
-            plt.sca(axes[plot_idx])
+            print("Processing GNM results...")
             self.plot_gnm_energy_landscape(
                 gnm_results_file,
                 visualization_type="voronoi",
-                show=False
+                show=False,
+                ax=axes[plot_idx]
             )
             axes[plot_idx].set_title("GNM Energy Landscape")
         
@@ -477,16 +579,18 @@ class PipelineVisualizer:
         
         if savepath:
             fig.savefig(savepath, bbox_inches="tight", dpi=150)
+            print(f"Saved summary plot to: {savepath}")
         
         plt.show()
         
         return fig
 
 
-# Integration functions for the main pipeline
+# Integration functions
 def visualize_pipeline_results(experiment_dir: Path, 
                               visualization_types: List[str] = ["voronoi"],
-                              save_plots: bool = True) -> Dict[str, Any]:
+                              save_plots: bool = True, 
+                              save_format: Optional[str] = "png") -> Dict[str, Any]:
     """
     Visualize all results from a pipeline experiment.
     
@@ -501,13 +605,14 @@ def visualize_pipeline_results(experiment_dir: Path,
     visualizer = PipelineVisualizer(output_dir=experiment_dir / "visualizations")
     created_plots = {}
     
-    # Find ESN results
+    # Find and process ESN results
     esn_files = list(experiment_dir.glob("esn_mc_results_*.csv"))
     if esn_files:
         latest_esn = max(esn_files, key=lambda x: x.stat().st_mtime)
         
         for viz_type in visualization_types:
-            savepath = visualizer.output_dir / f"esn_landscape_{viz_type}.png" if save_plots else None
+            plot_key = f"esn_{viz_type}"
+            savepath = visualizer.output_dir / f"esn_landscape_{viz_type}.{save_format}" if save_plots else None
             
             try:
                 fig, ax = visualizer.plot_esn_memory_capacity_landscape(
@@ -516,17 +621,19 @@ def visualize_pipeline_results(experiment_dir: Path,
                     savepath=savepath,
                     show=not save_plots
                 )
-                created_plots[f"esn_{viz_type}"] = savepath
+                created_plots[plot_key] = savepath
                 plt.close(fig)
+                print(f"Created {plot_key} visualization")
             except Exception as e:
                 print(f"Failed to create ESN {viz_type} plot: {e}")
     
-    # Find GNM results
+    # Find and process GNM results
     gnm_files = list(experiment_dir.glob("gnm_comprehensive_results.json"))
     if gnm_files:
         for gnm_file in gnm_files:
             for viz_type in visualization_types:
-                savepath = visualizer.output_dir / f"gnm_landscape_{viz_type}.png" if save_plots else None
+                plot_key = f"gnm_{viz_type}"
+                savepath = visualizer.output_dir / f"gnm_landscape_{viz_type}.{save_format}" if save_plots else None
                 
                 try:
                     fig, ax = visualizer.plot_gnm_energy_landscape(
@@ -535,95 +642,125 @@ def visualize_pipeline_results(experiment_dir: Path,
                         savepath=savepath,
                         show=not save_plots
                     )
-                    created_plots[f"gnm_{viz_type}"] = savepath
+                    created_plots[plot_key] = savepath
                     plt.close(fig)
+                    print(f"Created {plot_key} visualization")
                 except Exception as e:
                     print(f"Failed to create GNM {viz_type} plot: {e}")
     
     # Create summary plot if both results exist
     if esn_files and gnm_files:
-        savepath = visualizer.output_dir / "summary_plot.png" if save_plots else None
+        savepath = visualizer.output_dir / f"summary_plot.{save_format}" if save_plots else None
         try:
             fig = visualizer.create_summary_plot(
-                esn_results_file=latest_esn if esn_files else None,
-                gnm_results_file=gnm_files[0] if gnm_files else None,
+                esn_results_file=latest_esn,
+                gnm_results_file=gnm_files[0],
                 savepath=savepath
             )
             created_plots["summary"] = savepath
             plt.close(fig)
+            print("Created summary plot")
         except Exception as e:
             print(f"Failed to create summary plot: {e}")
     
     return created_plots
 
 
-# Example usage functions
-def example_visualize_gnm_sweep():
-    """Example: Visualize GNM parameter sweep results."""
-    # Create sample data for GNM sweep
-    np.random.seed(42)
-    n_samples = 100
+def visualize_gnm_results(df_path: Union[str, Path], 
+                         name_of_energy_metric: str = "MaxCriteria(DegreeKS_ClusteringKS)",
+                         save_dir: Optional[Path] = None,
+                         save_name: Optional[str] = None,
+                         save_format: str = "png",
+                         save_individual: bool = True) -> None:
+    """
+    Visualize GNM parameter sweep results.
     
-    eta_values = np.random.uniform(-5, 0, n_samples)
-    gamma_values = np.random.uniform(0, 1, n_samples)
-    # Simulate energy values with some structure
-    energy_values = np.exp(eta_values) * (1 - gamma_values) + np.random.normal(0, 0.1, n_samples)
+    Args:
+        df_path: Path to the results CSV file
+        name_of_energy_metric: Name of the energy metric column
+        save_dir: Directory to save visualizations
+        save_name: Base name for saved files
+        save_individual: Whether to save individual plots in addition to comparison
+    """
+    # Load and process data
+    gnm_results_df = pd.read_csv(df_path, index_col=False, sep=", ")
     
-    df = pd.DataFrame({
-        'eta': eta_values,
-        'gamma': gamma_values,
-        'energy': energy_values,
-        'subject': np.random.randint(0, 10, n_samples)
-    })
+    # Prepare DataFrame
+    df = gnm_results_df[["eta", "gamma", name_of_energy_metric]].copy()
+    df.columns = ["eta", "gamma", "energy"]
     
+    # Convert to numeric, handling string format
+    df["eta"] = pd.to_numeric(df["eta"], errors='coerce')
+    df["gamma"] = pd.to_numeric(df["gamma"], errors='coerce')
+    
+    # Handle energy values (remove trailing comma if present)
+    energy_values = df["energy"].astype(str).str.rstrip(',')
+    df["energy"] = pd.to_numeric(energy_values, errors='coerce')
+    
+    # Drop any rows with NaN values
+    df = df.dropna()
+    
+    if df.empty:
+        raise ValueError("No valid data after processing")
+    
+    # Initialize visualizer
     visualizer = PipelineVisualizer()
     
-    # Compare visualization methods
-    visualizer.compare_visualizations(df, title_prefix="GNM Parameter Sweep")
-
-
-def example_visualize_esn_results():
-    """Example: Visualize ESN hyperparameter optimization results."""
-    # Create sample data for ESN results
-    np.random.seed(42)
-    n_samples = 150
+    # Setup save path
+    save_path = None
+    if save_dir is not None:
+        save_dir = Path(save_dir)
+        save_dir.mkdir(parents=True, exist_ok=True)
+        
+        if save_name is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            save_name = f"gnm_landscape_{timestamp}"
+        
+        save_path = save_dir / save_name
     
-    spectral_radius = np.random.uniform(0.5, 2.0, n_samples)
-    input_length = np.random.choice([1000, 2000, 4000], n_samples)
-    # Simulate memory capacity with peak around sr=0.99
-    mc_values = np.exp(-2 * (spectral_radius - 0.99)**2) + np.random.normal(0, 0.05, n_samples)
+    # Create visualizations
+    print(f"Creating visualizations for {len(df)} data points...")
+    print(f"Energy range: {df['energy'].min():.4f} to {df['energy'].max():.4f}")
     
-    df = pd.DataFrame({
-        'eta': spectral_radius,  # Using eta for x-axis
-        'gamma': input_length,    # Using gamma for y-axis
-        'energy': -mc_values,     # Negative MC as energy
-        'subject': np.random.randint(0, 20, n_samples)
-    })
-    
-    visualizer = PipelineVisualizer()
-    
-    # Create Voronoi plot
-    fig, ax = visualizer.plot_energy_landscape_voronoi(
+    visualizer.compare_visualizations(
         df, 
-        title="ESN Memory Capacity Landscape\n(Spectral Radius vs Input Length)",
-        cmap="coolwarm",
-        show_points=True
+        title_prefix="GNM Parameter Sweep", 
+        savepath=save_path,
+        save_individual=save_individual, 
+        save_format=save_format
     )
-    
-    # Adjust labels
-    ax.set_xlabel("Spectral Radius")
-    ax.set_ylabel("Input Length")
 
 
-
+# Example usage
 if __name__ == "__main__":
-    print("Testing visualization module...")
+    print("Testing improved visualization module...")
     
-    # Run examples
+    # Test with GNM results
     print("\n1. Testing GNM visualization:")
-    example_visualize_gnm_sweep()
     
-    print("\n2. Testing ESN visualization:")
-    example_visualize_esn_results()
+    name_of_energy_metric = "MaxCriteria(DegreeKS_ClusteringKS)"
+    print(f"Using energy metric: {name_of_energy_metric}")
+    
+    # Update with your actual file path
+    df_name = "/Users/adrian/Documents/01_projects/14_4D_lab/output/default_folder/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv"
+    
+    # Extract folder name for organization
+    folder_name = Path(df_name).stem
+    save_path = Path("output/visualizations") / folder_name
+    
+    try:
+        visualize_gnm_results(
+            df_path=df_name,
+            name_of_energy_metric=name_of_energy_metric,
+            save_dir=save_path,
+            save_format="pdf", 
+            save_individual=True  # Save both individual and comparison plots
+        )
+        print(f"\nVisualization completed successfully!")
+        print(f"Results saved to: {save_path}")
+    except Exception as e:
+        print(f"Error during visualization: {e}")
+        import traceback
+        traceback.print_exc()
     
     print("\nVisualization tests completed!")

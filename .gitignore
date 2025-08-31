@@ -211,8 +211,8 @@ __marimo__/
 
 # data/
 # data_*
-# X_*
-# OLD_*
+X_*
+OLD_*
 # *.npy
 # *.csv
 # summary_session_*.json 
@@ -240,3 +240,5 @@ wandb*.json
 *.wandb 
 sweep-*/ */
 config*.yaml
+visualizations/
+output/

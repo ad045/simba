@@ -122,8 +122,8 @@ class RunLogger:
             if isinstance(exp.get("run_types"), set):
                 exp["run_types"] = list(exp["run_types"])
         
-        # Save session summary
-        self._save_session_summary()
+        # # Save session summary
+        # self._save_session_summary()
         
         # Log to wandb if available
         if self._wandb_available:
@@ -235,10 +235,10 @@ class RunLogger:
         with open(path, 'a') as f:
             f.write(json.dumps(record, default=str) + '\n')
     
-    def _save_session_summary(self) -> None:
-        """Save the session summary to JSON."""
-        with open(self.session_summary_path, 'w') as f:
-            json.dump(self.session_summary, f, indent=2, default=str)
+    # def _save_session_summary(self) -> None:
+    #     """Save the session summary to JSON."""
+    #     with open(self.session_summary_path, 'w') as f:
+    #         json.dump(self.session_summary, f, indent=2, default=str)
     
     def _log_to_wandb(self, run_type: str, parameters: Dict, results: Dict) -> None:
         """Log to wandb if available."""
@@ -266,14 +266,14 @@ class RunLogger:
             datetime.now() - datetime.fromisoformat(self.session_start)
         ).total_seconds()
         
-        self._save_session_summary()
+        # self._save_session_summary()
         
         print(f"\nLogging session completed:")
         print(f"  Session ID: {self.session_id}")
         print(f"  Total runs logged: {self.session_summary['total_runs']}")
-        print(f"  Session log: {self.all_runs_path}")
-        print(f"  Session summary: {self.session_summary_path}")
-        print(f"  Global log: {self.global_log_path}")
+        # print(f"  Session log: {self.all_runs_path}")
+        # print(f"  Session summary: {self.session_summary_path}")
+        # print(f"  Global log: {self.global_log_path}")
     
     def get_session_stats(self) -> Dict[str, Any]:
         """Get statistics for the current session."""
