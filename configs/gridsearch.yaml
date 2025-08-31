@@ -1,0 +1,30 @@
+# Inherit base settings
+base_config: "configs/default.yaml"
+
+search:
+  type: "grid"  # or "random"
+  n_jobs: -1    # Parallel jobs (-1 = use all cores)
+  verbose: 2
+  save_results: "experiments/grid_search_results.pkl"
+
+# Parameters to search over
+param_grid:
+  esn:
+    spectral_radius: [0.5, 0.8, 1.0, 1.2, 1.5]
+    input_scaling: [0.1, 0.5, 1.0, 2.0]
+    regularization_alpha: [1e-6, 1e-4, 1e-2]
+  
+  gnm:
+    eta: [0.1, 0.5, 1, 2, 5, 10]
+    gamma: [-5, -3, -1, 0, 1, 3, 5]
+  
+  data:
+    density_threshold: [0.1, 0.15, 0.2]
+
+# Fixed parameters during search
+fixed_params:
+  esn:
+    leakage_rate: 1.0
+    n_runs: 5
+  gnm:
+    wiring_rule: "matching_index"

@@ -216,6 +216,7 @@ OLD_*
 *.npy
 *.csv
 summary_session_*.json 
+session_summary_*.json
 run_info_*.txt
 sweep_results.json
 

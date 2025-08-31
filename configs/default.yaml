@@ -1,0 +1,22 @@
+data:
+  connectome_resolution: 68
+  density_threshold: 0.2
+  consensus_threshold: 0.6
+
+gnm:
+  eta_range: [0.1, 10.0]
+  gamma_range: [-5.0, 5.0]
+  n_grid_points: 50
+  wiring_rule: "matching_index"
+
+esn:
+  spectral_radius: 1.0
+  input_scaling: 1.0
+  leakage_rate: 1.0
+  n_runs: 5
+  regularization: "ridge"
+
+output:
+  save_intermediate: true
+  figure_format: "png"
+  verbosity: "INFO"
