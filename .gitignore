@@ -215,6 +215,9 @@ X_*
 OLD_*
 *.npy
 *.csv
+summary_session_*.json 
+run_info_*.txt
+sweep_results.json
 
 *.png 
 *.jpg
@@ -227,6 +230,6 @@ conn2res/
 output/
 # neonatal_generative_network_modeling-main/
 neonatal_generative_network_modeling-main/
-
+GenerativeNetworkModels_2/ 
 
 wandb/
