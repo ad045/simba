@@ -147,8 +147,8 @@ class PipelineVisualizer:
         
         if savepath is not None:
             fig.savefig(savepath, bbox_inches="tight", dpi=150)
-        
-        if show:
+        elif show: 
+            # only show if not saving, such that return works correctly
             plt.show()
             
         
@@ -233,7 +233,7 @@ class PipelineVisualizer:
         if savepath is not None:
             fig.savefig(savepath, bbox_inches="tight", dpi=150)
         
-        if show:
+        elif show:
             plt.show()
         
         return fig, ax
@@ -291,6 +291,7 @@ class PipelineVisualizer:
                 df, title=title, savepath=savepath, show=show,
                 cmap="viridis", show_points=True
             )
+            plt.show()
         else:
             fig, ax = self.plot_energy_landscape_interpolated(
                 df, method='cubic', title=title, 
@@ -446,17 +447,6 @@ class PipelineVisualizer:
                     savepath=savepath / "linear_interpolation.png" if savepath else None
                 )
         
-        # Set common properties        
-        plt.tight_layout()
-        
-        # if savepath:
-        #     fig.savefig(savepath / "comparison.png", bbox_inches="tight", dpi=150)
-
-        # plt.show()
-        
-        # return fig
-        
-        
         # Save the comparison figure
         if savepath:
             comparison_path = savepath.parent / f"{base_name}_comparison.png"
@@ -497,6 +487,7 @@ class PipelineVisualizer:
         
         # Plot ESN results if available
         if esn_results_file and esn_results_file.exists():
+            print("FOR DEBUGGING: ESN results file found, plotting...")
             plt.sca(axes[plot_idx])
             self.plot_esn_memory_capacity_landscape(
                 esn_results_file,
@@ -558,7 +549,7 @@ def visualize_pipeline_results(experiment_dir: Path,
                     latest_esn,
                     visualization_type=viz_type,
                     savepath=savepath,
-                    show=not save_plots
+                    show= not save_plots
                 )
                 created_plots[f"esn_{viz_type}"] = savepath
                 plt.close(fig)
@@ -638,7 +629,6 @@ def visualize_gnm_results(df_path,
         if save_name is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             # save_name = f"gnm_landscape_{timestamp}"
-            
         
         # Don't add extension - let the function handle it
         # save_path = save_dir / save_name
@@ -747,14 +737,23 @@ if __name__ == "__main__":
     # /Users/adrian/Documents/01_projects/14_4D_lab/output/default_folder/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv" 
     # /Users/adrian/Documents/01_projects/14_4D_lab/output/None/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv"
     folder_name = df_name.split("/")[-1].replace(".csv","")
-    import os 
-    os.makedirs("output/visualizations/"+folder_name, exist_ok=True)
+    
+    save_path = Path("output/visualizations/") / folder_name
+    
+    # Is in theory done in function already: 
+    # import os 
+    # os.makedirs(save_path, exist_ok=True)
+    
     visualize_gnm_results(
         df_path=df_name,
         name_of_energy_metric=name_of_energy_metric,
-        save_dir=Path("output/visualizations/"+folder_name),
+        save_dir=save_path,
+        
         # save_name=folder_name
     )
+    
+    # create_summary_plot = PipelineVisualizer().create_summary_plot
+    
 
     # print("\n2. Testing ESN visualization:")
     # example_visualize_esn_results()
