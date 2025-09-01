@@ -2,11 +2,11 @@
 Main pipeline fully integrated with GNM library and centralized logging.
 Clean version with proper logging integration.
 """
+# -> Used at least for main_pipeline_2.py
 
 import argparse
 import sys
-from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 import json
 import time
 import numpy as np
@@ -14,7 +14,7 @@ import torch
 import pandas as pd
 
 # GNM library imports
-from gnm import fitting, evaluation, defaults, utils
+from gnm import fitting # , evaluation, defaults, utils
 from src.imported_libraries.GenerativeNetworkModels_2.src.gnm.model import GenerativeNetworkModel, BinaryGenerativeParameters
 
 # Import our optimized modules
@@ -931,45 +931,51 @@ def main():
     """Main entry point with command-line interface."""
     parser = argparse.ArgumentParser(description="GNM-Optimized Connectome Analysis Pipeline")
     
-    parser.add_argument("command", choices=["sweep", "comprehensive", "full", "test", "minimal_test", "esn"],
-                   help="Command to run")
-    
-    parser.add_argument("--config", choices=["quick_test", "comprehensive", "rule_comparison", "minimal_test"],
-                       default="quick_test", help="Configuration preset")
+    # Choice between GNM (different options), and ESN
+    parser.add_argument("command", choices=["sweep", "esn", "test"], # "full", "comprehensive", "test", "minimal_test",
+                   help="Command to run: Either GNM (different versions) or ESN")
     
     parser.add_argument("--experiment-name", help="Custom experiment name")
-    
-    parser.add_argument("--compare-rules", action="store_true",
-                       help="Compare different generative rules")
-    
-    parser.add_argument("--fit-weights", action="store_true",
-                       help="Optimize edge weights")
-    
-    parser.add_argument("--wandb-project", default="GNM_Pipeline",
-                       help="Wandb project name")
     
     parser.add_argument("--no-wandb", action="store_true",
                        help="Disable wandb logging")
     
-    parser.add_argument("--default_wandb_project_name", default="GNMs",
+    parser.add_argument("--wandb-project", default="GNM_Pipeline",
+                       help="Wandb project name") # TODO: Not sure how well wandb works for ESN. 
+    
+    parser.add_argument("--default_wandb_project_name", default="GNMs", # TODO: Deprecated! Remove... 
                        help="Default wandb project name")
     
-    # For random sampling option
+    
+    # GNM-specific arguments: Configuration
+    parser.add_argument("--config", choices=["quick_test", "comprehensive", "rule_comparison", "minimal_test"],
+                       default="quick_test", help="Choice of configuration")
+    
+    parser.add_argument("--compare-rules", action="store_true",
+                       help="Compare different generative rules. Not perfectly implemented yet.")
+    
+    parser.add_argument("--fit-weights", action="store_true",
+                       help="Optimize edge weights. Not perfectly implemented yet.")
+
+    
+    # GNM-specific arguments: Random sampling option
     parser.add_argument("--random-sample", action="store_true",
                     help="Use random sampling instead of grid search when wandb is disabled")
 
     parser.add_argument("--n-random-samples", type=int, default=30,
                     help="Number of random samples for parameter sweep (default: 30)")
 
+
     # ESN-specific arguments
     parser.add_argument("--esn-search-mode", choices=["grid", "random_sample"], 
                     default="random_sample", help="ESN search mode")
     
     parser.add_argument("--esn-random-sample-size", type=int, 
-                    help="Number of random samples for ESN random search")
+                    help="Number of random samples for ESN random search. Will be multiplied by number of subjects - i.e. setting this parameter to 50 will lead to 3500 tasks for 70 subjects.")
+    
     
     args = parser.parse_args()
-    
+
     
     # Load configuration
     if args.config == "quick_test":
@@ -1092,16 +1098,21 @@ if __name__ == "__main__":
     
         
     """
-        ### ESN ONLY
+        ### ESN ONLY -> this works. TODO: Test with more args. 
         python src/connectome_analysis/main_pipeline_2.py esn --experiment-name "my_esn_analysis"
-        python src/connectome_analysis/main_pipeline_2.py esn --esn-search-mode grid --no-wandb
+        python src/connectome_analysis/main_pipeline_2.py esn --esn-search-mode grid --no-wandb --experiment-name "grid_esn_analysis"
+        python src/connectome_analysis/main_pipeline_2.py esn --esn-search-mode grid --no-wandb --experiment-name "gnm"
         
         ### RANDOM SEARCH
         python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb --random-sample --experiment-name "random_local"
         
         ### GRID SEARCH 
-        python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb 
+        python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb --compare-rules --config minimal_test --experiment-name "gnm"
+        python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb --experiment-name "gnm"
         
         
-     
+        # -> This works. 
+        python src/connectome_analysis/main_pipeline_2.py esn --esn-search-mode random_sample --esn-random-sample-size 50 --no-wandb --experiment-name "esn_main_pipeline_2"
+        
+        
     """

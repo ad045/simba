@@ -211,8 +211,8 @@ __marimo__/
 
 data/
 data_*
-# X_*
-# OLD_*
+X_*
+OLD_*
 
 *.npy
 *.csv
@@ -227,6 +227,7 @@ sweep_results.json
 *.jpeg
 *.svg 
 *.pdf 
+*.html
 
 # BCT/
 # conn2res/

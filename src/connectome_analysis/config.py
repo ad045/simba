@@ -1,14 +1,12 @@
 """
 Configuration management using GNM library structures.
 """
+# -> Used at least for main_pipeline_2_gnm_esn_landscape.py and for main_pipeline_2.py (esn part)
 
 from pathlib import Path
-from itertools import product
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
-import numpy as np
 import torch
-import json
 
 # Import GNM configuration structures
 from gnm import fitting, generative_rules, evaluation, weight_criteria

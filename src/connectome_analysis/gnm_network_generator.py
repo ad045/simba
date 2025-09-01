@@ -1,25 +1,22 @@
 """
 Optimized GNM-based network generation fully leveraging Edward's GNM library.
 """
-# Replaced by /Users/adrian/Documents/01_projects/14_4D_lab/src/models/gnm/generator.py
+# -> Used at least for main_pipeline_2_gnm_esn_landscape.py
 
 import numpy as np
 import torch
 import warnings
-from typing import Optional, Union, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass
-from pathlib import Path
 
 # Import everything we need from GNM library
 from gnm import (
     fitting, 
     generative_rules, 
     evaluation, 
-    defaults,
-    utils,
     weight_criteria
 )
-from gnm.model import BinaryGenerativeParameters
+# from gnm.model import BinaryGenerativeParameters
 
 
 @dataclass

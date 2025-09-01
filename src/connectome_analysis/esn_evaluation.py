@@ -2,6 +2,7 @@
 ESN evaluation module for the connectome analysis pipeline.
 Handles memory capacity evaluation and hyperparameter optimization.
 """
+# -> Used at least for main_pipeline_2_gnm_esn_landscape.py and for main_pipeline_2.py (esn part)
 
 import os
 import time
@@ -11,12 +12,11 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any, Union
 from datetime import datetime
-from collections.abc import Iterable
 import random
 import numpy as np
 import pandas as pd
 
-from config import ConfigManager, ESNConfig
+from config import ConfigManager
 from data_loader import DataLoader
 
 # Import your existing ESN functions
@@ -24,37 +24,36 @@ try:
     from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome
     from src.utils.saving_and_finding_files import time_stamp_for_saving
     from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
-    # Import the new GNM network generator
-    from gnm_network_generator import GNMGenerator, GNMParameters
-    from gnm_generation import WiringRule
+    
 except ImportError as e:
     warnings.warn(f"Could not import ESN modules: {e}")
+    
     # Define dummy functions for testing
-    def evaluate_memory_capacity_from_connectome(*args, **kwargs):
-        return {"mc_mean": np.random.random(), "mc_std": 0.1, "hparams": kwargs}
+    # def evaluate_memory_capacity_from_connectome(*args, **kwargs):
+    #     return {"mc_mean": np.random.random(), "mc_std": 0.1, "hparams": kwargs}
     
-    def time_stamp_for_saving():
-        return datetime.now().strftime("%Y%m%d_%H%M%S")
+    # def time_stamp_for_saving():
+    #     return datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    def _summarize_hparam_space(hparams):
-        return f"Grid with {len(hparams)} combinations"
+    # def _summarize_hparam_space(hparams):
+    #     return f"Grid with {len(hparams)} combinations"
     
-    def _write_run_info_txt(path, **kwargs):
-        with open(path, 'w') as f:
-            for k, v in kwargs.items():
-                f.write(f"{k}: {v}\n")
+    # def _write_run_info_txt(path, **kwargs):
+    #     with open(path, 'w') as f:
+    #         for k, v in kwargs.items():
+    #             f.write(f"{k}: {v}\n")
     
-    # Dummy GNM classes
-    class GNMNetworkGenerator:
-        def __init__(self): pass
-        def generate_matched_network(self, *args, **kwargs): return np.random.randint(0, 2, (68, 68))
+    # # Dummy GNM classes
+    # class GNMNetworkGenerator:
+    #     def __init__(self): pass
+    #     def generate_matched_network(self, *args, **kwargs): return np.random.randint(0, 2, (68, 68))
     
-    class GNMParameters:
-        def __init__(self, **kwargs): 
-            for k, v in kwargs.items(): setattr(self, k, v)
+    # class GNMParameters:
+    #     def __init__(self, **kwargs): 
+    #         for k, v in kwargs.items(): setattr(self, k, v)
     
-    class WiringRule:
-        MATCHING_INDEX = "matching_index"
+    # class WiringRule:
+    #     MATCHING_INDEX = "matching_index"
 
 
 class ESNEvaluator:
@@ -98,8 +97,7 @@ class ESNEvaluator:
             Tuple of (mc_result_dict, timing_dict)
         """
         if timing_flag:
-            t0 = time.perf_counter()
-            t_metrics = 0.0  # Placeholder for potential graph metrics timing
+            t_metrics = 0.0  # Placeholder for potential graph metrics timing: TODO
         
         # Set up hyperparameters with defaults
         esn_hparams = {
@@ -153,6 +151,8 @@ class ESNEvaluator:
             timing_dict = {"subject": subj_idx}
         
         return mc_result_dict, timing_dict
+    
+
     
     def evaluate_single_subject(self, 
                                subject_idx: int,

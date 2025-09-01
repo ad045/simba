@@ -1,6 +1,5 @@
 # Modelled after damicelli's work. 
-# THIS CODE IS USED CURRENTLY 
-
+# -> Used at least for main_pipeline_2_gnm_esn_landscape.py and for main_pipeline_2.py (esn part)
 
 import numpy as np
 from typing import List, Tuple, Dict, Optional

@@ -3,6 +3,8 @@ from collections.abc import Iterable
 from pathlib import Path
 
 
+# -> Used at least for main_pipeline_2.py (esn part)
+
 def _summarize_hparam_space(hparam_grid: list[dict]) -> dict:
     """
     Build a summary of unique values for each hyperparameter across the grid.

@@ -3,6 +3,7 @@ Visualization module for connectome analysis pipeline.
 Integrates energy landscape plotting for both GNM and ESN results.
 """
 
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
