@@ -209,27 +209,27 @@ __marimo__/
 .DS_Store
 .DS_*
 
-# data/
-# data_*
-X_*
-OLD_*
-# *.npy
-# *.csv
-# summary_session_*.json 
-# session_summary_*.json
-# run_info_*.txt
-# sweep_results.json
+data/
+data_*
+# X_*
+# OLD_*
+
+*.npy
+*.csv
+summary_session_*.json 
+session_summary_*.json
+run_info_*.txt
+sweep_results.json
 
 
-# *.png 
-# *.jpg
-# *.jpeg
-# *.svg 
-# *.pdf 
+*.png 
+*.jpg
+*.jpeg
+*.svg 
+*.pdf 
 
 # BCT/
 # conn2res/
-# output/
 # # neonatal_generative_network_modeling-main/
 # neonatal_generative_network_modeling-main/
 # GenerativeNetworkModels_2/ 
@@ -238,7 +238,10 @@ wandb/
 wandb*.json
 *.txt
 *.wandb 
+*wandb*
 sweep-*/ */
 config*.yaml
+
 visualizations/
 output/
+*output*

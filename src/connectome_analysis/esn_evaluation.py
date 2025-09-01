@@ -496,11 +496,11 @@ def create_esn_evaluator(config_path: Optional[Union[str, Path]] = None,
 # Example usage and testing
 if __name__ == "__main__":
     # Example: Quick test with small hyperparameter grid
-    from config import get_quick_test_config
+    from config import get_gnm_quick_test_config # get_quick_test_config
     from data_loader import create_data_loader
     
     # Set up configuration for testing
-    config = get_quick_test_config()
+    config = get_gnm_quick_test_config()
     data_loader = create_data_loader(config_manager=config)
     evaluator = ESNEvaluator(config, data_loader)
     

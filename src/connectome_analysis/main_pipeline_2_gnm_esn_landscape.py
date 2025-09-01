@@ -530,12 +530,12 @@ def main():
         results_file = exp_dir / "landscape_results.json"
         save_path = exp_dir / "landscape_visualization.png"
         
-        pipeline.visualize_landscape(
-            results_file=results_file,
-            visualization_type="heatmap",
-            show_empirical=True,
-            save_path=save_path
-        )
+        # pipeline.visualize_landscape(
+        #     results_file=results_file,
+        #     visualization_type="heatmap",
+        #     show_empirical=True,
+        #     save_path=save_path
+        # )
         
         print("\nPipeline completed successfully!")
         print(f"Results directory: {exp_dir}")
@@ -559,5 +559,16 @@ if __name__ == "__main__":
     
     
     
-    python main_pipeline_2_gnm_esn_landscape.py --use-defaults --n-eta 10 --n-gamma 10
+    python src/connectome_analysis/main_pipeline_2_gnm_esn_landscape.py --use-defaults --n-eta 10 --n-gamma 10
+
+    python src/connectome_analysis/enhanced_landscape_viz.py path/to/landscape_results.json
+
+    python src/connectome_analysis/main_pipeline_2_gnm_esn_landscape.py \
+    --eta-min -8 --eta-max 0 \
+    --gamma-min 0.1 --gamma-max 8 \
+    --n-eta 30 --n-gamma 30 \
+    --density 14 \
+    --n-subjects 10 \
+    --esn-spectral-radius 0.99 \
+    --esn-input-length 2000
     """
