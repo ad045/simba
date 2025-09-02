@@ -21,7 +21,7 @@ class PlotManager:
     def _setup_matplotlib(self):
         """Apply global matplotlib settings."""
         # plt.style.use(self.plot_config.style)
-        plt.rcParams.update({
+        plt.rcParams.update({                                           # TODO: Add these settings again... 
             # 'figure.dpi': self.plot_config.dpi,
             # 'savefig.dpi': self.plot_config.dpi,
             # 'font.family': self.plot_config.font_family,
