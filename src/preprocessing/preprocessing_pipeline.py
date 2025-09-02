@@ -128,7 +128,7 @@ def save_dataframe(path: Path, df: pd.DataFrame) -> None:
 def step_setup_paths() -> dict:
     env = setup()
     DATA_PATH: Path = env["DATA_PATH"]
-    OUTPUT_PATH: Path = env["OUTPUT_PATH"] / "01_notebook_experiments"
+    OUTPUT_PATH: Path = env["OUTPUT_PATH"] / "preprocessing"
     PREPROCESSED_PATH: Path = env["PREPROCESSED_PATH"] / "01_first_analysises"
     INPUT_DATA_PATH: Path = env["PREPROCESSED_PATH"] / "00_just_converted_for_matlab_and_python"
 
@@ -310,7 +310,7 @@ def step_plot_consensus(
     im1 = ax1.imshow(consensus_conn_bin, cmap="Blues")
     fig.colorbar(im1, ax=ax1)
     ax1.set(xlabel="Region Index", ylabel="Region Index",
-            title=f"Consensus (Binarized @ {analyze_density}%)\nDensity: {density_bin*100:.2f}%")
+            title=f"Consensus (Binarized at {analyze_density}%)\nDensity: {density_bin*100:.2f}%")
 
     ax2 = fig.add_subplot(1, 2, 2)
     im2 = ax2.imshow(consensus_conn_all, cmap="Blues")
@@ -325,7 +325,7 @@ def step_plot_consensus(
 
     outpng = paths["OUTPUT_PATH"] / f"consensus_connectomes_compare_density_{analyze_density}.png"
     fig.tight_layout()
-    fig.savefig(outpng, dpi=200)
+    fig.savefig(outpng) 
     print(f"Saved plot: {outpng}")
 
 
@@ -387,14 +387,24 @@ def main():
             analyze_density=cfg.analyze_density,
         )
 
+    # Print summary to console
     print("\nPipeline completed successfully. Summary:")
-    print(json.dumps({
+    summary = {
         "resolution": cfg.resolution,
         "goal_densities": cfg.goal_densities,
         "analyze_density": cfg.analyze_density,
         "plots": cfg.do_plots,
         "paths": {k: str(v) for k, v in paths.items()},
-    }, indent=2))
+    }
+    print(json.dumps(summary, indent=2))
+
+    # Save summary to a text file
+    output_file = paths["OUTPUT_PATH"] / "preprocessing_pipeline_summary.json"
+    with open(output_file, 'w') as f:
+        json.dump(summary, f, indent=2)
+
+    print(f"\nSummary saved to: {output_file}")
+
 
 
 if __name__ == "__main__":

@@ -39,7 +39,7 @@ def setup():
         sys.path.insert(0, str(src))
         print("Added src path.")
 
-    # 
+    # Enable autoreload if in IPython (for Jupyter notebooks)
     ip = get_ipython()
     if ip:
         try:
@@ -59,7 +59,7 @@ def setup():
     )
 
 
-# Copy this into notebooks:
+# Copy this into notebooks (not relevant for scripts):
 """
 
 ## Setup notebook, and get paths 
