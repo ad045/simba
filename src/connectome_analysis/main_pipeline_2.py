@@ -930,9 +930,8 @@ class GNMPipelineOrchestrator:
 def main():
     """Main entry point with command-line interface."""
     parser = argparse.ArgumentParser(description="GNM-Optimized Connectome Analysis Pipeline")
-    
     # Choice between GNM (different options), and ESN
-    parser.add_argument("command", choices=["sweep", "esn", "test"], # "full", "comprehensive", "test", "minimal_test",
+    parser.add_argument("command", choices=["sweep", "esn", "test", "full", "gnm_esn_grid"], # "full", "comprehensive", "test", "minimal_test",
                    help="Command to run: Either GNM (different versions) or ESN")
     
     parser.add_argument("--experiment-name", help="Custom experiment name")
@@ -1077,6 +1076,22 @@ def main():
             )
             print(esn_message)
             
+        elif args.command == "full":
+            results = orchestrator.run_full_pipeline(
+                esn_experiment_name=args.experiment_name,
+                gnm_experiment_name=args.experiment_name
+            )
+            print(f"Full pipeline completed successfully!")
+            
+        elif args.command == "gnm_esn_grid": 
+            results = orchestrator.run_gnm_esn_grid_evaluation(
+                experiment_name=args.experiment_name
+            )
+            print(f"GNM-ESN grid evaluation completed successfully!")
+        
+        print("Final Results:")
+        print(results)
+        print("----")
         # Always finalize logger at the end
         orchestrator.logger.finalize()
         
@@ -1101,10 +1116,10 @@ if __name__ == "__main__":
         ### ESN ONLY -> this works. TODO: Test with more args. 
         python src/connectome_analysis/main_pipeline_2.py esn --experiment-name "my_esn_analysis"
         python src/connectome_analysis/main_pipeline_2.py esn --esn-search-mode grid --no-wandb --experiment-name "grid_esn_analysis"
-        python src/connectome_analysis/main_pipeline_2.py esn --esn-search-mode grid --no-wandb --experiment-name "gnm"
+        python src/connectome_analysis/main_pipeline_2.py esn --esn-search-mode grid --no-wandb --experiment-name "esn"
         
         ### RANDOM SEARCH
-        python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb --random-sample --experiment-name "random_local"
+        python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb --random-sample --experiment-name "gnm_random_local"
         
         ### GRID SEARCH 
         python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb --compare-rules --config minimal_test --experiment-name "gnm"
@@ -1113,6 +1128,12 @@ if __name__ == "__main__":
         
         # -> This works. 
         python src/connectome_analysis/main_pipeline_2.py esn --esn-search-mode random_sample --esn-random-sample-size 50 --no-wandb --experiment-name "esn_main_pipeline_2"
+
+        ### GNM-ESN GRID EVALUATION (Not sure yet if it works)
+        python src/connectome_analysis/main_pipeline_2.py gnm_esn_grid --experiment-name "gnm_esn_grid" --no-wandb
         
-        
+        # TODO: "full" and "gnm_esn_grid" commands not tested yet.
     """
+
+
+   

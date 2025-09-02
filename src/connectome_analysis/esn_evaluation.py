@@ -20,13 +20,14 @@ from config import ConfigManager
 from data_loader import DataLoader
 
 # Import your existing ESN functions
-try:
-    from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome
-    from src.utils.saving_and_finding_files import time_stamp_for_saving
-    from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
+# try:
+
+from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes 
+from src.utils.saving_and_finding_files import time_stamp_for_saving
+from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
     
-except ImportError as e:
-    warnings.warn(f"Could not import ESN modules: {e}")
+# except ImportError as e:
+#     warnings.warn(f"Could not import ESN modules: {e}")
     
     # Define dummy functions for testing
     # def evaluate_memory_capacity_from_connectome(*args, **kwargs):

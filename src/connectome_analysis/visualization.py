@@ -743,6 +743,13 @@ if __name__ == "__main__":
     print(f"Using energy metric: {name_of_energy_metric}")
     
     # Update with your actual file path
+    # df_name = "/Users/adrian/Documents/01_projects/14_4D_lab/output/default_folder/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv"
+    # df_name = "/Users/adrian/Documents/01_projects/14_SAFETY_COPY/V2_before_deleting_the_too_big_commit/OLD_output_2/02_esns_on_observed_weighted_connectomes/esn_adaptive_resolution68_2025-08-15_16-57-22/gnm_mc_results_2025-08-15_16-57-22_iter0.csv"
+    
+    # One old file (not the hyper large one)
+    df_name = "/Users/adrian/Documents/01_projects/14_4D_lab/OLD_output_3/default_folder/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv"
+    
+    # Random search (new one, currently still being created)
     df_name = "/Users/adrian/Documents/01_projects/14_4D_lab/output/default_folder/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv"
     
     # Extract folder name for organization
