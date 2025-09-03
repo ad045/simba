@@ -94,3 +94,26 @@ def evaluate_memory_capacity_from_connectome(connectome: np.ndarray,
                 "random_state": random_state,
                 }
             }
+    
+    #     result = {
+    #     "mc_mean": np.mean(mc_of_runs),
+    #     "mc_std": np.std(mc_of_runs),
+    #     "mean_mc_of_individual_runs": list(mc_of_runs),
+    #     "mc_r2_5_to_25": mc_r2_5_to_25,
+    #     "hparams": {
+    #         "spectral_radius": spectral_radius,
+    #             "n_lags": n_lags,
+    #             "train_len": train_len,
+    #             "test_len": test_len,
+    #             "n_runs": n_runs,
+    #             "input_scaling": input_scaling,
+    #             "regression_method": regression_method,
+    #             "n_transient": n_transient,
+    #             "leak_rate": leak_rate,
+    #             "bias": bias,
+    #             "random_state": random_state,
+    #             }
+    #     }
+
+    # return result
+        

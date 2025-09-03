@@ -1,3 +1,6 @@
+
+   
+   
 """
 Main pipeline fully integrated with GNM library and centralized logging.
 Clean version with proper logging integration.
@@ -24,8 +27,9 @@ from data_loader import DataLoader
 from esn_evaluation import ESNEvaluator
 from run_logger import RunLogger, get_logger
 
+from jaxtyping import Float
 
-class GNMPipelineOrchestrator:
+class GNMandESNPipelineOrchestrator:
     """Pipeline orchestrator with integrated logging."""
     
     def __init__(self, config: ConfigManager):
@@ -275,15 +279,18 @@ class GNMPipelineOrchestrator:
         
         return results
     
-
+    
     def run_gnm_parameter_sweep(self,
-                           target_network: Optional[torch.Tensor] = None,
+                           target_network: Optional[torch.Tensor] = None, # ATTENTION: If this is none, then the first connectome of the binary connectomes is used....
                            experiment_name: Optional[str] = None, 
                            no_wandb: Optional[bool] = False,
                            random_sample: bool = False,
                            n_random_samples: int = 30) -> Dict[str, Any]:
+        
+    
         """
         Run parameter sweep with integrated logging.
+        ONLY FOR ONE SUBJECT! 
         
         Args:
             target_network: Optional specific target network
@@ -295,6 +302,7 @@ class GNMPipelineOrchestrator:
         Returns:
             Sweep results
         """
+        
         print("=" * 60)
         print("GNM PARAMETER SWEEP")
         print("=" * 60)
@@ -303,35 +311,77 @@ class GNMPipelineOrchestrator:
         if not experiment_name:
             experiment_name = f"gnm_sweep_{time.strftime('%Y%m%d_%H%M%S')}"
         
-        # Load data
-        if target_network is None:
-            if self.config.data.use_gnm_defaults:
+        # Load data, and run one GNM (default data) - i.e., one full "sweep" 
+        if self.config.data.use_gnm_defaults:
+            if target_network is None:
                 data = self.config.load_gnm_defaults()
                 target_network = data["binary_network"]
                 distance_matrix = data["distance_matrix"]
-            else:
+            else: 
+                distance_matrix = self.config.load_gnm_defaults()["distance_matrix"]
+            
+            self.run_one_gnm_parameter_sweep(target_network, distance_matrix, 
+                                    # experiment_name, 
+                                    no_wandb, random_sample, n_random_samples)
+
+        # Load data, and run sweep (not default)
+        else: 
+            if target_network is None:
                 distance_matrix = torch.tensor(
                     self.data_loader.load_distance_matrix(), 
                     dtype=torch.float32,
                     device=self.device
-                )
+                )  
                 # Use first available connectome
+                # Added fix previously - use first slice! 
+                # LOOP! TODO: Replace this loop.
                 binary_connectomes = self.data_loader.load_binary_connectomes()
                 first_density = sorted(binary_connectomes.keys())[0]
                 target_network = torch.tensor(
-                    binary_connectomes[first_density][:, :, 0],
+                    binary_connectomes[first_density][0, :, :],
                     dtype=torch.float32,
                     device=self.device
                 )
-        else:
-            if self.config.data.use_gnm_defaults:
-                distance_matrix = self.config.load_gnm_defaults()["distance_matrix"]
+                
+                self.run_one_gnm_parameter_sweep(self, target_network, distance_matrix, 
+                                    experiment_name, no_wandb, random_sample, n_random_samples)
+
+
             else:
                 distance_matrix = torch.tensor(
                     self.data_loader.load_distance_matrix(),
                     dtype=torch.float32,
                     device=self.device
                 )
+                
+                self.run_one_gnm_parameter_sweep(self, target_network, distance_matrix, 
+                                    experiment_name, no_wandb, random_sample, n_random_samples)
+
+                
+                
+
+
+    def run_one_gnm_parameter_sweep(self,
+                           target_network: torch.Tensor = None, # ATTENTION: If this is none, then the first connectome of the binary connectomes is used....
+                           distance_matrix: torch.Tensor = None,
+                           experiment_name: Optional[str] = None, 
+                           no_wandb: Optional[bool] = False,
+                           random_sample: bool = False,
+                           n_random_samples: int = 30) -> Dict[str, Any]:
+        """
+        Run parameter sweep with integrated logging.
+        ONLY FOR ONE SUBJECT! 
+        
+        Args:
+            target_network: Optional specific target network
+            experiment_name: Custom experiment name
+            no_wandb: If True, disable wandb logging
+            random_sample: If True, use random sampling instead of grid search
+            n_random_samples: Number of random samples to use
+            
+        Returns:
+            Sweep results
+        """
         
         # Number of edges to generate (number of iterations per config)
         num_iterations = int(target_network.sum().item() // 2)
@@ -405,10 +455,35 @@ class GNMPipelineOrchestrator:
         else:
             method = "bayesian"
 
+        # experiments = fitting.perform_sweep(
+        #     sweep_config=sweep_config,
+        #     binary_evaluations=[evaluation_criteria],
+        #     real_binary_matrices=target_network,
+        #     method=method,
+        #     num_bayesian_runs=200 if not no_wandb else n_random_samples if random_sample else None,
+        #     weighted_evaluations=None,
+        #     save_model=True,
+        #     save_run_history=True,
+        #     verbose=True,
+        #     wandb_logging=not no_wandb,
+        #     no_different_project_name=True,
+        #     device=self.device
+        # )
+        
+        # Explicitly convert to the required tensor type
+        # real_binary_matrices = Float[torch.tensor(target_network.float()), 'num_real_binary_networks num_nodes num_nodes']
+        # real_binary_matrices = target_network.unsqueeze(0).float()
+        if target_network.ndim == 2:
+            real_binary_matrices = target_network.unsqueeze(0).float()
+        else: 
+            real_binary_matrices = target_network.float()
+        # print("REAL BINARY MATRICES SHAPE:", real_binary_matrices[0].shape)
+        
         experiments = fitting.perform_sweep(
             sweep_config=sweep_config,
             binary_evaluations=[evaluation_criteria],
-            real_binary_matrices=target_network,
+            real_binary_matrices=real_binary_matrices, # this is a jax tensor
+            # real_binary_matrices=Float[target_network, 'num_real_binary_networks num_nodes num_nodes'], # needs to be jax
             method=method,
             num_bayesian_runs=200 if not no_wandb else n_random_samples if random_sample else None,
             weighted_evaluations=None,
@@ -1005,7 +1080,7 @@ def main():
             print(f"Wandb initialization failed: {e}")
     
     # Create orchestrator
-    orchestrator = GNMPipelineOrchestrator(config)
+    orchestrator = GNMandESNPipelineOrchestrator(config)
     
     try:
         if args.command == "sweep":
@@ -1019,7 +1094,7 @@ def main():
         elif args.command == "test":
             print("Running quick test with GNM defaults...")
             config = get_gnm_quick_test_config()
-            orchestrator = GNMPipelineOrchestrator(config)
+            orchestrator = GNMandESNPipelineOrchestrator(config)
             results = orchestrator.run_gnm_parameter_sweep(
                 experiment_name=args.experiment_name or "quick_test",
                 no_wandb=args.no_wandb,
@@ -1031,7 +1106,7 @@ def main():
         elif args.command == "minimal_test":
             print("Running minimal test with GNM defaults...")
             config = get_gnm_minimal_config()
-            orchestrator = GNMPipelineOrchestrator(config)
+            orchestrator = GNMandESNPipelineOrchestrator(config)
             results = orchestrator.run_gnm_parameter_sweep(
                 experiment_name=args.experiment_name or "minimal_test",
                 no_wandb=args.no_wandb,
@@ -1119,20 +1194,24 @@ if __name__ == "__main__":
         python src/connectome_analysis/main_pipeline_2.py esn --esn-search-mode grid --no-wandb --experiment-name "esn"
         
         ### RANDOM SEARCH
-        python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb --random-sample --experiment-name "gnm_random_local"
+        python src/connectome_analysis/gnm_and_esn_orchestrator_old.py.py sweep --no-wandb --random-sample --experiment-name "gnm_random_local"
         
         ### GRID SEARCH 
-        python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb --compare-rules --config minimal_test --experiment-name "gnm"
-        python src/connectome_analysis/main_pipeline_2.py sweep --no-wandb --experiment-name "gnm"
-        
-        
+        python src/connectome_analysis/gnm_and_esn_orchestrator_old.py sweep --no-wandb --compare-rules --config minimal_test --experiment-name "gnm"
+        python src/connectome_analysis/gnm_and_esn_orchestrator_old.py sweep --no-wandb --experiment-name "gnm"
+
+
         # -> This works. 
-        python src/connectome_analysis/main_pipeline_2.py esn --esn-search-mode random_sample --esn-random-sample-size 50 --no-wandb --experiment-name "esn_main_pipeline_2"
+        python src/connectome_analysis/gnm_and_esn_orchestrator_old.py esn --esn-search-mode random_sample --esn-random-sample-size 50 --no-wandb --experiment-name "esn_main_pipeline_2"
 
         ### GNM-ESN GRID EVALUATION (Not sure yet if it works)
         python src/connectome_analysis/main_pipeline_2.py gnm_esn_grid --experiment-name "gnm_esn_grid" --no-wandb
         
         # TODO: "full" and "gnm_esn_grid" commands not tested yet.
+        
+        
+        
+        
     """
 
 

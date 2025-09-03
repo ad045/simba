@@ -218,6 +218,7 @@ class GNMGenerator:
             real_binary_matrices=target_network,
             save_model=False,
             save_run_history=False,
+            # experiment_name=experiment_name, (added by me)
             verbose=False
         )
         
