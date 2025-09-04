@@ -20,8 +20,8 @@ data:
   use_gnm_defaults: false  # Set to true to use GNM's built-in test data
 
 gnm:
-  eta_range: [0.1, 10.0]
-  gamma_range: [-5.0, 5.0]
+  eta_range: [-3.0, 0.0] # Attention: Too big values may lead to numerical instabilities! e.g.: [-5.0, 0.0] 
+  gamma_range: [0.1, 0.6] # Attention: Too big values may lead to numerical instabilities! e.g.: [0.0, 1.0]
   n_eta: 3 # 10  # Number of eta grid points
   n_gamma: 3 # 10  # Number of gamma grid points
   wiring_rules: 
@@ -47,7 +47,7 @@ esn:
   bias: 1.0
 
 compute:
-  n_workers: 4
+  n_workers: 12 # 14 cores - 10 normal, 4 efficiency. 
   timing_flag: true
   random_seed: 42
 
