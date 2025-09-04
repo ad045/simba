@@ -582,6 +582,7 @@ if __name__ == "__main__":
     # -> Testing ESN worked. Did this in "/Users/adrian/Documents/01_projects/14_4D_lab/output/esn/my_gnm_experiment/my_gnm_experiment_20250902_175257"
     
     # TASK 2: GNM sweep
+    # python src/connectome_analysis/main_pipeline.py configs/example_gnm.yaml
     
 # TODO: Try out the next few lines. 
 # # Validate config without running

@@ -426,7 +426,7 @@ class GNMandESNPipelineOrchestrator:
         #     device=self.device
         # )
         
-        experiments = fitting.perform_sweep(
+        experiments, path_for_the_binary_csv_file = fitting.perform_sweep(
             sweep_config=sweep_config,
             binary_evaluations=[evaluation_criteria],
             real_binary_matrices=torch.Tensor(binary_connectomes[first_density]), # should be of size (n_subj, n_nodes, n_nodes)
@@ -485,7 +485,8 @@ class GNMandESNPipelineOrchestrator:
                 "generative_rule": str(exp.run_config.binary_parameters.generative_rule)
             })
         
-        results_file = exp_dir / "sweep_results.json"
+        path_for_the_binary_csv_folder = path_for_the_binary_csv_file.parent
+        results_file = path_for_the_binary_csv_folder / "sweep_results.json"
         with open(results_file, 'w') as f:
             json.dump(results, f, indent=2)
         
