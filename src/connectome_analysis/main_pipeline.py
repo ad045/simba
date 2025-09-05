@@ -591,3 +591,7 @@ if __name__ == "__main__":
 # # Or still use the original command-line interface
 # python main_pipeline_2.py gnm_sweep --experiment-name test
 
+
+# THIS IS THE COMMAND TO RUN THE GNM SWEEP EXPERIMENT THAT I AM CURRENTLY USING
+
+# python src/connectome_analysis/main_pipeline.py configs/gnm_sweep.yaml
