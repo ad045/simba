@@ -40,6 +40,7 @@ class PipelineVisualizer:
                                       title: str = "", 
                                       cmap: str = "hot", 
                                       savepath: Optional[Path] = None, 
+                                      energy_name: Optional[str] = None,
                                       show: bool = True,
                                       show_points: bool = False, 
                                       point_size: int = 8,
@@ -122,8 +123,11 @@ class PipelineVisualizer:
         # Add colorbar
         sm = cm.ScalarMappable(cmap=colormap, norm=norm)
         sm.set_array([])
+        
+        # Add colorbar
         cbar = plt.colorbar(sm, ax=ax)
-        cbar.set_label("Energy", rotation=270, labelpad=12)
+        cbar = self.get_energy_name_cbar(energy_name, cbar)
+            
         
         # Show sample points if requested
         if show_points:
@@ -154,6 +158,13 @@ class PipelineVisualizer:
             plt.show()
         
         return fig, ax
+
+    def get_energy_name_cbar(self, energy_name, cbar):
+        labelpad = 20 # 12 
+        if energy_name: 
+            cbar.set_label("Energy \n" + energy_name, rotation=270, labelpad=labelpad)
+        else: 
+            cbar.set_label("Energy", rotation=270, labelpad=12)
     
     def plot_energy_landscape_interpolated(self, df: pd.DataFrame, 
                                           method: str = 'cubic', 
@@ -162,6 +173,7 @@ class PipelineVisualizer:
                                           title: str = "", 
                                           cmap: str = "hot", 
                                           savepath: Optional[Path] = None, 
+                                          energy_name: Optional[str] = None,
                                           show: bool = True,
                                           vmin: Optional[float] = None, 
                                           vmax: Optional[float] = None,
@@ -226,8 +238,9 @@ class PipelineVisualizer:
                       vmin=vmin,
                       vmax=vmax)
         
+        # Add colorbar
         cbar = plt.colorbar(im, ax=ax)
-        cbar.set_label("Energy", rotation=270, labelpad=12)
+        cbar = self.get_energy_name_cbar(energy_name, cbar)
         
         # Show sample points
         ax.scatter(points[:, 0], points[:, 1], 
@@ -256,6 +269,7 @@ class PipelineVisualizer:
     
     def compare_visualizations(self, df: pd.DataFrame, 
                           title_prefix: str = "Energy Landscape",
+                          energy_name: Optional[str] = None, 
                           savepath: Optional[Path] = None,
                           save_individual: bool = True,
                           save_format: str = "png") -> plt.Figure:
@@ -297,6 +311,7 @@ class PipelineVisualizer:
         self.plot_energy_landscape_voronoi(
             df, 
             title=f"{title_prefix} - Voronoi", 
+            energy_name=energy_name,
             show=False, 
             vmin=vmin, 
             vmax=vmax,
@@ -309,6 +324,7 @@ class PipelineVisualizer:
             df, 
             method='cubic', 
             title=f"{title_prefix} - Cubic Interpolation",
+            energy_name=energy_name,
             show=False, 
             vmin=vmin, 
             vmax=vmax,
@@ -321,6 +337,7 @@ class PipelineVisualizer:
             df, 
             method='linear',
             title=f"{title_prefix} - Linear Interpolation",
+            energy_name=energy_name,
             show=False, 
             vmin=vmin, 
             vmax=vmax,
@@ -336,6 +353,7 @@ class PipelineVisualizer:
                 if method == 'voronoi':
                     fig_ind, _ = self.plot_energy_landscape_voronoi(
                         df, title=f"{title_prefix} - Voronoi", 
+                        energy_name=energy_name,
                         show=False, vmin=vmin, vmax=vmax,
                         savepath=path
                     )
@@ -343,6 +361,7 @@ class PipelineVisualizer:
                     fig_ind, _ = self.plot_energy_landscape_interpolated(
                         df, method='cubic',
                         title=f"{title_prefix} - Cubic Interpolation",
+                        energy_name=energy_name,
                         show=False, vmin=vmin, vmax=vmax,
                         savepath=path
                     )
@@ -350,6 +369,7 @@ class PipelineVisualizer:
                     fig_ind, _ = self.plot_energy_landscape_interpolated(
                         df, method='linear',
                         title=f"{title_prefix} - Linear Interpolation",
+                        energy_name=energy_name,
                         show=False, vmin=vmin, vmax=vmax,
                         savepath=path
                     )
@@ -673,11 +693,11 @@ def visualize_pipeline_results(experiment_dir: Path,
 
 
 def visualize_gnm_results(df_path: Union[str, Path], 
-                         name_of_energy_metric: str = "MaxCriteria(DegreeKS_ClusteringKS)",
+                         name_of_energy_metric: str = "MaxCriteria", # could be MaxCriteria(DegreeKS_ClusteringKS)",
                          save_dir: Optional[Path] = None,
                          save_name: Optional[str] = None,
                          save_format: str = "png",
-                         save_individual: bool = True) -> None:
+                         save_individual: bool = True) -> str:
     """
     Visualize GNM parameter sweep results.
     
@@ -692,15 +712,16 @@ def visualize_gnm_results(df_path: Union[str, Path],
     gnm_results_df = pd.read_csv(df_path, index_col=False, sep=", ")
     
     # Prepare DataFrame
-    df = gnm_results_df[["eta", "gamma", name_of_energy_metric]].copy()
-    df.columns = ["eta", "gamma", "energy"]
-    
+    df = gnm_results_df[["eta", "gamma"]].copy()
+    # df.columns = ["eta", "gamma"]
     # Convert to numeric, handling string format
     df["eta"] = pd.to_numeric(df["eta"], errors='coerce')
     df["gamma"] = pd.to_numeric(df["gamma"], errors='coerce')
     
     # Handle energy values (remove trailing comma if present)
-    energy_values = df["energy"].astype(str).str.rstrip(',')
+    # energy_name = gnm_results_df.filter(regex=f'^{name_of_energy_metric}\\(').columns.tolist()[0] # [0] as we assume that the is only one energy column. 
+    energy_name = gnm_results_df.filter(regex=name_of_energy_metric).columns.tolist()[0]
+    energy_values = gnm_results_df[energy_name].astype(str).str.rstrip(",") # remove trailing comma if present
     df["energy"] = pd.to_numeric(energy_values, errors='coerce')
     
     # Drop any rows with NaN values
@@ -731,44 +752,47 @@ def visualize_gnm_results(df_path: Union[str, Path],
     visualizer.compare_visualizations(
         df, 
         title_prefix="GNM Parameter Sweep", 
+        energy_name=energy_name,
         savepath=save_path,
         save_individual=save_individual, 
         save_format=save_format
     )
+    
+    return energy_name
 
 
 # Example usage -> see other files for this... 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
-    print("Testing improved visualization module...")
+#     print("Testing improved visualization module...")
     
-    # Test with GNM results
-    print("\n1. Testing GNM visualization:")
+#     # Test with GNM results
+#     print("\n1. Testing GNM visualization:")
     
-    name_of_energy_metric = "MaxCriteria(DegreeKS_ClusteringKS)"
-    print(f"Using energy metric: {name_of_energy_metric}")
+#     name_of_energy_metric = "MaxCriteria(DegreeKS_ClusteringKS)"
+#     print(f"Using energy metric: {name_of_energy_metric}")
     
-    # Update with your actual file path
-    # One old file (not the hyper large one)
-    df_name = "/Users/adrian/Documents/01_projects/14_4D_lab/OLD_output_3/default_folder/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv"
+#     # Update with your actual file path
+#     # One old file (not the hyper large one)
+#     df_name = "/Users/adrian/Documents/01_projects/14_4D_lab/OLD_output_3/default_folder/binary_evaluations_resultsdistance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_400.csv"
 
-    # Extract folder name for organization
-    folder_name = Path(df_name).stem
-    save_path = Path("output/visualizations") / folder_name
+#     # Extract folder name for organization
+#     folder_name = Path(df_name).stem
+#     save_path = Path("output/visualizations") / folder_name
     
-    try:
-        visualize_gnm_results(
-            df_path=df_name,
-            name_of_energy_metric=name_of_energy_metric,
-            save_dir=save_path,
-            save_format="pdf", 
-            save_individual=True  # Save both individual and comparison plots
-        )
-        print(f"\nVisualization completed successfully!")
-        print(f"Results saved to: {save_path}")
-    except Exception as e:
-        print(f"Error during visualization: {e}")
-        import traceback
-        traceback.print_exc()
+#     try:
+#         visualize_gnm_results(
+#             df_path=df_name,
+#             name_of_energy_metric=name_of_energy_metric,
+#             save_dir=save_path,
+#             save_format="pdf", 
+#             save_individual=True  # Save both individual and comparison plots
+#         )
+#         print(f"\nVisualization completed successfully!")
+#         print(f"Results saved to: {save_path}")
+#     except Exception as e:
+#         print(f"Error during visualization: {e}")
+#         import traceback
+#         traceback.print_exc()
     
-    print("\nVisualization tests completed!")
+#     print("\nVisualization tests completed!")
