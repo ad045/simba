@@ -73,13 +73,15 @@ def evaluate_memory_capacity_from_connectome(connectome: np.ndarray,
         #     r = np.nan_to_num(r, nan=0.0, posinf=0.0, neginf=0.0)
         r = (Yt * Yp).mean(axis=0) / denom
         r = np.nan_to_num(r, nan=0.0, posinf=0.0, neginf=0.0)
+        r2 = r**2
         
-        mc = float(np.sum(r**2))
+        mc = float(np.sum(r2))
         mc_values.append(mc)
         
     return {"mc_mean": float(np.mean(mc_values)), 
             "mc_std": float(np.std(mc_values)),
             "mean_mc_of_individual_runs": mc_values,  
+            # "r2_array_from_0_to_n_lags_minus_1": r2, # TODO: R2 array could be added, but code currently "nearly stops", when added? (TODO_R2_array for searching)
             "hparams": {
                 "spectral_radius": spectral_radius,
                 "n_lags": n_lags,
@@ -92,7 +94,7 @@ def evaluate_memory_capacity_from_connectome(connectome: np.ndarray,
                 "leak_rate": leak_rate,
                 "bias": bias,
                 "random_state": random_state,
-                }
+                },
             }
     
     #     result = {

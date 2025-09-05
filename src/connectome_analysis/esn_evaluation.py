@@ -305,6 +305,7 @@ class ESNEvaluator:
                     mc_result_dict.get("mc_mean"),
                     mc_result_dict.get("mc_std"),
                     mc_result_dict.get("mean_mc_of_individual_runs"),
+                    # mc_result_dict.get("r2_array_from_0_to_n_lags_minus_1"), # TODO: R2 array could be added, but code currently "nearly stops", when added? (TODO_R2_array for searching)
                     hp_from_job,
                 ]
                 self._append_rows_csv([mc_values], mc_columns, mc_values_csv_path)

@@ -247,7 +247,7 @@ class ConfigManager:
             num_simulations=num_simulations,
             distance_matrix=[distance_matrix]
         )
-        
+
     def create_gnm_sweep_config(self, 
                                distance_matrix: torch.Tensor,
                                num_iterations: int,

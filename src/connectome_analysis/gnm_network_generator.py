@@ -216,6 +216,7 @@ class GNMGenerator:
             sweep_config=sweep_config,
             binary_evaluations=[energy_equation],
             real_binary_matrices=target_network,
+            # given_output_path=
             save_model=False,
             save_run_history=False,
             # experiment_name=experiment_name, (added by me)

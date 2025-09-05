@@ -364,7 +364,7 @@ def run_from_yaml(yaml_path: str):
         precise_folder_name = exp_args.get('experiment_name', 'default_no_exp_name_set') + f"_{current_time}"
         if exp_type == 'esn':
             output_dir = config.paths.esn_output_dir / exp_args.get('experiment_name', f"esn_{current_time}") / precise_folder_name
-        else:
+        else: # TODO: Change this here. 
             output_dir = config.paths.gnm_output_dir / exp_args.get('experiment_name', f"gnm_{current_time}") / precise_folder_name
         
         # # Ensure the directory exists
@@ -477,6 +477,7 @@ def run_from_yaml(yaml_path: str):
         
     else:
         # Use orchestrator for GNM experiments
+        # config.paths.
         orchestrator = GNMandESNPipelineOrchestrator(config)
         
         if exp_type == 'gnm_sweep':
