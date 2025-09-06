@@ -12,6 +12,7 @@ import time
 import numpy as np
 import torch
 import pandas as pd
+from datetime import datetime
 
 # GNM library imports
 from gnm import fitting # , evaluation, defaults, utils
@@ -1033,6 +1034,48 @@ class GNMandESNPipelineOrchestrator:
             }
         )
         
+        fitness_metric = "mc_mean" # TODO: REMOVE HARDCODED-NESS!!! 
+        
+        try:
+            results_dir = self.config.paths.current_projects_output_dir
+            csv_path = results_dir / "dynamic_gnm_results.csv"
+
+            # Flatten the nested fast_esn_eval dictionary for clear CSV columns
+            fast_esn_params = {f"fast_{k}": v for k, v in dynamic_config.get('fast_esn_eval', {}).items()}
+
+            # Consolidate all parameters and results into a single dictionary for the CSV row
+            result_row = {
+                "timestamp": datetime.now().isoformat(timespec="seconds"),
+                "experiment_name": experiment_name,
+                "fitness_metric_used": fitness_metric, # e.g. "mc_mean" 
+                "target_density": density,
+                "n_nodes": n_nodes,
+                "n_edges": n_edges,
+                "eta": gnm_params.eta,
+                "gamma": gnm_params.gamma,
+                "generative_rule": rule_name,
+                "dynamic_delta": dynamic_config['dynamic_delta'],
+                "candidate_pool_size": dynamic_config['candidate_pool_size'],
+                **fast_esn_params,  # Add the flattened fast ESN params
+                "final_mc_mean": final_esn_eval.get("mc_mean"),
+                "final_mc_std": final_esn_eval.get("mc_std"),
+                "final_branching_ratio": final_esn_eval.get("branching_ratio"),
+                "final_avg_transfer_entropy": final_esn_eval.get("avg_transfer_entropy"),
+                "final_avg_active_info": final_esn_eval.get("avg_active_info"),
+                "final_info_balance": final_esn_eval.get("info_balance"),
+                "random_seed": self.config.compute.random_seed
+            }
+
+            # Create a DataFrame and save/append to the CSV file
+            # This mode handles creating the file with a header if it doesn't exist,
+            # and appending a new row without a header if it does.
+            df = pd.DataFrame([result_row])
+            df.to_csv(csv_path, mode='a', index=False, header=not csv_path.exists())
+            
+            print(f"Dynamic GNM results appended to CSV: {csv_path}")
+
+        except Exception as e:
+            print(f"[Warning] Could not save dynamic GNM results to CSV: {e}")
         
         self.logger.finalize(self.config.paths.current_projects_output_dir)
         print("Run complete and logged.")

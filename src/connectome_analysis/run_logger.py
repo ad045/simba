@@ -255,10 +255,12 @@ class RunLogger:
     
     def _save_session_summary(self, current_projects_output_dir) -> None:
         """Save the session summary to JSON."""
-        with open(current_projects_output_dir / "session_summary_2.json", 'w') as f: # TODO!!
+        summary_session_path = current_projects_output_dir / "session_summary.json"
+        with open(summary_session_path, 'w') as f: 
             json.dump(self.session_summary, f, indent=2, default=str)
-    
-    
+        print("Saved session summary to", summary_session_path)
+
+
     def _log_to_wandb(self, run_type: str, parameters: Dict, results: Dict) -> None:
         """Log to wandb if available."""
         try:
@@ -287,7 +289,6 @@ class RunLogger:
         
         try:    
             self._save_session_summary(current_projects_output_dir)
-            print(current_projects_output_dir / "session_summary_2.json")
         except Exception as e:
             print(f"Error saving session summary: {e}")
         
