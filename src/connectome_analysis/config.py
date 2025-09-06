@@ -62,6 +62,7 @@ class GNMConfig:
     use_dynamic_generation: bool = False
     dynamic_delta: float = 1.0  # The 'δ' parameter, balancing GNM vs. ESN
     candidate_pool_size: int = 50  # Number of top GNM candidates to evaluate with ESN
+    dynamic_fitness_metric: str = "mc_mean"  # Metric to optimize during dynamic generation.  "mc_mean", "branching_ratio", "info_balance", ...
     
     # Configuration for the fast ESN evaluation used during generation od dynGNM
     fast_esn_eval: Dict[str, Any] = field(default_factory=lambda: {

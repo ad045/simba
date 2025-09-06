@@ -19,12 +19,10 @@ import pandas as pd
 from config import ConfigManager
 from data_loader import DataLoader
 
-# Import your existing ESN functions
-# try:
-
 from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes 
 from src.utils.saving_and_finding_files import time_stamp_for_saving
 from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
+    
     
 # except ImportError as e:
 #     warnings.warn(f"Could not import ESN modules: {e}")
@@ -56,6 +54,8 @@ from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
     # class WiringRule:
     #     MATCHING_INDEX = "matching_index"
 
+
+### ESN Evaluation
 
 class ESNEvaluator:
     """Handles ESN evaluation across multiple subjects and hyperparameters."""
@@ -133,7 +133,9 @@ class ESNEvaluator:
                 n_transient=esn_hparams["n_transient"],
                 leak_rate=esn_hparams["leak_rate"],
                 bias=esn_hparams["bias"],
-                random_state=random_seed if random_seed is not None else subj_idx
+                random_state=random_seed if random_seed is not None else subj_idx, 
+                calculate_criticality=hparams.get("calculate_criticality", False),
+                calculate_info_dynamics=hparams.get("calculate_info_dynamics", False)
             )
             
             # Merge all hyperparameters into the result

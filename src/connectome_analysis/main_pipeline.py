@@ -181,6 +181,10 @@ class YAMLConfigLoader:
             gnm_cfg.weight_criterion = yaml_gnm['weight_criterion']
         if 'alpha' in yaml_gnm:
             gnm_cfg.alpha = yaml_gnm['alpha']
+            
+        # Dynamic fitness metric 
+        if 'dynamic_fitness_metric' in yaml_gnm:
+            gnm_cfg.dynamic_fitness_metric = yaml_gnm['dynamic_fitness_metric']
         
         # Simulation parameters
         if 'num_simulations' in yaml_gnm:

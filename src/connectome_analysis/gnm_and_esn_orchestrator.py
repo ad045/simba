@@ -997,20 +997,30 @@ class GNMandESNPipelineOrchestrator:
         }
 
         # --- Run Generation ---
+        
+        fitness_metric = self.config.gnm.dynamic_fitness_metric
+        
         generated_network = dynamic_generator.generate_dynamically_aware_network(
             n_nodes=n_nodes,
             n_edges=n_edges,
             distance_matrix=distance_matrix,
             gnm_params=gnm_params,
-            dynamic_config=dynamic_config
+            dynamic_config=dynamic_config,
+            fitness_metric=fitness_metric
         )
 
         # --- Evaluation and Logging ---
         print("Evaluating final generated network...")
+        
+        final_eval_hparams = {
+            "calculate_criticality": True,
+            "calculate_info_dynamics": True
+        }
+        
         final_esn_eval = self.esn_evaluator.evaluate_single_subject(
             subject_idx=0,
-             connectome=generated_network.cpu().numpy(), # is float 32??, 68x68
-            hparams={} # Use defaults from config for final, thorough evaluation
+            connectome=generated_network.cpu().numpy(), # is float 32??, 68x68
+            hparams=final_eval_hparams
         )
         
         self.logger.log_run(
@@ -1021,11 +1031,16 @@ class GNMandESNPipelineOrchestrator:
                 "gamma": gnm_params.gamma,
                 "delta": dynamic_config['dynamic_delta'],
                 "rule": rule_name,
-                "candidate_pool_size": dynamic_config['candidate_pool_size']
+                "candidate_pool_size": dynamic_config['candidate_pool_size'], 
+                "fitness_metric_used": fitness_metric 
             },
             results={
                 "final_mc_mean": final_esn_eval.get("mc_mean"),
-                "final_mc_std": final_esn_eval.get("mc_std")
+                "final_mc_std": final_esn_eval.get("mc_std"), 
+                "final_branching_ratio": final_esn_eval.get("branching_ratio"),
+                "final_avg_transfer_entropy": final_esn_eval.get("avg_transfer_entropy"),
+                "final_avg_active_info": final_esn_eval.get("avg_active_info"),
+                "final_info_balance": final_esn_eval.get("info_balance")
             },
             metadata={
                 "target_density": density,

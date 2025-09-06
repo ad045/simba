@@ -423,7 +423,8 @@ class DynamicGNMGenerator(GNMGenerator):
                                            n_edges: int,
                                            distance_matrix: torch.Tensor,
                                            gnm_params: GNMParameters,
-                                           dynamic_config: Dict[str, Any]) -> torch.Tensor:
+                                           dynamic_config: Dict[str, Any], 
+                                           fitness_metric: str = "mc_mean") -> torch.Tensor:
         """
         Generates a network using the candidate re-ranking algorithm.
         
@@ -433,11 +434,13 @@ class DynamicGNMGenerator(GNMGenerator):
             distance_matrix: Distance matrix.
             gnm_params: Standard GNM parameters (eta, gamma, rule).
             dynamic_config: Dictionary with dynamic parameters (delta, pool_size, etc.).
+            fitness_metric: The dynamic metric to optimize (e.g., 'mc_mean', 'branching_ratio').
 
         Returns:
             The generated dynamically-aware binary network.
         """
-        print("Starting dynamically-aware GNM generation...")
+        print(f"Starting dynamically-aware GNM generation (optimizing for: {fitness_metric})...")
+      
         
         # Initialize network
         adjacency_matrix = torch.zeros((n_nodes, n_nodes), device=self.device)
@@ -485,18 +488,39 @@ class DynamicGNMGenerator(GNMGenerator):
                 temp_adj = adjacency_matrix.clone()
                 temp_adj[0, u, v] = temp_adj[0, v, u] = 1
 
+
+                # Configure the ESN evaluation based on the chosen metric
+                eval_hparams = dynamic_config.get('fast_esn_eval', {}).copy()
+                if fitness_metric == 'branching_ratio':
+                    eval_hparams['calculate_criticality'] = True
+                elif fitness_metric in ['avg_transfer_entropy', 'avg_active_info', 'info_balance']:
+                    eval_hparams['calculate_info_dynamics'] = True
+                
+                
                 # Run fast ESN evaluation
                 esn_result = self.esn_evaluator.evaluate_single_subject(
                     subject_idx=0,
                     connectome=temp_adj[0,:,:].cpu().numpy().astype(np.float64),
-                    hparams=dynamic_config['fast_esn_eval']
+                    hparams=eval_hparams # dynamic_config['fast_esn_eval']
                 )
-                mc = esn_result.get("mc_mean", 0.0)
                 
-                # Final MC score calculation
+                # Get the score for the chosen metric
+                dynamic_score = esn_result.get(fitness_metric, 0.0)
+                
+                
+                # mc = esn_result.get("mc_mean", 0.0)
+                
+                # # Final MC score calculation
+                
+                # dynamic_score = mc
+                
+                # For criticality, the goal is a branching ratio of 1.0
+                # So we transform the score: higher score means closer to 1.0
+                if fitness_metric == 'branching_ratio':
+                    dynamic_score = 1.0 - abs(1.0 - dynamic_score)
+                
                 # Normalize probabilities and MC for stable combination
                 gnm_score = gnm_prob[0, u, v].item()
-                dynamic_score = mc
                 
                 # Combine scores (using delta as a weight here for simplicity): TODO
                 delta = dynamic_config['dynamic_delta']
