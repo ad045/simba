@@ -1,76 +1,138 @@
-from datetime import datetime
-from collections.abc import Iterable
-from pathlib import Path
+
+# Helper functions for calculating information dynamics and criticality in reservoir states
+
+import numpy as np 
+from typing import List, Tuple, Dict, Optional
+import warnings
 
 
-# -> Used at least for main_pipeline_2.py (esn part)
+def _entropy(p: np.ndarray) -> float:
+    """Calculates Shannon entropy H(X) for a probability distribution p."""
+    # Filter out probabilities of zero to avoid log(0)
+    p = p[p > 0]
+    return -np.sum(p * np.log2(p))
 
-def _summarize_hparam_space(hparam_grid: list[dict]) -> dict:
+
+def _calculate_information_dynamics(states: np.ndarray, k: int = 1) -> Dict[str, float]:
     """
-    Build a summary of unique values for each hyperparameter across the grid.
-    Returns a dict: {param_name: sorted_unique_values}
+    Calculates average AIS and TE from first principles using only NumPy.
+    
+    Args:
+        states: Reservoir state matrix (n_time_steps, n_nodes).
+        k: History length. NOTE: This implementation is optimized for k=1.
+        
+    Returns:
+        A dictionary with average AIS, TE, and their balance.
     """
-    if not hparam_grid:
-        return {}
+    if k != 1:
+        warnings.warn(f"NumPy implementation is optimized for k=1, but k={k}. Results may be slow or incorrect.")
 
-    uniq = {}
-    for hp in hparam_grid:
-        for k, v in hp.items():
-            uniq.setdefault(k, set()).add(v)
+    n_time_steps, n_nodes = states.shape
+    
+    # 1. Discretize states into integer bins (same as before)
+    bins = np.quantile(states, [0, 0.25, 0.5, 0.75, 1.0])
+    bins[0] = -np.inf
+    bins[-1] = np.inf
+    discretized_states = np.digitize(states, bins) - 1
 
-    def _safe_sorted(vals: set):
-        try:
-            # Try numeric sort first, then fallback to string
-            return sorted(vals)  # ok for homogenous numeric/str
-        except Exception:
-            return sorted(vals, key=lambda x: str(x))
+    total_ais = 0.0
+    total_te = 0.0
+    
+    for i in range(n_nodes):
+        # --- 2. Calculate Active Information for node i: I(X_t ; X_{t-1}) ---
+        # AI = H(X_t) + H(X_{t-1}) - H(X_t, X_{t-1})
+        
+        present_i = discretized_states[k:, i]
+        past_i = discretized_states[:-k, i]
 
-    return {k: _safe_sorted(vs) for k, vs in uniq.items()}
+        # Estimate probabilities by counting unique outcomes
+        _, p_present_i = np.unique(present_i, return_counts=True)
+        _, p_past_i = np.unique(past_i, return_counts=True)
+        _, p_joint_ai = np.unique(np.c_[present_i, past_i], axis=0, return_counts=True)
 
-def _write_run_info_txt(
-    path,
-    *,
-    started_at: str,
-    updated_at: str,
-    save_dir: str,
-    timestamp: str,
-    n_subjects: int,
-    total_tasks: int,
-    completed_tasks: int,
-    search_mode: str,                # "grid" or "random_sample"
-    random_sample_size: int | None,  # if used, else None
-    densities_available: list[int] | None,
-    hparam_space_summary: dict,
-):
+        # Normalize counts to get probabilities
+        p_present_i = p_present_i / p_present_i.sum()
+        p_past_i = p_past_i / p_past_i.sum()
+        p_joint_ai = p_joint_ai / p_joint_ai.sum()
+        
+        # Calculate entropies
+        h_present_i = _entropy(p_present_i)
+        h_past_i = _entropy(p_past_i)
+        h_joint_ai = _entropy(p_joint_ai)
+        
+        total_ais += h_present_i + h_past_i - h_joint_ai
+
+        # --- 3. Calculate Transfer Entropy from all other nodes j to node i ---
+        # TE(j->i) = H(I_t, J_t) + H(I_{t+1}, I_t) - H(I_t) - H(I_{t+1}, I_t, J_t)
+        for j in range(n_nodes):
+            if i == j: continue
+            
+            future_i = discretized_states[k:, i]
+            # past_i is the same as present_i from the AI calculation above
+            past_j = discretized_states[:-k, j]
+
+            # Estimate joint probability distributions
+            _, p_past_ij = np.unique(np.c_[past_i, past_j], axis=0, return_counts=True)
+            _, p_future_i_past_i = np.unique(np.c_[future_i, past_i], axis=0, return_counts=True)
+            _, p_joint_te = np.unique(np.c_[future_i, past_i, past_j], axis=0, return_counts=True)
+
+            # Normalize
+            p_past_ij = p_past_ij / p_past_ij.sum()
+            p_future_i_past_i = p_future_i_past_i / p_future_i_past_i.sum()
+            p_joint_te = p_joint_te / p_joint_te.sum()
+            
+            # Calculate entropies for the TE formula
+            h_past_ij = _entropy(p_past_ij)
+            h_future_i_past_i = _entropy(p_future_i_past_i)
+            # h_past_i is the same as h_present_i from the AI calculation
+            h_joint_te = _entropy(p_joint_te)
+            
+            te = h_past_ij + h_future_i_past_i - h_present_i - h_joint_te
+            total_te += te
+            
+    avg_ais = total_ais / n_nodes
+    avg_te = total_te / (n_nodes * (n_nodes - 1)) if n_nodes > 1 else 0.0
+    info_balance = avg_ais / (avg_te + 1e-9)
+    
+    return {
+        "avg_active_info": avg_ais,
+        "avg_transfer_entropy": avg_te,
+        "info_balance": info_balance
+    }
+
+
+def _calculate_branching_ratio(states: np.ndarray, threshold: float = 0.0) -> float:
     """
-    Overwrites a human-readable run_info.txt with the latest status.
-    Call this repeatedly (e.g., every time a task completes).
+    Calculates the branching ratio (sigma) to estimate criticality.
+    A value of 1.0 indicates critical dynamics.
+    
+    Args:
+        states: Reservoir state matrix (n_time_steps, n_nodes).
+        threshold: Activity threshold to consider a neuron 'active'.
+                   0.0 means any non-zero state is active.
+                   
+    Returns:
+        The branching ratio, sigma.
     """
-    lines = []
-    lines.append("=== ESN Grid/Random Search Run Info ===")
-    lines.append(f"Started at:      {started_at}")
-    lines.append(f"Last updated:    {updated_at}")
-    lines.append(f"Save dir:        {save_dir}")
-    lines.append(f"Timestamp:       {timestamp}")
-    lines.append("")
-    lines.append(f"Subjects:        {n_subjects}")
-    lines.append(f"Total tasks:     {total_tasks}")
-    lines.append(f"Completed:       {completed_tasks}  ({(completed_tasks/total_tasks*100):.2f}%)")
-    lines.append("")
-    lines.append(f"Search mode:     {search_mode}")
-    if search_mode == "random_sample":
-        lines.append(f"Sample size:     {random_sample_size}")
-    if densities_available:
-        lines.append(f"Densities:       {', '.join(map(str, densities_available))}")
-    lines.append("")
-    lines.append("Hyperparameter space (unique values):")
-    for k, vals in sorted(hparam_space_summary.items()):
-        # Keep lines compact but readable; cap very long lists
-        shown = vals if len(vals) <= 20 else (vals[:20] + ["..."])
-        lines.append(f"  - {k}: {shown}")
-    lines.append("")
-    lines.append("Notes:")
-    lines.append("  - This file is overwritten as the run progresses.")
-    lines.append("  - The CSVs contain per-task results and timings.")
-    path = Path(path)
-    path.write_text("\n".join(lines))
+    if threshold == 0.0:
+        # Use the median as a more robust threshold if not specified
+        threshold = np.median(np.abs(states))
+        if threshold == 0: threshold = 1e-6 # Avoid division by zero if states are all zero
+
+    # Binarize activity based on the threshold
+    active_states = np.abs(states) > threshold
+    
+    n_time_steps, n_nodes = active_states.shape
+    
+    ancestors = np.sum(active_states[:-1], axis=1)
+    descendants = np.sum(active_states[1:], axis=1)
+    
+    # Avoid division by zero for silent steps
+    valid_indices = np.where(ancestors > 0)[0]
+    if len(valid_indices) == 0:
+        return 0.0  # Network was inactive
+        
+    ratios = descendants[valid_indices] / ancestors[valid_indices]
+    
+    return np.mean(ratios)
+
