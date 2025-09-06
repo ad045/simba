@@ -416,8 +416,8 @@ def create_parallel_coordinates_plot(summary_csv_path='hyperparameter_summary.cs
 if __name__ == "__main__":
     # Replace 'your_file.csv' with your actual file path
     from pathlib import Path
-    base_path = Path('/Users/adrian/Documents/01_projects/14_4D_lab/OLD_output_2/esn/esn_20250831_181229') 
-    csv_file = base_path / "esn_mc_results_2025-08-31_18-12-29.csv"
+    csv_file = Path('/Users/adrian/Documents/01_projects/14_4D_lab/output/esn/00_esn_experiments/00_esn_experiments_20250906_161304/esn_mc_results_2025-09-06_16-13-05.csv') 
+    base_path = csv_file.parent
 
     # Run the main analysis -> save?? 
     top_configs = analyze_hyperparameters(csv_file, top_n=5)

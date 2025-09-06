@@ -149,18 +149,21 @@ MRC Cognition and Brain Sciences Unit, Cambridge
 Technical University of Munich (TUM)
 Authors of the Echoes and GenerativeNetworkModels libraries
 
-Current tree: 
 
-tree .
+tree -I '__pycache__|cache|test_*'
+tree -I '__pycache__|X_additional_analyses'
+
+Current tree: tree -I '__pycache__'
 .
 ├── __init__.py
-├── __pycache__ 
-│   ├── ...
 ├── configs
+│   ├── esn_sweep.yaml
+│   ├── example_dynamic_gnm copy.yaml
 │   ├── example_dynamic_gnm.yaml
 │   ├── example_esn.yaml
 │   ├── example_gnm.yaml
 │   ├── gnm_sweep_small_for_testing.yaml
+│   ├── gnm_sweep.yaml
 ├── data
 │   ├── notes.md
 │   ├── preprocessed
@@ -220,11 +223,8 @@ tree .
 │           ├── atlas
 │           │   ├── regions.mat
 │           │   └── X_euclidean_distance.mat
-│          
 ├── notebooks
 │   ├── __init__.py
-│   ├── __pycache__
-│   │   └── ...
 │   ├── 00_experiments.ipynb
 │   ├── 01_preprocessing.ipynb
 │   ├── 02_experiments.ipynb
@@ -237,44 +237,43 @@ tree .
 │   ├── notebook_setup.py
 ├── output
 │   ├── dynamic_gnm
-│   │   ├── 01_dynamic_gnm_criticality_test
-│   │   │   ├── 01_dynamic_gnm_criticality_test_20250906_130852
-│   │   │   │   └── config.yaml
-│   │   │   ├── 01_dynamic_gnm_criticality_test_20250906_130906
-│   │   │   │   └── config.yaml
-│   │   │   ├── 01_dynamic_gnm_criticality_test_20250906_131019
-│   │   │   │   ├── config.yaml
-│   │   │   │   ├── dynamic_gnm_results.csv
-│   │   │   │   ├── generated_network.npy
-│               └── session_summary.json
+│   │   └── 01_dynamic_gnm_test
+│   │       ├── 01_dynamic_gnm_test_20250906_112519
+│   │       │   ├── config.yaml
+│   │       │   ├── generated_network.npy
+│   │       │   └── session_summary_2.json
+│   │       ├── 01_dynamic_gnm_test_20250906_113556
+│   │       │   ├── config.yaml
+│   │       │   ├── dynamic_gnm_results.csv
+│   │       │   ├── generated_network.npy
+│   │       │   └── session_summary_2.json
+│   ├── esn
+│   │   └── 00_esn_experiments
+│   │       └── 00_esn_experiments_20250906_161304
+│   │           ├── config.yaml
+│   │           ├── esn_durations_2025-09-06_16-13-05.csv
+│   │           ├── esn_mc_results_2025-09-06_16-13-05.csv
+│   │           ├── hyperparameter_parallel_coordinates_matplotlib_improved.png
+│   │           ├── hyperparameter_parallel_coordinates.html
+│   │           ├── hyperparameter_summary_avg_over_input_length_too.csv
+│   │           └── run_info_2025-09-06_16-13-05.txt
+│   └── gnm
 ├── pyproject.toml
 ├── README.md
+├── run_experiment.py
 ├── scripts
 │   ├── __init__.py
-│   └── 03_visualization.py
+│   ├── 03_visualization.py
+│   └── run_esn_example.sh
 ├── src
 │   ├── __init__.py
-│   ├── __pycache__
-│   │   ├── __init__.cpython-313.pyc
-│   │   ├── config.cpython-313.pyc
-│   │   ├── data_loader.cpython-313.pyc
-│   │   ├── esn_evaluation.cpython-313.pyc
-│   │   ├── gnm_and_esn_orchestrator.cpython-313.pyc
-│   │   ├── gnm_network_generator.cpython-313.pyc
-│   │   └── run_logger.cpython-313.pyc
-│   ├── config.py
+│   ├── config
+│   │   ├── __init__.py
+│   │   ├── config_plotting.py
+│   │   ├── ESN_and_GNM_config.py
+│   │   └── yaml_loader.py
 │   ├── ESNs
 │   │   ├── __init__.py
-│   │   ├── __pycache__
-│   │   │   ├── __init__.cpython-313.pyc
-│   │   │   ├── generate_weight_matrices_bio_no_rank_weighted.cpython-313.pyc
-│   │   │   ├── generate_weight_matrices_bio_no_rank.cpython-313.pyc
-│   │   │   ├── test_memory_capacity_weighted.cpython-313.pyc
-│   │   │   ├── test_memory_capacity.cpython-313.pyc
-│   │   │   ├── test_sequence_recall_weighted.cpython-313.pyc
-│   │   │   ├── test_sequence_recall.cpython-313.pyc
-│   │   │   ├── utils_math.cpython-313.pyc
-│   │   │   └── utils.cpython-313.pyc
 │   │   ├── esn_evaluation.py
 │   │   ├── test_memory_capacity_weighted.py
 │   │   ├── utils_math.py
@@ -392,8 +391,6 @@ tree .
 │   │   │   ├── setup.py
 │   │   │   ├── src
 │   │   │   │   ├── __init__.py
-│   │   │   │   ├── __pycache__
-│   │   │   │   │   └── __init__.cpython-313.pyc
 │   │   │   │   ├── GenerativeNetworkModels.egg-info
 │   │   │   │   │   ├── dependency_links.txt
 │   │   │   │   │   ├── PKG-INFO
@@ -402,10 +399,6 @@ tree .
 │   │   │   │   │   └── top_level.txt
 │   │   │   │   └── gnm
 │   │   │   │       ├── __init__.py
-│   │   │   │       ├── __pycache__
-│   │   │   │       │   ├── __init__.cpython-313.pyc
-│   │   │   │       │   ├── _device.cpython-313.pyc
-│   │   │   │       │   └── model.cpython-313.pyc
 │   │   │   │       ├── _device.py
 │   │   │   │       ├── defaults
 │   │   │   │       │   ├── __init__.py
@@ -435,9 +428,6 @@ tree .
 │   │   │   │       │   └── sweep.py
 │   │   │   │       ├── generative_rules
 │   │   │   │       │   ├── __init__.py
-│   │   │   │       │   ├── __pycache__
-│   │   │   │       │   │   ├── __init__.cpython-313.pyc
-│   │   │   │       │   │   └── generative_rules.cpython-313.pyc
 │   │   │   │       │   └── generative_rules.py
 │   │   │   │       ├── model.py
 │   │   │   │       ├── tools
@@ -451,9 +441,6 @@ tree .
 │   │   │   │       │   └── statistics.py
 │   │   │   │       └── weight_criteria
 │   │   │   │           ├── __init__.py
-│   │   │   │           ├── __pycache__
-│   │   │   │           │   ├── __init__.cpython-313.pyc
-│   │   │   │           │   └── optimisation_criteria.cpython-313.pyc
 │   │   │   │           └── optimisation_criteria.py
 │   │   │   └── tests
 │   │   │       ├── conftest.py
@@ -465,14 +452,11 @@ tree .
 │   │   │       ├── wandb_logging_test.py
 │   │   │       └── wandb_test.py
 │   │   └── what_to_include_here.md
-│   ├── main_pipeline.py
+│   ├── pipeline
+│   │   ├── __init__.py
+│   │   └── orchestrator.py
 │   ├── preprocessing
 │   │   ├── __init__.py
-│   │   ├── __pycache__
-│   │   │   ├── __init__.cpython-313.pyc
-│   │   │   ├── preprocess_70_connectomes.cpython-313.pyc
-│   │   │   ├── preprocess_distance_matrix.cpython-313.pyc
-│   │   │   └── preprocessing_setup.cpython-313.pyc
 │   │   ├── get_70_connectomes_700mb.m
 │   │   ├── get_consensus_data_10_2.m
 │   │   ├── preprocess_70_connectomes.py
@@ -484,18 +468,9 @@ tree .
 │   │   └── graph_measures.py
 │   ├── utils
 │   │   ├── __init__.py
-│   │   ├── __pycache__
-│   │   │   ├── __init__.cpython-313.pyc
-│   │   │   ├── config.cpython-313.pyc
-│   │   │   └── saving_and_finding_files.cpython-313.pyc
-│   │   ├── config.py
 │   │   ├── data_loader.py
 │   │   ├── run_logger.py
 │   │   └── saving_and_finding_files.py
 │   └── visualization
 │       ├── __init__.py
-│       ├── __pycache__
-│       │   ├── __init__.cpython-313.pyc
-│       │   └── energy_and_mc_landscape.cpython-313.pyc
 │       └── energy_and_mc_landscape.py
-└── README.md
