@@ -4,7 +4,7 @@
 ### Note: 
 
 ⚠️⚠️⚠️
-This is a preliminary state of the repo - please do not continue to read any further. I'll make some improvements, and generate some better results. I'll send you, Kayson, a more complete update report on Tuesday evening! 
+This is a preliminary state of the repo - please do not continue to read any further. I'll make some improvements, and generate some better results. Kayson, I'll send you a more complete update report on Tuesday evening! 
 ⚠️⚠️⚠️
 
 ---- 
