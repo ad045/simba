@@ -24,7 +24,7 @@ Currently, the repo contains scripts for:
         - **GNM** generation and evaluation (energy) - this creates nice plots (see plot below), 
         - "dynamic GNMs" (in short **DynGNMs**) generation and evaluation (MC). The generation is similar to the GNM, but every next edge's placement is done in accordance to it's best location in terms of MC improvement / transfer entropy improvement / etc. 
 
-![alt text](/Users/adrian/Documents/01_projects/14_4D_lab/shared_results/gnm/05_plotting_energy_grids_older_data/energy_landscape_properly_preprocessed_connectomes_2_0_2_5_-_0_8_-_1_3___1_8_-_5_4_-_3_4.png)
+![alt text](image.png)
 *Plot showing energy landscape of GNM sweep. This works now better than the results shown in the first update.*
 
 
