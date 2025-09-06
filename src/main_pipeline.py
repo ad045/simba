@@ -401,13 +401,13 @@ def run_from_yaml(yaml_path: str):
     print("-" * 60)
     
     # Import pipeline orchestrator
-    from src.connectome_analysis.gnm_and_esn_orchestrator import GNMandESNPipelineOrchestrator
+    from src.gnm_and_esn_orchestrator import GNMandESNPipelineOrchestrator
     
     # Run appropriate experiment type
     if exp_type == 'esn':
         # Special handling for ESN
-        from esn_evaluation import create_esn_evaluator
-        from data_loader import DataLoader
+        from src.ESNs.esn_evaluation import create_esn_evaluator
+        from src.utils.data_loader import DataLoader
         
         esn_evaluator = create_esn_evaluator(config_manager=config)
         
@@ -539,23 +539,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    # TODO: Test ESN. Then test GNM sweep.
-    # TASK 1: ESN
-    # python src/connectome_analysis/main_pipeline.py configs/example_esn.yaml
-    # -> Testing ESN worked. Did this in "/Users/adrian/Documents/01_projects/14_4D_lab/output/esn/my_gnm_experiment/my_gnm_experiment_20250902_175257"
-    
-    # TASK 2: GNM sweep
-    # python src/connectome_analysis/main_pipeline.py configs/example_gnm.yaml
-    
-# TODO: Try out the next few lines. 
-# # Validate config without running
-# python yaml_config.py example_config.yaml --validate-only
-
-# # Or still use the original command-line interface
-# python main_pipeline_2.py gnm_sweep --experiment-name test
-
-
-# THIS IS THE COMMAND TO RUN THE GNM SWEEP EXPERIMENT THAT I AM CURRENTLY USING
-
-# python src/connectome_analysis/main_pipeline.py configs/gnm_sweep.yaml

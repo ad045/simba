@@ -7,7 +7,7 @@ from echoes.esn import ESNRegressor
 
 import warnings
 
-from utils import _entropy, _calculate_information_dynamics, _calculate_branching_ratio
+from src.ESNs.utils_math import _entropy, _calculate_information_dynamics, _calculate_branching_ratio
 
 
 def _generate_mc_dataset(train_len: int, test_len: int, n_lags: int, rng: np.random.Generator) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:

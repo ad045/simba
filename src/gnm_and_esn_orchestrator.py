@@ -2,7 +2,6 @@
 Main pipeline fully integrated with GNM library and centralized logging.
 Clean version with proper logging integration.
 """
-# -> Used at least for main_pipeline_2.py
 
 import argparse
 import sys
@@ -15,17 +14,16 @@ import pandas as pd
 from datetime import datetime
 
 # GNM library imports
-from gnm import fitting # , evaluation, defaults, utils
-from src.imported_libraries.GenerativeNetworkModels_2.src.gnm.model import GenerativeNetworkModel, BinaryGenerativeParameters
+from gnm import fitting 
+# from src.imported_libraries.GenerativeNetworkModels_2.src.gnm.model import GenerativeNetworkModel, BinaryGenerativeParameters
 
 # Import our optimized modules
-from config import ConfigManager, get_gnm_quick_test_config, get_gnm_comprehensive_config, get_gnm_minimal_config
-from gnm_network_generator import GNMGenerator
-from data_loader import DataLoader
-from esn_evaluation import ESNEvaluator
-from run_logger import RunLogger, get_logger
+from config import ConfigManager # , get_gnm_quick_test_config, get_gnm_comprehensive_config, get_gnm_minimal_config
+from src.GNMs.gnm_network_generator import GNMGenerator
+from src.utils.data_loader import DataLoader
+from src.ESNs.esn_evaluation import ESNEvaluator
+from src.utils.run_logger import get_logger
 
-from jaxtyping import Float
 
 class GNMandESNPipelineOrchestrator:
     """Pipeline orchestrator with integrated logging."""
@@ -46,599 +44,584 @@ class GNMandESNPipelineOrchestrator:
         self.config.paths.esn_output_dir.mkdir(parents=True, exist_ok=True)
         self.config.paths.gnm_output_dir.mkdir(parents=True, exist_ok=True)
     
-    def run_gnm_comprehensive_analysis(self,
-                                      experiment_name: Optional[str] = None,
-                                      compare_rules: bool = True,
-                                      fit_weights: bool = True) -> Dict[str, Any]:
-        """
-        Run comprehensive GNM analysis with logging.
+    # def run_gnm_comprehensive_analysis(self,
+    #                                   experiment_name: Optional[str] = None,
+    #                                   compare_rules: bool = True,
+    #                                   fit_weights: bool = True) -> Dict[str, Any]:
+    #     """
+    #     Run comprehensive GNM analysis with logging.
         
-        Args:
-            experiment_name: Custom experiment name
-            compare_rules: Whether to compare different generative rules
-            fit_weights: Whether to optimize edge weights
+    #     Args:
+    #         experiment_name: Custom experiment name
+    #         compare_rules: Whether to compare different generative rules
+    #         fit_weights: Whether to optimize edge weights
             
-        Returns:
-            Dictionary with comprehensive results
-        """
-        print("=" * 60)
-        print("COMPREHENSIVE GNM ANALYSIS")
-        print("=" * 60)
+    #     Returns:
+    #         Dictionary with comprehensive results
+    #     """
+    #     print("=" * 60)
+    #     print("COMPREHENSIVE GNM ANALYSIS")
+    #     print("=" * 60)
         
-        # Set experiment name
-        if not experiment_name:
-            experiment_name = f"gnm_comprehensive_{time.strftime('%Y%m%d_%H%M%S')}"
+    #     # Set experiment name
+    #     if not experiment_name:
+    #         experiment_name = f"gnm_comprehensive_{time.strftime('%Y%m%d_%H%M%S')}"
         
-        # Load data
-        if self.config.data.use_gnm_defaults:
-            print("Using GNM default data...")
-            data = self.config.load_gnm_defaults()
-            distance_matrix = data["distance_matrix"]
-            target_networks = [data["binary_network"]]
-        else:
-            print("Loading custom connectome data...")
-            distance_matrix = torch.tensor(
-                self.data_loader.load_distance_matrix(), 
-                dtype=torch.float32, 
-                device=self.device
-            )
+    #     # Load data
+    #     if self.config.data.use_gnm_defaults:
+    #         print("Using GNM default data...")
+    #         data = self.config.load_gnm_defaults()
+    #         distance_matrix = data["distance_matrix"]
+    #         target_networks = [data["binary_network"]]
+    #     else:
+    #         print("Loading custom connectome data...")
+    #         distance_matrix = torch.tensor(
+    #             self.data_loader.load_distance_matrix(), 
+    #             dtype=torch.float32, 
+    #             device=self.device
+    #         )
             
-            # Load binary connectomes
-            binary_connectomes = self.data_loader.load_binary_connectomes()
+    #         # Load binary connectomes
+    #         binary_connectomes = self.data_loader.load_binary_connectomes()
             
-            # Convert to list of torch tensors
-            target_networks = []
-            for density, conn_array in binary_connectomes.items():
-                for i in range(min(5, conn_array.shape[2])):  # Limit subjects
-                    target_networks.append(
-                        torch.tensor(conn_array[:, :, i], dtype=torch.float32, device=self.device)
-                    )
+    #         # Convert to list of torch tensors
+    #         target_networks = []
+    #         for density, conn_array in binary_connectomes.items():
+    #             for i in range(min(5, conn_array.shape[2])):  # Limit subjects
+    #                 target_networks.append(
+    #                     torch.tensor(conn_array[:, :, i], dtype=torch.float32, device=self.device)
+    #                 )
         
-        # Create experiment directory
-        exp_dir = self.config.paths.gnm_output_dir / experiment_name
-        exp_dir.mkdir(parents=True, exist_ok=True)
+    #     # Create experiment directory
+    #     exp_dir = self.config.paths.gnm_output_dir / experiment_name
+    #     exp_dir.mkdir(parents=True, exist_ok=True)
         
-        results = {
-            "experiment_dir": str(exp_dir),
-            "experiment_name": experiment_name,
-            "n_target_networks": len(target_networks),
-            "generative_rules_tested": self.config.gnm.generative_rules_to_test,
-            "evaluation_metrics": self.config.gnm.evaluation_metrics,
-            "network_results": []
-        }
+    #     results = {
+    #         "experiment_dir": str(exp_dir),
+    #         "experiment_name": experiment_name,
+    #         "n_target_networks": len(target_networks),
+    #         "generative_rules_tested": self.config.gnm.generative_rules_to_test,
+    #         "evaluation_metrics": self.config.gnm.evaluation_metrics,
+    #         "network_results": []
+    #     }
         
-        # Process each target network
-        for idx, target_network in enumerate(target_networks):
-            print(f"\nProcessing network {idx + 1}/{len(target_networks)}...")
+    #     # Process each target network
+    #     for idx, target_network in enumerate(target_networks):
+    #         print(f"\nProcessing network {idx + 1}/{len(target_networks)}...")
             
-            network_result = {
-                "network_index": idx,
-                "n_nodes": target_network.shape[0],
-                "n_edges": int(target_network.sum().item() // 2)
-            }
+    #         network_result = {
+    #             "network_index": idx,
+    #             "n_nodes": target_network.shape[0],
+    #             "n_edges": int(target_network.sum().item() // 2)
+    #         }
             
-            # 1. Compare generative rules if requested
-            if compare_rules:
-                print("  Comparing generative rules...")
-                rule_comparison = self.gnm_generator.compare_generative_rules(
-                    target_network=target_network,
-                    distance_matrix=distance_matrix,
-                    rules_to_test=self.config.gnm.generative_rules_to_test,
-                    n_simulations=min(20, self.config.gnm.num_simulations)
-                )
-                network_result["rule_comparison"] = rule_comparison
-                best_rule = rule_comparison["best_rule"]
-                print(f"    Best rule: {best_rule}")
+    #         # 1. Compare generative rules if requested
+    #         if compare_rules:
+    #             print("  Comparing generative rules...")
+    #             rule_comparison = self.gnm_generator.compare_generative_rules(
+    #                 target_network=target_network,
+    #                 distance_matrix=distance_matrix,
+    #                 rules_to_test=self.config.gnm.generative_rules_to_test,
+    #                 n_simulations=min(20, self.config.gnm.num_simulations)
+    #             )
+    #             network_result["rule_comparison"] = rule_comparison
+    #             best_rule = rule_comparison["best_rule"]
+    #             print(f"    Best rule: {best_rule}")
                 
-                # Log rule comparison results
-                for rule, rule_results in rule_comparison.items():
-                    if isinstance(rule_results, dict) and "best_energy" in rule_results:
-                        self.logger.log_run(
-                            run_type="gnm_rule_comparison",
-                            experiment_name=experiment_name,
-                            parameters={
-                                "network_index": idx,
-                                "generative_rule": rule,
-                                "eta": rule_results.get("best_eta"),
-                                "gamma": rule_results.get("best_gamma")
-                            },
-                            results={
-                                "energy": rule_results.get("best_energy")
-                            },
-                            metadata={
-                                "n_edges": network_result["n_edges"],
-                                "n_nodes": network_result["n_nodes"]
-                            }
-                        )
-            else:
-                best_rule = self.config.gnm.generative_rules_to_test[0]
+    #             # Log rule comparison results
+    #             for rule, rule_results in rule_comparison.items():
+    #                 if isinstance(rule_results, dict) and "best_energy" in rule_results:
+    #                     self.logger.log_run(
+    #                         run_type="gnm_rule_comparison",
+    #                         experiment_name=experiment_name,
+    #                         parameters={
+    #                             "network_index": idx,
+    #                             "generative_rule": rule,
+    #                             "eta": rule_results.get("best_eta"),
+    #                             "gamma": rule_results.get("best_gamma")
+    #                         },
+    #                         results={
+    #                             "energy": rule_results.get("best_energy")
+    #                         },
+    #                         metadata={
+    #                             "n_edges": network_result["n_edges"],
+    #                             "n_nodes": network_result["n_nodes"]
+    #                         }
+    #                     )
+    #         else:
+    #             best_rule = self.config.gnm.generative_rules_to_test[0]
             
-            # 2. Fit parameters for best rule
-            print(f"  Fitting parameters for {best_rule}...")
-            fit_result = self.gnm_generator.fit_parameters(
-                target_network=target_network,
-                distance_matrix=distance_matrix,
-                generative_rule_name=best_rule,
-                n_eta=self.config.gnm.n_eta,
-                n_gamma=self.config.gnm.n_gamma,
-                num_simulations=self.config.gnm.num_simulations,
-                evaluation_metrics=self.config.gnm.evaluation_metrics
-            )
+    #         # 2. Fit parameters for best rule
+    #         print(f"  Fitting parameters for {best_rule}...")
+    #         fit_result = self.gnm_generator.fit_parameters(
+    #             target_network=target_network,
+    #             distance_matrix=distance_matrix,
+    #             generative_rule_name=best_rule,
+    #             n_eta=self.config.gnm.n_eta,
+    #             n_gamma=self.config.gnm.n_gamma,
+    #             num_simulations=self.config.gnm.num_simulations,
+    #             evaluation_metrics=self.config.gnm.evaluation_metrics
+    #         )
             
-            network_result["parameter_fitting"] = {
-                "best_eta": fit_result["best_eta"],
-                "best_gamma": fit_result["best_gamma"],
-                "best_energy": fit_result["best_energy"],
-                "generative_rule": best_rule
-            }
+    #         network_result["parameter_fitting"] = {
+    #             "best_eta": fit_result["best_eta"],
+    #             "best_gamma": fit_result["best_gamma"],
+    #             "best_energy": fit_result["best_energy"],
+    #             "generative_rule": best_rule
+    #         }
             
-            # Log parameter fitting result
-            self.logger.log_run(
-                run_type="gnm_parameter_fitting",
-                experiment_name=experiment_name,
-                parameters={
-                    "network_index": idx,
-                    "generative_rule": best_rule,
-                    "eta": fit_result["best_eta"],
-                    "gamma": fit_result["best_gamma"]
-                },
-                results={
-                    "energy": fit_result["best_energy"]
-                },
-                metadata={
-                    "n_eta_tested": self.config.gnm.n_eta,
-                    "n_gamma_tested": self.config.gnm.n_gamma,
-                    "num_simulations": self.config.gnm.num_simulations
-                }
-            )
+    #         # Log parameter fitting result
+    #         self.logger.log_run(
+    #             run_type="gnm_parameter_fitting",
+    #             experiment_name=experiment_name,
+    #             parameters={
+    #                 "network_index": idx,
+    #                 "generative_rule": best_rule,
+    #                 "eta": fit_result["best_eta"],
+    #                 "gamma": fit_result["best_gamma"]
+    #             },
+    #             results={
+    #                 "energy": fit_result["best_energy"]
+    #             },
+    #             metadata={
+    #                 "n_eta_tested": self.config.gnm.n_eta,
+    #                 "n_gamma_tested": self.config.gnm.n_gamma,
+    #                 "num_simulations": self.config.gnm.num_simulations
+    #             }
+    #         )
             
-            # 3. Generate and evaluate synthetic networks
-            print("  Generating synthetic networks...")
-            from gnm_network_generator import GNMParameters
+    #         # 3. Generate and evaluate synthetic networks
+    #         print("  Generating synthetic networks...")
+    #         from gnm_network_generator import GNMParameters
             
-            params = GNMParameters(
-                eta=fit_result["best_eta"],
-                gamma=fit_result["best_gamma"],
-                generative_rule=self.gnm_generator.AVAILABLE_RULES[best_rule]()
-            )
+    #         params = GNMParameters(
+    #             eta=fit_result["best_eta"],
+    #             gamma=fit_result["best_gamma"],
+    #             generative_rule=self.gnm_generator.AVAILABLE_RULES[best_rule]()
+    #         )
             
-            synthetic_networks = []
-            for i in range(10):  # Generate 10 realizations
-                synthetic = self.gnm_generator.generate_network(
-                    n_nodes=target_network.shape[0],
-                    n_edges=network_result["n_edges"],
-                    distance_matrix=distance_matrix,
-                    parameters=params
-                )
-                synthetic_networks.append(synthetic)
+    #         synthetic_networks = []
+    #         for i in range(10):  # Generate 10 realizations
+    #             synthetic = self.gnm_generator.generate_network(
+    #                 n_nodes=target_network.shape[0],
+    #                 n_edges=network_result["n_edges"],
+    #                 distance_matrix=distance_matrix,
+    #                 parameters=params
+    #             )
+    #             synthetic_networks.append(synthetic)
             
-            # 4. Evaluate synthetic networks
-            print("  Evaluating synthetic networks...")
-            evaluations = []
-            for synthetic in synthetic_networks:
-                eval_result = self.gnm_generator.evaluate_network(
-                    generated_network=synthetic,
-                    target_network=target_network,
-                    distance_matrix=distance_matrix,
-                    metrics=self.config.gnm.evaluation_metrics
-                )
-                evaluations.append(eval_result)
+    #         # 4. Evaluate synthetic networks
+    #         print("  Evaluating synthetic networks...")
+    #         evaluations = []
+    #         for synthetic in synthetic_networks:
+    #             eval_result = self.gnm_generator.evaluate_network(
+    #                 generated_network=synthetic,
+    #                 target_network=target_network,
+    #                 distance_matrix=distance_matrix,
+    #                 metrics=self.config.gnm.evaluation_metrics
+    #             )
+    #             evaluations.append(eval_result)
             
-            # Compute average metrics
-            avg_metrics = {}
-            for metric in self.config.gnm.evaluation_metrics:
-                values = [e[metric] for e in evaluations if metric in e]
-                if values:
-                    avg_metrics[metric] = {
-                        "mean": np.mean(values),
-                        "std": np.std(values)
-                    }
+    #         # Compute average metrics
+    #         avg_metrics = {}
+    #         for metric in self.config.gnm.evaluation_metrics:
+    #             values = [e[metric] for e in evaluations if metric in e]
+    #             if values:
+    #                 avg_metrics[metric] = {
+    #                     "mean": np.mean(values),
+    #                     "std": np.std(values)
+    #                 }
             
-            network_result["evaluation"] = avg_metrics
+    #         network_result["evaluation"] = avg_metrics
             
-            # 5. Optimize weights if requested
-            if fit_weights:
-                print("  Optimizing edge weights...")
-                try:
-                    weighted_networks = self.gnm_generator.batch_generate_with_weights(
-                        binary_networks=[synthetic_networks[0]],
-                        distance_matrix=distance_matrix,
-                        binary_params=params,
-                        alpha=self.config.gnm.alpha
-                    )
+    #         # 5. Optimize weights if requested
+    #         if fit_weights:
+    #             print("  Optimizing edge weights...")
+    #             try:
+    #                 weighted_networks = self.gnm_generator.batch_generate_with_weights(
+    #                     binary_networks=[synthetic_networks[0]],
+    #                     distance_matrix=distance_matrix,
+    #                     binary_params=params,
+    #                     alpha=self.config.gnm.alpha
+    #                 )
                     
-                    if weighted_networks:
-                        network_result["weight_optimization"] = {
-                            "alpha": self.config.gnm.alpha,
-                            "criterion": self.config.gnm.weight_criterion,
-                            "success": True
-                        }
-                except Exception as e:
-                    print(f"    Weight optimization failed: {e}")
-                    network_result["weight_optimization"] = {
-                        "success": False,
-                        "error": str(e)
-                    }
+    #                 if weighted_networks:
+    #                     network_result["weight_optimization"] = {
+    #                         "alpha": self.config.gnm.alpha,
+    #                         "criterion": self.config.gnm.weight_criterion,
+    #                         "success": True
+    #                     }
+    #             except Exception as e:
+    #                 print(f"    Weight optimization failed: {e}")
+    #                 network_result["weight_optimization"] = {
+    #                     "success": False,
+    #                     "error": str(e)
+    #                 }
             
-            results["network_results"].append(network_result)
+    #         results["network_results"].append(network_result)
         
-        # Save results
-        results_file = exp_dir / "gnm_comprehensive_results.json"
-        with open(results_file, 'w') as f:
-            json.dump(results, f, indent=2, default=str)
+    #     # Save results
+    #     results_file = exp_dir / "gnm_comprehensive_results.json"
+    #     with open(results_file, 'w') as f:
+    #         json.dump(results, f, indent=2, default=str)
         
-        print(f"\nResults saved to: {results_file}")
+    #     print(f"\nResults saved to: {results_file}")
         
-        # Generate summary statistics
-        summary = self._generate_summary(results)
-        summary_file = exp_dir / "summary.json"
-        with open(summary_file, 'w') as f:
-            json.dump(summary, f, indent=2)
+    #     # Generate summary statistics
+    #     summary = self._generate_summary(results)
+    #     summary_file = exp_dir / "summary.json"
+    #     with open(summary_file, 'w') as f:
+    #         json.dump(summary, f, indent=2)
         
-        return results
+    #     return results
     
 
-    def run_gnm_parameter_sweep(self,
-                           target_network: Optional[torch.Tensor] = None, # ATTENTION: If this is none, then the first connectome of the binary connectomes is used....
-                           experiment_name: Optional[str] = None, 
-                           no_wandb: Optional[bool] = False,
-                           random_sample: bool = False,
-                           n_random_samples: int = 30) -> Dict[str, Any]:
-        """
-        Run parameter sweep with integrated logging.
+    # def run_gnm_parameter_sweep(self,
+    #                        target_network: Optional[torch.Tensor] = None, # ATTENTION: If this is none, then the first connectome of the binary connectomes is used....
+    #                        experiment_name: Optional[str] = None, 
+    #                        no_wandb: Optional[bool] = False,
+    #                        random_sample: bool = False,
+    #                        n_random_samples: int = 30) -> Dict[str, Any]:
+    #     """
+    #     Run parameter sweep with integrated logging.
         
-        Args:
-            target_network: Optional specific target network
-            experiment_name: Custom experiment name
-            no_wandb: If True, disable wandb logging
-            random_sample: If True, use random sampling instead of grid search
-            n_random_samples: Number of random samples to use
+    #     Args:
+    #         target_network: Optional specific target network
+    #         experiment_name: Custom experiment name
+    #         no_wandb: If True, disable wandb logging
+    #         random_sample: If True, use random sampling instead of grid search
+    #         n_random_samples: Number of random samples to use
             
-        Returns:
-            Sweep results
-        """
-        print("=" * 60)
-        print("GNM PARAMETER SWEEP")
-        print("=" * 60)
+    #     Returns:
+    #         Sweep results
+    #     """
+    #     print("=" * 60)
+    #     print("GNM PARAMETER SWEEP")
+    #     print("=" * 60)
         
-        # Set experiment name
-        if not experiment_name:
-            experiment_name = f"gnm_sweep_{time.strftime('%Y%m%d_%H%M%S')}"
+    #     # Set experiment name
+    #     if not experiment_name:
+    #         experiment_name = f"gnm_sweep_{time.strftime('%Y%m%d_%H%M%S')}"
         
-        # Load data
-        if target_network is None:
-            if self.config.data.use_gnm_defaults:
-                data = self.config.load_gnm_defaults()
-                target_network = data["binary_network"]
-                distance_matrix = data["distance_matrix"]
-            else:
-                distance_matrix = torch.tensor(
-                    self.data_loader.load_distance_matrix(), 
-                    dtype=torch.float32,
-                    device=self.device
-                )
-                # Use first available connectome
-                # Added fix previously - use first slice! 
-                binary_connectomes = self.data_loader.load_binary_connectomes()
-                first_density = sorted(binary_connectomes.keys())[0]
-                target_network = torch.tensor(
-                    binary_connectomes[first_density][0, :, :],
-                    dtype=torch.float32,
-                    device=self.device
-                )
-        else: # I do not understand what this here does: 
-            # USES DEFAULTS: 
-            if self.config.data.use_gnm_defaults:
-                distance_matrix = self.config.load_gnm_defaults()["distance_matrix"] 
-                binary_connectomes = self.config.load_gnm_defaults()["binary_connectomes"]
-            else:
-                print("Please either hand over binary connectomes or use 'use_gnm_defaults'.")
-            #     distance_matrix = torch.tensor(
-            #         self.data_loader.load_distance_matrix(),
-            #         dtype=torch.float32,
-            #         device=self.device
-            #     )
+    #     # Load data
+    #     if target_network is None:
+    #         if self.config.data.use_gnm_defaults:
+    #             data = self.config.load_gnm_defaults()
+    #             target_network = data["binary_network"]
+    #             distance_matrix = data["distance_matrix"]
+    #         else:
+    #             distance_matrix = torch.tensor(
+    #                 self.data_loader.load_distance_matrix(), 
+    #                 dtype=torch.float32,
+    #                 device=self.device
+    #             )
+    #             # Use first available connectome
+    #             # Added fix previously - use first slice! 
+    #             binary_connectomes = self.data_loader.load_binary_connectomes()
+    #             first_density = sorted(binary_connectomes.keys())[0]
+    #             target_network = torch.tensor(
+    #                 binary_connectomes[first_density][0, :, :],
+    #                 dtype=torch.float32,
+    #                 device=self.device
+    #             )
+    #     else: # I do not understand what this here does: 
+    #         # USES DEFAULTS: 
+    #         if self.config.data.use_gnm_defaults:
+    #             distance_matrix = self.config.load_gnm_defaults()["distance_matrix"] 
+    #             binary_connectomes = self.config.load_gnm_defaults()["binary_connectomes"]
+    #         else:
+    #             print("Please either hand over binary connectomes or use 'use_gnm_defaults'.")
+    #         #     distance_matrix = torch.tensor(
+    #         #         self.data_loader.load_distance_matrix(),
+    #         #         dtype=torch.float32,
+    #         #         device=self.device
+    #         #     )
         
-        # Number of edges to generate (number of iterations per config)
-        num_iterations = int(target_network.sum().item() // 2)
-        num_simulations = 100
+    #     # Number of edges to generate (number of iterations per config)
+    #     num_iterations = int(target_network.sum().item() // 2)
+    #     num_simulations = 100
         
-        # Create sweep configuration based on sampling method
-        if no_wandb and random_sample:
-            sweep_config = self.config.create_gnm_random_sweep_config(
-                distance_matrix=distance_matrix,
-                num_iterations=num_iterations,
-                num_simulations=num_simulations,
-                n_random_samples=n_random_samples,
-                include_weights=True
-            )
-        else:
-            sweep_config = self.config.create_gnm_sweep_config(
-                distance_matrix=distance_matrix,
-                num_iterations=num_iterations,
-                num_simulations=num_simulations,
-                include_weights=True
-            )
+    #     # Create sweep configuration based on sampling method
+    #     if no_wandb and random_sample:
+    #         sweep_config = self.config.create_gnm_random_sweep_config(
+    #             distance_matrix=distance_matrix,
+    #             num_iterations=num_iterations,
+    #             num_simulations=num_simulations,
+    #             n_random_samples=n_random_samples,
+    #             include_weights=True
+    #         )
+    #     else:
+    #         sweep_config = self.config.create_gnm_sweep_config(
+    #             distance_matrix=distance_matrix,
+    #             num_iterations=num_iterations,
+    #             num_simulations=num_simulations,
+    #             include_weights=True
+    #         )
             
-        # Get evaluation criteria
-        evaluation_criteria = self.config.get_gnm_evaluation_criteria(distance_matrix)
+    #     # Get evaluation criteria
+    #     evaluation_criteria = self.config.get_gnm_evaluation_criteria(distance_matrix)
         
-        print(f"Running parameter sweep...")
-        print(f"  - Generative rules: {self.config.gnm.generative_rules_to_test}")
-        print(f"  - Simulations per parameter set: {self.config.gnm.num_simulations}")
-        print(f"  - Wandb logging: {'DISABLED' if no_wandb else 'ENABLED'}")
+    #     print(f"Running parameter sweep...")
+    #     print(f"  - Generative rules: {self.config.gnm.generative_rules_to_test}")
+    #     print(f"  - Simulations per parameter set: {self.config.gnm.num_simulations}")
+    #     print(f"  - Wandb logging: {'DISABLED' if no_wandb else 'ENABLED'}")
         
-        # Better print statements based on sampling method
-        if no_wandb and random_sample:
-            print(f"  - Random sampling: {n_random_samples} parameter combinations")
-            print(f"  - Eta range: {self.config.gnm.eta_range}")
-            print(f"  - Gamma range: {self.config.gnm.gamma_range}")
-        else:
-            print(f"  - Parameter grid: {self.config.gnm.n_eta} × {self.config.gnm.n_gamma}")
-            print(f"  - Eta range: {self.config.gnm.eta_range}")
-            print(f"  - Gamma range: {self.config.gnm.gamma_range}")
+    #     # Better print statements based on sampling method
+    #     if no_wandb and random_sample:
+    #         print(f"  - Random sampling: {n_random_samples} parameter combinations")
+    #         print(f"  - Eta range: {self.config.gnm.eta_range}")
+    #         print(f"  - Gamma range: {self.config.gnm.gamma_range}")
+    #     else:
+    #         print(f"  - Parameter grid: {self.config.gnm.n_eta} × {self.config.gnm.n_gamma}")
+    #         print(f"  - Eta range: {self.config.gnm.eta_range}")
+    #         print(f"  - Gamma range: {self.config.gnm.gamma_range}")
             
-        # Initialize wandb if requested
-        if not no_wandb: 
-            try:
-                import wandb
-                if not wandb.run:
+    #     # Initialize wandb if requested
+    #     if not no_wandb: 
+    #         try:
+    #             import wandb
+    #             if not wandb.run:
                     
-                    # FIXED: Use dynamic wandb directory based on config
-                    wandb_dir = self.config.paths.output_dir / "wandb"
-                    wandb_dir.mkdir(parents=True, exist_ok=True)
+    #                 # FIXED: Use dynamic wandb directory based on config
+    #                 wandb_dir = self.config.paths.output_dir / "wandb"
+    #                 wandb_dir.mkdir(parents=True, exist_ok=True)
 
-                    wandb.init(
-                        project="GNM_Pipeline",
-                        name=experiment_name,
-                        dir=str(wandb_dir),  # Use config-based directory
-                        config={
-                            "n_eta": self.config.gnm.n_eta,
-                            "n_gamma": self.config.gnm.n_gamma,
-                            "num_simulations": self.config.gnm.num_simulations,
-                            "generative_rules": self.config.gnm.generative_rules_to_test, 
-                        }
-                    )
-            except:
-                pass  # Wandb not available or not needed
+    #                 wandb.init(
+    #                     project="GNM_Pipeline",
+    #                     name=experiment_name,
+    #                     dir=str(wandb_dir),  # Use config-based directory
+    #                     config={
+    #                         "n_eta": self.config.gnm.n_eta,
+    #                         "n_gamma": self.config.gnm.n_gamma,
+    #                         "num_simulations": self.config.gnm.num_simulations,
+    #                         "generative_rules": self.config.gnm.generative_rules_to_test, 
+    #                     }
+    #                 )
+    #         except:
+    #             pass  # Wandb not available or not needed
     
-        # Determine method based on flags
-        if no_wandb:
-            if random_sample:
-                method = "random"
-            else:
-                method = "grid"
-        else:
-            method = "bayesian"
+    #     # Determine method based on flags
+    #     if no_wandb:
+    #         if random_sample:
+    #             method = "random"
+    #         else:
+    #             method = "grid"
+    #     else:
+    #         method = "bayesian"
 
-        print("TARGET NETWORK SHAPE:", target_network.shape)
-        # experiments = fitting.perform_sweep(
-        #     sweep_config=sweep_config,
-        #     binary_evaluations=[evaluation_criteria],
-        #     real_binary_matrices=target_network,
-        #     method=method,
-        #     num_bayesian_runs=200 if not no_wandb else n_random_samples if random_sample else None,
-        #     weighted_evaluations=None,
-        #     save_model=True,
-        #     save_run_history=True,
-        #     verbose=True,
-        #     wandb_logging=not no_wandb,
-        #     no_different_project_name=True,
-        #     device=self.device
-        # )
         
-        experiments, path_for_the_binary_csv_file = fitting.perform_sweep(
-            sweep_config=sweep_config,
-            binary_evaluations=[evaluation_criteria],
-            real_binary_matrices=torch.Tensor(binary_connectomes[first_density]), # should be of size (n_subj, n_nodes, n_nodes)
-            # real_binary_matrices=Float[target_network, 'num_real_binary_networks num_nodes num_nodes'], # needs to be jax
-            method=method,
-            num_bayesian_runs=200 if not no_wandb else n_random_samples if random_sample else None,
-            weighted_evaluations=None,
-            # given_output_path=
-            save_model=True,
-            experiment_name=experiment_name,
-            save_run_history=True,
-            verbose=True,
-            wandb_logging=not no_wandb,
-            no_different_project_name=True,
-            device=self.device
-        )
+    #     experiments, path_for_the_binary_csv_file = fitting.perform_sweep(
+    #         sweep_config=sweep_config,
+    #         binary_evaluations=[evaluation_criteria],
+    #         real_binary_matrices=torch.Tensor(binary_connectomes[first_density]), # should be of size (n_subj, n_nodes, n_nodes)
+    #         # real_binary_matrices=Float[target_network, 'num_real_binary_networks num_nodes num_nodes'], # needs to be jax
+    #         method=method,
+    #         num_bayesian_runs=200 if not no_wandb else n_random_samples if random_sample else None,
+    #         weighted_evaluations=None,
+    #         # given_output_path=
+    #         save_model=True,
+    #         experiment_name=experiment_name,
+    #         save_run_history=True,
+    #         verbose=True,
+    #         wandb_logging=not no_wandb,
+    #         no_different_project_name=True,
+    #         device=self.device
+    #     )
 
-        # Log all experiments using centralized logger
-        self.logger.log_gnm_sweep(
-            experiments=experiments,
-            evaluation_criteria=evaluation_criteria,
-            config=self.config,
-            experiment_name=experiment_name
-        )
+    #     # Log all experiments using centralized logger
+    #     self.logger.log_gnm_sweep(
+    #         experiments=experiments,
+    #         evaluation_criteria=evaluation_criteria,
+    #         config=self.config,
+    #         experiment_name=experiment_name
+    #     )
         
-        # Find optimal parameters
-        optimal_experiments, optimal_energies = fitting.optimise_evaluation(
-            experiments=experiments,
-            criterion=evaluation_criteria
-        )
+    #     # Find optimal parameters
+    #     optimal_experiments, optimal_energies = fitting.optimise_evaluation(
+    #         experiments=experiments,
+    #         criterion=evaluation_criteria
+    #     )
         
-        # Create experiment directory
-        exp_dir = self.config.paths.gnm_output_dir / experiment_name
-        exp_dir.mkdir(parents=True, exist_ok=True)
+    #     # Create experiment directory
+    #     exp_dir = self.config.paths.gnm_output_dir / experiment_name
+    #     exp_dir.mkdir(parents=True, exist_ok=True)
         
-        # Save sweep results summary
-        results = {
-            "experiment_name": experiment_name,
-            "n_experiments": len(experiments),
-            "optimal_parameters": [],
-            "parameter_grid": {
-                "eta_range": self.config.gnm.eta_range,
-                "gamma_range": self.config.gnm.gamma_range,
-                "n_eta": self.config.gnm.n_eta,
-                "n_gamma": self.config.gnm.n_gamma,
-                "sampling_method": "random" if (no_wandb and random_sample) else "grid" if no_wandb else "bayesian",
-                "n_random_samples": n_random_samples if (no_wandb and random_sample) else None
-            }
-        }
+    #     # Save sweep results summary
+    #     results = {
+    #         "experiment_name": experiment_name,
+    #         "n_experiments": len(experiments),
+    #         "optimal_parameters": [],
+    #         "parameter_grid": {
+    #             "eta_range": self.config.gnm.eta_range,
+    #             "gamma_range": self.config.gnm.gamma_range,
+    #             "n_eta": self.config.gnm.n_eta,
+    #             "n_gamma": self.config.gnm.n_gamma,
+    #             "sampling_method": "random" if (no_wandb and random_sample) else "grid" if no_wandb else "bayesian",
+    #             "n_random_samples": n_random_samples if (no_wandb and random_sample) else None
+    #         }
+    #     }
         
-        # Add top 10 optimal parameters
-        for exp, energy in zip(optimal_experiments[:10], optimal_energies[:10]):
-            results["optimal_parameters"].append({
-                "eta": float(exp.run_config.binary_parameters.eta),
-                "gamma": float(exp.run_config.binary_parameters.gamma),
-                "energy": float(energy),
-                "generative_rule": str(exp.run_config.binary_parameters.generative_rule)
-            })
+    #     # Add top 10 optimal parameters
+    #     for exp, energy in zip(optimal_experiments[:10], optimal_energies[:10]):
+    #         results["optimal_parameters"].append({
+    #             "eta": float(exp.run_config.binary_parameters.eta),
+    #             "gamma": float(exp.run_config.binary_parameters.gamma),
+    #             "energy": float(energy),
+    #             "generative_rule": str(exp.run_config.binary_parameters.generative_rule)
+    #         })
         
-        path_for_the_binary_csv_folder = path_for_the_binary_csv_file.parent
-        results_file = path_for_the_binary_csv_folder / "sweep_results.json"
-        with open(results_file, 'w') as f:
-            json.dump(results, f, indent=2)
+    #     path_for_the_binary_csv_folder = path_for_the_binary_csv_file.parent
+    #     results_file = path_for_the_binary_csv_folder / "sweep_results.json"
+    #     with open(results_file, 'w') as f:
+    #         json.dump(results, f, indent=2)
         
-        print(f"\nSweep completed!")
-        print(f"Best parameters:")
-        if results["optimal_parameters"]:
-            best = results["optimal_parameters"][0]
-            print(f"  - eta: {best['eta']:.3f}")
-            print(f"  - gamma: {best['gamma']:.3f}")
-            print(f"  - energy: {best['energy']:.3f}")
+    #     print(f"\nSweep completed!")
+    #     print(f"Best parameters:")
+    #     if results["optimal_parameters"]:
+    #         best = results["optimal_parameters"][0]
+    #         print(f"  - eta: {best['eta']:.3f}")
+    #         print(f"  - gamma: {best['gamma']:.3f}")
+    #         print(f"  - energy: {best['energy']:.3f}")
         
-        print(f"Results saved to: {results_file}")
+    #     print(f"Results saved to: {results_file}")
         
-        return results
+    #     return results
     
-    def run_full_pipeline(self,
-                         esn_experiment_name: Optional[str] = None,
-                         gnm_experiment_name: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Run complete pipeline with integrated logging.
+    # def run_full_pipeline(self,
+    #                      esn_experiment_name: Optional[str] = None,
+    #                      gnm_experiment_name: Optional[str] = None) -> Dict[str, Any]:
+    #     """
+    #     Run complete pipeline with integrated logging.
         
-        Args:
-            esn_experiment_name: Custom ESN experiment name
-            gnm_experiment_name: Custom GNM experiment name
+    #     Args:
+    #         esn_experiment_name: Custom ESN experiment name
+    #         gnm_experiment_name: Custom GNM experiment name
             
-        Returns:
-            Combined results
-        """
-        print("=" * 60)
-        print("FULL PIPELINE: ESN + GNM ANALYSIS")
-        print("=" * 60)
+    #     Returns:
+    #         Combined results
+    #     """
+    #     print("=" * 60)
+    #     print("FULL PIPELINE: ESN + GNM ANALYSIS")
+    #     print("=" * 60)
         
-        results = {"esn": None, "gnm": None}
+    #     results = {"esn": None, "gnm": None}
         
-        # Run ESN evaluation if data loader is available
-        if self.esn_evaluator:
-            print("\nPhase 1: ESN Memory Capacity Evaluation")
-            print("-" * 40)
+    #     # Run ESN evaluation if data loader is available
+    #     if self.esn_evaluator:
+    #         print("\nPhase 1: ESN Memory Capacity Evaluation")
+    #         print("-" * 40)
             
-            # Set ESN experiment name
-            if not esn_experiment_name:
-                esn_experiment_name = f"esn_{time.strftime('%Y%m%d_%H%M%S')}"
+    #         # Set ESN experiment name
+    #         if not esn_experiment_name:
+    #             esn_experiment_name = f"esn_{time.strftime('%Y%m%d_%H%M%S')}"
             
-            try:
-                # Generate ESN hyperparameter grid
-                hparam_grid = self.config.generate_esn_hparam_grid(
-                    spectral_radii=np.linspace(0.1, 2.5, 25),
-                    input_lengths=[500, 1000, 2000, 3000, 4000],
-                    input_scalings=[1.0, 1.5],
-                    regularization_methods=["pinv", "ridge"],
-                    densities=[10, 12, 14, 16, 18, 20]
-                )
+    #         try:
+    #             # Generate ESN hyperparameter grid
+    #             hparam_grid = self.config.generate_esn_hparam_grid(
+    #                 spectral_radii=np.linspace(0.1, 2.5, 25),
+    #                 input_lengths=[500, 1000, 2000, 3000, 4000],
+    #                 input_scalings=[1.0, 1.5],
+    #                 regularization_methods=["pinv", "ridge"],
+    #                 densities=[10, 12, 14, 16, 18, 20]
+    #             )
                 
-                # Load data
-                weighted_by_density = self.data_loader.load_weighted_by_density()
+    #             # Load data
+    #             weighted_by_density = self.data_loader.load_weighted_by_density()
                 
-                # Create experiment directory
-                exp_dir = self.config.paths.esn_output_dir / esn_experiment_name
-                exp_dir.mkdir(parents=True, exist_ok=True)
+    #             # Create experiment directory
+    #             exp_dir = self.config.paths.esn_output_dir / esn_experiment_name
+    #             exp_dir.mkdir(parents=True, exist_ok=True)
                 
-                # Run ESN sweep with enhanced logging
-                class ESNEvaluatorWithLogging(ESNEvaluator):
-                    """Extended ESN evaluator that logs to our centralized logger."""
+    #             # Run ESN sweep with enhanced logging
+    #             class ESNEvaluatorWithLogging(ESNEvaluator):
+    #                 """Extended ESN evaluator that logs to our centralized logger."""
                     
-                    def __init__(self, evaluator, logger, experiment_name):
-                        self.__dict__.update(evaluator.__dict__)
-                        self.central_logger = logger
-                        self.exp_name = experiment_name
+    #                 def __init__(self, evaluator, logger, experiment_name):
+    #                     self.__dict__.update(evaluator.__dict__)
+    #                     self.central_logger = logger
+    #                     self.exp_name = experiment_name
                     
-                    def _subject_job(self, subj_idx, A_obs, hparams, timing_flag=True, random_seed=None):
-                        """Override to add logging."""
-                        mc_result_dict, timing_dict = super()._subject_job(
-                            subj_idx, A_obs, hparams, timing_flag, random_seed
-                        )
+    #                 def _subject_job(self, subj_idx, A_obs, hparams, timing_flag=True, random_seed=None):
+    #                     """Override to add logging."""
+    #                     mc_result_dict, timing_dict = super()._subject_job(
+    #                         subj_idx, A_obs, hparams, timing_flag, random_seed
+    #                     )
                         
-                        # Log to centralized logger
-                        self.central_logger.log_esn_evaluation(
-                            subject_id=subj_idx,
-                            hyperparameters=hparams,
-                            mc_result=mc_result_dict,
-                            experiment_name=self.exp_name
-                        )
+    #                     # Log to centralized logger
+    #                     self.central_logger.log_esn_evaluation(
+    #                         subject_id=subj_idx,
+    #                         hyperparameters=hparams,
+    #                         mc_result=mc_result_dict,
+    #                         experiment_name=self.exp_name
+    #                     )
                         
-                        return mc_result_dict, timing_dict
+    #                     return mc_result_dict, timing_dict
                 
-                # Create wrapped evaluator with logging
-                evaluator_with_logging = ESNEvaluatorWithLogging(
-                    self.esn_evaluator, self.logger, esn_experiment_name
-                )
+    #             # Create wrapped evaluator with logging
+    #             evaluator_with_logging = ESNEvaluatorWithLogging(
+    #                 self.esn_evaluator, self.logger, esn_experiment_name
+    #             )
                 
-                # Run ESN sweep
-                esn_message = evaluator_with_logging.run_hyperparameter_sweep(
-                    connectomes=weighted_by_density,
-                    hparam_grid=hparam_grid,
-                    save_dir=exp_dir,
-                    search_mode="random_sample"
-                )
+    #             # Run ESN sweep
+    #             esn_message = evaluator_with_logging.run_hyperparameter_sweep(
+    #                 connectomes=weighted_by_density,
+    #                 hparam_grid=hparam_grid,
+    #                 save_dir=exp_dir,
+    #                 search_mode="random_sample"
+    #             )
                 
-                # Load and analyze results
-                esn_analysis = self.esn_evaluator.load_and_analyze_results(exp_dir)
-                print("Loaded and analyzed ESN results.")
+    #             # Load and analyze results
+    #             esn_analysis = self.esn_evaluator.load_and_analyze_results(exp_dir)
+    #             print("Loaded and analyzed ESN results.")
                 
-                print(esn_analysis)  # TODO: Remove again
+    #             print(esn_analysis)  # TODO: Remove again
                 
-                results["esn"] = {
-                    "status": "success",
-                    "message": esn_message,
-                    "analysis": esn_analysis,
-                    "experiment_dir": str(exp_dir)
-                }
+    #             results["esn"] = {
+    #                 "status": "success",
+    #                 "message": esn_message,
+    #                 "analysis": esn_analysis,
+    #                 "experiment_dir": str(exp_dir)
+    #             }
                 
                 
-            except Exception as e:
-                results["esn"] = {
-                    "status": "failed",
-                    "error": str(e)
-                }
-                print(f"ESN evaluation failed: {e}")
+    #         except Exception as e:
+    #             results["esn"] = {
+    #                 "status": "failed",
+    #                 "error": str(e)
+    #             }
+    #             print(f"ESN evaluation failed: {e}")
         
-        # Run GNM analysis
-        print("\nPhase 2: GNM Comprehensive Analysis")
-        print("-" * 40)
+    #     # Run GNM analysis
+    #     print("\nPhase 2: GNM Comprehensive Analysis")
+    #     print("-" * 40)
         
-        try:
-            gnm_results = self.run_gnm_comprehensive_analysis(
-                experiment_name=gnm_experiment_name,
-                compare_rules=True,
-                fit_weights=True
-            )
+    #     try:
+    #         gnm_results = self.run_gnm_comprehensive_analysis(
+    #             experiment_name=gnm_experiment_name,
+    #             compare_rules=True,
+    #             fit_weights=True
+    #         )
             
-            results["gnm"] = {
-                "status": "success",
-                "results": gnm_results
-            }
+    #         results["gnm"] = {
+    #             "status": "success",
+    #             "results": gnm_results
+    #         }
             
-        except Exception as e:
-            results["gnm"] = {
-                "status": "failed",
-                "error": str(e)
-            }
-            print(f"GNM analysis failed: {e}")
+    #     except Exception as e:
+    #         results["gnm"] = {
+    #             "status": "failed",
+    #             "error": str(e)
+    #         }
+    #         print(f"GNM analysis failed: {e}")
         
-        print("\n" + "=" * 60)
-        print("PIPELINE COMPLETED")
-        print("=" * 60)
+    #     print("\n" + "=" * 60)
+    #     print("PIPELINE COMPLETED")
+    #     print("=" * 60)
         
-        # Finalize logging session
-        self.logger.finalize()
+    #     # Finalize logging session
+    #     self.logger.finalize()
         
-        return results
+    #     return results
     
     
     def _generate_summary(self, results: Dict[str, Any]) -> Dict[str, Any]:
@@ -825,7 +808,7 @@ class GNMandESNPipelineOrchestrator:
         grid_results = []
         
         # Use matching index as default rule
-        from gnm_network_generator import GNMParameters
+        from src.GNMs.gnm_network_generator import GNMParameters
         from gnm import generative_rules
         
         print(f"Evaluating {n_eta} x {n_gamma} = {n_eta * n_gamma} parameter combinations...")
@@ -979,7 +962,7 @@ class GNMandESNPipelineOrchestrator:
         n_nodes = target_network.shape[-1]
 
         # --- Initialize Dynamic Generator ---
-        from gnm_network_generator import DynamicGNMGenerator, GNMParameters
+        from src.GNMs.gnm_network_generator import DynamicGNMGenerator, GNMParameters
         
         dynamic_generator = DynamicGNMGenerator(self.esn_evaluator, self.config.gnm.device)
         
@@ -1228,14 +1211,14 @@ def main():
             esn_config = get_esn_config()
           
             # Create ESN evaluator directly
-            from esn_evaluation import create_esn_evaluator
+            from src.ESNs.esn_evaluation import create_esn_evaluator
             esn_evaluator = create_esn_evaluator(config_manager=esn_config)
             
             # Generate hyperparameter grid
             hparam_grid = esn_config.generate_esn_hparam_grid()
 
             # Load data
-            from data_loader import DataLoader
+            from src.utils.data_loader import DataLoader
             data_loader = DataLoader(esn_config)
             weighted_by_density = data_loader.load_weighted_by_density()
             

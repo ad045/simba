@@ -4,13 +4,13 @@ experiment:
 
 data:
   connectome_resolution: 68
-  densities: [16]
+  densities: [16, 20]
   use_gnm_defaults: false
 
 gnm:
   # Static GNM parameters (provide a starting point)
-  eta_range: [-2.0]
-  gamma_range: [0.1]
+  eta_range: [-2.0, -1.5] # sollte eig nur eine Zahl sein
+  gamma_range: [0.1, 0.3] # sollte eig nur eine Zahl sein
   wiring_rules: 
     - matching_index
   

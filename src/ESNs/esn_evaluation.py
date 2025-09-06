@@ -2,7 +2,6 @@
 ESN evaluation module for the connectome analysis pipeline.
 Handles memory capacity evaluation and hyperparameter optimization.
 """
-# -> Used at least for main_pipeline_2_gnm_esn_landscape.py and for main_pipeline_2.py (esn part)
 
 import os
 import time
@@ -17,45 +16,13 @@ import numpy as np
 import pandas as pd
 
 from config import ConfigManager
-from data_loader import DataLoader
+from src.utils.data_loader import DataLoader
 
 from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes 
 from src.utils.saving_and_finding_files import time_stamp_for_saving
 from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
-    
-    
-# except ImportError as e:
-#     warnings.warn(f"Could not import ESN modules: {e}")
-    
-    # Define dummy functions for testing
-    # def evaluate_memory_capacity_from_connectome(*args, **kwargs):
-    #     return {"mc_mean": np.random.random(), "mc_std": 0.1, "hparams": kwargs}
-    
-    # def time_stamp_for_saving():
-    #     return datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    # def _summarize_hparam_space(hparams):
-    #     return f"Grid with {len(hparams)} combinations"
-    
-    # def _write_run_info_txt(path, **kwargs):
-    #     with open(path, 'w') as f:
-    #         for k, v in kwargs.items():
-    #             f.write(f"{k}: {v}\n")
-    
-    # # Dummy GNM classes
-    # class GNMNetworkGenerator:
-    #     def __init__(self): pass
-    #     def generate_matched_network(self, *args, **kwargs): return np.random.randint(0, 2, (68, 68))
-    
-    # class GNMParameters:
-    #     def __init__(self, **kwargs): 
-    #         for k, v in kwargs.items(): setattr(self, k, v)
-    
-    # class WiringRule:
-    #     MATCHING_INDEX = "matching_index"
+from src.ESNs.utils_math import _calculate_branching_ratio
 
-
-### ESN Evaluation
 
 class ESNEvaluator:
     """Handles ESN evaluation across multiple subjects and hyperparameters."""
@@ -491,7 +458,7 @@ def create_esn_evaluator(config_path: Optional[Union[str, Path]] = None,
             config_manager = ConfigManager()
     
     if data_loader is None:
-        from data_loader import DataLoader
+        from src.utils.data_loader import DataLoader
         data_loader = DataLoader(config_manager)
     
     return ESNEvaluator(config_manager, data_loader)
@@ -501,7 +468,7 @@ def create_esn_evaluator(config_path: Optional[Union[str, Path]] = None,
 if __name__ == "__main__":
     # Example: Quick test with small hyperparameter grid
     from config import get_gnm_quick_test_config # get_quick_test_config
-    from data_loader import create_data_loader
+    from src.utils.data_loader import create_data_loader
     
     # Set up configuration for testing
     config = get_gnm_quick_test_config()

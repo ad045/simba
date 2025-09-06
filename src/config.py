@@ -381,114 +381,114 @@ def get_esn_config():
     return config
 
 
-# Preset configurations optimized for GNM library
-def get_gnm_quick_test_config() -> ConfigManager:
-    """Quick test configuration using GNM defaults."""
-    gnm_config = GNMConfig(
-        n_eta=50, # TODO: I seem to use this one here for the sweep... WHY THO? 
-        n_gamma=50,
-        num_simulations=10,
-        generative_rules_to_test=["matching_index"],
-        evaluation_metrics=["degree_ks", "clustering_ks"]
-    )
+# # Preset configurations optimized for GNM library
+# def get_gnm_quick_test_config() -> ConfigManager:
+#     """Quick test configuration using GNM defaults."""
+#     gnm_config = GNMConfig(
+#         n_eta=50, # TODO: I seem to use this one here for the sweep... WHY THO? 
+#         n_gamma=50,
+#         num_simulations=10,
+#         generative_rules_to_test=["matching_index"],
+#         evaluation_metrics=["degree_ks", "clustering_ks"]
+#     )
     
-    data_config = DataConfig(
-        densities=[10],
-        use_gnm_defaults=True  # Use GNM's default data for testing
-    )
+#     data_config = DataConfig(
+#         densities=[10],
+#         use_gnm_defaults=True  # Use GNM's default data for testing
+#     )
     
-    compute_config = ComputeConfig(
-        timing_flag=True,
-        n_workers=2
-    )
+#     compute_config = ComputeConfig(
+#         timing_flag=True,
+#         n_workers=2
+#     )
     
-    return ConfigManager(
-        gnm_config=gnm_config,
-        data_config=data_config,
-        compute_config=compute_config
-    )
+#     return ConfigManager(
+#         gnm_config=gnm_config,
+#         data_config=data_config,
+#         compute_config=compute_config
+#     )
 
-# Preset MINIMAL configurations optimized for GNM library
-def get_gnm_minimal_config() -> ConfigManager:
-    """Minimal configuration using GNM defaults."""
-    gnm_config = GNMConfig(
-        n_eta=2,
-        n_gamma=2,
-        num_simulations=1,
-        generative_rules_to_test=["matching_index"],
-        evaluation_metrics=["degree_ks", "clustering_ks"]
-    )
+# # Preset MINIMAL configurations optimized for GNM library
+# def get_gnm_minimal_config() -> ConfigManager:
+#     """Minimal configuration using GNM defaults."""
+#     gnm_config = GNMConfig(
+#         n_eta=2,
+#         n_gamma=2,
+#         num_simulations=1,
+#         generative_rules_to_test=["matching_index"],
+#         evaluation_metrics=["degree_ks", "clustering_ks"]
+#     )
     
-    data_config = DataConfig(
-        densities=[10],
-        use_gnm_defaults=True  # Use GNM's default data for testing
-    )
+#     data_config = DataConfig(
+#         densities=[10],
+#         use_gnm_defaults=True  # Use GNM's default data for testing
+#     )
     
-    compute_config = ComputeConfig(
-        timing_flag=True,
-        n_workers=2
-    )
+#     compute_config = ComputeConfig(
+#         timing_flag=True,
+#         n_workers=2
+#     )
     
-    return ConfigManager(
-        gnm_config=gnm_config,
-        data_config=data_config,
-        compute_config=compute_config
-    )
-
-
-def get_gnm_comprehensive_config() -> ConfigManager:
-    """Comprehensive GNM analysis configuration."""
-    gnm_config = GNMConfig(
-        n_eta=50,
-        n_gamma=50,
-        num_simulations=100,
-        generative_rules_to_test=[
-            "matching_index", 
-            "neighbors",
-            "degree_product",
-            "clustering_coefficient",
-            "spatial"
-        ],
-        evaluation_metrics=[
-            "degree_ks", 
-            "clustering_ks", 
-            "betweenness_ks",
-            "edge_length_ks"
-        ],
-        weight_criterion="distance_weighted_communicability",
-        alpha=0.01
-    )
-    
-    data_config = DataConfig(
-        densities=[10, 12, 14, 16, 18, 20],
-        use_weighted=True
-    )
-    
-    return ConfigManager(gnm_config=gnm_config, data_config=data_config)
+#     return ConfigManager(
+#         gnm_config=gnm_config,
+#         data_config=data_config,
+#         compute_config=compute_config
+#     )
 
 
-def get_gnm_rule_comparison_config() -> ConfigManager:
-    """Configuration for comparing different generative rules."""
-    gnm_config = GNMConfig(
-        n_eta=20,
-        n_gamma=20,
-        num_simulations=50,
-        generative_rules_to_test=[
-            "matching_index",
-            "neighbors", 
-            "degree_product",
-            "degree_difference",
-            "clustering_coefficient",
-            "clustering_coefficient_zhang",
-            "clustering_coefficient_bu",
-            "spatial",
-            "communicability",
-            "adamic_adar",
-            "path_index_2",
-            "preferential_attachment",
-            "resource_allocation"
-        ],
-        evaluation_metrics=["degree_ks", "clustering_ks", "edge_length_ks", "frobenius"]
-    )
+# def get_gnm_comprehensive_config() -> ConfigManager:
+#     """Comprehensive GNM analysis configuration."""
+#     gnm_config = GNMConfig(
+#         n_eta=50,
+#         n_gamma=50,
+#         num_simulations=100,
+#         generative_rules_to_test=[
+#             "matching_index", 
+#             "neighbors",
+#             "degree_product",
+#             "clustering_coefficient",
+#             "spatial"
+#         ],
+#         evaluation_metrics=[
+#             "degree_ks", 
+#             "clustering_ks", 
+#             "betweenness_ks",
+#             "edge_length_ks"
+#         ],
+#         weight_criterion="distance_weighted_communicability",
+#         alpha=0.01
+#     )
     
-    return ConfigManager(gnm_config=gnm_config)
+#     data_config = DataConfig(
+#         densities=[10, 12, 14, 16, 18, 20],
+#         use_weighted=True
+#     )
+    
+#     return ConfigManager(gnm_config=gnm_config, data_config=data_config)
+
+
+# def get_gnm_rule_comparison_config() -> ConfigManager:
+#     """Configuration for comparing different generative rules."""
+#     gnm_config = GNMConfig(
+#         n_eta=20,
+#         n_gamma=20,
+#         num_simulations=50,
+#         generative_rules_to_test=[
+#             "matching_index",
+#             "neighbors", 
+#             "degree_product",
+#             "degree_difference",
+#             "clustering_coefficient",
+#             "clustering_coefficient_zhang",
+#             "clustering_coefficient_bu",
+#             "spatial",
+#             "communicability",
+#             "adamic_adar",
+#             "path_index_2",
+#             "preferential_attachment",
+#             "resource_allocation"
+#         ],
+#         evaluation_metrics=["degree_ks", "clustering_ks", "edge_length_ks", "frobenius"]
+#     )
+    
+    # return ConfigManager(gnm_config=gnm_config)
