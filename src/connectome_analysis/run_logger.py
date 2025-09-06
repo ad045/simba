@@ -91,11 +91,22 @@ class RunLogger:
             "metadata": metadata or {}
         }
         
+        # run_record = {
+        #     "session_id": self.logger.session_id,
+        #     "run_id": f"{self.logger.session_id}_{self.logger.session_summary['total_runs']}",
+        #     "timestamp": datetime.now().isoformat(),
+        #     "run_type": run_type,
+        #     "experiment_name": experiment_name,
+        #     "parameters": parameters,
+        #     "results": results,
+        #     "metadata": metadata or {}
+        # }
+        
         # Log to session file (JSONL format - one line per run)
-        self._append_jsonl(self.all_runs_path, run_record)
+        # self._append_jsonl(self.all_runs_path, run_record)
         
         # Log to global file
-        self._append_jsonl(self.global_log_path, run_record)
+        # self._append_jsonl(self.global_log_path, run_record)
         
         # Update session summary
         self.session_summary["total_runs"] += 1
@@ -115,13 +126,19 @@ class RunLogger:
         
         exp_summary = self.session_summary["experiments"][experiment_name]
         exp_summary["run_count"] += 1
-        exp_summary["run_types"].add(run_type)
+        if not exp_summary["run_types"]:  # Is this sensible? Think if there's a smarter way to do so 
+            exp_summary["run_types"] = [] # .add(run_type)
+        exp_summary["run_types"].append(run_type)
         exp_summary["last_update"] = run_record["timestamp"]
         
         # Convert set to list for JSON serialization
-        for exp in self.session_summary["experiments"].values():
-            if isinstance(exp.get("run_types"), set):
-                exp["run_types"] = list(exp["run_types"])
+        # for exp in self.session_summary["experiments"].values():
+            # if isinstance(exp.get("run_types"), set): 
+            #     if exp.get("run_types"): 
+            #         exp["run_types"] = list(exp["run_types"])
+            #     else: 
+            #         exp["run_types"] = []
+            
         
         # # Save session summary
         # self._save_session_summary()
@@ -236,10 +253,11 @@ class RunLogger:
         with open(path, 'a') as f:
             f.write(json.dumps(record, default=str) + '\n')
     
-    # def _save_session_summary(self) -> None:
-    #     """Save the session summary to JSON."""
-    #     with open(self.session_summary_path, 'w') as f:
-    #         json.dump(self.session_summary, f, indent=2, default=str)
+    def _save_session_summary(self, current_projects_output_dir) -> None:
+        """Save the session summary to JSON."""
+        with open(current_projects_output_dir / "session_summary_2.json", 'w') as f: # TODO!!
+            json.dump(self.session_summary, f, indent=2, default=str)
+    
     
     def _log_to_wandb(self, run_type: str, parameters: Dict, results: Dict) -> None:
         """Log to wandb if available."""
@@ -260,14 +278,18 @@ class RunLogger:
         except Exception as e:
             pass  # Silently fail wandb logging
     
-    def finalize(self) -> None:
+    def finalize(self, current_projects_output_dir) -> None:
         """Finalize the logging session."""
         self.session_summary["end_time"] = datetime.now().isoformat()
         self.session_summary["duration_seconds"] = (
             datetime.now() - datetime.fromisoformat(self.session_start)
         ).total_seconds()
         
-        # self._save_session_summary()
+        try:    
+            self._save_session_summary(current_projects_output_dir)
+            print(current_projects_output_dir / "session_summary_2.json")
+        except Exception as e:
+            print(f"Error saving session summary: {e}")
         
         print(f"\nLogging session completed:")
         print(f"  Session ID: {self.session_id}")

@@ -80,7 +80,7 @@ class ESNEvaluator:
     
     def _subject_job(self, 
                     subj_idx: int,
-                    A_obs: np.ndarray,
+                    A_obs: np.ndarray, # rename!
                     hparams: Dict[str, Any],
                     timing_flag: bool = True,
                     random_seed: Optional[int] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -117,12 +117,12 @@ class ESNEvaluator:
         if timing_flag:
             t_esn0 = time.perf_counter()
         
-        with warnings.catch_warnings():
+        with warnings.catch_warnings(): # This one fails... 
             warnings.simplefilter("ignore", RuntimeWarning)
             np.seterr(over="ignore", divide="ignore", invalid="ignore")
             
             mc_result_dict = evaluate_memory_capacity_from_connectome(
-                connectome=A_obs,
+                connectome=A_obs,  # np float 64
                 spectral_radius=esn_hparams["spectral_radius"],
                 n_lags=esn_hparams["n_lags"],
                 train_len=esn_hparams["input_length"],

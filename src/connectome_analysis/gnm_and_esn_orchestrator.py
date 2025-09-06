@@ -639,6 +639,7 @@ class GNMandESNPipelineOrchestrator:
         
         return results
     
+    
     def _generate_summary(self, results: Dict[str, Any]) -> Dict[str, Any]:
         """Generate summary statistics from results."""
         summary = {
@@ -756,6 +757,7 @@ class GNMandESNPipelineOrchestrator:
                 "error": str(e),
                 "experiment_name": experiment_name
             }
+
 
     def run_gnm_esn_grid_evaluation(self,
                                     target_network: Optional[torch.Tensor] = None,
@@ -949,6 +951,95 @@ class GNMandESNPipelineOrchestrator:
         )
         
         return results
+
+
+    def run_dynamic_gnm_generation(self, experiment_name: Optional[str] = None):
+        """
+        Runs the full dynamically-aware GNM generation and evaluation pipeline.
+        """
+        print("=" * 60)
+        print("DYNAMICALLY-AWARE GNM GENERATION")
+        print("=" * 60)
+        
+        if not experiment_name:
+            experiment_name = f"dynamic_gnm_{time.strftime('%Y%m%d_%H%M%S')}"
+
+        # --- Data Loading ---
+        # (Assuming non-default data for this advanced task)
+        distance_matrix = torch.tensor(
+            self.data_loader.load_distance_matrix(), dtype=torch.float32
+        )
+        binary_connectomes = self.data_loader.load_binary_connectomes()
+        
+        # Use first subject of first density as target
+        density = sorted(binary_connectomes.keys())[0]
+        target_network = binary_connectomes[density][0, :, :]
+        n_edges = int(target_network.sum() // 2)
+        n_nodes = target_network.shape[-1]
+
+        # --- Initialize Dynamic Generator ---
+        from gnm_network_generator import DynamicGNMGenerator, GNMParameters
+        
+        dynamic_generator = DynamicGNMGenerator(self.esn_evaluator, self.config.gnm.device)
+        
+        # --- Set up Parameters ---
+        rule_name = self.config.gnm.generative_rules_to_test[0] # Use first rule from config. TODO
+        gnm_params = GNMParameters(
+            eta=self.config.gnm.eta_range[0], # Example: use start of range. TODO
+            gamma=self.config.gnm.gamma_range[0],
+            generative_rule=dynamic_generator.AVAILABLE_RULES[rule_name]()
+        )
+        dynamic_config = {
+            "dynamic_delta": self.config.gnm.dynamic_delta,
+            "candidate_pool_size": self.config.gnm.candidate_pool_size,
+            "fast_esn_eval": self.config.gnm.fast_esn_eval
+        }
+
+        # --- Run Generation ---
+        generated_network = dynamic_generator.generate_dynamically_aware_network(
+            n_nodes=n_nodes,
+            n_edges=n_edges,
+            distance_matrix=distance_matrix,
+            gnm_params=gnm_params,
+            dynamic_config=dynamic_config
+        )
+
+        # --- Evaluation and Logging ---
+        print("Evaluating final generated network...")
+        final_esn_eval = self.esn_evaluator.evaluate_single_subject(
+            subject_idx=0,
+             connectome=generated_network.cpu().numpy(), # is float 32??, 68x68
+            hparams={} # Use defaults from config for final, thorough evaluation
+        )
+        
+        self.logger.log_run(
+            run_type="dynamic_gnm_generation",
+            experiment_name=experiment_name,
+            parameters={
+                "eta": gnm_params.eta,
+                "gamma": gnm_params.gamma,
+                "delta": dynamic_config['dynamic_delta'],
+                "rule": rule_name,
+                "candidate_pool_size": dynamic_config['candidate_pool_size']
+            },
+            results={
+                "final_mc_mean": final_esn_eval.get("mc_mean"),
+                "final_mc_std": final_esn_eval.get("mc_std")
+            },
+            metadata={
+                "target_density": density,
+                "n_nodes": n_nodes,
+                "n_edges": n_edges
+            }
+        )
+        
+        
+        self.logger.finalize(self.config.paths.current_projects_output_dir)
+        print("Run complete and logged.")
+        np.save(self.config.paths.current_projects_output_dir / "generated_network.npy", generated_network.cpu().numpy())
+        
+        return {"status": "success", "network": generated_network}
+
 
 
 

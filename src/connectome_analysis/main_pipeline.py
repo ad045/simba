@@ -53,7 +53,7 @@ class YAMLConfigLoader:
         if 'type' not in self.config['experiment']:
             raise ValueError("Missing 'type' in experiment section")
         
-        valid_types = ['esn', 'gnm_sweep', 'gnm_comprehensive', 'full_pipeline', 'gnm_esn_grid']
+        valid_types = ['esn', 'gnm_sweep', 'gnm_comprehensive', 'full_pipeline', 'gnm_esn_grid', 'dynamic_gnm']
         if self.config['experiment']['type'] not in valid_types:
             raise ValueError(f"Invalid experiment type. Must be one of: {valid_types}")
     
@@ -364,58 +364,14 @@ def run_from_yaml(yaml_path: str):
         precise_folder_name = exp_args.get('experiment_name', 'default_no_exp_name_set') + f"_{current_time}"
         if exp_type == 'esn':
             output_dir = config.paths.esn_output_dir / exp_args.get('experiment_name', f"esn_{current_time}") / precise_folder_name
-        else: # TODO: Change this here. 
+        elif exp_type == 'gnm':
             output_dir = config.paths.gnm_output_dir / exp_args.get('experiment_name', f"gnm_{current_time}") / precise_folder_name
-        
+        elif exp_type == 'dynamic_gnm': # TODO: Change this here.
+            output_dir = config.paths.dynamic_gnm_output_dir / exp_args.get('experiment_name', f"dynamic_gnm_{current_time}") / precise_folder_name
+
         # # Ensure the directory exists
         output_dir.mkdir(parents=True, exist_ok=True)
-        
-        # # Save run_info.txt
-        # run_info_path = output_dir / "run_info.txt"
-        # with open(run_info_path, 'w') as f:
-        #     # Write experiment details
-        #     f.write("Experiment Configuration\n")
-        #     f.write("=" * 40 + "\n")
-        #     f.write(f"Experiment Type: {exp_type}\n")
-        #     f.write(f"Experiment Name: {exp_args.get('experiment_name', 'Unnamed')}\n\n")
-            
-        #     # Save a copy of the original YAML config
-        #     f.write("Original YAML Configuration File\n")
-        #     f.write("=" * 40 + "\n")
-        #     with open(yaml_path, 'r') as yaml_file:
-        #         f.write(yaml_file.read() + "\n\n")
-            
-        #     # Serialize and write parsed configuration details
-        #     f.write("Parsed Configuration Summary\n")
-        #     f.write("=" * 40 + "\n")
-        #     config_summary = {
-        #         "data": {
-        #             "resolution": config.data.resolution,
-        #             "densities": config.data.densities,
-        #             "use_weighted": config.data.use_weighted,
-        #         },
-        #         "esn": {
-        #             "spectral_radius": config.esn.spectral_radius,
-        #             "input_scaling": config.esn.input_scaling,
-        #             "input_length": config.esn.input_length,
-        #             "regularization_method": config.esn.regularization_method,
-        #             "n_runs": config.esn.n_runs,
-        #             "n_lags": config.esn.n_lags,
-        #         },
-        #         "gnm": {
-        #             "eta_range": config.gnm.eta_range,
-        #             "gamma_range": config.gnm.gamma_range,
-        #             "generative_rules_to_test": config.gnm.generative_rules_to_test,
-        #         },
-        #         "compute": {
-        #             "n_workers": config.compute.n_workers,
-        #             "random_seed": config.compute.random_seed,
-        #         },
-        #         "experiment_args": exp_args
-        #     }
-            
-        #     # Use json.dump for cleaner formatting
-        #     json.dump(config_summary, f, indent=2)
+        config.paths.current_projects_output_dir = output_dir
         
         # Copy the original YAML config to the output directory
         shutil.copy(yaml_path, output_dir / "config.yaml")
@@ -477,7 +433,6 @@ def run_from_yaml(yaml_path: str):
         
     else:
         # Use orchestrator for GNM experiments
-        # config.paths.
         orchestrator = GNMandESNPipelineOrchestrator(config)
         
         if exp_type == 'gnm_sweep':
@@ -512,11 +467,15 @@ def run_from_yaml(yaml_path: str):
                 n_gamma=gnm_cfg.get('n_gamma', 20)
             )
         
+        elif exp_type == "dynamic_gnm":
+            results = orchestrator.run_dynamic_gnm_generation(
+                experiment_name=exp_args.get('experiment_name')
+            )
         
         print("\nExperiment completed!")
         
         # Finalize logger
-        orchestrator.logger.finalize()
+        orchestrator.logger.finalize(config.paths.current_projects_output_dir)
 
 
 def main():

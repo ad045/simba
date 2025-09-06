@@ -6,7 +6,7 @@ Optimized GNM-based network generation fully leveraging Edward's GNM library.
 import numpy as np
 import torch
 import warnings
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, List, Tuple, Union
 from dataclasses import dataclass
 
 # Import everything we need from GNM library
@@ -18,17 +18,19 @@ from gnm import (
 )
 # from gnm.model import BinaryGenerativeParameters
 
+# For the dynamicGNMGenerator
+from esn_evaluation import ESNEvaluator 
 
 @dataclass
 class GNMParameters:
     """Parameters for GNM generation - matches GNM library structure."""
-    eta: float = -2.0                    # Distance parameter
-    gamma: float = 0.3                   # Homophily parameter
-    lambdah: float = 0.0                # Time-dependency parameter
-    generative_rule: Any = None         # Will be set to actual rule object
-    distance_relationship_type: str = "powerlaw"
-    preferential_relationship_type: str = "powerlaw"
-    heterochronicity_relationship_type: str = "powerlaw"
+    eta: Union[float, torch.Tensor] = -2.0                    # Distance parameter
+    gamma: Union[float, torch.Tensor] = 0.3                   # Homophily parameter
+    lambdah: Union[float, torch.Tensor] = 0.0                # Time-dependency parameter
+    generative_rule: Any = None                               # Will be set to actual rule object
+    distance_relationship_type: Union[str, List[str]] = "powerlaw"
+    preferential_relationship_type: Union[str, List[str]] = "powerlaw"
+    heterochronicity_relationship_type: Union[str, List[str]] = "powerlaw"
     num_simulations: int = 100
     device: str = "cpu"
     random_seed: Optional[int] = None
@@ -400,6 +402,123 @@ class GNMGenerator:
         results["best_rule"] = best_rule
         
         return results
+
+
+############## 
+
+class DynamicGNMGenerator(GNMGenerator):
+    """
+    A GNM generator that incorporates ESN-based dynamic fitness into the edge selection process.
+    """
+    
+    def __init__(self, esn_evaluator: ESNEvaluator, device: Optional[str] = None):
+        """Initialize with an ESN evaluator."""
+        super().__init__(device)
+        self.esn_evaluator = esn_evaluator
+        # Ensure the evaluator uses a single worker for this internal task
+        self.esn_evaluator.config.compute.n_workers = 1
+
+    def generate_dynamically_aware_network(self,
+                                           n_nodes: int,
+                                           n_edges: int,
+                                           distance_matrix: torch.Tensor,
+                                           gnm_params: GNMParameters,
+                                           dynamic_config: Dict[str, Any]) -> torch.Tensor:
+        """
+        Generates a network using the candidate re-ranking algorithm.
+        
+        Args:
+            n_nodes: Number of nodes.
+            n_edges: Target number of edges.
+            distance_matrix: Distance matrix.
+            gnm_params: Standard GNM parameters (eta, gamma, rule).
+            dynamic_config: Dictionary with dynamic parameters (delta, pool_size, etc.).
+
+        Returns:
+            The generated dynamically-aware binary network.
+        """
+        print("Starting dynamically-aware GNM generation...")
+        
+        # Initialize network
+        adjacency_matrix = torch.zeros((n_nodes, n_nodes), device=self.device)
+        distance_matrix = distance_matrix.to(self.device)
+        
+        # Pre-compute distance term
+        dist_term = distance_matrix.pow(gnm_params.eta)
+        dist_term.fill_diagonal_(0)
+        
+        # Add batch dimension for compatibility with GNM library (jax)
+        adjacency_matrix = adjacency_matrix.unsqueeze(0)
+
+        for edge_k in range(n_edges):
+            print(f"  Adding edge {edge_k + 1}/{n_edges}...", end='\r')
+            
+            # Candidate selection (standard GNM)
+            # Calculate homophily term using the chosen rule
+            K = gnm_params.generative_rule(adjacency_matrix)
+            K_term = K.pow(gnm_params.gamma)
+            
+            # Calculate standard GNM probability
+            gnm_prob = dist_term * K_term
+            
+            # Mask out existing edges
+            gnm_prob[adjacency_matrix == 1] = 0
+            
+            # Explicitly prevent self-loops by zeroing the diagonal. (should be unnecessary) + issues with dimensions. 
+            # gnm_prob.fill_diagonal_(0)
+            
+            ####
+            # Get top candidates
+            flat_probs = gnm_prob.flatten()
+            top_k_indices = torch.topk(flat_probs, k=dynamic_config['candidate_pool_size']).indices
+            candidate_edges = [(idx // n_nodes, idx % n_nodes) for idx in top_k_indices]
+            
+            # Dynamic evaluation and adding of edges
+            candidate_scores = []
+            for u, v in candidate_edges:
+
+                # Skip self-loops 
+                if u == v:
+                    continue 
+                
+                # Create a temporary network
+                temp_adj = adjacency_matrix.clone()
+                temp_adj[0, u, v] = temp_adj[0, v, u] = 1
+
+                # Run fast ESN evaluation
+                esn_result = self.esn_evaluator.evaluate_single_subject(
+                    subject_idx=0,
+                    connectome=temp_adj[0,:,:].cpu().numpy().astype(np.float64),
+                    hparams=dynamic_config['fast_esn_eval']
+                )
+                mc = esn_result.get("mc_mean", 0.0)
+                
+                # Final MC score calculation
+                # Normalize probabilities and MC for stable combination
+                gnm_score = gnm_prob[0, u, v].item()
+                dynamic_score = mc
+                
+                # Combine scores (using delta as a weight here for simplicity): TODO
+                delta = dynamic_config['dynamic_delta']
+                final_score = (1 - delta) * gnm_score + delta * dynamic_score
+                candidate_scores.append(final_score)
+            
+            # Edge selection
+            best_candidate_idx = np.argmax(candidate_scores)
+            best_u, best_v = candidate_edges[best_candidate_idx]
+            # Print selected edge info, into the same line as previous print
+            print(f"    Selected edge ({best_u}, {best_v}) with combined score {candidate_scores[best_candidate_idx]:.4f}")
+            
+            # Add the best edge permanently
+            adjacency_matrix[0, best_u, best_v] = adjacency_matrix[0, best_v, best_u] = 1
+
+        print("Dynamic generation complete.")
+        return adjacency_matrix[0,:,:].to(torch.float32)  # Remove batch dimension again
+
+
+
+
+##############
 
 
 # Convenience functions using GNM library features

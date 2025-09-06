@@ -58,6 +58,20 @@ class GNMConfig:
     num_simulations: int = 10
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     
+    # For dynamic generation process (dynGNM) 
+    use_dynamic_generation: bool = False
+    dynamic_delta: float = 1.0  # The 'δ' parameter, balancing GNM vs. ESN
+    candidate_pool_size: int = 50  # Number of top GNM candidates to evaluate with ESN
+    
+    # Configuration for the fast ESN evaluation used during generation od dynGNM
+    fast_esn_eval: Dict[str, Any] = field(default_factory=lambda: {
+        "input_length": 500,
+        "n_runs": 3,
+        "spectral_radius": 0.99,
+        "input_scaling": 1.0,
+        "regularization_method": "pinv"
+    })
+    
     def create_binary_sweep_parameters(self, 
                                       distance_matrix: torch.Tensor,
                                       num_iterations: int) -> fitting.BinarySweepParameters:
@@ -175,6 +189,7 @@ class PathConfig:
         self.output_dir = self.root_dir / "output"
         self.esn_output_dir = self.output_dir / "esn"  # TODO: ESN path. previously: 02_esns_on_observed_weighted_connectomes
         self.gnm_output_dir = self.output_dir / "gnm" # TODO: GNM path. previously: 03_gnm_estimation
+        self.dynamic_gnm_output_dir = self.output_dir / "dynamic_gnm" # dynGNM path
 
 
 class ConfigManager:
