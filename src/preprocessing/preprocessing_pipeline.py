@@ -78,7 +78,7 @@ def parse_args() -> PipelineConfig:
     p.add_argument("--resolution", type=int, default=68,
                    help="Parcellation resolution for distance matrix & inputs (default: 68)")
     p.add_argument("--goal-densities", type=int, nargs="+",
-                   default=[10, 12, 14, 16, 18, 20],
+                   default=[4], # 10, 12, 14, 16, 18, 20],
                    help="One or more goal densities in PERCENT to retain during thresholding")
     p.add_argument("--analyze-density", type=int, default=10,
                    help="Which density (in percent) to use for analyses that require a single binarized set")
