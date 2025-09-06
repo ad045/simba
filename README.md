@@ -25,6 +25,8 @@ Currently, the repo contains scripts for:
         - "dynamic GNMs" (in short **DynGNMs**) generation and evaluation (MC). The generation is similar to the GNM, but every next edge's placement is done in accordance to it's best location in terms of MC improvement / transfer entropy improvement / etc. 
 
 ![alt text](image.png)
+
+
 *Plot showing energy landscape of GNM sweep. This works now better than the results shown in the first update.*
 
 
