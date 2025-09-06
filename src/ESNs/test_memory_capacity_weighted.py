@@ -1,12 +1,20 @@
 # Modelled after damicelli's work. 
+# -> Used at least for main_pipeline_2_gnm_esn_landscape.py and for main_pipeline_2.py (esn part)
 
 import numpy as np
 from typing import List, Tuple, Dict, Optional
 from echoes.esn import ESNRegressor
 
+import warnings
+
+from src.ESNs.utils_math import _entropy, _calculate_information_dynamics, _calculate_branching_ratio
+
 
 def _generate_mc_dataset(train_len: int, test_len: int, n_lags: int, rng: np.random.Generator) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    total_len = train_len + test_len + n_lags + 100
+    """ Generates a dataset for memory capacity evaluation."""
+    
+    total_len = int(train_len + test_len + n_lags + 100)
+
     seq = rng.uniform(-0.5, 0.5, size=(total_len,))
     def build_targets(x: np.ndarray, lags: int) -> np.ndarray:
         T = len(x) - lags
@@ -25,23 +33,26 @@ def _generate_mc_dataset(train_len: int, test_len: int, n_lags: int, rng: np.ran
 
 
 def evaluate_memory_capacity_from_connectome(connectome: np.ndarray, 
-                                             *, 
-                                             spectral_radius: float = 0.99, 
-                                             n_lags: int = 50, 
-                                             train_len: int = 4000, 
-                                             test_len: int = 1000, 
-                                             n_runs: int = 10, 
-                                             input_scaling: float = 1.0,
-                                             regression_method: str = "pinv",
-                                             n_transient: int = 0,
-                                             leak_rate: float = 1.0,
-                                             bias: float = 1.0,
+                                             spectral_radius: Optional[float] = 0.99, 
+                                             n_lags: Optional[int] = 50, 
+                                             train_len:  Optional[int] = 4000, 
+                                             test_len: Optional[int] = 1000, 
+                                             n_runs: Optional[int] = 10, 
+                                             input_scaling: Optional[float] = 1.0,
+                                             regression_method: Optional[str] = "pinv",
+                                             n_transient: Optional[int] = 0,
+                                             leak_rate: Optional[float] = 1.0,
+                                             bias: Optional[float] = 1.0,
                                              random_state: Optional[int] = 42, 
+                                             calculate_criticality:  Optional[bool] = False,
+                                             calculate_info_dynamics: Optional[bool] = False, 
+                                             
  ) -> Dict[str, float]:
     
     # Random generator to generate the input sequence
     rng = np.random.default_rng(random_state)
     mc_values: List[float] = []
+    all_states_for_metrics: List[np.ndarray] = []
     
     # Loop through the number of runs
     for _ in range(n_runs):
@@ -57,25 +68,30 @@ def evaluate_memory_capacity_from_connectome(connectome: np.ndarray,
             leak_rate=leak_rate,
             bias=bias,
             regression_method=regression_method,
+            # store_states_train=True,
+            store_states_pred=True, 
         )
         
         esn.fit(X_tr, Y_tr)
+        # check out esn. states_train_
+ 
         Y_pred = esn.predict(X_te)
+        all_states_for_metrics.append(esn.states_pred_)
         
         # Vectorised Pearson r per column
         Yt = Y_te - Y_te.mean(axis=0, keepdims=True)
         Yp = Y_pred - Y_pred.mean(axis=0, keepdims=True)
         denom = (Yt.std(axis=0, ddof=0) * Yp.std(axis=0, ddof=0))
-        # with np.errstate(divide='ignore', invalid='ignore'):
-        #     r = (Yt * Yp).mean(axis=0) / denom
-        #     r = np.nan_to_num(r, nan=0.0, posinf=0.0, neginf=0.0)
+        
         r = (Yt * Yp).mean(axis=0) / denom
         r = np.nan_to_num(r, nan=0.0, posinf=0.0, neginf=0.0)
+        r2 = r**2
         
-        mc = float(np.sum(r**2))
+        mc = float(np.sum(r2))
         mc_values.append(mc)
-        
-    return {"mc_mean": float(np.mean(mc_values)), 
+    
+    mc_result_dict = {
+            "mc_mean": float(np.mean(mc_values)), 
             "mc_std": float(np.std(mc_values)),
             "mean_mc_of_individual_runs": mc_values,  
             "hparams": {
@@ -90,5 +106,20 @@ def evaluate_memory_capacity_from_connectome(connectome: np.ndarray,
                 "leak_rate": leak_rate,
                 "bias": bias,
                 "random_state": random_state,
-                }
+                },
             }
+    
+    if (calculate_criticality or calculate_info_dynamics) and all_states_for_metrics:
+        # Concatenate states from all runs for a more robust estimation
+        concatenated_states = np.vstack(all_states_for_metrics)
+        
+        if calculate_criticality:
+            branching_ratio = _calculate_branching_ratio(concatenated_states)
+            mc_result_dict['branching_ratio'] = branching_ratio
+            
+        if calculate_info_dynamics:
+            info_dyn_results = _calculate_information_dynamics(concatenated_states)
+            mc_result_dict.update(info_dyn_results)
+
+    return mc_result_dict
+    

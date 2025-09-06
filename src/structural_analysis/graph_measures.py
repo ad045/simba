@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 from networkx.algorithms import community as nx_comm
 
+# is used in preprocessing pipeline. 
 
 def _largest_component_char_path_length(G):
     """

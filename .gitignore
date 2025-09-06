@@ -213,8 +213,18 @@ data/
 # data_*
 X_*
 OLD_*
+
 *.npy
+<<<<<<< HEAD
 # *.csv
+=======
+*.csv
+summary_session_*.json 
+session_summary_*.json
+run_info_*.txt
+sweep_results.json
+
+>>>>>>> esn_and_gnm_work
 
 # Force the inclusion of the "sharing" directory - I know, not best practice. 
 !/Users/adrian/Documents/01_projects/14_4D_lab/sharing 
@@ -226,11 +236,23 @@ wandb
 *.jpeg
 *.svg 
 *.pdf 
+*.html
 
-BCT/
-conn2res/
-output/
+# BCT/
+# conn2res/
+# # neonatal_generative_network_modeling-main/
 # neonatal_generative_network_modeling-main/
-neonatal_generative_network_modeling-main/
+# GenerativeNetworkModels_2
+# GenerativeNetworkModels_2/
 
+wandb/
+wandb*.json
+*.txt
+*.wandb 
+*wandb*
+sweep-*/ */
+config*.yaml
 
+visualizations/
+output/
+*output*

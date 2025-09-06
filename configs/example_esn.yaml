@@ -1,0 +1,60 @@
+# Note: Not every parameter is relevant for every experiment type. 
+# Note: Not all parameter configurations are tested yet. 
+
+experiment:
+  type: esn # gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
+  name: 00_esn_experiments 
+  search:
+    method: grid  # Options: grid, random, bayesian
+    n_samples: 30  # For random search
+  wandb:
+    enabled: false
+    project: ESN_project # GNM_Pipeline
+  compare_rules: true  # For gnm_comprehensive
+  fit_weights: true    # For gnm_comprehensive
+
+data:
+  connectome_resolution: 68
+  densities: [10, 12, 14, 16, 18, 20]
+  use_weighted: true
+  use_gnm_defaults: false  # Set to true to use GNM's built-in test data
+
+gnm:
+  eta_range: [0.1, 10.0]
+  gamma_range: [-5.0, 5.0]
+  n_eta: 10  # Number of eta grid points
+  n_gamma: 10  # Number of gamma grid points
+  wiring_rules: 
+    - matching_index
+    - communicability
+  num_simulations: 100
+  evaluation_metrics:
+    - degree_ks
+    - clustering_ks
+    - edge_length_ks
+  weight_criterion: distance_weighted_communicability
+  alpha: 0.01
+
+esn:
+  spectral_radius: [0.42] # [0.5, 1.0, 1.5, 2.0]  # List for grid search
+  input_scaling: [1.0, 1.5]
+  input_lengths: [1000] # [500, 1000, 2000, 3000, 4000]
+  regularization_methods: [pinv] #, ridge]
+  n_runs: 5
+  n_lags: 50
+  test_len: 1000
+  leak_rate: 1.0
+  bias: 1.0
+
+compute:
+  n_workers: 4
+  timing_flag: true
+  random_seed: 42
+
+output:
+  root_dir: /Users/adrian/Documents/01_projects/14_4D_lab  # Override root directory
+  base_dir: ./output  # Possibility to override base output directory
+  # experiment_name: my_experiment # TODO: TAKE THIS FROM ABOVE! 
+  # save_intermediate: true # TODO: REMOVE THIS AGAIN! 
+  figure_format: pdf # png
+  verbosity: INFO

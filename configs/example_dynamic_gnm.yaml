@@ -1,0 +1,44 @@
+experiment:
+  type: dynamic_gnm # New type
+  name: 01_dynamic_gnm_criticality_test
+
+data:
+  connectome_resolution: 68
+  densities: [16, 20]
+  use_gnm_defaults: false
+
+gnm:
+  # Static GNM parameters (provide a starting point)
+  eta_range: [-2.0, -1.5] # sollte eig nur eine Zahl sein
+  gamma_range: [0.1, 0.3] # sollte eig nur eine Zahl sein
+  wiring_rules: 
+    - matching_index
+  
+  # --- Dynamic Generation Parameters ---
+  use_dynamic_generation: true
+  dynamic_delta: 0.7  # 0.0 = pure GNM, 1.0 = pure ESN. 0.7 gives more weight to dynamics.
+  candidate_pool_size: 10
+
+  # --- New Fitness Metric Selection ---
+  # Choose the metric to guide network growth.
+  # Options: "mc_mean", "branching_ratio", "info_balance", "avg_transfer_entropy", "avg_active_info"
+  dynamic_fitness_metric: "mc_mean"  # Options: ["# "mc_mean", "branching_ratio", "info_balance", "avg_transfer_entropy", "avg_active_info"]
+
+  # Fast ESN config for the generation loop
+  fast_esn_eval:
+    input_length: 500
+    n_runs: 3
+    spectral_radius: 0.99
+
+esn:
+  # Full ESN config for the FINAL evaluation
+  spectral_radius: [0.99]
+  input_lengths: [4000]
+  n_runs: 25
+
+compute:
+  n_workers: 8 # Note: dynamic generation itself is sequential
+  random_seed: 42
+
+output:
+  base_dir: ./output
