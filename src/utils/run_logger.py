@@ -165,42 +165,42 @@ class RunLogger:
             try:
                 print("DEBUG: Logging GNM experiment", i)
                 # Extract parameters
-                bp = exp.run_config.binary_parameters
-                
                 parameters = {
-                    "eta": float(bp.eta),
-                    "gamma": float(bp.gamma),
-                    "generative_rule": str(bp.generative_rule),
-                    "num_iterations": getattr(bp, 'num_iterations', None),
-                    "distance_relationship": getattr(bp, 'distance_relationship_type', 'powerlaw')
+                    "eta": float(exp.model.binary_parameters.eta),
+                    "gamma": float(exp.model.binary_parameters.gamma),
+                    # "lamdah": float(exp.model.binary_parameters.lamdah),
+                    "generative_rule": str(exp.model.binary_parameters.generative_rule),
+                    "num_iterations": int(exp.model.binary_parameters.num_iterations), # getattr(bp, 'num_iterations', None),
+                    "distance_relationship": str(exp.model.binary_parameters.distance_relationship_type), # getattr(bp, 'distance_relationship_type', 'powerlaw')
                 }
                 print("DEBUG: Getting parameters worked") 
                 
                 # Extract results
-                try:
-                    energy = float(exp.evaluation_dict[evaluation_criteria])
-                except:
-                    energy = float(exp.evaluation_dict.get(str(evaluation_criteria), float("nan")))
-                
+                # try:
+                #     energy = float(exp.evaluation_dict[evaluation_criteria])
+                # except:
+                #     energy = float(exp.evaluation_dict.get(str(evaluation_criteria), float("nan")))
+                energy_list = exp.evaluation_results.binary_evaluations
+
                 # Get individual energies if available
                 individual_energies = {}
-                if hasattr(exp, 'evaluation_results') and hasattr(exp.evaluation_results, 'binary_evaluations'):
-                    for j, eval_result in enumerate(exp.evaluation_results.binary_evaluations):
-                        individual_energies[f"sim_{j}"] = float(eval_result) if eval_result is not None else None
+                for j, eval_method in enumerate(energy_list):
+                    individual_energies[f"sim_{j}"] = energy_list[eval_method] # float(energy_list[eval_method]) 
+                    print("testing")
                 
                 print("DEBUG: Getting results worked")
                 
-                results = {
-                    "energy": energy,
-                    "individual_energies": individual_energies,
-                    "rank": i
-                }
+                # results = {
+                #     "energy": energy,
+                #     "individual_energies": individual_energies,
+                #     "rank": i
+                # }
                 
-                metadata = {
-                    "num_simulations": config.gnm.num_simulations,
-                    "device": config.gnm.device,
-                    "sweep_method": "bayesian"
-                }
+                # metadata = {
+                #     "num_simulations": config.gnm.num_simulations,
+                #     "device": config.gnm.device,
+                #     "sweep_method": "bayesian"
+                # }
                 
                 print("DEBUG: Getting metadata worked")
                 
@@ -208,8 +208,8 @@ class RunLogger:
                     run_type="gnm_sweep",
                     experiment_name=experiment_name,
                     parameters=parameters,
-                    results=results,
-                    metadata=metadata
+                    # results=results,
+                    # metadata=metadata
                 )
                 print(f"[{i+1}/{len(experiments)}] GNM experiment logged successfully.")
                 

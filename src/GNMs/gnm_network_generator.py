@@ -8,6 +8,7 @@ import torch
 import warnings
 from typing import Optional, Dict, Any, List, Tuple, Union
 from dataclasses import dataclass
+from pathlib import Path 
 
 # Import everything we need from GNM library
 from gnm import (
@@ -152,6 +153,7 @@ class GNMGenerator:
                       n_eta: int = 20,
                       n_gamma: int = 20,
                       generative_rule_name: str = "matching_index",
+                      given_output_path: Optional[Path] = None, 
                       num_simulations: int = 100,
                       evaluation_metrics: Optional[List[str]] = None) -> Dict[str, Any]:
         """
@@ -218,7 +220,7 @@ class GNMGenerator:
             sweep_config=sweep_config,
             binary_evaluations=[energy_equation],
             real_binary_matrices=target_network,
-            # given_output_path=
+            given_output_path=given_output_path, 
             save_model=False,
             save_run_history=False,
             # experiment_name=experiment_name, (added by me)

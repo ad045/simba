@@ -347,6 +347,7 @@ class GNMandESNPipelineOrchestrator:
                 distance_matrix=distance_matrix,
                 num_iterations=num_iterations,
                 num_simulations=num_simulations,
+                method="random", # method, # should be "random"
                 n_random_samples=n_random_samples,
                 include_weights=True
             )
@@ -354,6 +355,7 @@ class GNMandESNPipelineOrchestrator:
             sweep_config = self.config.create_gnm_sweep_config(
                 distance_matrix=distance_matrix,
                 num_iterations=num_iterations,
+                method="grid", # method, # should be "grid" 
                 num_simulations=num_simulations,
                 include_weights=True
             )
@@ -409,7 +411,8 @@ class GNMandESNPipelineOrchestrator:
         else:
             method = "bayesian"
 
-        
+        # from pathlib import Path 
+        # given_output_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/output/gnm/00_gnm_experiments/00_gnm_XXXX")
         experiments, path_for_the_binary_csv_file = fitting.perform_sweep(
             sweep_config=sweep_config,
             binary_evaluations=[evaluation_criteria],
@@ -418,7 +421,8 @@ class GNMandESNPipelineOrchestrator:
             method=method,
             num_bayesian_runs=200 if not no_wandb else n_random_samples if random_sample else None,
             weighted_evaluations=None,
-            # given_output_path=
+            given_output_path=self.config.paths.current_projects_output_dir,
+            # given_output_path=given_output_path,
             save_model=True,
             experiment_name=experiment_name,
             save_run_history=True,

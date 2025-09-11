@@ -6,7 +6,7 @@ experiment:
   name: 00_gnm_experiments
   search:
     method: random # grid  # Options: grid, random, bayesian
-    n_samples: 5  # For random search
+    n_samples: 100  # For random search
   wandb:
     enabled: false
     project: GNM_project # GNM_Pipeline
@@ -15,15 +15,15 @@ experiment:
 
 data:
   connectome_resolution: 68
-  densities: [10] # , 12, 14, 16, 18, 20]
+  densities: [20] # , 12, 14, 16, 18, 20]
   use_weighted: false # IS THIS CORRECT LIKE THAT? true
   use_gnm_defaults: false  # Set to true to use GNM's built-in test data
 
 gnm:
   eta_range: [-3.0, 0.0] # Attention: Too big values may lead to numerical instabilities! e.g.: [-5.0, 0.0] 
   gamma_range: [0.1, 0.6] # Attention: Too big values may lead to numerical instabilities! e.g.: [0.0, 1.0]
-  n_eta: 3 # 10  # Number of eta grid points
-  n_gamma: 3 # 10  # Number of gamma grid points
+  n_eta: 100 # 10  # Number of eta grid points
+  n_gamma: 100 # 10  # Number of gamma grid points
   wiring_rules: 
     - matching_index
     - communicability
@@ -37,7 +37,7 @@ gnm:
 
 esn:
   spectral_radius: [2.0] # [0.5, 1.0, 1.5, 2.0]  # List for grid search
-  input_scaling: [1.0, 1.5]
+  input_scaling: [1.0] # , 1.5]
   input_lengths: [1000] # [500, 1000, 2000, 3000, 4000]
   regularization_methods: [pinv] #, ridge]
   n_runs: 5
@@ -53,7 +53,7 @@ compute:
 
 output:
   root_dir: /Users/adrian/Documents/01_projects/14_4D_lab  # Override root directory
-  base_dir: ./output  # Possibility to override base output directory
+  # base_dir: ./output  # Possibility to override base output directory
   # experiment_name: my_experiment # TODO: TAKE THIS FROM ABOVE! 
   # save_intermediate: true # TODO: REMOVE THIS AGAIN! 
   figure_format: pdf # png

@@ -214,6 +214,7 @@ class ConfigManager:
                                     distance_matrix: torch.Tensor,
                                     num_iterations: int,
                                     num_simulations: int = 100,
+                                    method: Optional[str] = "grid", # "random", # "grid",
                                     n_random_samples: int = 30,
                                     include_weights: bool = True) -> fitting.SweepConfig:
         """Create GNM sweep configuration with random parameter sampling."""
@@ -261,7 +262,9 @@ class ConfigManager:
             binary_sweep_parameters=binary_params,
             weighted_sweep_parameters=weighted_params,
             num_simulations=num_simulations,
-            distance_matrix=[distance_matrix]
+            distance_matrix=[distance_matrix], 
+            method=method, 
+            num_random_samples=n_random_samples, 
         )
 
     def create_gnm_sweep_config(self, 
