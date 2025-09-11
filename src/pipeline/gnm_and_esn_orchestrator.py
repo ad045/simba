@@ -281,7 +281,9 @@ class GNMandESNPipelineOrchestrator:
                            experiment_name: Optional[str] = None, 
                            no_wandb: Optional[bool] = False,
                            random_sample: bool = False,
-                           n_random_samples: int = 30) -> Dict[str, Any]:
+                           n_random_samples: int = 30, 
+                           elaborate_analysis: Optional[bool] = False, 
+                           **kwargs) -> Dict[str, Any]:
         """
         Run parameter sweep with integrated logging.
         
@@ -291,6 +293,7 @@ class GNMandESNPipelineOrchestrator:
             no_wandb: If True, disable wandb logging
             random_sample: If True, use random sampling instead of grid search
             n_random_samples: Number of random samples to use
+            elaborate_analysis: If True, run detailed analysis and save all networks
             
         Returns:
             Sweep results
@@ -362,7 +365,107 @@ class GNMandESNPipelineOrchestrator:
             
         # Get evaluation criteria
         evaluation_criteria = self.config.get_gnm_evaluation_criteria(distance_matrix)
+          
+        #############
         
+        # --- NEW CORE LOGIC WITH INCREMENTAL SAVING ---
+        from tqdm import tqdm
+        from gnm.fitting import perform_run
+        import pandas as pd
+        import numpy as np
+        from src.structural_analysis.graph_measures import analyze_connectomes
+        from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome
+
+        # Define the path for the output CSV before the loop starts
+        csv_path = self.config.paths.current_projects_output_dir / f"{experiment_name}_results.csv"
+        print(f"Results will be incrementally saved to: {csv_path}")
+
+        for run_config in tqdm(sweep_config, desc="Configuration Iterations"):
+            # 1. Run the basic GNM simulation
+            experiment = perform_run(
+                run_config=run_config,
+                binary_evaluations=[evaluation_criteria],
+                real_binary_matrices=target_network.unsqueeze(0),
+                save_model=True, # Temporarily keep model for elaborate analysis
+                save_run_history=False,
+                device=self.device,
+            )
+
+            # 2. Prepare the data record for this iteration
+            flat_record = {}
+            # Get parameters
+            params = experiment.run_config.binary_parameters
+            flat_record.update({
+                "eta": float(params.eta), "gamma": float(params.gamma),
+                "distance_relationship_type": str(params.distance_relationship_type),
+                "preferential_relationship_type": str(params.preferential_relationship_type),
+                "generative_rule": str(params.generative_rule.__class__.__name__),
+                "num_iterations": int(params.num_iterations),
+            })
+            # Get standard GNM evaluation results
+            # flat_record.update(experiment.evaluation_results.binary_evaluations)
+            
+            # Decision: Option 1: Tracking ALL individual energy scores 
+            # energy_metric_name = list(experiment.evaluation_results.binary_evaluations.keys())[0] # as it's only one key until now. 
+            # energy_values_arr = experiment.evaluation_results.binary_evaluations[energy_metric_name].reshape(-1).numpy()
+            # energy_values_arr = str(energy_values_arr.tolist())
+            # flat_record.update({energy_metric_name: energy_values_arr})
+            # energy_values_arr_as_string = str(...)
+            
+            # Decision Option 2: Only tracking mean energy score 
+            energy_metric_name = list(experiment.evaluation_results.binary_evaluations.keys())[0] # + "_mean" # as it's only one key until now. 
+            energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item() # reshape(-1).numpy()
+            # energy_values_arr = str(energy_values_arr.tolist())
+            flat_record.update({energy_metric_name: energy_value_mean})
+            
+            
+            # 3. If elaborate_analysis is true, run your custom code
+            if elaborate_analysis and experiment.model:
+                networks_np = experiment.model.adjacency_matrix.cpu().numpy()
+                output_dir = self.config.paths.current_projects_output_dir
+
+                # (The logic for saving networks remains the same)
+                rule_name = params.generative_rule.__class__.__name__
+                filename = f"net_eta{params.eta.item():.3f}_gamma{params.gamma.item():.3f}_rule{rule_name}.npy"
+                save_path = output_dir / "generated_networks" / filename
+                save_path.parent.mkdir(parents=True, exist_ok=True)
+                np.save(save_path, networks_np)
+
+                # Calculate graph and ESN measures and add them to the record
+                graph_measures_list = analyze_connectomes(
+                    connectomes=networks_np, distance_matrix=run_config.distance_matrix.cpu().numpy()
+                )
+                flat_record.update(pd.DataFrame(graph_measures_list).mean().to_dict())
+
+                try:
+                    mc_lags_to_calc = [1, 2, 5, 10, 30, 50]
+                    esn_results = [evaluate_memory_capacity_from_connectome(
+                        connectome=net, mc_lengths=mc_lags_to_calc, train_len=1000, n_runs=5, spectral_radius=0.99
+                    ) for net in networks_np]
+                    df_esn = pd.DataFrame(esn_results)
+                    numeric_cols = [c for c in df_esn.columns if 'mc' in c and 'indiv' not in c]
+                    flat_record.update(df_esn[numeric_cols].mean().to_dict())
+                except Exception as e:
+                    print(f"    [Warning] ESN eval failed: {e}. Logging NaN.")
+                    mc_keys = ["mc_mean", "mc_std"] + [f"mc_length_{l}" for l in mc_lags_to_calc]
+                    flat_record.update({key: np.nan for key in mc_keys})
+
+            # 4. Append the flattened record to the CSV file
+            df_to_append = pd.DataFrame([flat_record])
+            df_to_append.to_csv(
+                csv_path,
+                mode='a',
+                header=not csv_path.exists(), # Write header only if file doesn't exist
+                index=False
+            )
+            # Clear model from memory to prevent overuse
+            experiment.model = None
+            
+        print("\nSweep completed! All iterations have been saved.")
+        return {"status": "success", "output_file": str(csv_path)}
+    
+        #############
+
         print(f"Running parameter sweep...")
         print(f"  - Generative rules: {self.config.gnm.generative_rules_to_test}")
         print(f"  - Simulations per parameter set: {self.config.gnm.num_simulations}")
@@ -416,20 +519,22 @@ class GNMandESNPipelineOrchestrator:
         experiments, path_for_the_binary_csv_file = fitting.perform_sweep(
             sweep_config=sweep_config,
             binary_evaluations=[evaluation_criteria],
+            # real_binary_matrices=target_network.unsqueeze(0), # TODO: SHOULD ACTUALLY BE INCLUDED. should be of size (n_subj, n_nodes, n_nodes)
             real_binary_matrices=torch.Tensor(binary_connectomes[first_density]), # should be of size (n_subj, n_nodes, n_nodes)
             # real_binary_matrices=Float[target_network, 'num_real_binary_networks num_nodes num_nodes'], # needs to be jax
             method=method,
             num_bayesian_runs=200 if not no_wandb else n_random_samples if random_sample else None,
             weighted_evaluations=None,
-            given_output_path=self.config.paths.current_projects_output_dir,
             # given_output_path=given_output_path,
-            save_model=True,
-            experiment_name=experiment_name,
+            save_model=False, # True,
+            # experiment_name=experiment_name,
             save_run_history=True,
             verbose=True,
             wandb_logging=not no_wandb,
-            no_different_project_name=True,
-            device=self.device
+            # no_different_project_name=True,
+            device=self.device, 
+            elaborate_analysis=elaborate_analysis,
+            output_dir=self.config.paths.current_projects_output_dir,
         )
 
         # Log all experiments using centralized logger
@@ -490,6 +595,9 @@ class GNMandESNPipelineOrchestrator:
         print(f"Results saved to: {results_file}")
         
         return results
+    
+    
+    
     
     # def run_full_pipeline(self,
     #                      esn_experiment_name: Optional[str] = None,

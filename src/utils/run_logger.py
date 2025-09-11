@@ -147,6 +147,75 @@ class RunLogger:
         if self._wandb_available:
             self._log_to_wandb(run_type, parameters, results)
     
+    # def log_gnm_sweep(self,
+    #                  experiments: List[Any],
+    #                  evaluation_criteria: Any,
+    #                  config: Any,
+    #                  experiment_name: str) -> None:
+    #     """
+    #     Specialized method for logging GNM parameter sweep results.
+        
+    #     Args:
+    #         experiments: List of GNM experiment objects
+    #         evaluation_criteria: Evaluation criteria used
+    #         config: Configuration object
+    #         experiment_name: Name of the experiment
+    #     """
+    #     for i, exp in enumerate(experiments):
+    #         try:
+    #             print("DEBUG: Logging GNM experiment", i)
+    #             # Extract parameters
+    #             parameters = {
+    #                 "eta": float(exp.model.binary_parameters.eta),
+    #                 "gamma": float(exp.model.binary_parameters.gamma),
+    #                 # "lamdah": float(exp.model.binary_parameters.lamdah),
+    #                 "generative_rule": str(exp.model.binary_parameters.generative_rule),
+    #                 "num_iterations": int(exp.model.binary_parameters.num_iterations), # getattr(bp, 'num_iterations', None),
+    #                 "distance_relationship": str(exp.model.binary_parameters.distance_relationship_type), # getattr(bp, 'distance_relationship_type', 'powerlaw')
+    #             }
+    #             print("DEBUG: Getting parameters worked") 
+                
+    #             # Extract results
+    #             # try:
+    #             #     energy = float(exp.evaluation_dict[evaluation_criteria])
+    #             # except:
+    #             #     energy = float(exp.evaluation_dict.get(str(evaluation_criteria), float("nan")))
+    #             energy_list = exp.evaluation_results.binary_evaluations
+
+    #             # Get individual energies if available
+    #             individual_energies = {}
+    #             for j, eval_method in enumerate(energy_list):
+    #                 individual_energies[f"sim_{j}"] = energy_list[eval_method] # float(energy_list[eval_method]) 
+    #                 print("testing")
+                
+    #             print("DEBUG: Getting results worked")
+                
+    #             # results = {
+    #             #     "energy": energy,
+    #             #     "individual_energies": individual_energies,
+    #             #     "rank": i
+    #             # }
+                
+    #             # metadata = {
+    #             #     "num_simulations": config.gnm.num_simulations,
+    #             #     "device": config.gnm.device,
+    #             #     "sweep_method": "bayesian"
+    #             # }
+                
+    #             print("DEBUG: Getting metadata worked")
+                
+    #             self.log_run(
+    #                 run_type="gnm_sweep",
+    #                 experiment_name=experiment_name,
+    #                 parameters=parameters,
+    #                 # results=results,
+    #                 # metadata=metadata
+    #             )
+    #             print(f"[{i+1}/{len(experiments)}] GNM experiment logged successfully.")
+                
+    #         except Exception as e:
+    #             print(f"[Warning] Could not log experiment {i}: {e}")
+    
     def log_gnm_sweep(self,
                      experiments: List[Any],
                      evaluation_criteria: Any,
@@ -155,66 +224,63 @@ class RunLogger:
         """
         Specialized method for logging GNM parameter sweep results.
         
+        This version extracts standard GNM evaluation metrics and, if available,
+        the extended results from the 'elaborate_analysis' feature.
+        
         Args:
-            experiments: List of GNM experiment objects
-            evaluation_criteria: Evaluation criteria used
-            config: Configuration object
-            experiment_name: Name of the experiment
+            experiments: List of GNM experiment objects.
+            evaluation_criteria: Evaluation criteria used.
+            config: The configuration object for the run.
+            experiment_name: Name of the experiment.
         """
+        import numpy as np # Add numpy import for type checking
+
         for i, exp in enumerate(experiments):
             try:
-                print("DEBUG: Logging GNM experiment", i)
-                # Extract parameters
+                # 1. Extract GNM parameters from the run configuration for safety
+                params_obj = exp.run_config.binary_parameters
                 parameters = {
-                    "eta": float(exp.model.binary_parameters.eta),
-                    "gamma": float(exp.model.binary_parameters.gamma),
-                    # "lamdah": float(exp.model.binary_parameters.lamdah),
-                    "generative_rule": str(exp.model.binary_parameters.generative_rule),
-                    "num_iterations": int(exp.model.binary_parameters.num_iterations), # getattr(bp, 'num_iterations', None),
-                    "distance_relationship": str(exp.model.binary_parameters.distance_relationship_type), # getattr(bp, 'distance_relationship_type', 'powerlaw')
+                    "eta": float(params_obj.eta),
+                    "gamma": float(params_obj.gamma),
+                    "distance_relationship_type": str(params_obj.distance_relationship_type),
+                    "preferential_relationship_type": str(params_obj.preferential_relationship_type),
+                    "generative_rule": str(params_obj.generative_rule.__class__.__name__),
+                    "num_iterations": int(params_obj.num_iterations),
                 }
-                print("DEBUG: Getting parameters worked") 
-                
-                # Extract results
-                # try:
-                #     energy = float(exp.evaluation_dict[evaluation_criteria])
-                # except:
-                #     energy = float(exp.evaluation_dict.get(str(evaluation_criteria), float("nan")))
-                energy_list = exp.evaluation_results.binary_evaluations
 
-                # Get individual energies if available
-                individual_energies = {}
-                for j, eval_method in enumerate(energy_list):
-                    individual_energies[f"sim_{j}"] = energy_list[eval_method] # float(energy_list[eval_method]) 
-                    print("testing")
+                # 2. Extract standard GNM evaluation results (e.g., DegreeKS)
+                results = {k: v for k, v in exp.evaluation_results.binary_evaluations.items()}
+
+                # 3. Check for, validate, and add elaborate analysis results
+                if hasattr(exp.evaluation_results, 'elaborate_results'):
+                    elaborate_data = exp.evaluation_results.elaborate_results
+                    # Clean data: ensure all values are JSON-serializable Python natives
+                    cleaned_elaborate_data = {
+                        key: float(val) if isinstance(val, (np.floating, np.integer)) else val
+                        for key, val in elaborate_data.items()
+                    }
+                    results.update(cleaned_elaborate_data)
+
+                # 4. Define metadata for the run
+                metadata = {
+                    "num_simulations": exp.run_config.num_simulations,
+                    "device": config.gnm.device,
+                    "rank_in_sweep": i
+                }
                 
-                print("DEBUG: Getting results worked")
-                
-                # results = {
-                #     "energy": energy,
-                #     "individual_energies": individual_energies,
-                #     "rank": i
-                # }
-                
-                # metadata = {
-                #     "num_simulations": config.gnm.num_simulations,
-                #     "device": config.gnm.device,
-                #     "sweep_method": "bayesian"
-                # }
-                
-                print("DEBUG: Getting metadata worked")
-                
+                # 5. Log the complete, flattened record
                 self.log_run(
-                    run_type="gnm_sweep",
+                    run_type="gnm_sweep_elaborate" if 'mc_mean' in results else "gnm_sweep",
                     experiment_name=experiment_name,
                     parameters=parameters,
-                    # results=results,
-                    # metadata=metadata
+                    results=results,
+                    metadata=metadata
                 )
-                print(f"[{i+1}/{len(experiments)}] GNM experiment logged successfully.")
                 
             except Exception as e:
-                print(f"[Warning] Could not log experiment {i}: {e}")
+                import traceback
+                print(f"[ERROR] Could not log experiment {i}. Reason: {e}\n{traceback.format_exc()}")
+
     
     def log_esn_evaluation(self,
                           subject_id: int,

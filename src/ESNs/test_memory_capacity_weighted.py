@@ -46,6 +46,7 @@ def evaluate_memory_capacity_from_connectome(connectome: np.ndarray,
                                              random_state: Optional[int] = 42, 
                                              calculate_criticality:  Optional[bool] = False,
                                              calculate_info_dynamics: Optional[bool] = False, 
+                                             mc_lengths: Optional[List[int]] = None, 
                                              
  ) -> Dict[str, float]:
     
@@ -89,6 +90,28 @@ def evaluate_memory_capacity_from_connectome(connectome: np.ndarray,
         
         mc = float(np.sum(r2))
         mc_values.append(mc)
+        
+        mc_result_dict = {} # or is this stupid? 
+        
+        # Calculate MC for specific lags
+        if mc_lengths:
+            # loop through the as-args-given-lags
+            for length in mc_lengths:
+                key = f"mc_length_{length}"
+                if length <= len(r2):
+                    value = float(np.sum(r2[:length]))
+                else:
+                    value = mc  # Fallback to total MC if requested length is too long
+                
+                # Store per-run values to be averaged later
+                if key not in mc_result_dict:
+                    mc_result_dict[key] = []
+                mc_result_dict[key].append(value)
+    
+    if mc_lengths:
+        for key in [f"mc_length_{l}" for l in mc_lengths]:
+            if key in mc_result_dict:
+                mc_result_dict[key] = float(np.mean(mc_result_dict[key]))
     
     mc_result_dict = {
             "mc_mean": float(np.mean(mc_values)), 

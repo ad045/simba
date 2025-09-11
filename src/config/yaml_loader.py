@@ -307,6 +307,9 @@ class YAMLConfigLoader:
             if 'fit_weights' in exp_cfg:
                 args['fit_weights'] = exp_cfg['fit_weights']
         
+        if 'elaborate_analysis' in exp_cfg:
+            args['elaborate_analysis'] = exp_cfg['elaborate_analysis']
+            
         # ESN-specific arguments  
         if exp_cfg['type'] == 'esn':
             if 'search' in exp_cfg:

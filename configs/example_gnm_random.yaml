@@ -4,6 +4,7 @@
 experiment:
   type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
   name: 00_gnm_experiments
+  elaborate_analysis: true 
   search:
     method: random # grid  # Options: grid, random, bayesian
     n_samples: 100  # For random search
@@ -36,8 +37,8 @@ gnm:
   alpha: 0.01
 
 esn:
-  spectral_radius: [2.0] # [0.5, 1.0, 1.5, 2.0]  # List for grid search
-  input_scaling: [1.0] # , 1.5]
+  spectral_radius: [0.99] # [0.5, 1.0, 1.5, 2.0]  # List for grid search. Everything above around 1 is prob stable 
+  input_scaling: [0.5] # 1.0] # , 1.5]
   input_lengths: [1000] # [500, 1000, 2000, 3000, 4000]
   regularization_methods: [pinv] #, ridge]
   n_runs: 5

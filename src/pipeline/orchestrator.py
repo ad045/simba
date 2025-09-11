@@ -95,11 +95,13 @@ def run_from_yaml(yaml_path: str):
         
         if exp_type == 'gnm_sweep':
             results = orchestrator.run_gnm_parameter_sweep(
-                experiment_name=exp_args.get('experiment_name'),
-                no_wandb=exp_args.get('no_wandb', True),
-                random_sample=exp_args.get('random_sample', False),
-                n_random_samples=exp_args.get('n_random_samples', 30)
-            )
+                **exp_args,
+            ) 
+            #     experiment_name=exp_args.get('experiment_name'),
+            #     no_wandb=exp_args.get('no_wandb', True),
+            #     random_sample=exp_args.get('random_sample', False),
+            #     n_random_samples=exp_args.get('n_random_samples', 30)
+            # ) TODO: IS THIS SENSIBLE AND CORRECT THE WAY IT IS? 
             
         elif exp_type == 'gnm_comprehensive':
             results = orchestrator.run_gnm_comprehensive_analysis(
