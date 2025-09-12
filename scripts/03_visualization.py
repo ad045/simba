@@ -25,9 +25,11 @@ if __name__ == "__main__":
 
     save_path = Path(df_names).parent / "figures"
     df_names = [ 
-                "/Users/adrian/Documents/01_projects/14_4D_lab/output/gnm/00_gnm_experiments/00_gnm_experiments_20250911_190638/00_gnm_experiments_results.csv", # newest
-                "/Users/adrian/Documents/01_projects/14_4D_lab/output/gnm/00_gnm_experiments/00_gnm_experiments_20250910_133726/binary_evaluations_results_distance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_455.csv", 
-                "/Users/adrian/Documents/01_projects/14_4D_lab/OLD_output_6/gnm/00_gnm_experiments/00_gnm_experiments_20250910_131743/binary_evaluations_results_distance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_227.csv",
+                "/Users/adrian/Documents/01_projects/14_4D_lab/output/gnm/00_gnm_experiments/00_gnm_experiments_20250912_123348/00_gnm_experiments_results.csv", 
+                # /Users/adrian/Documents/01_projects/14_4D_lab/output/gnm/00_gnm_experiments/00_gnm_experiments_20250911_190638/00_gnm_experiments_results.csv", 
+                # "/Users/adrian/Documents/01_projects/14_4D_lab/output/gnm/00_gnm_experiments/00_gnm_experiments_20250911_190638/00_gnm_experiments_results.csv", # newest
+                # "/Users/adrian/Documents/01_projects/14_4D_lab/output/gnm/00_gnm_experiments/00_gnm_experiments_20250910_133726/binary_evaluations_results_distance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_455.csv", 
+                # "/Users/adrian/Documents/01_projects/14_4D_lab/OLD_output_6/gnm/00_gnm_experiments/00_gnm_experiments_20250910_131743/binary_evaluations_results_distance_rel_powerlaw_pref_rel_powerlaw_gen_rule_MatchingIndex_num_iterations_227.csv",
                 ] 
     
     save_path = Path(df_names[0]).parent / "figures"
