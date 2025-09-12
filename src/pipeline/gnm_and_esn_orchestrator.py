@@ -438,7 +438,7 @@ class GNMandESNPipelineOrchestrator:
                 flat_record.update(pd.DataFrame(graph_measures_list).mean().to_dict())
 
                 try:
-                    mc_lags_to_calc = [1, 2, 5, 10, 30, 50]
+                    mc_lags_to_calc = [1, 2, 5, 10, 15, 20, 30, 40, 50] 
                     esn_results = [evaluate_memory_capacity_from_connectome(
                         connectome=net, mc_lengths=mc_lags_to_calc, train_len=1000, n_runs=5, spectral_radius=0.99
                     ) for net in networks_np]
@@ -447,7 +447,7 @@ class GNMandESNPipelineOrchestrator:
                     flat_record.update(df_esn[numeric_cols].mean().to_dict())
                 except Exception as e:
                     print(f"    [Warning] ESN eval failed: {e}. Logging NaN.")
-                    mc_keys = ["mc_mean", "mc_std"] + [f"mc_length_{l}" for l in mc_lags_to_calc]
+                    mc_keys = ["mc_mean", "mc_std"] + [f"mc_lag_{l}" for l in mc_lags_to_calc]
                     flat_record.update({key: np.nan for key in mc_keys})
 
             # 4. Append the flattened record to the CSV file
@@ -1246,15 +1246,15 @@ def main():
 
     
     # Load configuration
-    if args.config == "quick_test":
-        config = get_gnm_quick_test_config()
-    elif args.config == "comprehensive":
-        config = get_gnm_comprehensive_config()
-    elif args.config == "rule_comparison":
-        from config import get_gnm_rule_comparison_config
-        config = get_gnm_rule_comparison_config()
-    else:
-        config = ConfigManager()
+    # if args.config == "quick_test":
+    #     config = get_gnm_quick_test_config()
+    # elif args.config == "comprehensive":
+    #     config = get_gnm_comprehensive_config()
+    # elif args.config == "rule_comparison":
+    #     from config import get_gnm_rule_comparison_config
+    #     config = get_gnm_rule_comparison_config()
+    # else:
+    config = ConfigManager()
         
     # Initialize wandb if not disabled
     if not args.no_wandb:
@@ -1285,36 +1285,36 @@ def main():
                 n_random_samples=args.n_random_samples
             )
             
-        elif args.command == "test":
-            print("Running quick test with GNM defaults...")
-            config = get_gnm_quick_test_config()
-            orchestrator = GNMandESNPipelineOrchestrator(config)
-            results = orchestrator.run_gnm_parameter_sweep(
-                experiment_name=args.experiment_name or "quick_test",
-                no_wandb=args.no_wandb,
-                random_sample=args.random_sample,
-                n_random_samples=args.n_random_samples
-            )
-            print(f"Test completed successfully!")
+        # elif args.command == "test":
+        #     print("Running quick test with GNM defaults...")
+        #     config = get_gnm_quick_test_config()
+        #     orchestrator = GNMandESNPipelineOrchestrator(config)
+        #     results = orchestrator.run_gnm_parameter_sweep(
+        #         experiment_name=args.experiment_name or "quick_test",
+        #         no_wandb=args.no_wandb,
+        #         random_sample=args.random_sample,
+        #         n_random_samples=args.n_random_samples
+        #     )
+        #     print(f"Test completed successfully!")
     
-        elif args.command == "minimal_test":
-            print("Running minimal test with GNM defaults...")
-            config = get_gnm_minimal_config()
-            orchestrator = GNMandESNPipelineOrchestrator(config)
-            results = orchestrator.run_gnm_parameter_sweep(
-                experiment_name=args.experiment_name or "minimal_test",
-                no_wandb=args.no_wandb,
-                random_sample=args.random_sample,
-                n_random_samples=args.n_random_samples
-            )
-            print(f"Test completed successfully!")
+        # elif args.command == "minimal_test":
+        #     print("Running minimal test with GNM defaults...")
+        #     config = get_gnm_minimal_config()
+        #     orchestrator = GNMandESNPipelineOrchestrator(config)
+        #     results = orchestrator.run_gnm_parameter_sweep(
+        #         experiment_name=args.experiment_name or "minimal_test",
+        #         no_wandb=args.no_wandb,
+        #         random_sample=args.random_sample,
+        #         n_random_samples=args.n_random_samples
+        #     )
+        #     print(f"Test completed successfully!")
             
-        elif args.command == "comprehensive":
-            results = orchestrator.run_gnm_comprehensive_analysis(
-                experiment_name=args.experiment_name,
-                compare_rules=args.compare_rules,
-                fit_weights=args.fit_weights
-            )
+        # elif args.command == "comprehensive":
+        #     results = orchestrator.run_gnm_comprehensive_analysis(
+        #         experiment_name=args.experiment_name,
+        #         compare_rules=args.compare_rules,
+        #         fit_weights=args.fit_weights
+        #     )
   
         elif args.command == "esn":
             
@@ -1409,6 +1409,3 @@ if __name__ == "__main__":
         python src/connectome_analysis/gnm_and_esn_orchestrator.py sweep --no-wandb --experiment-name "gnm"
 
     """
-
-
-   
