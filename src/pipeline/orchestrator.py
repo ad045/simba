@@ -95,44 +95,8 @@ def run_from_yaml(yaml_path: str):
         if exp_type == 'gnm_sweep':
             results = orchestrator.run_gnm_parameter_sweep(
                 **exp_args,
-                
-                # target_network: Optional[torch.Tensor] = None,
-                #            experiment_name: Optional[str] = None, 
-                #            no_wandb: Optional[bool] = False,
-                #            random_sample: bool = False,
-                #            n_random_samples: int = 30, 
-                #            elaborate_analysis: Optional[bool] = False, 
             ) 
-            #     experiment_name=exp_args.get('experiment_name'),
-            #     no_wandb=exp_args.get('no_wandb', True),
-            #     random_sample=exp_args.get('random_sample', False),
-            #     n_random_samples=exp_args.get('n_random_samples', 30)
-            # ) TODO: IS THIS SENSIBLE AND CORRECT THE WAY IT IS? 
             
-        elif exp_type == 'gnm_comprehensive':
-            results = orchestrator.run_gnm_comprehensive_analysis(
-                experiment_name=exp_args.get('experiment_name'),
-                compare_rules=exp_args.get('compare_rules', True),
-                fit_weights=exp_args.get('fit_weights', True)
-            )
-            
-        elif exp_type == 'full_pipeline':
-            results = orchestrator.run_full_pipeline(
-                esn_experiment_name=exp_args.get('experiment_name'),
-                gnm_experiment_name=exp_args.get('experiment_name')
-            )
-            
-        elif exp_type == 'gnm_esn_grid':
-            # Extract additional parameters if provided
-            gnm_cfg = loader.config.get('gnm', {})
-            results = orchestrator.run_gnm_esn_grid_evaluation(
-                experiment_name=exp_args.get('experiment_name'),
-                eta_range=gnm_cfg.get('eta_range', (-8, 0)),
-                gamma_range=gnm_cfg.get('gamma_range', (0.2, 8)),
-                n_eta=gnm_cfg.get('n_eta', 20),
-                n_gamma=gnm_cfg.get('n_gamma', 20)
-            )
-        
         elif exp_type == "dynamic_gnm":
             results = orchestrator.run_dynamic_gnm_generation(
                 experiment_name=exp_args.get('experiment_name')
