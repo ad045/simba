@@ -1,0 +1,131 @@
+# conda remove -n ma_thesis --all
+
+
+# conda env create -f environments/environment_ma_thesis_automatically_cleaned.yml     (run in 14_4D_lab folder)   
+# conda activate ma_thesis 
+# pip install -e .                                                        (run this in 14_4D_lab/GenerativeNetworkModels folder, and in new conda env)
+
+# Add src to path from new: "export PYTHONPATH=$PYTHONPATH:/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab"
+      # How it should look like: 
+      # (ma_thesis) adrian@Mac 14_4D_lab % python
+      # >>> import sys
+      # >>> print(sys.path)
+      # >>> exit()
+      # (ma_thesis) adrian@Mac 14_4D_lab % export PYTHONPATH=$PYTHONPATH:/Users/adrian/Documents/01_projects/14_4D_lab # WITH THIS!!
+      # (ma_thesis) adrian@Mac 14_4D_lab % python 
+      # >>> import sys
+      # >>> print(sys.path)
+      
+
+# (base) adrian@Mac examples % python 
+# Cmd click to launch VS Code Native REPL
+# >>> import site
+# >>> site.getsitepackages()
+
+
+# Then also: export PYTHONPATH=$PYTHONPATH:/Users/adrian/Documents/01_projects/14_4D_lab/GenerativeNetworkModels
+name: ma_thesis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.13
+  - h5py
+  - hydra-core
+  - matplotlib
+  - nilearn
+  - numpy
+  - pandas
+  - pip
+  - scikit-learn
+  - scipy
+  - seaborn
+  - pip:
+      - annotated-types
+      - antlr4-python3-runtime
+      - attrs
+      - bctpy
+      # - bio2art
+      - boltons
+      - certifi
+      - charset-normalizer
+      - click
+      - cloudpickle
+      - debtcollector
+      - dill
+      - echoes
+      - farama-notifications
+      - fastjsonschema
+      - filelock
+      - fsspec
+      - future
+      # - generativenetworkmodels -> do pip install -e . in correct folder. 
+      - git-filter-repo
+      - gitdb
+      - gitpython
+      - gym
+      - gym-notices
+      - gymnasium
+      - h5py
+      - hydra-core
+      - idna
+      - jaxtyping
+      - jinja2
+      - joblib
+      - jsonschema
+      - jsonschema-specifications
+      - lattices
+      - llvmlite
+      - loguru
+      - lxml
+      - markupsafe
+      - matplotlib
+      - mdp
+      - mpmath
+      - narwhals
+      - nbformat
+      - netneurotools
+      - nibabel
+      - nilearn
+      - numba
+      - numpy
+      - omegaconf
+      - plotly
+      - pltable
+      - protobuf
+      - pyan
+      - pyan3
+      - pyarrow
+      - pydantic
+      - pydantic-core
+      - pydantic-settings
+      - pydeps
+      - python-dotenv
+      - pyyaml
+      - referencing
+      - requests
+      - reservoir
+      - reservoirpy
+      - rpds-py
+      - scikit-learn
+      - scipy
+      - seaborn
+      - sentry-sdk
+      - setuptools
+      - six
+      - smmap
+      - stdlib-list
+      - sympy
+      - threadpoolctl
+      - tomlkit
+      - torch
+      - tqdm
+      - typeguard
+      - typing-extensions
+      - typing-inspection
+      - urllib3
+      - wadler-lindig
+      - wandb
+      - wheel
+      - wrapt
+      - zipp

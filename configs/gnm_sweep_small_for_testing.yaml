@@ -1,0 +1,62 @@
+# Note: Not every parameter is relevant for every experiment type. 
+# Note: Not all parameter configurations are tested yet. 
+
+# python src/connectome_analysis/main_pipeline.py configs/gnm_sweep_small_for_testing.yaml 
+
+experiment:
+  type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
+  name: 00_gnm_experiments
+  search:
+    method: random  # Options: grid, random, bayesian
+    n_samples: 2500  # For random search
+  wandb:
+    enabled: false
+    project: GNM_project # GNM_Pipeline
+  compare_rules: true  # For gnm_comprehensive
+  fit_weights: true    # For gnm_comprehensive
+
+data:
+  connectome_resolution: 68
+  densities: [10, 12, 14, 16, 18, 20]
+  use_weighted: false # IS THIS CORRECT LIKE THAT? true
+  use_gnm_defaults: false  # Set to true to use GNM's built-in test data
+
+gnm:
+  eta_range: [-3.0, 0.0] # Attention: Too big values may lead to numerical instabilities! e.g.: [-5.0, 0.0] 
+  gamma_range: [0.1, 0.6] # Attention: Too big values may lead to numerical instabilities! e.g.: [0.0, 1.0]
+  n_eta: 10  # Number of eta grid points
+  n_gamma: 10  # Number of gamma grid points
+  wiring_rules: 
+    - matching_index
+    - communicability
+  num_simulations: 10
+  evaluation_metrics:
+    - degree_ks
+    - clustering_ks
+    - edge_length_ks
+  weight_criterion: distance_weighted_communicability
+  alpha: 0.01
+
+esn:
+  spectral_radius: [0.9, 1.0, 1.1, 1.5, 2.0]  # List for grid search
+  input_scaling: [1.0, 1.5]
+  input_lengths: [1000] # [500, 1000, 2000, 3000, 4000]
+  regularization_methods: [pinv, ridge]
+  n_runs: 10
+  n_lags: 50
+  test_len: 1000
+  leak_rate: 1.0
+  bias: 1.0
+
+compute:
+  n_workers: 12 # 14 cores - 10 normal, 4 efficiency. 
+  timing_flag: true
+  random_seed: 42
+
+output:
+  root_dir: /Users/adrian/Documents/01_projects/14_4D_lab  # Override root directory
+  base_dir: ./output  # Possibility to override base output directory
+  # experiment_name: my_experiment # TODO: TAKE THIS FROM ABOVE! 
+  # save_intermediate: true # TODO: REMOVE THIS AGAIN! 
+  figure_format: pdf # png
+  verbosity: INFO
