@@ -100,7 +100,7 @@ def _run_and_save_single_simulation(task_data: dict,
         })
 
         energy_metric_name = list(experiment.evaluation_results.binary_evaluations.keys())[0]
-        energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()
+        energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item() # check if these values make sense 
         flat_record.update({energy_metric_name: energy_value_mean})
 
         # 3. If elaborate_analysis is true, run detailed analysis
@@ -220,7 +220,7 @@ class GNMandESNPipelineOrchestrator:
                 binary_connectomes = self.data_loader.load_binary_connectomes()
                 first_density = sorted(binary_connectomes.keys())[0]
                 target_network = torch.tensor(
-                    binary_connectomes[first_density][0, :, :],
+                    binary_connectomes[first_density][0, :, :], # TODO: So far, we only look at the first network.... 
                     dtype=torch.float32,
                     device=self.device
                 )

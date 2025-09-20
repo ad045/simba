@@ -202,7 +202,8 @@ class PathConfig:
                 self.root_dir = parent
                 break
         
-        self.data_dir = self.root_dir / "14_4D_lab_code" / "data/preprocessed/01_first_analysises"
+        # self.data_dir = self.root_dir / "14_4D_lab_code" / "data/preprocessed/01_first_analysises" # TODO TODO !!! 
+        self.data_dir = self.root_dir / "data/preprocessed/01_first_analysises"
         self.output_dir = self.root_dir / "output"
         self.esn_output_dir = self.output_dir / "esn"
         self.gnm_output_dir = self.output_dir / "gnm"

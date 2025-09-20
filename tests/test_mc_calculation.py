@@ -95,7 +95,7 @@ def run_mc_tests():
 
     # 2. Create the evaluator
     # The DataLoader is needed but we won't use it to load data here.
-    data_loader = DataLoader(config)
+    # data_loader = DataLoader(config)
     # evaluator = ESNEvaluator(config, data_loader)
 
     # 3. Generate test matrices
@@ -129,7 +129,7 @@ def run_mc_tests():
     
     print("-------")
     
-    output_path = "/Users/adrian/Documents/01_projects/14_4D_lab/output/testing"
+    output_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/testing"
     output_path = Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
     

@@ -163,7 +163,7 @@ def plot_mc_curves():
     # plt.xlim(1, n_lags)
     plt.tight_layout()
     
-    output_folder = Path("/Users/adrian/Documents/01_projects/14_4D_lab/output/testing") 
+    output_folder = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/testing") 
     output_folder.mkdir(parents=True, exist_ok=True)
     output_path = output_folder / "mc_curves_comparison.png"
     plt.savefig(output_path)
