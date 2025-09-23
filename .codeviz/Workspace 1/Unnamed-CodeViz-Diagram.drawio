@@ -1,0 +1,425 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" version="28.2.4">
+  <diagram id="codeviz-diagram" name="System Diagram">
+    <mxGraphModel dx="2136" dy="1413" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="base-diagram-group" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" parent="1" vertex="1">
+          <mxGeometry x="-110" y="-20" width="2175" height="1051" as="geometry" />
+        </mxCell>
+        <mxCell id="ESN_GNM_Platform" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" parent="base-diagram-group" vertex="1">
+          <mxGeometry x="40" y="100" width="1977" height="827" as="geometry" />
+        </mxCell>
+        <mxCell id="PipelineContainer" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" parent="ESN_GNM_Platform" vertex="1">
+          <mxGeometry x="700" y="10" width="273" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="Orchestrator" value="Orchestrator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="PipelineContainer" vertex="1">
+          <mxGeometry x="10" y="140" width="93" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="GnmEsnOrchestrator" value="GNM/ESN Orchestrator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="PipelineContainer" vertex="1">
+          <mxGeometry x="20" y="30" width="156" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="PipelineContainer_label" value="Experiment Orchestrator" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" parent="ESN_GNM_Platform" vertex="1">
+          <mxGeometry x="665.0028571428571" y="10" width="197" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="tTknQURD_Y8g2Jkz63wN-3" value="" style="group" vertex="1" connectable="0" parent="ESN_GNM_Platform">
+          <mxGeometry x="17.99752780955238" y="356.00000000000006" width="474" height="269" as="geometry" />
+        </mxCell>
+        <mxCell id="PreprocessingContainer" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" parent="tTknQURD_Y8g2Jkz63wN-3" vertex="1">
+          <mxGeometry width="474" height="269" as="geometry" />
+        </mxCell>
+        <mxCell id="PreprocessConnectomes" value="Preprocess Connectomes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="PreprocessingContainer" vertex="1">
+          <mxGeometry x="20" y="188" width="172" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="PreprocessDistanceMatrix" value="Preprocess Distance Matrix" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="PreprocessingContainer" vertex="1">
+          <mxGeometry x="212" y="188" width="182" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="PreprocessingContainer_label" value="Preprocessing Module" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" parent="tTknQURD_Y8g2Jkz63wN-3" vertex="1">
+          <mxGeometry x="8" y="8" width="398" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="PreprocessingPipeline" value="Preprocessing Pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="tTknQURD_Y8g2Jkz63wN-3" vertex="1">
+          <mxGeometry x="130" y="70" width="154" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-PreprocessingPipeline-PreprocessConnectomes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="tTknQURD_Y8g2Jkz63wN-3" source="PreprocessingPipeline" target="PreprocessConnectomes" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-PreprocessingPipeline-PreprocessConnectomes_label" value="Uses | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-PreprocessingPipeline-PreprocessConnectomes" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-PreprocessingPipeline-PreprocessDistanceMatrix" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="tTknQURD_Y8g2Jkz63wN-3" source="PreprocessingPipeline" target="PreprocessDistanceMatrix" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-PreprocessingPipeline-PreprocessDistanceMatrix_label" value="Uses | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-PreprocessingPipeline-PreprocessDistanceMatrix" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-Orchestrator-PreprocessingContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="ESN_GNM_Platform" source="Orchestrator" target="PreprocessingContainer" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="756" y="250" />
+              <mxPoint x="255" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-Orchestrator-PreprocessingContainer_label" value="Orchestrates | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-Orchestrator-PreprocessingContainer" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-PreprocessingContainer-UtilitiesContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="ESN_GNM_Platform" source="PreprocessingContainer" target="UtilitiesContainer" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="490" />
+              <mxPoint x="520" y="725" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-PreprocessingContainer-UtilitiesContainer_label" value="Uses | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-PreprocessingContainer-UtilitiesContainer" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tTknQURD_Y8g2Jkz63wN-4" value="" style="group" vertex="1" connectable="0" parent="ESN_GNM_Platform">
+          <mxGeometry x="558.0024439095521" y="669.995814989344" width="591" height="209" as="geometry" />
+        </mxCell>
+        <mxCell id="UtilitiesContainer" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" parent="tTknQURD_Y8g2Jkz63wN-4" vertex="1">
+          <mxGeometry width="591" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="UtilitiesContainer_label" value="Utilities Module" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" parent="tTknQURD_Y8g2Jkz63wN-4" vertex="1">
+          <mxGeometry x="8" y="8" width="515" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="SavingFindingFiles" value="Saving &amp; Finding Files" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="tTknQURD_Y8g2Jkz63wN-4" vertex="1">
+          <mxGeometry x="126" y="56" width="149" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="RunLogger" value="Run Logger" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="tTknQURD_Y8g2Jkz63wN-4" vertex="1">
+          <mxGeometry x="20" y="56" width="86" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="DataLoader" value="Data Loader" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="tTknQURD_Y8g2Jkz63wN-4" vertex="1">
+          <mxGeometry x="295" y="56" width="90" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="CombineCsvs" value="Combine CSVs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="tTknQURD_Y8g2Jkz63wN-4" vertex="1">
+          <mxGeometry x="405" y="56" width="106" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-ESNContainer-UtilitiesContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="ESN_GNM_Platform" source="ESNContainer" target="UtilitiesContainer" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="728" y="526" />
+              <mxPoint x="728" y="526" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-ESNContainer-UtilitiesContainer_label" value="Uses | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-ESNContainer-UtilitiesContainer" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-GNMContainer-UtilitiesContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="ESN_GNM_Platform" source="GNMContainer" target="UtilitiesContainer" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1050" y="550" />
+              <mxPoint x="1050" y="550" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-GNMContainer-UtilitiesContainer_label" value="Uses | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-GNMContainer-UtilitiesContainer" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-StructuralAnalysisContainer-UtilitiesContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none;exitX=0.444;exitY=0.993;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.951;entryY=0.029;entryDx=0;entryDy=0;entryPerimeter=0;" parent="ESN_GNM_Platform" source="StructuralAnalysisContainer" target="UtilitiesContainer" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1060" y="330" as="sourcePoint" />
+            <mxPoint x="1060" y="583.9958149893441" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-StructuralAnalysisContainer-UtilitiesContainer_label" value="Uses | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-StructuralAnalysisContainer-UtilitiesContainer" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint x="-119" y="-21" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-VisualizationContainer-UtilitiesContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="ESN_GNM_Platform" source="VisualizationContainer" target="UtilitiesContainer" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-VisualizationContainer-UtilitiesContainer_label" value="Uses | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-VisualizationContainer-UtilitiesContainer" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tTknQURD_Y8g2Jkz63wN-5" value="" style="group" vertex="1" connectable="0" parent="ESN_GNM_Platform">
+          <mxGeometry x="1288" y="600" width="152" height="146" as="geometry" />
+        </mxCell>
+        <mxCell id="VisualizationContainer" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" parent="tTknQURD_Y8g2Jkz63wN-5" vertex="1">
+          <mxGeometry width="152" height="146" as="geometry" />
+        </mxCell>
+        <mxCell id="VisualizationContainer_label" value="Visualization Module" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" parent="tTknQURD_Y8g2Jkz63wN-5" vertex="1">
+          <mxGeometry x="4.588679245283019" y="5.588516746411484" width="189" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="EnergyMcLandscape" value="Energy &amp; MC Landscape" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="tTknQURD_Y8g2Jkz63wN-5" vertex="1">
+          <mxGeometry x="10.73" y="57.35349514563106" width="128.53" height="28.64009708737864" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-Orchestrator-VisualizationContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="ESN_GNM_Platform" source="Orchestrator" target="VisualizationContainer" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="756" y="250" />
+              <mxPoint x="1538" y="250" />
+              <mxPoint x="1538" y="646" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tTknQURD_Y8g2Jkz63wN-6" value="" style="group" vertex="1" connectable="0" parent="ESN_GNM_Platform">
+          <mxGeometry x="1010" y="330" width="222" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="GNMContainer" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" parent="tTknQURD_Y8g2Jkz63wN-6" vertex="1">
+          <mxGeometry width="222" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="GNMNetworkGenerator" value="GNM Network Generator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="GNMContainer" vertex="1">
+          <mxGeometry x="16.754716981132077" y="92.1531100478469" width="138.22641509433961" height="35.311004784689" as="geometry" />
+        </mxCell>
+        <mxCell id="GNMContainer_label" value="GNM Module" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" parent="tTknQURD_Y8g2Jkz63wN-6" vertex="1">
+          <mxGeometry x="6.7018867924528305" y="6.889952153110048" width="189" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-Orchestrator-GNMContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="ESN_GNM_Platform" source="Orchestrator" target="GNMContainer" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="756" y="250" />
+              <mxPoint x="1121" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-Orchestrator-GNMContainer_label" value="Orchestrates | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-Orchestrator-GNMContainer" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint x="-74" y="-4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tTknQURD_Y8g2Jkz63wN-7" value="" style="group" vertex="1" connectable="0" parent="ESN_GNM_Platform">
+          <mxGeometry x="610" y="300" width="382" height="235" as="geometry" />
+        </mxCell>
+        <mxCell id="ESNContainer" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" parent="tTknQURD_Y8g2Jkz63wN-7" vertex="1">
+          <mxGeometry x="-10" y="9.609665427509293" width="382" height="235" as="geometry" />
+        </mxCell>
+        <mxCell id="ESNUtilsMath" value="ESN Math Utilities" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="ESNContainer" vertex="1">
+          <mxGeometry x="16.050420168067227" y="164.23791821561338" width="100.31512605042018" height="35.817843866171" as="geometry" />
+        </mxCell>
+        <mxCell id="ESNUtils" value="ESN Utilities" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="ESNContainer" vertex="1">
+          <mxGeometry x="132.41596638655463" y="164.23791821561338" width="73.02941176470588" height="35.817843866171" as="geometry" />
+        </mxCell>
+        <mxCell id="ESNContainer_label" value="ESN Module" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" parent="tTknQURD_Y8g2Jkz63wN-7" vertex="1">
+          <mxGeometry x="-27.999831932773112" y="18.345724907063197" width="400" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="AlternativeESNEvaluation" value="Alternative ESN Evaluation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="tTknQURD_Y8g2Jkz63wN-7" vertex="1">
+          <mxGeometry x="200.00462184873953" y="63.771078066914505" width="141.2436974789916" height="35.817843866171" as="geometry" />
+        </mxCell>
+        <mxCell id="ESNEvaluation" value="ESN Evaluation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="tTknQURD_Y8g2Jkz63wN-7" vertex="1">
+          <mxGeometry x="64.6344537815126" y="63.775501858736064" width="85.86974789915966" height="35.817843866171" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-ESNEvaluation-ESNUtilsMath" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="tTknQURD_Y8g2Jkz63wN-7" source="ESNEvaluation" target="ESNUtilsMath" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-ESNEvaluation-ESNUtilsMath_label" value="Uses | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-ESNEvaluation-ESNUtilsMath" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-ESNEvaluation-ESNUtils" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="tTknQURD_Y8g2Jkz63wN-7" source="ESNEvaluation" target="ESNUtils" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-ESNEvaluation-ESNUtils_label" value="Uses | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-ESNEvaluation-ESNUtils" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-Orchestrator-ESNContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="ESN_GNM_Platform" source="Orchestrator" target="ESNContainer" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="757" y="240" />
+              <mxPoint x="757" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tTknQURD_Y8g2Jkz63wN-8" value="" style="group" vertex="1" connectable="0" parent="ESN_GNM_Platform">
+          <mxGeometry x="1270" y="340" width="192" height="164" as="geometry" />
+        </mxCell>
+        <mxCell id="GraphMeasures" value="Graph Measures" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="tTknQURD_Y8g2Jkz63wN-8" vertex="1">
+          <mxGeometry x="32.69" y="65.91999999999999" width="126.62" height="32.17" as="geometry" />
+        </mxCell>
+        <mxCell id="tTknQURD_Y8g2Jkz63wN-10" value="" style="group" vertex="1" connectable="0" parent="tTknQURD_Y8g2Jkz63wN-8">
+          <mxGeometry x="2" width="182" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="StructuralAnalysisContainer" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" parent="tTknQURD_Y8g2Jkz63wN-10" vertex="1">
+          <mxGeometry x="16.3869726043232" width="165.61137440758296" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="StructuralAnalysisContainer_label" value="Structural Analysis Module" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" parent="tTknQURD_Y8g2Jkz63wN-10" vertex="1">
+          <mxGeometry y="5.358851674641148" width="211" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-Orchestrator-StructuralAnalysisContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="ESN_GNM_Platform" source="Orchestrator" target="StructuralAnalysisContainer" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="756" y="250" />
+              <mxPoint x="1360" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tTknQURD_Y8g2Jkz63wN-11" value="" style="group" vertex="1" connectable="0" parent="ESN_GNM_Platform">
+          <mxGeometry x="119.99999999999999" y="20" width="329.05" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="ConfigurationContainer" value="" style="html=1;whiteSpace=wrap;container=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;fillOpacity=20;strokeWidth=2;containerType=none;recursiveResize=0;movable=1;resizable=1;autosize=0;dropTarget=0" parent="tTknQURD_Y8g2Jkz63wN-11" vertex="1">
+          <mxGeometry width="329.05" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="EsnGnmConfig" value="ESN/GNM Config" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="ConfigurationContainer" vertex="1">
+          <mxGeometry x="17.690860215053764" y="146.76579925650557" width="105.2606182795699" height="32.007434944237914" as="geometry" />
+        </mxCell>
+        <mxCell id="ConfigPlotting" value="Plotting Config" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="ConfigurationContainer" vertex="1">
+          <mxGeometry x="140.6423387096774" y="146.76579925650557" width="93.76155913978495" height="32.007434944237914" as="geometry" />
+        </mxCell>
+        <mxCell id="YamlLoader" value="YAML Loader" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="tTknQURD_Y8g2Jkz63wN-11" vertex="1">
+          <mxGeometry x="86.46407930107527" y="46.001598513011146" width="84.91612903225806" height="32.007434944237914" as="geometry" />
+        </mxCell>
+        <mxCell id="Constants" value="Constants" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="tTknQURD_Y8g2Jkz63wN-11" vertex="1">
+          <mxGeometry x="189.0710685483871" y="46.001598513011146" width="68.99435483870968" height="32.007434944237914" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-YamlLoader-EsnGnmConfig" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="tTknQURD_Y8g2Jkz63wN-11" source="YamlLoader" target="EsnGnmConfig" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-YamlLoader-EsnGnmConfig_label" value="Loads | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-YamlLoader-EsnGnmConfig" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-YamlLoader-ConfigPlotting" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="tTknQURD_Y8g2Jkz63wN-11" source="YamlLoader" target="ConfigPlotting" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-YamlLoader-ConfigPlotting_label" value="Loads | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-YamlLoader-ConfigPlotting" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ConfigurationContainer_label" value="Configuration Module" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" parent="tTknQURD_Y8g2Jkz63wN-11" vertex="1">
+          <mxGeometry x="-80.00365591397849" y="-0.004646840148694764" width="296" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-Orchestrator-ConfigurationContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="ESN_GNM_Platform" source="Orchestrator" target="ConfigurationContainer" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="510" y="170" />
+              <mxPoint x="510" y="170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-Orchestrator-ConfigurationContainer_label" value="Uses | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-Orchestrator-ConfigurationContainer" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Raw_Connectome_Data" value="Raw Connectome Data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="base-diagram-group" vertex="1">
+          <mxGeometry x="209.99778439252668" y="942.356577518038" width="154" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="Experiment_Configs" value="Experiment Configuration Files" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="base-diagram-group" vertex="1">
+          <mxGeometry x="548.9970560230819" y="-0.004239579552901773" width="202" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="Experiment_Outputs" value="Experiment Outputs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="base-diagram-group" vertex="1">
+          <mxGeometry x="1550.0036234590407" y="928.3554601529947" width="137" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-PreprocessingContainer-Raw_Connectome_Data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="base-diagram-group" source="PreprocessingContainer" target="Raw_Connectome_Data" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="287" y="770" />
+              <mxPoint x="287" y="770" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-PreprocessingContainer-Raw_Connectome_Data_label" value="Reads | Filesystem" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-PreprocessingContainer-Raw_Connectome_Data" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-VisualizationContainer-Experiment_Outputs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="base-diagram-group" source="VisualizationContainer" target="Experiment_Outputs" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1590" y="800" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-VisualizationContainer-Experiment_Outputs_label" value="Writes figures to | Filesystem" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-VisualizationContainer-Experiment_Outputs" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-ConfigurationContainer-Experiment_Configs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="base-diagram-group" source="ConfigurationContainer" target="Experiment_Configs" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="650" y="160" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-ConfigurationContainer-Experiment_Configs_label" value="Reads | YAML parser" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-ConfigurationContainer-Experiment_Configs" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="base-diagram-group_label" value="Base Diagram" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" parent="1" vertex="1">
+          <mxGeometry x="-1060" y="-50" width="1977" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-e-GnmEsnOrchestrator-Orchestrator" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="1" source="GnmEsnOrchestrator" target="Orchestrator" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="676" y="130" />
+              <mxPoint x="676" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-GnmEsnOrchestrator-Orchestrator_label" value="Extends/Specializes | Python" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-GnmEsnOrchestrator-Orchestrator" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-Researcher-PipelineContainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="1" source="Researcher" target="PipelineContainer" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="680" y="-60" />
+              <mxPoint x="790" y="-60" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-Researcher-PipelineContainer_label" value="Runs experiments via | CLI/Script" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-Researcher-PipelineContainer" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint x="38" y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-Researcher-Experiment_Configs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="1" source="Researcher" target="Experiment_Configs" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="662" y="-60" />
+              <mxPoint x="540" y="-60" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-Researcher-Experiment_Configs_label" value="Provides | YAML" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-Researcher-Experiment_Configs" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-PipelineContainer-Experiment_Outputs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#808080;strokeWidth=2;jumpStyle=arc;jumpSize=10;spacing=15;labelBackgroundColor=white;labelBorderColor=none" parent="1" source="PipelineContainer" target="Experiment_Outputs" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1550" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-e-PipelineContainer-Experiment_Outputs_label" value="Writes results to | Filesystem" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="edge-e-PipelineContainer-Experiment_Outputs" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Researcher" value="Researcher" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5" parent="1" vertex="1">
+          <mxGeometry x="629.9967594982836" y="-150.00058404310187" width="84" height="41" as="geometry" />
+        </mxCell>
+        <mxCell id="ESN_GNM_Platform_label" value="ESN/GNM Experiment Platform" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;labelBackgroundColor=white;spacing=5" parent="1" vertex="1">
+          <mxGeometry x="-940" y="60" width="1901" height="24" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
