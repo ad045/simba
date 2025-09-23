@@ -289,6 +289,9 @@ class YAMLConfigLoader:
                 elif search_cfg['method'] == 'bayesian':
                     args['no_wandb'] = False
         
+        if 'elaborate_analysis' in exp_cfg: 
+            args['elaborate_analysis'] = exp_cfg['elaborate_analysis']
+        
         # Wandb settings
         if 'wandb' in exp_cfg:
             wandb_cfg = exp_cfg['wandb']
