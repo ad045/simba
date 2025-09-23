@@ -193,6 +193,7 @@ class GNMandESNPipelineOrchestrator:
                            random_sample: bool = False,
                            n_random_samples: int = 30, 
                            elaborate_analysis: Optional[bool] = False, 
+                           average_connectomes: bool = True, # set to false to only evaluate one connectome
                            **kwargs) -> Dict[str, Any]:
         """
         Run a parameter sweep in parallel with robust, interrupt-safe saving.
@@ -205,34 +206,67 @@ class GNMandESNPipelineOrchestrator:
         if not experiment_name:
             experiment_name = f"gnm_sweep_{time.strftime('%Y%m%d_%H%M%S')}"
         
-        # --- Data Loading ---
-        if target_network is None:
-            if self.config.data.use_gnm_defaults:
-                data = self.config.load_gnm_defaults()
-                target_network = data["binary_network"]
-                distance_matrix = data["distance_matrix"]
-            else: # Should always use this case, actually 
-                distance_matrix = torch.tensor(
-                    self.data_loader.load_distance_matrix(), 
-                    dtype=torch.float32,
-                    device=self.device
-                )
-                binary_connectomes = self.data_loader.load_binary_connectomes()
-                first_density = sorted(binary_connectomes.keys())[0]
-                target_network = torch.tensor(
-                    binary_connectomes[first_density][0, :, :], # TODO: So far, we only look at the first network.... 
-                    dtype=torch.float32,
-                    device=self.device
-                )
-        else:
-            if self.config.data.use_gnm_defaults:
-                distance_matrix = self.config.load_gnm_defaults()["distance_matrix"]
-            else: # Or alternatively this case 
-                 distance_matrix = torch.tensor(
+        # --- Data Loading --- # Commented this out to not use the default GNM distance matrices anymore. 
+        # if target_network is None:
+        #     if self.config.data.use_gnm_defaults:
+        #         data = self.config.load_gnm_defaults()
+        #         target_network = data["binary_network"]
+        #         distance_matrix = data["distance_matrix"]
+        #     else: # Should always use this case, actually 
+        #         distance_matrix = torch.tensor(
+        #             self.data_loader.load_distance_matrix(), 
+        #             dtype=torch.float32,
+        #             device=self.device
+        #         )
+        #         binary_connectomes = self.data_loader.load_binary_connectomes()
+        #         first_density = sorted(binary_connectomes.keys())[0]
+        #         target_network = torch.tensor(
+        #             binary_connectomes[first_density][0, :, :], # TODO: So far, we only look at the first network.... 
+        #             dtype=torch.float32,
+        #             device=self.device
+        #         )
+        # else:
+        #     if self.config.data.use_gnm_defaults:
+        #         distance_matrix = self.config.load_gnm_defaults()["distance_matrix"]
+        #     else: # Or alternatively this case 
+        #          distance_matrix = torch.tensor(
+        #             self.data_loader.load_distance_matrix(),
+        #             dtype=torch.float32,
+        #             device=self.device
+        #         )
+                 
+
+        binary_connectomes = self.data_loader.load_binary_connectomes()
+        # distance_matrix = self.data_loader.load_distance_matrix() 
+        distance_matrix = torch.tensor(
                     self.data_loader.load_distance_matrix(),
                     dtype=torch.float32,
                     device=self.device
                 )
+        first_density = sorted(binary_connectomes.keys())[0] # TODO: Make this itterable, such that one can do a grid search - or remove this. 
+
+        # Connectome selection: TODO: Figure out if this is the right approach (i.e. if energies are adding distributive)
+        if average_connectomes:
+            print("Averaging all connectomes for the target network.")
+            all_connectomes_for_density = binary_connectomes[first_density]
+            
+            # Average across the first dimension (subjects)
+            averaged_connectome = np.mean(all_connectomes_for_density, axis=0)
+            target_network = torch.tensor(
+                averaged_connectome,
+                dtype=torch.float32,
+                device=self.device
+            )
+            # create binary version
+            target_network = torch.where(target_network > 0.5, torch.ones_like(target_network), torch.zeros_like(target_network))
+            
+        else:
+            print("Using the first connectome as the target network.")
+            target_network = torch.tensor(
+                binary_connectomes[first_density][0, :, :], 
+                dtype=torch.float32,
+                device=self.device
+            )
 
         num_iterations = int(target_network.sum().item() // 2)
         num_simulations = 100
@@ -240,13 +274,15 @@ class GNMandESNPipelineOrchestrator:
         # Create sweep config 
         if no_wandb and random_sample:
             sweep_config = self.config.create_gnm_random_sweep_config(
-                distance_matrix=distance_matrix, num_iterations=num_iterations,
+                distance_matrix=torch.Tensor(distance_matrix), # distance_matrix
+                num_iterations=num_iterations,
                 num_simulations=num_simulations, method="random",
                 n_random_samples=n_random_samples, include_weights=True
             )
         else:
             sweep_config = self.config.create_gnm_sweep_config(
-                distance_matrix=distance_matrix, num_iterations=num_iterations,
+                distance_matrix=torch.Tensor(distance_matrix), # distance_matrix
+                num_iterations=num_iterations,
                 num_simulations=num_simulations, method="grid", 
                 include_weights=True
             )
@@ -367,6 +403,9 @@ def main():
                     help="Use random sampling for GNM sweep instead of grid search (only if wandb is disabled).")
     parser.add_argument("--n-random-samples", type=int, default=30,
                     help="Number of random samples for GNM parameter sweep.")
+    parser.add_argument("--average-connectomes", action="store_true",
+                        help="Use the average of all connectomes as the target network.")
+
 
     # ESN-specific arguments
     parser.add_argument("--esn-search-mode", choices=["grid", "random_sample"], default="random_sample",
@@ -384,7 +423,8 @@ def main():
                 experiment_name=args.experiment_name, 
                 no_wandb=args.no_wandb,
                 random_sample=args.random_sample,
-                n_random_samples=args.n_random_samples
+                n_random_samples=args.n_random_samples, 
+                average_connectomes=args.average_connectomes, 
             )
         elif args.command == "esn":
             orchestrator.run_esn_only_analysis(
