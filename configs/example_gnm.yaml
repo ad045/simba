@@ -4,6 +4,8 @@
 experiment:
   type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
   name: 00_gnm_experiments
+  average_connectomes: true 
+  elaborate_analysis: true # Whether to average the connectomes BEFORE running them through the pipeline (question: does this work because they are distributative, or not?), or only use one. 
   search:
     method: random # grid  # Options: grid, random, bayesian
     n_samples: 5  # For random search

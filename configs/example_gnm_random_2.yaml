@@ -3,7 +3,8 @@
 
 experiment:
   type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
-  name: 09_bigger_sweep_clustering_coefficient
+  name: 12_average_connectome_matching_index_and_communicability
+  average_connectomes: true 
   elaborate_analysis: true 
   search:
     method: random # grid  # Options: grid, random, bayesian
@@ -26,9 +27,9 @@ gnm:
   n_eta: 100 # 10  # Number of eta grid points. Only relevant if "grid" is chosen. 
   n_gamma: 100 # 10  # Number of gamma grid points. Only relevant if "grid" is chosen. 
   wiring_rules: 
-    # - matching_index
-    - clustering_coefficient
-    - communicability
+    - matching_index
+    # - degree_product # clustering_coefficient does not work yet... 
+    - communicability # -> needs torch... (or something working with "unsqueeze") 
   num_simulations: 1000
   evaluation_metrics:
     - degree_ks
