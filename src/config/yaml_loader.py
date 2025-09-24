@@ -289,6 +289,8 @@ class YAMLConfigLoader:
                 elif search_cfg['method'] == 'bayesian':
                     args['no_wandb'] = False
         
+        if 'evaluate_individual_connectomes' in exp_cfg:
+            args['evaluate_individual_connectomes'] = exp_cfg['evaluate_individual_connectomes']
         if 'elaborate_analysis' in exp_cfg: 
             args['elaborate_analysis'] = exp_cfg['elaborate_analysis']
         

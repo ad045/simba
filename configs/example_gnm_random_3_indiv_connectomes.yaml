@@ -1,0 +1,89 @@
+# Note: Not every parameter is relevant for every experiment type. 
+# Note: Not all parameter configurations are tested yet. 
+
+experiment:
+  type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
+  name: 13_experiments
+  average_connectomes: true 
+  elaborate_analysis: true  # this is ignored if "evaluate_individual_connectomes" is true
+  evaluate_individual_connectomes: true
+  search:
+    method: random # grid  # Options: grid, random, bayesian
+    n_samples: 100  # For random search
+  wandb:
+    enabled: false
+    project: GNM_project # GNM_Pipeline
+  compare_rules: true  # For gnm_comprehensive
+  fit_weights: true    # For gnm_comprehensive
+
+data:
+  connectome_resolution: 68 # 1000 # 114, 68
+  densities: [20] # , 12, 14, 16, 18, 20]
+  use_weighted: false # IS THIS CORRECT LIKE THAT? true
+  use_gnm_defaults: false  # Set to true to use GNM's built-in test data
+
+gnm:
+  eta_range: [-3.0, 0.0] # Attention: Too big values may lead to numerical instabilities! e.g.: [-5.0, 0.0] 
+  gamma_range: [0.1, 0.6] # Attention: Too big values may lead to numerical instabilities! e.g.: [0.0, 1.0]
+  n_eta: 100 # 10  # Number of eta grid points. Only relevant if "grid" is chosen. 
+  n_gamma: 100 # 10  # Number of gamma grid points. Only relevant if "grid" is chosen. 
+  wiring_rules: 
+    - matching_index
+    # - degree_product # clustering_coefficient does not work yet... 
+    - communicability # -> needs torch... (or something working with "unsqueeze") 
+  num_simulations: 1000
+  evaluation_metrics:
+    - degree_ks
+    - clustering_ks
+    - edge_length_ks
+  weight_criterion: distance_weighted_communicability
+  alpha: 0.01
+
+#  # You can customize ESN hyperparameters here for the test
+#     hparams = {
+#         "spectral_radius": 0.9, # 0.9,
+#         "input_length": 2000,
+#         "input_scaling": 1.0, #  -0.1, # 0.5, #nA value between 0.1 and 1.0 is a great starting point.
+#         "leak_rate": 1.0,  # only relies on input data, not older data
+#         "bias": 0.0, 
+#         "n_runs": 5,
+#         "train_len": 5000, 
+#         "test_len": 1000,
+#         "n_lags": 50,
+#         "regression_method": "ridge", # pinv", # "ridge"
+#         "random_state": 42, 
+#     }
+#     # Optimal hyperparameters based on Damicelli et al.
+#     hparams = {
+#         "spectral_radius": 1.2,
+#         "input_length": 2000,
+#         "input_scaling": 0.1,
+#         "leak_rate": 0.3,
+#         "bias": 1,
+#         "regression_method": "ridge", # Using ridge as in the paper
+#         "random_state": 42,
+#     }
+
+esn:
+  spectral_radius: [0.9] # 1.0] # [0.5, 1.0, 1.5, 2.0]  # List for grid search. Everything above around 1 is prob stable 
+  input_scaling: [1.0] # 1.5 1.02] # [1e-5] #[0.5] # 1.0] # , 1.5]
+  input_lengths: [5000] # [500, 1000, 2000, 3000, 4000]
+  regularization_methods: [pinv] # pinv] # pinv] #ridge] #pinv] #, ridge] #maybe ridge does not work? 
+  n_runs: 50
+  n_lags: 50
+  test_len: 1000
+  leak_rate: 1.0 # only relies on input data, not older data
+  bias: 0.0 # 1.0 no constant bias added. 
+
+compute:
+  n_workers: 1  # -1 for maximum parallelization # 12 # 14 cores - 10 normal, 4 efficiency. 
+  timing_flag: true
+  random_seed: 42
+
+output:
+  root_dir: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code  # Override root directory
+  # base_dir: ./output  # Possibility to override base output directory
+  # experiment_name: my_experiment # TODO: TAKE THIS FROM ABOVE! 
+  # save_intermediate: true # TODO: REMOVE THIS AGAIN! 
+  figure_format: pdf # png
+  verbosity: INFO

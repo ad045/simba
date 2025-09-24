@@ -42,8 +42,10 @@ from src.ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_co
 
 def _run_and_save_single_simulation(task_data: dict, 
                                     evaluation_criteria, 
-                                    target_network, 
-                                    elaborate_analysis,
+                                    # weighted_evaluation_criteria, 
+                                    target_network, # can be one or more?  
+                                    individual_networks, # can be none (if we do not want to analzye individual connectomes) or a np array of shape (num_subjects, n_nodes, n_nodes)
+                                    elaborate_analysis: bool, 
                                     device_str: str, 
                                     output_dir: Path, temp_dir: str, 
                                     h_params: dict): # esn_params: dict):
@@ -92,16 +94,35 @@ def _run_and_save_single_simulation(task_data: dict,
         # 2. Prepare the data record for this iteration
         params = experiment.run_config.binary_parameters
         flat_record.update({
-            "eta": float(params.eta), "gamma": float(params.gamma),
+            "eta": float(params.eta), 
+            "gamma": float(params.gamma),
             "distance_relationship_type": str(params.distance_relationship_type),
             "preferential_relationship_type": str(params.preferential_relationship_type),
             "generative_rule": str(params.generative_rule.__class__.__name__),
             "num_iterations": int(params.num_iterations),
         })
 
-        energy_metric_name = list(experiment.evaluation_results.binary_evaluations.keys())[0]
-        energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item() # check if these values make sense 
+        energy_metric_name = list(experiment.evaluation_results.binary_evaluations.keys())[0]  # TODO: Include all names
+
+        # Analze energy compared to mean connectome
+        energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()  # TODO: Include all names # check if these values make sense 
         flat_record.update({energy_metric_name: energy_value_mean})
+
+
+        # HERE: ADD evaluation results of the individual networks
+        
+        # individual_network_results = [] # HERE!!! 
+        # if individual_networks: # if individual networks were passed, analyze them 
+        #     print("LOL")
+        #     # for i in range(individual_networks.shape[0]):
+        #         # individual_network_results.append(
+        #         #     experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()
+        #         #         connectome=individual_networks[i],
+        #         #         h_params=h_params
+        #         #     )
+        #         # )
+
+            
 
         # 3. If elaborate_analysis is true, run detailed analysis
         if elaborate_analysis and experiment.model:
@@ -347,18 +368,23 @@ class GNMandESNPipelineOrchestrator:
             deconstructed_tasks.append(task)
 
         try:
-            # Set n_jobs back to -1 for parallel execution
-            Parallel(n_jobs=-1)(
+            
+            evaluate_individual_connectomes = True # TODO: REPLACE WITH FLAG! 
+            
+            # Set number of workers (default: -1 for maximum parallel execution)
+            n_jobs = self.data_loader.config.compute.n_workers if self.data_loader.config.compute.n_workers else -1
+            Parallel(n_jobs=n_jobs)( # TODO: REPLACE WITH NUMBER_JOBS!
                 delayed(_run_and_save_single_simulation)(
-                    task_data, # Pass the deconstructed dictionary
-                    evaluation_criteria,
-                    target_network,
-                    elaborate_analysis,
-                    self.config.gnm.device,
-                    self.config.paths.current_projects_output_dir,
-                    temp_results_dir,
-                    h_params
-                    # esn_params
+                    task_data=task_data, # Pass the deconstructed dictionary
+                    evaluation_criteria=evaluation_criteria,
+                    # weighted_evaluation_criteria=weighted_criteria, # TODO: STOP HARDCODING THIS (SEE ABOVE)
+                    target_network=target_network,
+                    individual_networks=all_connectomes_for_density if evaluate_individual_connectomes is not None else None, 
+                    elaborate_analysis=elaborate_analysis,
+                    device_str=self.config.gnm.device,
+                    output_dir=self.config.paths.current_projects_output_dir,
+                    temp_dir=temp_results_dir,
+                    h_params=h_params
                 )
                 for task_data in tqdm(deconstructed_tasks, desc="Configuration Iterations")
             )
