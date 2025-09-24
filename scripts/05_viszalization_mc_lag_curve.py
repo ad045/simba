@@ -11,7 +11,7 @@ from src.visualization.energy_and_mc_landscape import visualize_gnm_results, gen
 
 # This will close all plots after saving, preventing them from displaying in a loop.
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 
 if __name__ == "__main__":
     
@@ -76,8 +76,11 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/09_bigger_sweep_matching_index/combined_results09_bigger_sweep_matching_index_summary.csv"
         
         # 12: Medium sweep (250) with matching index and communicability
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/12_average_connectome_matching_index_and_communicability/combined_results12_average_connectome_matching_index_and_communicability_summary.csv", 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/12_average_connectome_matching_index_and_communicability/combined_results12_average_connectome_matching_index_and_communicability_summary.csv", 
         
+        # 14: Big sweep, density 10 
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/14_average_connectome_matching_index_and_communicability_density10/combined_results14_average_connectome_matching_index_and_communicability_density10_summary.csv", 
+
     ]
     
     # The folder where the final figures will be saved.
