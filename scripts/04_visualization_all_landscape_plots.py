@@ -75,8 +75,10 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/12_average_connectome_matching_index_and_communicability/combined_results12_average_connectome_matching_index_and_communicability_summary.csv", 
         
         # 14: Big sweep, density 10 
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/14_average_connectome_matching_index_and_communicability_density10/combined_results14_average_connectome_matching_index_and_communicability_density10_summary.csv", 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/14_average_connectome_matching_index_and_communicability_density10/combined_results14_average_connectome_matching_index_and_communicability_density10_summary.csv", 
 
+        # 16: Also including individual connectomes 
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes_indiv_connectome_energies_results.csv", 
     ]
     
     # The folder where the final figures will be saved.

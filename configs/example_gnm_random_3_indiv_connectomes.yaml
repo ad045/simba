@@ -3,10 +3,10 @@
 
 experiment:
   type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
-  name: 13_experiments
+  name: 16_big_sweep_with_individual_connectomes
   average_connectomes: true 
-  elaborate_analysis: true  # this is ignored if "evaluate_individual_connectomes" is true
-  evaluate_individual_connectomes: true
+  elaborate_analysis: true  # check if this is ingored?? (should not be, hopefully)
+  evaluate_individual_connectomes: true # include this - this is currently not parsed by yaml...
   search:
     method: random # grid  # Options: grid, random, bayesian
     n_samples: 100  # For random search
@@ -38,31 +38,6 @@ gnm:
     - edge_length_ks
   weight_criterion: distance_weighted_communicability
   alpha: 0.01
-
-#  # You can customize ESN hyperparameters here for the test
-#     hparams = {
-#         "spectral_radius": 0.9, # 0.9,
-#         "input_length": 2000,
-#         "input_scaling": 1.0, #  -0.1, # 0.5, #nA value between 0.1 and 1.0 is a great starting point.
-#         "leak_rate": 1.0,  # only relies on input data, not older data
-#         "bias": 0.0, 
-#         "n_runs": 5,
-#         "train_len": 5000, 
-#         "test_len": 1000,
-#         "n_lags": 50,
-#         "regression_method": "ridge", # pinv", # "ridge"
-#         "random_state": 42, 
-#     }
-#     # Optimal hyperparameters based on Damicelli et al.
-#     hparams = {
-#         "spectral_radius": 1.2,
-#         "input_length": 2000,
-#         "input_scaling": 0.1,
-#         "leak_rate": 0.3,
-#         "bias": 1,
-#         "regression_method": "ridge", # Using ridge as in the paper
-#         "random_state": 42,
-#     }
 
 esn:
   spectral_radius: [0.9] # 1.0] # [0.5, 1.0, 1.5, 2.0]  # List for grid search. Everything above around 1 is prob stable 

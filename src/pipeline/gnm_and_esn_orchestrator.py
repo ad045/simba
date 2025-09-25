@@ -44,8 +44,9 @@ def _run_and_save_single_simulation(task_data: dict,
                                     evaluation_criteria, 
                                     # weighted_evaluation_criteria, 
                                     target_network, # can be one or more?  
-                                    individual_networks, # can be none (if we do not want to analzye individual connectomes) or a np array of shape (num_subjects, n_nodes, n_nodes)
+                                    individual_networks, # needs to be set: a float32 torch Tensor of shape (num_subjects, n_nodes, n_nodes)
                                     elaborate_analysis: bool, 
+                                    save_indiv_network_energies: bool, 
                                     device_str: str, 
                                     output_dir: Path, temp_dir: str, 
                                     h_params: dict): # esn_params: dict):
@@ -80,12 +81,21 @@ def _run_and_save_single_simulation(task_data: dict,
     # --- End Reconstruction ---
 
     flat_record = {}
+    indiv_networks_record = {}
+    
     try:
+        
+        individual_networks = torch.tensor(
+                individual_networks, 
+                dtype=torch.float32,
+                # device=device
+            )
+        
         # 1. Run the simulation with the newly reconstructed run_config
         experiment = perform_run(
             run_config=run_config,
             binary_evaluations=[evaluation_criteria],
-            real_binary_matrices=target_network.unsqueeze(0),
+            real_binary_matrices=individual_networks, # target_network.unsqueeze(0),
             save_model=True,
             save_run_history=False,
             device=torch.device(device_str),
@@ -102,14 +112,30 @@ def _run_and_save_single_simulation(task_data: dict,
             "num_iterations": int(params.num_iterations),
         })
 
-        energy_metric_name = list(experiment.evaluation_results.binary_evaluations.keys())[0]  # TODO: Include all names
+        if save_indiv_network_energies: 
+            indiv_networks_record.update({
+                "eta": float(params.eta), 
+                "gamma": float(params.gamma),
+            })
 
-        # Analze energy compared to mean connectome
-        energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()  # TODO: Include all names # check if these values make sense 
-        flat_record.update({energy_metric_name: energy_value_mean})
+        for energy_metric_name in list(experiment.evaluation_results.binary_evaluations.keys()):
+
+            # energy_metric_name = list(experiment.evaluation_results.binary_evaluations.keys())[0]  # TODO: Include all names
+
+            # Analze energy compared to mean connectome
+            energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()  # TODO: Include all names # check if these values make sense 
+            flat_record.update({energy_metric_name: energy_value_mean})
 
 
-        # HERE: ADD evaluation results of the individual networks
+            # HERE: ADD evaluation results of the individual networks
+            if save_indiv_network_energies: # TODO: Figure out if this is efficient
+                indiv_energy_values = experiment.evaluation_results.binary_evaluations[energy_metric_name].numpy().flatten()
+                for i in range(individual_networks.shape[0]):
+                    indiv_networks_record.update(
+                        {energy_metric_name + "_indiv_" + str(i): indiv_energy_values[i]}
+                    )
+        
+        
         
         # individual_network_results = [] # HERE!!! 
         # if individual_networks: # if individual networks were passed, analyze them 
@@ -186,11 +212,38 @@ def _run_and_save_single_simulation(task_data: dict,
         print(f"Error in worker process: {e}")
         flat_record.update({"error": str(e)})
 
-    # 4. Save the result to a unique file in the temporary directory
+    # 4. Save the results to a unique file in the temporary directory
     if flat_record:
         result_filename = f"result_{uuid.uuid4()}.csv"
         result_path = os.path.join(temp_dir, result_filename)
         pd.DataFrame([flat_record]).to_csv(result_path, index=False, na_rep="nan") # Added that missing values appear as "nan" for more clarity
+
+    if indiv_networks_record: 
+        result_filename = f"indiv_connectome_energies_{uuid.uuid4()}.csv"
+        result_path = os.path.join(temp_dir, result_filename)
+        pd.DataFrame([indiv_networks_record]).to_csv(result_path, index=False, na_rep="nan") # Added that missing values appear as "nan" for more clarity
+
+
+def _combine_csvs_by_pattern(search_dir, file_pattern, output_name):
+    """Finds, combines, and saves CSVs based on a recursive pattern."""
+    search_path = Path(search_dir)
+    # Use rglob to find files in the directory and all subdirectories
+    all_files = list(search_path.rglob(file_pattern))
+
+    if not all_files:
+        print(f"No files found matching pattern: '{file_pattern}'")
+        return
+
+    try:
+        df_list = [pd.read_csv(f) for f in all_files]
+        full_df = pd.concat(df_list, ignore_index=True)
+
+        output_path = search_path.parent() / output_name
+        full_df.to_csv(output_path, index=False)
+        print(f"✅ Combined {len(all_files)} files into: {output_path}")
+    except Exception as e:
+        print(f"❌ Error processing pattern '{file_pattern}': {e}")
+
 
 
 class GNMandESNPipelineOrchestrator:
@@ -369,7 +422,7 @@ class GNMandESNPipelineOrchestrator:
 
         try:
             
-            evaluate_individual_connectomes = True # TODO: REPLACE WITH FLAG! 
+            save_indiv_network_energies = True # TODO: REPLACE WITH FLAG! 
             
             # Set number of workers (default: -1 for maximum parallel execution)
             n_jobs = self.data_loader.config.compute.n_workers if self.data_loader.config.compute.n_workers else -1
@@ -379,8 +432,9 @@ class GNMandESNPipelineOrchestrator:
                     evaluation_criteria=evaluation_criteria,
                     # weighted_evaluation_criteria=weighted_criteria, # TODO: STOP HARDCODING THIS (SEE ABOVE)
                     target_network=target_network,
-                    individual_networks=all_connectomes_for_density if evaluate_individual_connectomes is not None else None, 
+                    individual_networks=all_connectomes_for_density, 
                     elaborate_analysis=elaborate_analysis,
+                    save_indiv_network_energies=save_indiv_network_energies, 
                     device_str=self.config.gnm.device,
                     output_dir=self.config.paths.current_projects_output_dir,
                     temp_dir=temp_results_dir,
@@ -394,22 +448,50 @@ class GNMandESNPipelineOrchestrator:
 
         finally:
             print("\nCombining results...")
-            all_result_files = [os.path.join(temp_results_dir, f) for f in os.listdir(temp_results_dir) if f.endswith('.csv')]
             
-            if all_result_files:
-                df_list = [pd.read_csv(f) for f in all_result_files]
-                full_results_df = pd.concat(df_list, ignore_index=True)
-                csv_path = self.config.paths.current_projects_output_dir / f"{experiment_name}_results.csv"
-                full_results_df.to_csv(csv_path, index=False)
+            print(f"\nCombining CSVs for experiment: '{experiment_name}'...")
+
+            # 1. Combine the 'result_....csv' files
+            try: 
+                _combine_csvs_by_pattern(
+                    search_dir=temp_results_dir,
+                    file_pattern="result_*.csv",
+                    output_name=f"{experiment_name}_results.csv"
+                )
+            except: 
+                print("No results_*.csv were previously generated.")
+
+            # 2. Combine the 'indiv_connectome...' files
+            try: 
+                # output/gnm/15_individual_connectomes/15_individual_connectomes_20250924_140855/15_individual_connectomes_temp/
+                _combine_csvs_by_pattern(
+                    search_dir=temp_results_dir,
+                    # file_pattern="indiv_connectome_energies_results_*.csv",
+                    file_pattern="indiv_connectome_energies_*.csv",
+                    output_name=f"{experiment_name}_indiv_connectome_energies_results.csv"
+                )
+            except: 
+                print("No indiv_connectome_energies_*.csv were previously generated.")
+
+
+            print("\nCombination complete.")
+            
+            # all_result_files = [os.path.join(temp_results_dir, f) for f in os.listdir(temp_results_dir) if f.endswith('.csv')]
+            
+            # if all_result_files:
+            #     df_list = [pd.read_csv(f) for f in all_result_files]
+            #     full_results_df = pd.concat(df_list, ignore_index=True)
+            #     csv_path = self.config.paths.current_projects_output_dir / f"{experiment_name}_results.csv"
+            #     full_results_df.to_csv(csv_path, index=False)
                 
-                 # --- 4. (Optional) Clean up temporary files ---
-                for f in all_result_files:
-                    os.remove(f)
-                os.rmdir(temp_results_dir)
+                #  --- 4. (Optional) Clean up temporary files ---
+                # for f in all_result_files:
+                #     os.remove(f)
+                # os.rmdir(temp_results_dir)
                 
-                print(f"Sweep finished. {len(full_results_df)} results saved to: {csv_path}")
-            else:
-                print("No results were generated.")
+            #     print(f"Sweep finished. {len(full_results_df)} results saved to: {csv_path}")
+            # else:
+            #     print("No results were generated.")
                 
 
         return {"status": "completed"}
