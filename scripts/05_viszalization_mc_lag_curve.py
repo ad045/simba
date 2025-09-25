@@ -79,8 +79,10 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/12_average_connectome_matching_index_and_communicability/combined_results12_average_connectome_matching_index_and_communicability_summary.csv", 
         
         # 14: Big sweep, density 10 
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/14_average_connectome_matching_index_and_communicability_density10/combined_results14_average_connectome_matching_index_and_communicability_density10_summary.csv", 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/14_average_connectome_matching_index_and_communicability_density10/combined_results14_average_connectome_matching_index_and_communicability_density10_summary.csv", 
 
+        # 16: including individual connectomes 
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes_results.csv", 
     ]
     
     # The folder where the final figures will be saved.
@@ -101,7 +103,10 @@ if __name__ == "__main__":
             if not combined_df.empty:
                 visualizer = PipelineVisualizer()
                 avg_mc_save_path = Path(save_path) / "average_mc_curve.pdf"
-                visualizer.plot_average_mc_curve(combined_df, savepath=avg_mc_save_path, show=False)
+                visualizer.plot_average_mc_curve(combined_df,   
+                                                 plot_all_individual_mc_curves=False, 
+                                                 savepath=avg_mc_save_path, 
+                                                 show=False)
             else:
                 print("SKIPPING: No data found to generate average MC curve plot.")
         except Exception as e:
@@ -110,51 +115,51 @@ if __name__ == "__main__":
         print("\n")
 
     # --- 3. Define Metrics for Landscape Plots ---
-    if PLOT_METRIC_LANDSCAPES:
-        lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
-        metrics_to_plot = [
-            "MaxCriteria",
-            "avg_communicability", 
-            "global_efficiency", 
-            "modularity", 
-            "avg_clustering", 
-            "avg_degree", 
-            "transitivity", 
-            "avg_edge_distance", 
-            "char_path_length", 
-            "richclub_n_edges", 
-            "richclub_avg_length", 
-            "mc_mean", 
-            "mc_std", 
-            "wiring_cost", 
-            "mean_mc_divided_by_wiring_cost",
-        ] + [f"mc_{lag}" for lag in lags_to_plot]
+    # if PLOT_METRIC_LANDSCAPES:
+    #     lags_to_plot = [2, 3, 4, 5, 6, 10, 20, 49] # include 1? 
+    #     metrics_to_plot = [
+    #         "MaxCriteria",
+    #         "avg_communicability", 
+    #         "global_efficiency", 
+    #         "modularity", 
+    #         "avg_clustering", 
+    #         "avg_degree", 
+    #         "transitivity", 
+    #         "avg_edge_distance", 
+    #         "char_path_length", 
+    #         "richclub_n_edges", 
+    #         "richclub_avg_length", 
+    #         "mc_mean", 
+    #         "mc_std", 
+    #         "wiring_cost", 
+    #         "mean_mc_divided_by_wiring_cost",
+    #     ] + [f"mc_{lag}" for lag in lags_to_plot]
         
-        print(f"Starting landscape visualization process...")
-        print(f"Output will be saved to: {save_path}\n")
+    #     print(f"Starting landscape visualization process...")
+    #     print(f"Output will be saved to: {save_path}\n")
         
-        # --- 4. Generate Landscape Plots in a Loop ---
-        for metric in metrics_to_plot:
-            print(f"--- Generating plot for metric: {metric} ---")
-            try:
-                figure_save_name = f"no_dots_comparison_landscape_{metric}"
+    #     # --- 4. Generate Landscape Plots in a Loop ---
+    #     for metric in metrics_to_plot:
+    #         print(f"--- Generating plot for metric: {metric} ---")
+    #         try:
+    #             figure_save_name = f"no_dots_comparison_landscape_{metric}"
 
-                visualize_gnm_results(
-                    df_paths=df_paths,
-                    metric_to_visualize=metric,
-                    save_dir=save_path,
-                    save_name=figure_save_name,
-                    save_format="pdf", 
-                    save_individual=False, 
-                    show_dots=False,
-                )
-                print(f"Successfully generated plot for {metric}.\n")
+    #             visualize_gnm_results(
+    #                 df_paths=df_paths,
+    #                 metric_to_visualize=metric,
+    #                 save_dir=save_path,
+    #                 save_name=figure_save_name,
+    #                 save_format="pdf", 
+    #                 save_individual=False, 
+    #                 show_dots=False,
+    #             )
+    #             print(f"Successfully generated plot for {metric}.\n")
                 
-            except ValueError as ve:
-                print(f"SKIPPING: Could not generate plot for '{metric}'. Reason: {ve}\n")
-            except Exception as e:
-                print(f"ERROR: An unexpected error occurred while plotting '{metric}'.")
-                traceback.print_exc()
-                print("\n")
+    #         except ValueError as ve:
+    #             print(f"SKIPPING: Could not generate plot for '{metric}'. Reason: {ve}\n")
+    #         except Exception as e:
+    #             print(f"ERROR: An unexpected error occurred while plotting '{metric}'.")
+    #             traceback.print_exc()
+    #             print("\n")
 
     print("--- Visualization process completed. ---")

@@ -63,3 +63,11 @@ Path:
         X = np.array(X, np.float32) # np.float32(X) # X.astype(target_dtype)
         y = np.array(y, np.float32) # float32(X) # y.astype(target_dtype)
         self._dtype_ = target_dtype
+
+
+if GNM does not work anymore after setting up a new conda environment: Add its path to the PATH variable: 
+should be somewhere here: /opt/miniconda3/envs/ma_thesis/lib/python3.13/site-packages/4D_lab_paths.pth
+        /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/src
+        /Users/adrian/Documents/01_projects/14_4D_lab/GenerativeNetworkModels/src/gnm
+
+        (and maybe add even more of them) 
