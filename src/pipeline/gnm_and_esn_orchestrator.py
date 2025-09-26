@@ -534,15 +534,15 @@ def main():
                 n_random_samples=args.n_random_samples, 
                 average_connectomes=args.average_connectomes, 
             )
-        elif args.command == "esn":
-            orchestrator.run_esn_only_analysis(
-                experiment_name=args.experiment_name,
-                search_mode=args.esn_search_mode
-            )
-        elif args.command == "gnm_esn_grid": 
-            orchestrator.run_gnm_esn_grid_evaluation(
-                experiment_name=args.experiment_name
-            )
+        # elif args.command == "esn":
+        #     orchestrator.run_esn_only_analysis(
+        #         experiment_name=args.experiment_name,
+        #         search_mode=args.esn_search_mode
+        #     )
+        # elif args.command == "gnm_esn_grid": 
+        #     orchestrator.run_gnm_esn_grid_evaluation(
+        #         experiment_name=args.experiment_name
+        #     )
         
         orchestrator.logger.finalize()
 

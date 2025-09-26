@@ -3,10 +3,10 @@
 
 experiment:
   type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
-  name: 16_big_sweep_with_individual_connectomes
+  name: 17_bigger_connectomes_no_individuals_density_10
   average_connectomes: true 
   elaborate_analysis: true  # check if this is ingored?? (should not be, hopefully)
-  evaluate_individual_connectomes: true # include this - this is currently not parsed by yaml...
+  evaluate_individual_connectomes: false # true # include this - this is currently not parsed by yaml...
   search:
     method: random # grid  # Options: grid, random, bayesian
     n_samples: 100  # For random search
@@ -18,7 +18,7 @@ experiment:
 
 data:
   connectome_resolution: 68 # 1000 # 114, 68
-  densities: [20] # , 12, 14, 16, 18, 20]
+  densities: [10] # , 12, 14, 16, 18, 20]
   use_weighted: false # IS THIS CORRECT LIKE THAT? true
   use_gnm_defaults: false  # Set to true to use GNM's built-in test data
 
@@ -30,7 +30,7 @@ gnm:
   wiring_rules: 
     - matching_index
     # - degree_product # clustering_coefficient does not work yet... 
-    - communicability # -> needs torch... (or something working with "unsqueeze") 
+    - communicability 
   num_simulations: 1000
   evaluation_metrics:
     - degree_ks
@@ -51,7 +51,7 @@ esn:
   bias: 0.0 # 1.0 no constant bias added. 
 
 compute:
-  n_workers: 1  # -1 for maximum parallelization # 12 # 14 cores - 10 normal, 4 efficiency. 
+  n_workers: -1  # -1 for maximum parallelization # 12 # 14 cores - 10 normal, 4 efficiency. TODO: Is not satisfactory implemented, I guess... 
   timing_flag: true
   random_seed: 42
 

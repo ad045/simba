@@ -67,20 +67,20 @@ echo "Combined individual connectome energy CSVs."
 echo
 
 # --- 4. Clean up unnecessary files ---
-# echo "Starting cleanup..."
+echo "Starting cleanup..."
 
-# if [ "$CLEANUP_GENERATED_NETWORKS" = true ] ; then
-#     # Delete 'generated_networks' folders
-#     find "$OUTPUT_DIR" -type d -name "generated_networks" -exec rm -rf {} +
-#     echo "Deleted 'generated_networks' directories."
-# else
-#     echo "Skipping deletion of 'generated_networks' directories."
-# fi
+if [ "$CLEANUP_GENERATED_NETWORKS" = true ] ; then
+    # Delete 'generated_networks' folders
+    find "$OUTPUT_DIR" -type d -name "generated_networks" -exec rm -rf {} +
+    echo "Deleted 'generated_networks' directories."
+else
+    echo "Skipping deletion of 'generated_networks' directories."
+fi
 
-# # Delete 'session_summary.json' files
-# find "$OUTPUT_DIR" -type f -name "session_summary.json" -exec rm -f {} +
-# echo "Deleted 'session_summary.json' files."
-# echo
+# Delete 'session_summary.json' files
+find "$OUTPUT_DIR" -type f -name "session_summary.json" -exec rm -f {} +
+echo "Deleted 'session_summary.json' files."
+echo
 
 # --- 5. Process Configs, Calculate Duration, and Save Summary ---
 echo "Processing config files, calculating duration, and saving summary..."

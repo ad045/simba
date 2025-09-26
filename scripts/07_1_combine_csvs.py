@@ -51,16 +51,17 @@ def main():
         type=str,
         help="The full path to the temporary directory containing the partial CSV files.\n(e.g., 'output/gnm/16_big_sweep_with_individual_connectomes_temp')"
     )
-    parser.add_argument(
-        "experiment_name",
-        type=str,
-        help="The base name of the experiment.\n(e.g., '16_big_sweep_with_individual_connectomes')"
-    )
+    # parser.add_argument(
+    #     "experiment_name",
+    #     type=str,
+    #     help="The base name of the experiment.\n(e.g., '16_big_sweep_with_individual_connectomes')"
+    # )
     
     args = parser.parse_args()
 
     temp_results_dir = Path(args.temp_dir)
-    experiment_name = args.experiment_name
+    experiment_name = args.temp_dir.split("/")[-1]
+    # experiment_name = args.experiment_name
 
     if not temp_results_dir.is_dir():
         print(f"❌ Error: The specified temporary directory does not exist: {temp_results_dir}")
@@ -90,6 +91,8 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 # run with 
-# scripts/07_1_combine_csvs.py <path>
+# scripts/07_1_combine_csvs.py <path> (previously: <experiment_name>)
+# i.e.: 
+# python scripts/07_1_combine_csvs.py /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/17_bigger_connectomes_no_individuals_density_10/17_bigger_connectomes_no_individuals_density_10_20250925_175325/17_bigger_connectomes_no_individuals_density_10_temp       # 17_bigger_connectomes_no_individuals_density_10_temp
+# /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes      # 16_big_sweep_with_individual_connectomes
