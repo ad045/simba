@@ -2,11 +2,11 @@
 
 # --- Configuration ---
 CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_3_indiv_connectomes.yaml"
-NUMBER_RUNS=1 # 250 # 500 # 1 #3 # 250
+NUMBER_RUNS=200 # 250 # 500 # 1 #3 # 250
 
 # --- New Flags for Cleanup Control ---
-CLEANUP_GENERATED_NETWORKS=false # true # false # Set to false to keep 'generated_networks' folders
-DELETE_SUBFOLDERS=false # true # false         # Set to false to keep individual run subfolders (e.g., "..._20250913_111422")
+CLEANUP_GENERATED_NETWORKS=false # Set to false to keep 'generated_networks' folders
+DELETE_SUBFOLDERS=true           # Set to false to keep individual (i.e. the second run of a yaml file) subfolders (e.g., "..._20250913_111422")
 
 # --- Extract experiment name from YAML file ---
 echo "Extracting experiment name from '$CONFIG_FILE'..."
@@ -45,24 +45,37 @@ done
 echo "All '$NUMBER_RUNS' runs completed."
 echo # Adding a blank line for readability
 
-# # --- 3. Combine the resulting CSV files ---
+# # # --- 3. Combine the resulting CSV files ---
 # echo "Combining CSVs from '$OUTPUT_DIR'..."
 # python src/utils/combine_csvs.py "$OUTPUT_DIR"
 # echo "Combined all CSVs into one big one."
 # echo
 
 # --- 3. Combine the resulting CSV files ---
-echo "Combining 'result' CSVs..."
-python src/utils/combine_csvs.py "$OUTPUT_DIR" \
-    --pattern "result_*.csv" \
-    --output-file "$OUTPUT_DIR/combined_results.csv"
-echo "Combined main result CSVs."
-echo
 
-echo "Combining 'indiv_connectome' CSVs..."
-python src/utils/combine_csvs.py "$OUTPUT_DIR" \
-    --pattern "indiv_connectome_energies_results_*.csv" \
-    --output-file "$OUTPUT_DIR/combined_indiv_connectome_energies.csv"
+#     # The parent folder containing all your experiment runs
+#     target_folder = sys.argv[1] 
+#     # target_folder = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/17_bigger_connectomes_no_individuals_density_10_2"
+#     experiment_name = target_folder.split("/")[-1]
+    
+#     # The name of the csv file inside each experiment folder
+#     csv_name = experiment_name # "*.csv"
+
+#     combine_and_cleanup(target_folder, "all_metrics_for_exp_" + experiment_name + ".csv")
+#     combine_and_cleanup(target_folder, "indiv_energies_for_exp_" + experiment_name + ".csv")
+#     combine_and_cleanup(root_directory, filename_to_find):
+
+# echo "Combining 'result' CSVs..."
+# python src/utils/combine_csvs.py "$OUTPUT_DIR" # \
+#     # --pattern "result_*.csv" \
+#     # --output-file "$OUTPUT_DIR/combined_results.csv"
+# echo "Combined main result CSVs."
+# echo
+
+echo "Combining 'results' and 'indiv_connectome' CSVs each..."
+python src/utils/combine_csvs.py "$OUTPUT_DIR" # \
+    # --pattern "indiv_connectome_energies_results_*.csv" \
+    # --output-file "$OUTPUT_DIR/combined_indiv_connectome_energies.csv"
 echo "Combined individual connectome energy CSVs."
 echo
 
@@ -144,15 +157,61 @@ SUMMARY_FILE="$OUTPUT_DIR/experiment_summary.txt"
 
 } | tee "$SUMMARY_FILE"
 
+# # --- 6. Final cleanup of experiment subfolders ---
+# if [ "$DELETE_SUBFOLDERS" = true ] ; then
+#     # Get the list of subdirectories again in case it's needed
+#     SUBDIRS_TO_DELETE=($(find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -type d))
+#     if [ ${#SUBDIRS_TO_DELETE[@]} -gt 0 ]; then
+#         echo "Deleting individual experiment subfolders..."
+#         find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
+#         echo "Deleted ${#SUBDIRS_TO_DELETE[@]} subfolders."
+#     fi
+# else
+#     echo "Skipping deletion of experiment subfolders."
+# fi
+# echo
+
+# echo "✅ Experiment and cleanup finished."
+# echo "Final output directory: '$OUTPUT_DIR'"
+
 # --- 6. Final cleanup of experiment subfolders ---
 if [ "$DELETE_SUBFOLDERS" = true ] ; then
-    # Get the list of subdirectories again in case it's needed
-    SUBDIRS_TO_DELETE=($(find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -type d))
+    
+    # --- 6a. Consolidate 'generated_networks' before deleting ---
+    DEST_DIR="$OUTPUT_DIR/all_generated_networks"
+    echo "Consolidating all 'generated_networks' into '$DEST_DIR'..."
+    mkdir -p "$DEST_DIR"
+
+    # Find all 'generated_networks' directories within the subfolders
+    for network_dir in $(find "$OUTPUT_DIR" -mindepth 2 -type d -name "generated_networks"); do
+        # Get the name of the parent directory (the unique run folder) to use as a prefix
+        parent_dir_name=$(basename "$(dirname "$network_dir")")
+        echo "  -> Processing files from '$parent_dir_name'"
+
+        # Loop through each file and move it with a unique prefix to avoid overwrites
+        for file_path in "$network_dir"/*; do
+            if [ -f "$file_path" ]; then
+                file_name=$(basename "$file_path")
+                # Move the file, prefixing it with its original parent folder's name
+                mv "$file_path" "$DEST_DIR/${parent_dir_name}_${file_name}"
+            fi
+        done
+    done
+    echo "Consolidation complete."
+    echo
+
+    # --- 6b. Delete the original subfolders ---
+    # Find all original subdirectories, making sure not to target the new consolidated one
+    SUBDIRS_TO_DELETE=($(find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -type d -not -name "$(basename "$DEST_DIR")"))
+    
     if [ ${#SUBDIRS_TO_DELETE[@]} -gt 0 ]; then
         echo "Deleting individual experiment subfolders..."
-        find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
+        rm -rf "${SUBDIRS_TO_DELETE[@]}"
         echo "Deleted ${#SUBDIRS_TO_DELETE[@]} subfolders."
+    else
+        echo "No subfolders to delete."
     fi
+
 else
     echo "Skipping deletion of experiment subfolders."
 fi

@@ -9,10 +9,10 @@ def combine_and_cleanup(root_directory, filename_to_find):
     and deletes the original files.
     """
     root_path = Path(root_directory)
-    output_filename = "combined_results" + filename_to_find + "_summary" + ".csv"
+    output_filename = "summary_" + filename_to_find # .csv"
 
     # 1. Find all matching CSV files recursively
-    csv_files = list(root_path.rglob(filename_to_find + "_results.csv"))
+    csv_files = list(root_path.rglob("*" + filename_to_find))
 
     if not csv_files:
         print(f"⚠️ No files matching '{filename_to_find}' found in '{root_path}'.")
@@ -32,9 +32,9 @@ def combine_and_cleanup(root_directory, filename_to_find):
     print(f"✅ Combined data saved to '{output_path}'.")
 
     # 5. Delete the original files
-    for file_path in csv_files:
-        os.remove(file_path)
-    print(f"🗑️  Original {len(csv_files)} files have been deleted.")
+    # for file_path in csv_files:
+    #     os.remove(file_path)
+    # print(f"🗑️  Original {len(csv_files)} files have been deleted.")
 
 
 if __name__ == "__main__":
@@ -44,10 +44,11 @@ if __name__ == "__main__":
     
     # The parent folder containing all your experiment runs
     target_folder = sys.argv[1] 
-    
+    # target_folder = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/17_bigger_connectomes_no_individuals_density_10_2"
     experiment_name = target_folder.split("/")[-1]
     
     # The name of the csv file inside each experiment folder
     csv_name = experiment_name # "*.csv"
 
-    combine_and_cleanup(target_folder, csv_name)
+    combine_and_cleanup(target_folder, "all_metrics_for_exp_" + experiment_name + ".csv")
+    combine_and_cleanup(target_folder, "indiv_energies_for_exp_" + experiment_name + ".csv")

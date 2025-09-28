@@ -204,6 +204,7 @@ def _run_and_save_single_simulation(task_data: dict,
                         flat_record.update({f"mc_{i}": df_esn["mc_values_for_indiv_lags"][0][i-1]}) # TODO: Check: Or always +1? 
 
             except Exception as e:
+                print(f"Error in worker process: {e}")
                 mc_keys = ["mc_mean"] # + [f"mc_lag_{l}" for l in mc_lags_to_calc]
                 flat_record.update({key: np.nan for key in mc_keys})
                 
@@ -226,7 +227,7 @@ def _run_and_save_single_simulation(task_data: dict,
 
 def _combine_csvs_by_pattern(search_dir, file_pattern, output_name):
     """Finds, combines, and saves CSVs based on a recursive pattern."""
-    search_path = Path(search_dir)
+    search_path = Path(search_dir) # PosixPath('/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/17_bigger_connectomes_no_individuals_density_10_2/17_bigger_connectomes_no_individuals_density_10_2_20250928_091044/17_bigger_connectomes_no_individuals_density_10_2_temp')
     # Use rglob to find files in the directory and all subdirectories
     all_files = list(search_path.rglob(file_pattern))
 
@@ -238,7 +239,7 @@ def _combine_csvs_by_pattern(search_dir, file_pattern, output_name):
         df_list = [pd.read_csv(f) for f in all_files]
         full_df = pd.concat(df_list, ignore_index=True)
 
-        output_path = search_path.parent() / output_name
+        output_path = search_path.parent / output_name
         full_df.to_csv(output_path, index=False)
         print(f"✅ Combined {len(all_files)} files into: {output_path}")
     except Exception as e:
@@ -456,7 +457,7 @@ class GNMandESNPipelineOrchestrator:
                 _combine_csvs_by_pattern(
                     search_dir=temp_results_dir,
                     file_pattern="result_*.csv",
-                    output_name=f"{experiment_name}_results.csv"
+                    output_name=f"all_metrics_for_exp_{experiment_name}.csv"
                 )
             except: 
                 print("No results_*.csv were previously generated.")
@@ -468,7 +469,7 @@ class GNMandESNPipelineOrchestrator:
                     search_dir=temp_results_dir,
                     # file_pattern="indiv_connectome_energies_results_*.csv",
                     file_pattern="indiv_connectome_energies_*.csv",
-                    output_name=f"{experiment_name}_indiv_connectome_energies_results.csv"
+                    output_name=f"indiv_energies_for_exp_{experiment_name}.csv"
                 )
             except: 
                 print("No indiv_connectome_energies_*.csv were previously generated.")
@@ -476,23 +477,35 @@ class GNMandESNPipelineOrchestrator:
 
             print("\nCombination complete.")
             
-            # all_result_files = [os.path.join(temp_results_dir, f) for f in os.listdir(temp_results_dir) if f.endswith('.csv')]
+            # for result_type in ["result", "indiv_energies"]:
+                
+            #     all_result_files = [os.path.join(temp_results_dir, f) for f in os.listdir(temp_results_dir) if f.endswith('.csv')]
+                
+            #     if all_result_files:
+            #         df_list = [pd.read_csv(f) for f in all_result_files]
+            #         full_results_df = pd.concat(df_list, ignore_index=True)
+            #         csv_path = self.config.paths.current_projects_output_dir / f"{experiment_name}_results.csv"
+            #         full_results_df.to_csv(csv_path, index=False)
+                    
+            #         #  --- 4. (Optional) Clean up temporary files ---
+            #         for f in all_result_files:
+            #             os.remove(f)
+            #         os.rmdir(temp_results_dir)
+                    
+            #         print(f"Sweep finished. {len(full_results_df)} results saved to: {csv_path}")
+            #     else:
+            #         print("No results were generated.")
+            print(temp_results_dir)
             
-            # if all_result_files:
-            #     df_list = [pd.read_csv(f) for f in all_result_files]
-            #     full_results_df = pd.concat(df_list, ignore_index=True)
-            #     csv_path = self.config.paths.current_projects_output_dir / f"{experiment_name}_results.csv"
-            #     full_results_df.to_csv(csv_path, index=False)
-                
-                #  --- 4. (Optional) Clean up temporary files ---
-                # for f in all_result_files:
-                #     os.remove(f)
-                # os.rmdir(temp_results_dir)
-                
-            #     print(f"Sweep finished. {len(full_results_df)} results saved to: {csv_path}")
-            # else:
-            #     print("No results were generated.")
-                
+            # Delete all files from temp dir         
+            for filename in os.listdir(temp_results_dir): # List all files in the directory
+                file_path = os.path.join(temp_results_dir, filename)
+                if os.path.isfile(file_path): # Check if it is a file (not a subdirectory)
+                    os.remove(file_path)  # Remove the file
+                    # print(f"Deleted file: {filename}")
+            # Delete now-empty folder (it needs to be empty to do so)
+            path = Path(temp_results_dir).rmdir()
+            print("Deleted '%s' successfully" % temp_results_dir)
 
         return {"status": "completed"}
 

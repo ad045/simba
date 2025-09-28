@@ -1,6 +1,6 @@
 experiment:
   type: dynamic_gnm # New type
-  name: 01_dynamic_gnm_criticality_test
+  name: 18_dynamic_gnm_criticality_test
 
 data:
   connectome_resolution: 68
