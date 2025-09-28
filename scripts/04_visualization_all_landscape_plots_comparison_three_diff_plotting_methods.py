@@ -107,12 +107,7 @@ if __name__ == "__main__":
         "mc_std", 
         "wiring_cost", 
         "mean_mc_divided_by_wiring_cost",
-        ###
-        # "mc_1",
-        # "mc_5",
-        # "mc_10",
-        # "mc_20",
-        # "mc_50"
+        "mc_5_divided_by_wiring_cost", 
     ] + [f"mc_{lag}" for lag in lags_to_plot]
     
     

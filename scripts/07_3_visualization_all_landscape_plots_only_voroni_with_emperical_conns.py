@@ -31,10 +31,12 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/15_individual_connectomes/15_individual_connectomes_20250924_142952/15_individual_connectomes_temp/15_individual_connectomes_results.csv", 
         
         # 16: With individual connectomes
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes_results.csv", 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes_results.csv", 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/16_big_sweep_with_individual_connectomes_results.csv", 
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/17_bigger_connectomes_no_individuals_density_10_8/summary_all_metrics_for_exp_17_bigger_connectomes_no_individuals_density_10_8.csv", 
     ]
     
-    plot_indiv_connectomes = True
+    plot_indiv_connectomes = False
     
     
     ##############
@@ -47,7 +49,7 @@ if __name__ == "__main__":
     
     # --- 2. Define Metrics to Plot ---
     
-    lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 50]
+    lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
     metrics_to_plot = [
         "MaxCriteria",
         "avg_communicability", 
@@ -64,6 +66,7 @@ if __name__ == "__main__":
         "mc_std", 
         "wiring_cost", 
         "mean_mc_divided_by_wiring_cost",
+        "mc_5_divided_by_wiring_cost", 
     ] + [f"mc_{lag}" for lag in lags_to_plot]
     
     
@@ -113,6 +116,8 @@ if __name__ == "__main__":
                 savepath=full_save_path,
                 save_format="pdf"
             )
+            matplotlib.pyplot.close() # Close the plot after saving to free memory, if generated figure is not used. 
+
             print("Successfully generated combined MC lag plot.\n")
         else:
             print("SKIPPING: No 'mc_lag' columns found to generate a combined plot.\n")
@@ -131,6 +136,10 @@ if __name__ == "__main__":
 
             if metric == "mean_mc_divided_by_wiring_cost": 
                 df["mean_mc_divided_by_wiring_cost"] = pd.to_numeric(df["mc_mean"], errors='coerce') / pd.to_numeric(df["wiring_cost"], errors='coerce')
+            
+                        
+            if metric == "mc_5_divided_by_wiring_cost": 
+                df["mc_5_divided_by_wiring_cost"] = pd.to_numeric(df["mc_5"], errors='coerce') / pd.to_numeric(df["wiring_cost"], errors='coerce')
             
             df["eta"] = pd.to_numeric(df["eta"], errors='coerce')
             df["gamma"] = pd.to_numeric(df["gamma"], errors='coerce')
@@ -167,11 +176,15 @@ if __name__ == "__main__":
                 title=plot_title,
                 metric_name=metric_col_name,
                 savepath=full_save_path,
+                dot_color="steelblue", 
                 show=False,
                 show_dots=False,
                 annotate_extremes=True, 
-                estimated_indiv_connectomes=df_best_gamma_and_eta_estimates if plot_indiv_connectomes is not None else None, 
+                estimated_indiv_connectomes=df_best_gamma_and_eta_estimates if plot_indiv_connectomes else None, 
             )
+            
+            matplotlib.pyplot.close() # Close the plot after saving to free memory, if returned fig and ax are not used.
+            
             
             print(f"Successfully generated plot for {metric} at {full_save_path}\n")
             
