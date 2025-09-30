@@ -55,7 +55,7 @@ from src.preprocessing.preprocess_distance_matrix import get_distance_matrix
 from src.preprocessing.preprocess_70_connectomes import get_individual_connectomes
 from src.structural_analysis.graph_measures import analyze_connectomes
 
-from preprocessing_setup import setup
+from src.preprocessing.preprocessing_setup import setup
 
 # ----------------------------
 # Config & argument parsing
@@ -75,7 +75,7 @@ class PipelineConfig:
 
 def parse_args() -> PipelineConfig:
     p = argparse.ArgumentParser(description="Connectome preprocessing pipeline")
-    p.add_argument("--resolution", type=int, default=114, # CHANGE here
+    p.add_argument("--resolution", type=int, default=68, # CHANGE here
                    help="Parcellation resolution for distance matrix & inputs (default: 68)")
     p.add_argument("--goal-densities", type=int, nargs="+",
                    default=[10, 12, 14, 16, 18, 20],
@@ -333,8 +333,11 @@ def step_plot_consensus(
 # Main orchestrator
 # ----------------------------
 
-def main():
+def main(resolution = None):
     cfg = parse_args()
+    if resolution: 
+        cfg.resolution = resolution
+
     paths = step_setup_paths()
 
     # Distance matrix
@@ -409,7 +412,12 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        main(resolution=68)
+        main(resolution=114)
+        main(resolution=219)
+        main(resolution=448)
+        main(resolution=1000)
+        
     except Exception as e:
         print(f"\n[ERROR] {type(e).__name__}: {e}", file=sys.stderr)
         sys.exit(1)

@@ -1,7 +1,7 @@
 %% This file creates the folder "data/preprocessed/00_just_converted_for_python", and - as the name says, just turns the raw data into a format that allows it to be used with python. No thresholding, no binarization, nothing. 
 
 % Paths 
-base_path = "/Users/adrian/Documents/01_projects/14_4D_lab"; 
+base_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code"; 
 raw_data_path = base_path + "/data/raw"; 
 preprocessed_data_path = base_path + "/data/preprocessed/00_just_converted_for_matlab_and_python";
 if ~exist(preprocessed_data_path,'dir'), mkdir(preprocessed_data_path); end % make sure the target folder exists
@@ -20,7 +20,7 @@ extract_data_and_save_to_csv(matrix_cells, preprocessed_data_path_subfolder);
 % Function definitions
 
 function extract_data_and_save_to_csv(matrix_cells, preprocessed_data_path)
-    %% Extract data and save to CSV files
+    % Extract data and save to CSV files
     %  ------------------------------------------------------------------------
     %  Assumptions:
     %  • The 5×5 cell array is in variable `MatCell`
@@ -56,7 +56,11 @@ function extract_data_and_save_to_csv(matrix_cells, preprocessed_data_path)
             fullPath = fullfile(preprocessed_data_path,fileName);
 
             if iscell(thisData)
-                writecell(thisData,fullPath);
+                % if iscell(thisData)
+                % Remove newline characters from strings before writing to the file
+                cleanedData = strtrim(thisData); % erase(thisData, char(10)); % , "");
+                writecell(cleanedData, fullPath);
+
             else
                 writematrix(thisData,fullPath);
             end
