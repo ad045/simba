@@ -3,7 +3,7 @@
 
 experiment:
   type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
-  name: _sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2
+  name: 23_testing_4_KS_folders # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2
   average_connectomes: true 
   elaborate_analysis: true  # check if this is ingored?? (should not be, hopefully)
   evaluate_individual_connectomes: false # true # include this - this is currently not parsed by yaml...
@@ -30,12 +30,13 @@ gnm:
   wiring_rules: 
     - matching_index
     # - degree_product # clustering_coefficient does not work yet... 
-    - communicability 
+    # - communicability 
   num_simulations: 1000
   evaluation_metrics:
     - degree_ks
     - clustering_ks
     - edge_length_ks
+    - betweenness_ks
   weight_criterion: distance_weighted_communicability
   alpha: 0.01
 

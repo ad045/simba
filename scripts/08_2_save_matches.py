@@ -45,10 +45,17 @@ def find_and_save_matches(mode, # "empirical_conns" or "select_generated_conns"
 if __name__ == "__main__":
     # Define the file names
     from pathlib import Path
-    file_emp_connectome_estimated_eta_and_gamma = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/min_energy_results.csv"
-    file_emp_connectome_calculated_graph_metrics = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/emprirical_analysis/empirical_analysis.csv"
-    file_generated_connectome_calculated_graph_metrics = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/16_big_sweep_with_individual_connectomes_results.csv"
-    output_file = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes")
+    
+    PROJECT_NAME = "2423_combined" # 24_testing_4_KS_folders_rougher_grid" # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2"
+    base_output_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output"
+    project_path = base_output_path + "/gnm/" + PROJECT_NAME
+    
+
+    file_emp_connectome_estimated_eta_and_gamma = project_path + "/min_energy_results.csv"
+    file_emp_connectome_calculated_graph_metrics = base_output_path + "/emprirical_analysis/empirical_analysis.csv"
+    file_generated_connectome_calculated_graph_metrics = project_path + "/summary_all_metrics_for_exp_" + PROJECT_NAME + ".csv" # summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv"
+    
+    output_file = Path(project_path)
 
     # Run the function
     print("Starting with empirical connectomes.")
@@ -62,3 +69,6 @@ if __name__ == "__main__":
                           file_estimated_eta_and_gamma=file_emp_connectome_estimated_eta_and_gamma, 
                           file_calculated_graph_metrics=file_generated_connectome_calculated_graph_metrics, 
                           output_file=output_file / "comparison_generated_connectomes_with_eta_and_gamma_and_graph_analysis.csv")
+#     /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/16_big_sweep_with_individual_connectomes_results.csv
+# /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/18_sweep_with_individual_connectomes_larger_eta_span/summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv
+# '/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv'

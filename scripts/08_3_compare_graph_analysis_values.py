@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import os
+from pathlib import Path 
 
 def format_p_value(p):
     """Formats p-values for the LaTeX table with significance stars."""
@@ -173,9 +174,11 @@ def compare_and_visualize(file_gen_connectomes,
 if __name__ == "__main__":
 
     # Define file paths
-    file_gen_connectomes = '/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/comparison_empirical_connectomes_with_estiamted_eta_and_gamma_and_graph_analysis.csv'
-    file_empirical_connectomes = '/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/comparison_generated_connectomes_with_eta_and_gamma_and_graph_analysis.csv'
-    output_folder = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes"
+    output_folder = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes")
+    
+    file_gen_connectomes = output_folder / 'comparison_empirical_connectomes_with_estiamted_eta_and_gamma_and_graph_analysis.csv'
+    file_empirical_connectomes = output_folder / 'comparison_generated_connectomes_with_eta_and_gamma_and_graph_analysis.csv'
+    
     
     if not os.path.exists(file_gen_connectomes):
         print(f"Error: The file '{file_gen_connectomes}' does not exist.")

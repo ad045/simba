@@ -2,6 +2,7 @@ import pandas as pd
 from pathlib import Path
 import argparse
 
+# Combines CVSs in the "TEMP" folders (but in a wrong way, I believe? It returns entries for #runs, not #runs**trials_of_run!! But better is to run the script/run file while commenting out 2. 
 def _combine_csvs_by_pattern(search_dir: Path, file_pattern: str, output_name: str):
     """
     Finds, combines, and saves CSVs based on a recursive glob pattern.
@@ -34,34 +35,38 @@ def _combine_csvs_by_pattern(search_dir: Path, file_pattern: str, output_name: s
         print(f"❌ Error while processing pattern '{file_pattern}': {e}")
 
 
-def main():
+def main(args=None):
     """
     Main function to parse command-line arguments and run the CSV combination.
     """
-    parser = argparse.ArgumentParser(
-        description="""
-        A script to manually combine temporary CSV results from a GNM sweep.
-        This is useful if the main pipeline was interrupted after the parallel
-        simulations finished but before the results could be combined.
-        """,
-        formatter_class=argparse.RawTextHelpFormatter
-    )
-    parser.add_argument(
-        "temp_dir",
-        type=str,
-        help="The full path to the temporary directory containing the partial CSV files.\n(e.g., 'output/gnm/16_big_sweep_with_individual_connectomes_temp')"
-    )
-    # parser.add_argument(
-    #     "experiment_name",
-    #     type=str,
-    #     help="The base name of the experiment.\n(e.g., '16_big_sweep_with_individual_connectomes')"
-    # )
-    
-    args = parser.parse_args()
+    if args: 
+        experiment_name = args["experiment"]
+        temp_results_dir = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/24_testing_4_KS_folders_rougher_grid/24_testing_4_KS_folders_rougher_grid_20250930_050118/24_testing_4_KS_folders_rougher_grid_temp") # args["temp_results_dir"]
+        
+    else: 
+        parser = argparse.ArgumentParser(
+            description="""
+            A script to manually combine temporary CSV results from a GNM sweep.
+            This is useful if the main pipeline was interrupted after the parallel
+            simulations finished but before the results could be combined.
+            """,
+            formatter_class=argparse.RawTextHelpFormatter
+        )
+        parser.add_argument(
+            "temp_dir",
+            type=str,
+            help="The full path to the temporary directory containing the partial CSV files.\n(e.g., 'output/gnm/16_big_sweep_with_individual_connectomes_temp')"
+        )
+        # parser.add_argument(
+        #     "experiment_name",
+        #     type=str,
+        #     help="The base name of the experiment.\n(e.g., '16_big_sweep_with_individual_connectomes')"
+        # )
+        
+        args = parser.parse_args()
+        experiment_name = args.temp_dir.split("/")[-1]
+        temp_results_dir = Path(args.temp_dir)
 
-    temp_results_dir = Path(args.temp_dir)
-    experiment_name = args.temp_dir.split("/")[-1]
-    # experiment_name = args.experiment_name
 
     if not temp_results_dir.is_dir():
         print(f"❌ Error: The specified temporary directory does not exist: {temp_results_dir}")
@@ -75,22 +80,25 @@ def main():
     # 1. Combine the main result files
     _combine_csvs_by_pattern(
         search_dir=temp_results_dir,
-        file_pattern="result_*.csv",
-        output_name=f"{experiment_name}_results.csv"
+        file_pattern="*result_*.csv",
+        output_name=temp_results_dir.parent.parent / f"{experiment_name}_results.csv" #  Path(experiment_name) / f"{experiment_name}_results.csv"
     )
 
     # 2. Combine the individual connectome energy files
     _combine_csvs_by_pattern(
         search_dir=temp_results_dir,
-        file_pattern="indiv_connectome_energies_*.csv",
-        output_name=f"{experiment_name}_indiv_connectome_energies_results.csv"
+        file_pattern="*indiv_connectome_energies_*.csv",
+        output_name=temp_results_dir.parent.parent / f"{experiment_name}_indiv_connectome_energies_results.csv" # / Path(experiment_name)
     )
 
     print("\nCombination process complete.")
 
 
 if __name__ == '__main__':
-    main()
+    folder_to_output = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm")
+    experiment = "24_testing_4_KS_folders_rougher_grid_copy_2"
+    main(args={"experiment": experiment, 
+              "temp_results_dir": folder_to_output / experiment})
 # run with 
 # scripts/07_1_combine_csvs.py <path> (previously: <experiment_name>)
 # i.e.: 

@@ -33,10 +33,15 @@ if __name__ == "__main__":
         # 16: With individual connectomes
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes_results.csv", 
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/16_big_sweep_with_individual_connectomes_results.csv", 
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/17_bigger_connectomes_no_individuals_density_10_8/summary_all_metrics_for_exp_17_bigger_connectomes_no_individuals_density_10_8.csv", 
-    ]
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/17_bigger_connectomes_no_individuals_density_10_8/summary_all_metrics_for_exp_17_bigger_connectomes_no_individuals_density_10_8.csv", 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/18_sweep_with_individual_connectomes_larger_eta_span/summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv", 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2/summary_all_metrics_for_exp_20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2/summary_all_metrics_for_exp_20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/2423_combined/summary_all_metrics_for_exp_2423_combined.csv"
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/2423_24rough_combined/summary_all_metrics_for_exp_2423_24rough_combined.csv"
+    ]       
     
-    plot_indiv_connectomes = False
+    plot_indiv_connectomes = True # False
     
     
     ##############
@@ -97,37 +102,7 @@ if __name__ == "__main__":
 
     visualizer = PipelineVisualizer() # Initialize the visualizer once
     
-    # --- 4. Generate Combined MC Lag Plot ---
-    print("--- Generating combined Voronoi plot for all MC lags ---")
-    try:
-        save_dir = Path(save_path)
-        save_dir.mkdir(parents=True, exist_ok=True)
-        # Define a base name for the save file, the function will add the extension
-        figure_save_name = "voronoi_landscape_mc_lags_grid"
-        full_save_path = save_dir / figure_save_name
-
-        mc_cols_exist = any(f"mc_{lag}" in gnm_results_df.columns for lag in lags_to_plot)
-
-        if mc_cols_exist:
-            visualizer.plot_mc_lag_landscapes_voronoi(
-                gnm_results_df,
-                lags=lags_to_plot,
-                n_cols=4, # As requested: 4 columns
-                savepath=full_save_path,
-                save_format="pdf"
-            )
-            matplotlib.pyplot.close() # Close the plot after saving to free memory, if generated figure is not used. 
-
-            print("Successfully generated combined MC lag plot.\n")
-        else:
-            print("SKIPPING: No 'mc_lag' columns found to generate a combined plot.\n")
-
-    except Exception as e:
-        print(f"ERROR: An unexpected error occurred while plotting the combined MC lags.")
-        traceback.print_exc()
-        print("\n")
-
-    # --- 5. Generate Individual Plots in a Loop ---
+    # --- 4. Generate Individual Plots in a Loop ---
     for metric in metrics_to_plot:
         print(f"--- Generating Voronoi plot for metric: {metric} ---")
         try:
@@ -199,6 +174,38 @@ if __name__ == "__main__":
             print(f"ERROR: An unexpected error occurred while plotting '{metric}'.")
             traceback.print_exc()
             print("\n")
+
+
+    # --- 5. Generate Combined MC Lag Plot ---
+    print("--- Generating combined Voronoi plot for all MC lags ---")
+    try:
+        save_dir = Path(save_path)
+        save_dir.mkdir(parents=True, exist_ok=True)
+        # Define a base name for the save file, the function will add the extension
+        figure_save_name = "voronoi_landscape_mc_lags_grid"
+        full_save_path = save_dir / figure_save_name
+
+        mc_cols_exist = any(f"mc_{lag}" in gnm_results_df.columns for lag in lags_to_plot)
+
+        if mc_cols_exist:
+            visualizer.plot_mc_lag_landscapes_voronoi(
+                gnm_results_df,
+                lags=lags_to_plot,
+                n_cols=4, # As requested: 4 columns
+                savepath=full_save_path,
+                save_format="pdf"
+            )
+            matplotlib.pyplot.close() # Close the plot after saving to free memory, if generated figure is not used. 
+
+            print("Successfully generated combined MC lag plot.\n")
+        else:
+            print("SKIPPING: No 'mc_lag' columns found to generate a combined plot.\n")
+
+    except Exception as e:
+        print(f"ERROR: An unexpected error occurred while plotting the combined MC lags.")
+        traceback.print_exc()
+        print("\n")
+
 
     print("--- Visualization process completed. ---")
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- Configuration ---
-CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_4_four_factors_in_energy.yaml"
+CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_5_four_factors_in_energy.yaml" # example_gnm_random_5_four_factors_in_energy.yaml"
 # CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_3_indiv_connectomes.yaml"
 NUMBER_RUNS=300 # 250 # 500 # 1 #3 # 250
 
@@ -14,6 +14,9 @@ echo "Extracting experiment name from '$CONFIG_FILE'..."
 
 # Method 1: Using grep and awk (works on most systems)
 EXPERIMENT_NAME=$(grep -E "^\s*name:" "$CONFIG_FILE" | awk -F':' '{gsub(/^[ \t]*/, "", $2); gsub(/[ \t]*#.*$/, "", $2); gsub(/["'"'"']/, "", $2); print $2}')
+
+# Method 2: Alternative using sed (uncomment if Method 1 doesn't work)
+# EXPERIMENT_NAME=$(grep -E "^\s*name:" "$CONFIG_FILE" | sed -E 's/^\s*name:\s*//; s/\s*#.*$//; s/["\047]//g')
 
 # Check if experiment name was extracted successfully
 if [ -z "$EXPERIMENT_NAME" ]; then
@@ -32,25 +35,24 @@ echo
 
 
 
-# --- 2. Run the Python experiment ---
-echo "Running run_experiment with the '$CONFIG_FILE' config file."
+# # --- 2. Run the Python experiment ---
+# echo "Running run_experiment with the '$CONFIG_FILE' config file."
 
-for (( i=1; i<=$NUMBER_RUNS; i++ ))
-do
-   echo "--- Starting run #$i ---"
-   python run_experiment.py "$CONFIG_FILE"
-   echo "--- Finished run #$i ---"
-done
+# for (( i=1; i<=$NUMBER_RUNS; i++ ))
+# do
+#    echo "--- Starting run #$i ---"
+#    python run_experiment.py "$CONFIG_FILE"
+#    echo "--- Finished run #$i ---"
+# done
 
-echo "All '$NUMBER_RUNS' runs completed."
-echo # Adding a blank line for readability
+# echo "All '$NUMBER_RUNS' runs completed."
+# echo # Adding a blank line for readability
 
 
-
-echo "Combining 'results' and 'indiv_connectome' CSVs each..."
-python src/utils/combine_csvs.py "$OUTPUT_DIR"
-echo "Combined individual connectome energy CSVs."
-echo
+# echo "Combining 'results' and 'indiv_connectome' CSVs each..."
+# python src/utils/combine_csvs.py "$OUTPUT_DIR" 
+# echo "Combined individual connectome energy CSVs."
+# echo
 
 
 
@@ -65,11 +67,36 @@ else
     echo "Skipping deletion of 'generated_networks' directories."
 fi
 
-# Delete 'session_summary.json' files
-find "$OUTPUT_DIR" -type f -name "session_summary.json" -exec rm -f {} +
-echo "Deleted 'session_summary.json' files."
-echo
+# # Delete 'session_summary.json' files
+# find "$OUTPUT_DIR" -type f -name "session_summary.json" -exec rm -f {} +
+# echo "Deleted 'session_summary.json' files."
+# echo
 
+
+# Find all session summary files, handling spaces/special characters
+readarray -t files < <(find "$OUTPUT_DIR" -type f -name "session_summary.json")
+
+if [ ${#files[@]} -gt 0 ]; then
+  # Aggregate data from all found files into a new total summary file
+  jq -s '
+    {
+      "earliest_start_time": (map(.start_time) | min),
+      "latest_end_time": (map(.end_time) | max),
+      "sum_of_durations_seconds": (map(.duration_seconds) | add),
+      "durations_seconds": map(.duration_seconds)
+    }
+  ' "${files[@]}" > "$OUTPUT_DIR/session_summary_total.json"
+
+  echo "Created 'session_summary_total.json'."
+  
+  # Delete the original files
+  rm -f "${files[@]}"
+  echo "Deleted individual 'session_summary.json' files."
+else
+  echo "No 'session_summary.json' files found to process."
+fi
+
+echo
 
 
 # --- 5. Process Configs, Calculate Duration, and Save Summary ---
