@@ -3,7 +3,7 @@
 
 experiment:
   type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
-  name: 18_sweep_with_individual_connectomes_larger_eta_span
+  name: 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2
   average_connectomes: true 
   elaborate_analysis: true  # check if this is ingored?? (should not be, hopefully)
   evaluate_individual_connectomes: false # true # include this - this is currently not parsed by yaml...
@@ -23,8 +23,8 @@ data:
   use_gnm_defaults: false  # Set to true to use GNM's built-in test data
 
 gnm:
-  eta_range: [-4.0, 0.0] # [-3.0, 0.0] # Attention: Too big values may lead to numerical instabilities! e.g.: [-5.0, 0.0] 
-  gamma_range: [0.1, 0.6] # Attention: Too big values may lead to numerical instabilities! e.g.: [0.0, 1.0]
+  eta_range: [-7.0, 0.0] # [-3.0, 0.0] # Attention: Too big values may lead to numerical instabilities! e.g.: [-5.0, 0.0] 
+  gamma_range: [-0.2, 0.6] # Attention: Too big values may lead to numerical instabilities! e.g.: [0.0, 1.0]
   n_eta: 100 # 10  # Number of eta grid points. Only relevant if "grid" is chosen. 
   n_gamma: 100 # 10  # Number of gamma grid points. Only relevant if "grid" is chosen. 
   wiring_rules: 
