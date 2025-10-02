@@ -5,8 +5,6 @@ This bridges YAML files with the existing config.py structure.
 
 # TODO: 
     # - Save in run_info.txt the actual config used (including lists for grid search)
-    # - Print different things based on experiment type (ESN vs GNM)
-    # - Test ESN and GNM sweep experiments -> ESN works really well now - what about GNM, though? 
     
 import yaml
 from pathlib import Path
@@ -44,7 +42,7 @@ class YAMLConfigLoader:
         if 'type' not in self.config['experiment']:
             raise ValueError("Missing 'type' in experiment section")
         
-        valid_types = ['esn', 'gnm_sweep', 'gnm_comprehensive', 'full_pipeline', 'gnm_esn_grid', 'dynamic_gnm']
+        valid_types = ['gnm_sweep', 'dynamic_gnm']
         if self.config['experiment']['type'] not in valid_types:
             raise ValueError(f"Invalid experiment type. Must be one of: {valid_types}")
     
@@ -247,7 +245,6 @@ class YAMLConfigLoader:
             if 'base_dir' in yaml_output:
                 # Override the output directory
                 path_cfg.output_dir = Path(yaml_output['base_dir'])
-                path_cfg.esn_output_dir = path_cfg.output_dir / "esn"
                 path_cfg.gnm_output_dir = path_cfg.output_dir / "gnm"
             
             if 'root_dir' in yaml_output:
@@ -256,7 +253,6 @@ class YAMLConfigLoader:
                 path_cfg.data_dir = path_cfg.root_dir / "data/preprocessed/01_first_analysises"
                 if 'base_dir' not in yaml_output:
                     path_cfg.output_dir = path_cfg.root_dir / "output"
-                    path_cfg.esn_output_dir = path_cfg.output_dir / "esn"
                     path_cfg.gnm_output_dir = path_cfg.output_dir / "gnm"
         
         return path_cfg

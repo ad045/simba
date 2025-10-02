@@ -8,7 +8,7 @@ import sys
 
 try:
     from src.structural_analysis.graph_measures import analyze_connectomes
-    from src.ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
+    from ESNs.esn_evaluation import evaluate_memory_capacity_from_connectome
 except ImportError as e:
     print(f"❌ Error importing project modules: {e}", file=sys.stderr)
     print("👉 Please ensure you run this script from your project's root directory.", file=sys.stderr)
@@ -33,7 +33,7 @@ def analyze_empirical_connectomes(connectomes_path: str, distance_matrix_path: s
     num_subjects, num_nodes, _ = connectomes.shape
     print(f"Found {num_subjects} connectomes with {num_nodes} nodes each.")
 
-    # 2. Define default ESN hyperparameters
+    # 2. Define default ESN hyperparameters # TODO: Change this here! 
     # These are based on your original script. Adjust them as needed.
     h_params = {
         "spectral_radius": 0.9,
