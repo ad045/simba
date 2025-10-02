@@ -238,13 +238,6 @@ wandb
 *.pdf 
 *.html
 
-# BCT/
-# conn2res/
-# # neonatal_generative_network_modeling-main/
-# neonatal_generative_network_modeling-main/
-# GenerativeNetworkModels_2
-# GenerativeNetworkModels_2/
-
 wandb/
 wandb*.json
 *.txt
