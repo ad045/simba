@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
 import matplotlib.patches as patches
-from typing import Literal
+from typing import Literal, List
 
 # def normalize_color_channels(df: pd.DataFrame) -> pd.DataFrame:
 #     """Normalizes data columns into 'r', 'g', 'b' channels."""
@@ -17,7 +17,9 @@ from typing import Literal
 #     df_norm['b'] = _normalize(df_norm['wiring_cost'])
 #     return df_norm
 
-def normalize_color_channels(df: pd.DataFrame) -> pd.DataFrame:
+def normalize_color_channels(df: pd.DataFrame, 
+                             metrics_to_analyze: List[str], 
+                             ) -> pd.DataFrame:
     """Normalizes data columns into 'c', 'm', 'y', 'k' channels."""
     def _normalize(column):
         if column.max() == column.min(): return np.zeros_like(column)
@@ -25,10 +27,10 @@ def normalize_color_channels(df: pd.DataFrame) -> pd.DataFrame:
 
     df_norm = df.copy()
     # Map data to CMYK channels directly
-    df_norm['c'] = _normalize(df_norm['mc_mean'])
-    df_norm['m'] = _normalize(df_norm['avg_communicability'])
-    df_norm['y'] = _normalize(df_norm['wiring_cost'])
-    df_norm['k'] = _normalize(df_norm['mc_5']) # Assign a data column to Black
+    df_norm['c'] = _normalize(df_norm[metrics_to_analyze[0]]) # 'mc_mean'])
+    df_norm['m'] = _normalize(df_norm[metrics_to_analyze[1]]) # 'avg_communicability'])
+    df_norm['y'] = _normalize(df_norm[metrics_to_analyze[2]]) # 'wiring_cost'])
+    df_norm['k'] = _normalize(df_norm[metrics_to_analyze[3]]) # 'mc_5']) 
     return df_norm
 
 # def _plot_voronoi(ax: plt.Axes, df: pd.DataFrame, channel: str):
@@ -112,6 +114,7 @@ def _plot_voronoi(ax: plt.Axes, df: pd.DataFrame, channel: str):
     
 
 def create_cmyk_plots(df: pd.DataFrame, 
+                      metrics_to_analyze: List[str], 
                       style: Literal['voronoi'] = 'voronoi', 
                       save_folder = None):
     """Generates and saves the CMYK separation plots in a 2x3 grid."""
@@ -119,11 +122,26 @@ def create_cmyk_plots(df: pd.DataFrame,
 
     # Add the 'black' channel to the list
     channels = ['cyan', 'magenta', 'yellow', 'black', 'cmyk']
-    titles = [
-        'Cyan Channel (MC Mean)', 'Magenta Channel (Communicability)',
-        'Yellow Channel (Wiring Cost)', 'Black Channel (MC 5)',
-        'Full CMYK Composite'
-    ]
+    title_mapping = {
+        "mc_mean": "MC Mean", 
+        "wiring_cost": "Wiring Cost", 
+        "mc_5": "MC_5", 
+        "avg_communicability": "Communicability", 
+        "richclub_avg_length": "Rich-Club Average Length", 
+        "modularity": "Modularity", 
+        'Full CMYK Composite': 'Full CMYK Composite'
+    }
+    
+    # titles = [
+    #     'Cyan Channel (MC Mean)', 'Magenta Channel (Communicability)',
+    #     'Yellow Channel (Wiring Cost)', 'Black Channel (MC 5)',
+    #     'Full CMYK Composite'
+    # ]
+    titles = [] 
+    for (channel, metric) in zip(channels, metrics_to_analyze + ['Full CMYK Composite']): 
+        titles.append(channel.capitalize() + f" Channel ({title_mapping[metric]}))")
+    print(titles)
+    
     
     # Change grid to 2x3 to accommodate the 5 plots
     fig, axes = plt.subplots(2, 3, figsize=(18, 12), sharex=True, sharey=True)
@@ -147,7 +165,7 @@ def create_cmyk_plots(df: pd.DataFrame,
         filename = f'plot_{style}_cmyk_separation_with_black.png'
         plt.savefig(save_folder / filename)
         plt.close()
-        print(f"Plot saved as {filename}")
+        print(f"Plot saved as {save_folder / filename}")
     else: 
         plt.show()
     
@@ -162,11 +180,13 @@ def main():
     save_folder = Path(data_path).parent / "figures/rgb_pictures"
     save_folder.mkdir(parents=True, exist_ok=True)
     
-    raw_df = pd.read_csv(data_path)[["eta", "gamma", "mc_mean", "wiring_cost", "avg_communicability", "mc_5"]]
-    df = normalize_color_channels(raw_df)
+    metrics_to_analyze = ["mc_mean", "wiring_cost", "avg_communicability", "richclub_avg_length"]  # modularity"]]
+    raw_df = pd.read_csv(data_path)[:500][["eta", "gamma"] + metrics_to_analyze]
+    df = normalize_color_channels(raw_df, metrics_to_analyze)
     
     # Generate the CMYK separation plot
-    create_cmyk_plots(df, style='voronoi', save_folder=save_folder)
+    create_cmyk_plots(df, metrics_to_analyze, style='voronoi', 
+                      save_folder=save_folder)
 
 if __name__ == "__main__":
     main()
