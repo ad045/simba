@@ -111,7 +111,9 @@ def _plot_voronoi(ax: plt.Axes, df: pd.DataFrame, channel: str):
     
     
 
-def create_cmyk_plots(df: pd.DataFrame, style: Literal['voronoi'] = 'voronoi'):
+def create_cmyk_plots(df: pd.DataFrame, 
+                      style: Literal['voronoi'] = 'voronoi', 
+                      save_folder = None):
     """Generates and saves the CMYK separation plots in a 2x3 grid."""
     plot_func = _plot_voronoi
 
@@ -141,17 +143,20 @@ def create_cmyk_plots(df: pd.DataFrame, style: Literal['voronoi'] = 'voronoi'):
 
     plt.tight_layout(rect=[0.05, 0.05, 1, 0.95])
     
-    filename = f'plot_{style}_cmyk_separation_with_black.png'
-    plt.savefig(filename)
-    plt.close()
-    print(f"Plot saved as {filename}")
-    
+    if save_folder: 
+        filename = f'plot_{style}_cmyk_separation_with_black.png'
+        plt.savefig(save_folder / filename)
+        plt.close()
+        print(f"Plot saved as {filename}")
+    else: 
+        plt.show()
     
 
 def main():
     """Main function to run the plotting script."""
     from pathlib import Path
-    data_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2/summary_all_metrics_for_exp_20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2.csv"
+    data_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/2423_24rough_combined/summary_all_metrics_for_exp_2423_24rough_combined.csv"
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2/summary_all_metrics_for_exp_20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2.csv"
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/18_sweep_with_individual_connectomes_larger_eta_span/summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv" 
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/16_big_sweep_with_individual_connectomes_results.csv"
     save_folder = Path(data_path).parent / "figures/rgb_pictures"
@@ -161,7 +166,7 @@ def main():
     df = normalize_color_channels(raw_df)
     
     # Generate the CMYK separation plot
-    create_cmyk_plots(df, style='voronoi')
+    create_cmyk_plots(df, style='voronoi', save_folder=save_folder)
 
 if __name__ == "__main__":
     main()
