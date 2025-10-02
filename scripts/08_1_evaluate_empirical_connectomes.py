@@ -83,7 +83,7 @@ def analyze_empirical_connectomes(connectomes_path: str, distance_matrix_path: s
             # flat_esn_results = {}
             for i, mc_lag_val in enumerate(esn_results["mc_values_for_indiv_lags"]): 
                 # print(i, mc_lag_val)
-                flat_esn_results.update({"mc_lag_" + str(i): mc_lag_val})
+                flat_esn_results.update({"mc_" + str(i): mc_lag_val})
                 
             flat_esn_results.pop("mc_values_for_indiv_lags")
                 
