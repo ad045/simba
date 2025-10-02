@@ -254,7 +254,6 @@ class GNMandESNPipelineOrchestrator:
         self.config = config
         self.device = torch.device(config.gnm.device)
         self.data_loader = DataLoader(config) if not config.data.use_gnm_defaults else None
-        # self.esn_evaluator = ESNEvaluator(config, self.data_loader) if self.data_loader else None
         self.gnm_generator = GNMGenerator(device=self.config.gnm.device)
         self.logger = get_logger(config.paths.output_dir)
         self.config.paths.esn_output_dir.mkdir(parents=True, exist_ok=True)
@@ -280,39 +279,9 @@ class GNMandESNPipelineOrchestrator:
         
         if not experiment_name:
             experiment_name = f"gnm_sweep_{time.strftime('%Y%m%d_%H%M%S')}"
-        
-        # --- Data Loading --- # Commented this out to not use the default GNM distance matrices anymore. 
-        # if target_network is None:
-        #     if self.config.data.use_gnm_defaults:
-        #         data = self.config.load_gnm_defaults()
-        #         target_network = data["binary_network"]
-        #         distance_matrix = data["distance_matrix"]
-        #     else: # Should always use this case, actually 
-        #         distance_matrix = torch.tensor(
-        #             self.data_loader.load_distance_matrix(), 
-        #             dtype=torch.float32,
-        #             device=self.device
-        #         )
-        #         binary_connectomes = self.data_loader.load_binary_connectomes()
-        #         first_density = sorted(binary_connectomes.keys())[0]
-        #         target_network = torch.tensor(
-        #             binary_connectomes[first_density][0, :, :], # TODO: So far, we only look at the first network.... 
-        #             dtype=torch.float32,
-        #             device=self.device
-        #         )
-        # else:
-        #     if self.config.data.use_gnm_defaults:
-        #         distance_matrix = self.config.load_gnm_defaults()["distance_matrix"]
-        #     else: # Or alternatively this case 
-        #          distance_matrix = torch.tensor(
-        #             self.data_loader.load_distance_matrix(),
-        #             dtype=torch.float32,
-        #             device=self.device
-        #         )
-                 
 
+        # Load data (binary connectomes, distance matrix) 
         binary_connectomes = self.data_loader.load_binary_connectomes()
-        # distance_matrix = self.data_loader.load_distance_matrix() 
         distance_matrix = torch.tensor(
                     self.data_loader.load_distance_matrix(),
                     dtype=torch.float32,
@@ -378,22 +347,9 @@ class GNMandESNPipelineOrchestrator:
                     "bias": self.config.esn.bias,  
                     "random_state": self.config.compute.random_seed,     
         }
-                    
-        # Pack the necessary ESN parameters into a picklable dictionary
-        # esn_params = {
-        #     # 'mc_lags_to_calc': [], # self.config.esn.mc_lags_to_calc,
-        #     'esn_eval_params': 
-        #         # {
-        #         # 'train_len': self.config.esn.input_length,
-        #         # 'n_runs': 5, # prob. self.config.esn.n_runs ? 
-        #         # 'spectral_radius': self.config.esn.spectral_radius, 
-        #         ### add more: 
-        #     }
-        # }
-          
-        # [FIX] Convert the generator to a list *before* the parallel call.
-        # This resolves the serialization error by ensuring a simple, picklable list
-        # is passed to the workers, not a complex generator object.
+            
+        # A HACK: Converted the generator to a list BEFORE the parallel call.
+        # This resolves the serialization error by ensuring a simple, picklable list is passed to the workers, not a complex generator object.
         print("Generating sweep configurations...")
         sweep_config_list = list(sweep_config)
         print(f"{len(sweep_config_list)} configurations generated.")
@@ -450,9 +406,8 @@ class GNMandESNPipelineOrchestrator:
         finally:
             print("\nCombining results...")
             
-            print(f"\nCombining CSVs for experiment: '{experiment_name}'...")
-
-            # 1. Combine the 'result_....csv' files
+            # Combine the 'result_....csv' files
+            print(f"\nStep 1: Combining 'result_...csv' CSVs for experiment: '{experiment_name}'...")
             try: 
                 _combine_csvs_by_pattern(
                     search_dir=temp_results_dir,
@@ -462,7 +417,9 @@ class GNMandESNPipelineOrchestrator:
             except: 
                 print("No results_*.csv were previously generated.")
 
-            # 2. Combine the 'indiv_connectome...' files
+
+            # Combine the 'indiv_connectome...' files
+            print(f"\nStep 2: Combining 'indiv_connectome....csv'CSVs for experiment: '{experiment_name}'...")
             try: 
                 # output/gnm/15_individual_connectomes/15_individual_connectomes_20250924_140855/15_individual_connectomes_temp/
                 _combine_csvs_by_pattern(
@@ -474,27 +431,7 @@ class GNMandESNPipelineOrchestrator:
             except: 
                 print("No indiv_connectome_energies_*.csv were previously generated.")
 
-
             print("\nCombination complete.")
-            
-            # for result_type in ["result", "indiv_energies"]:
-                
-            #     all_result_files = [os.path.join(temp_results_dir, f) for f in os.listdir(temp_results_dir) if f.endswith('.csv')]
-                
-            #     if all_result_files:
-            #         df_list = [pd.read_csv(f) for f in all_result_files]
-            #         full_results_df = pd.concat(df_list, ignore_index=True)
-            #         csv_path = self.config.paths.current_projects_output_dir / f"{experiment_name}_results.csv"
-            #         full_results_df.to_csv(csv_path, index=False)
-                    
-            #         #  --- 4. (Optional) Clean up temporary files ---
-            #         for f in all_result_files:
-            #             os.remove(f)
-            #         os.rmdir(temp_results_dir)
-                    
-            #         print(f"Sweep finished. {len(full_results_df)} results saved to: {csv_path}")
-            #     else:
-            #         print("No results were generated.")
             print(temp_results_dir)
             
             # Delete all files from temp dir         
@@ -502,73 +439,9 @@ class GNMandESNPipelineOrchestrator:
                 file_path = os.path.join(temp_results_dir, filename)
                 if os.path.isfile(file_path): # Check if it is a file (not a subdirectory)
                     os.remove(file_path)  # Remove the file
-                    # print(f"Deleted file: {filename}")
+                    
             # Delete now-empty folder (it needs to be empty to do so)
             path = Path(temp_results_dir).rmdir()
             print("Deleted '%s' successfully" % temp_results_dir)
 
         return {"status": "completed"}
-
-
-def main():
-    """Main entry point with command-line interface."""
-    parser = argparse.ArgumentParser(description="GNM-Optimized Connectome Analysis Pipeline")
-    parser.add_argument("command", choices=["sweep", "esn", "gnm_esn_grid"],
-                   help="Command to run: 'sweep' for GNM parameter sweep, 'esn' for ESN analysis, 'gnm_esn_grid' for grid evaluation.")
-    
-    parser.add_argument("--experiment-name", help="Custom experiment name for the run.")
-    parser.add_argument("--no-wandb", action="store_true", help="Disable weights and biases logging.")
-    
-    # GNM-specific arguments
-    parser.add_argument("--random-sample", action="store_true",
-                    help="Use random sampling for GNM sweep instead of grid search (only if wandb is disabled).")
-    parser.add_argument("--n-random-samples", type=int, default=30,
-                    help="Number of random samples for GNM parameter sweep.")
-    parser.add_argument("--average-connectomes", action="store_true",
-                        help="Use the average of all connectomes as the target network.")
-
-
-    # ESN-specific arguments
-    parser.add_argument("--esn-search-mode", choices=["grid", "random_sample"], default="random_sample",
-                    help="Search mode for ESN hyperparameter sweep.")
-    
-    args = parser.parse_args()
-    
-    config = ConfigManager()
-        
-    orchestrator = GNMandESNPipelineOrchestrator(config)
-    
-    try:
-        if args.command == "sweep":
-            orchestrator.run_gnm_parameter_sweep(
-                experiment_name=args.experiment_name, 
-                no_wandb=args.no_wandb,
-                random_sample=args.random_sample,
-                n_random_samples=args.n_random_samples, 
-                average_connectomes=args.average_connectomes, 
-            )
-        # elif args.command == "esn":
-        #     orchestrator.run_esn_only_analysis(
-        #         experiment_name=args.experiment_name,
-        #         search_mode=args.esn_search_mode
-        #     )
-        # elif args.command == "gnm_esn_grid": 
-        #     orchestrator.run_gnm_esn_grid_evaluation(
-        #         experiment_name=args.experiment_name
-        #     )
-        
-        orchestrator.logger.finalize()
-
-    except KeyboardInterrupt:
-        print("\nOperation cancelled by user.")
-        orchestrator.logger.finalize()
-        sys.exit(1)
-    except Exception as e:
-        print(f"\nAN ERROR OCCURRED: {e}")
-        import traceback
-        traceback.print_exc()
-        orchestrator.logger.finalize()
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()

@@ -19,9 +19,7 @@ def run_from_yaml(yaml_path: str):
         # Determine the output directory based on experiment type
         current_time = time.strftime('%Y%m%d_%H%M%S') 
         precise_folder_name = exp_args.get('experiment_name', 'default_no_exp_name_set') + f"_{current_time}"
-        if exp_type == 'esn':
-            output_dir = config.paths.esn_output_dir / exp_args.get('experiment_name', f"esn_{current_time}") / precise_folder_name
-        elif exp_type == 'gnm' or "gnm_sweep":
+        if exp_type == 'gnm_sweep':
             output_dir = config.paths.gnm_output_dir / exp_args.get('experiment_name', f"gnm_{current_time}") / precise_folder_name
         elif exp_type == 'dynamic_gnm': # TODO: Change this here.
             output_dir = config.paths.dynamic_gnm_output_dir / exp_args.get('experiment_name', f"dynamic_gnm_{current_time}") / precise_folder_name
@@ -32,6 +30,7 @@ def run_from_yaml(yaml_path: str):
         config.paths.current_projects_output_dir = output_dir
         
         # Copy the original YAML config to the output directory
+        # TODO: Check that there is no other run in this experiment with the same name. 
         shutil.copy(yaml_path, output_dir / "config.yaml")
         
         return output_dir
@@ -57,53 +56,22 @@ def run_from_yaml(yaml_path: str):
     # Import pipeline orchestrator
     from src.pipeline.gnm_and_esn_orchestrator import GNMandESNPipelineOrchestrator
     
-    # Run appropriate experiment type
-    if exp_type == 'esn':
-        # Special handling for ESN
-        from src.ESNs.esn_evaluation import create_esn_evaluator
-        from src.utils.data_loader import DataLoader
+    
+    # Use orchestrator for GNM experiments
+    orchestrator = GNMandESNPipelineOrchestrator(config)
+    
+    if exp_type == 'gnm_sweep':
+        results = orchestrator.run_gnm_parameter_sweep(
+            **exp_args,
+        ) 
         
-        esn_evaluator = create_esn_evaluator(config_manager=config)
-        
-        # Generate hyperparameter grid from YAML config
-        hparam_grid = loader.generate_esn_hparam_grid(config)
-        
-        # Load data
-        data_loader = DataLoader(config)
-        weighted_by_density = data_loader.load_weighted_by_density()
-        
-        # Run ESN sweep
-        # exp_name = exp_args.get('experiment_name', f"esn_{time.strftime('%Y%m%d_%H%M%S')}")
-        exp_dir = output_dir_for_saving # is already taken from config; and now adapted. config.paths.esn_output_dir / exp_name
-        
-        search_mode = exp_args.get('search_mode', 'random_sample')
-        random_sample_size = exp_args.get('random_sample_size', None)
-        
-        esn_message = esn_evaluator.run_hyperparameter_sweep(
-            connectomes=weighted_by_density,
-            hparam_grid=hparam_grid,
-            save_dir=exp_dir,
-            search_mode=search_mode,
-            random_sample_size=random_sample_size
+    elif exp_type == "dynamic_gnm":
+        results = orchestrator.run_dynamic_gnm_generation(
+            experiment_name=exp_args.get('experiment_name')
         )
-        print(esn_message)
-        
-    else:
-        # Use orchestrator for GNM experiments
-        orchestrator = GNMandESNPipelineOrchestrator(config)
-        
-        if exp_type == 'gnm_sweep':
-            results = orchestrator.run_gnm_parameter_sweep(
-                **exp_args,
-            ) 
-            
-        elif exp_type == "dynamic_gnm":
-            results = orchestrator.run_dynamic_gnm_generation(
-                experiment_name=exp_args.get('experiment_name')
-            )
-        
-        print("\nExperiment completed!")
-        
-        # Finalize logger
-        orchestrator.logger.finalize(config.paths.current_projects_output_dir)
+    
+    print("\nExperiment completed!")
+    
+    # Finalize logger
+    orchestrator.logger.finalize(config.paths.current_projects_output_dir)
 
