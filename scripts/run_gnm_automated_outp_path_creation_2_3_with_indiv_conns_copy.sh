@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # --- Configuration ---
-CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_5_four_factors_in_energy.yaml" # example_gnm_random_5_four_factors_in_energy.yaml"
+CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_4_four_factors_in_energy.yaml" # example_gnm_random_5_four_factors_in_energy.yaml"
 # CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_3_indiv_connectomes.yaml"
-NUMBER_RUNS=300 # 250 # 500 # 1 #3 # 250
+NUMBER_RUNS=100 # 300 # 250 # 500 # 1 #3 # 250
 
 # --- New Flags for Cleanup Control ---
 CLEANUP_GENERATED_NETWORKS=false # Set to false to keep 'generated_networks' folders
@@ -35,24 +35,24 @@ echo
 
 
 
-# # --- 2. Run the Python experiment ---
-# echo "Running run_experiment with the '$CONFIG_FILE' config file."
+# --- 2. Run the Python experiment ---
+echo "Running run_experiment with the '$CONFIG_FILE' config file."
 
-# for (( i=1; i<=$NUMBER_RUNS; i++ ))
-# do
-#    echo "--- Starting run #$i ---"
-#    python run_experiment.py "$CONFIG_FILE"
-#    echo "--- Finished run #$i ---"
-# done
+for (( i=1; i<=$NUMBER_RUNS; i++ ))
+do
+   echo "--- Starting run #$i ---"
+   python run_experiment.py "$CONFIG_FILE"
+   echo "--- Finished run #$i ---"
+done
 
-# echo "All '$NUMBER_RUNS' runs completed."
-# echo # Adding a blank line for readability
+echo "All '$NUMBER_RUNS' runs completed."
+echo # Adding a blank line for readability
 
 
-# echo "Combining 'results' and 'indiv_connectome' CSVs each..."
-# python src/utils/combine_csvs.py "$OUTPUT_DIR" 
-# echo "Combined individual connectome energy CSVs."
-# echo
+echo "Combining 'results' and 'indiv_connectome' CSVs each..."
+python src/utils/combine_csvs.py "$OUTPUT_DIR" 
+echo "Combined individual connectome energy CSVs."
+echo
 
 
 
@@ -73,28 +73,76 @@ fi
 # echo
 
 
+# # Find all session summary files, handling spaces/special characters
+# readarray -t files < <(find "$OUTPUT_DIR" -type f -name "session_summary.json")
+
+# if [ ${#files[@]} -gt 0 ]; then
+#   # Aggregate data from all found files into a new total summary file
+#   jq -s '
+#     {
+#       "earliest_start_time": (map(.start_time) | min),
+#       "latest_end_time": (map(.end_time) | max),
+#       "sum_of_durations_seconds": (map(.duration_seconds) | add),
+#       "durations_seconds": map(.duration_seconds)
+#     }
+#   ' "${files[@]}" > "$OUTPUT_DIR/session_summary_total.json"
+
+#   echo "Created 'session_summary_total.json'."
+  
+#   # Delete the original files
+#   rm -f "${files[@]}"
+#   echo "Deleted individual 'session_summary.json' files."
+# else
+#   echo "No 'session_summary.json' files found to process."
+# fi
+
+
 # Find all session summary files, handling spaces/special characters
 readarray -t files < <(find "$OUTPUT_DIR" -type f -name "session_summary.json")
 
 if [ ${#files[@]} -gt 0 ]; then
-  # Aggregate data from all found files into a new total summary file
-  jq -s '
-    {
-      "earliest_start_time": (map(.start_time) | min),
-      "latest_end_time": (map(.end_time) | max),
-      "sum_of_durations_seconds": (map(.duration_seconds) | add),
-      "durations_seconds": map(.duration_seconds)
-    }
-  ' "${files[@]}" > "$OUTPUT_DIR/session_summary_total.json"
+  TOTAL_SUMMARY_FILE="$OUTPUT_DIR/session_summary_total.json"
 
-  echo "Created 'session_summary_total.json'."
+  # 1. Process the new individual files into a single summary object
+  NEW_SUMMARY_DATA=$(jq -s '
+    {
+      "start_time": (map(.start_time) | min),
+      "end_time": (map(.end_time) | max),
+      "durations": map(.duration_seconds)
+    }
+  ' "${files[@]}")
+
+  # 2. Check if a total summary file already exists and update/create it
+  if [ -f "$TOTAL_SUMMARY_FILE" ]; then
+    # Append to the existing file
+    jq --argjson new_data "$NEW_SUMMARY_DATA" '
+      .earliest_start_time = ([.earliest_start_time, $new_data.start_time] | min) |
+      .latest_end_time = ([.latest_end_time, $new_data.end_time] | max) |
+      .sum_of_durations_seconds += ($new_data.durations | add) |
+      .durations_seconds += $new_data.durations
+    ' "$TOTAL_SUMMARY_FILE" > "$TOTAL_SUMMARY_FILE.tmp" && mv "$TOTAL_SUMMARY_FILE.tmp" "$TOTAL_SUMMARY_FILE"
+    echo "Appended run data to 'session_summary_total.json'."
+  else
+    # Create a new total summary file
+    echo "$NEW_SUMMARY_DATA" | jq '
+      {
+        "earliest_start_time": .start_time,
+        "latest_end_time": .end_time,
+        "sum_of_durations_seconds": (.durations | add),
+        "durations_seconds": .durations
+      }
+    ' > "$TOTAL_SUMMARY_FILE"
+    echo "Created 'session_summary_total.json'."
+  fi
   
-  # Delete the original files
+  # 3. Delete the original individual files
   rm -f "${files[@]}"
   echo "Deleted individual 'session_summary.json' files."
 else
   echo "No 'session_summary.json' files found to process."
 fi
+
+
 
 echo
 
