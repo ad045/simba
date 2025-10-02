@@ -5,10 +5,6 @@ from pathlib import Path
 from tqdm import tqdm
 import sys
 
-# --- Assumptions ---
-# This script assumes that the following custom modules are accessible in your
-# Python environment, typically by running this script from the root of your
-# project directory where 'src' is a subfolder.
 
 try:
     from src.structural_analysis.graph_measures import analyze_connectomes
@@ -42,14 +38,14 @@ def analyze_empirical_connectomes(connectomes_path: str, distance_matrix_path: s
     h_params = {
         "spectral_radius": 0.9,
         "n_lags": 50,
-        "train_len": 2000,
-        "test_len": 500,
-        "n_runs": 5,
-        "input_scaling": 0.1,
-        "regression_method": "ridge",
-        "n_transient": 100,
-        "leak_rate": 0.1,
-        "bias": True,
+        "train_len": 5000, # ?? Is this input lengths?? 2000,
+        "test_len": 1000,
+        "n_runs": 50,
+        "input_scaling": 1.0, # 0.1,
+        "regression_method": "pinv", # "ridge",
+        "n_transient": 100, # a????
+        "leak_rate": 1.0, # 0.1,
+        "bias": 0.0, # True,
         "random_state": 42,
     }
     
@@ -158,7 +154,8 @@ if __name__ == "__main__":
     # main()
     
     # File paths
-    connectomes_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/connectomes_weighted_68x68.npy"
+    connectomes_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/connectomes_binarized_68x68_density_10_percent.npy" 
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/connectomes_weighted_68x68.npy"
     distance_matrix_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/distance_matrix_68x68.npy"
     
     output_base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/emprirical_analysis")
