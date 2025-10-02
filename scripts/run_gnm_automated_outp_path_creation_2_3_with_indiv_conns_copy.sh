@@ -1,15 +1,16 @@
 #!/bin/bash
 
-# --- Configuration ---
-CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_5_four_factors_in_energy.yaml" # example_gnm_random_5_four_factors_in_energy.yaml"
+# Configuration
+CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_4_four_factors_in_energy.yaml"
+# /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_5_four_factors_in_energy.yaml" # example_gnm_random_5_four_factors_in_energy.yaml"
 # CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_3_indiv_connectomes.yaml"
-NUMBER_RUNS=300 # 250 # 500 # 1 #3 # 250
+NUMBER_RUNS=1 # 300 # 250 # 500 # 1 #3 # 250
 
-# --- New Flags for Cleanup Control ---
+# Flags for Cleanup Control 
 CLEANUP_GENERATED_NETWORKS=false # Set to false to keep 'generated_networks' folders
 DELETE_SUBFOLDERS=true           # Set to false to keep individual (i.e. the second run of a yaml file) subfolders (e.g., "..._20250913_111422")
 
-# --- Extract experiment name from YAML file ---
+# Extract experiment name from YAML file
 echo "Extracting experiment name from '$CONFIG_FILE'..."
 
 # Method 1: Using grep and awk (works on most systems)
@@ -35,28 +36,28 @@ echo
 
 
 
-# # --- 2. Run the Python experiment ---
-# echo "Running run_experiment with the '$CONFIG_FILE' config file."
+# Run the Python experiment
+echo "Running run_experiment with the '$CONFIG_FILE' config file."
 
-# for (( i=1; i<=$NUMBER_RUNS; i++ ))
-# do
-#    echo "--- Starting run #$i ---"
-#    python run_experiment.py "$CONFIG_FILE"
-#    echo "--- Finished run #$i ---"
-# done
+for (( i=1; i<=$NUMBER_RUNS; i++ ))
+do
+   echo "--- Starting run #$i ---"
+   python run_experiment.py "$CONFIG_FILE"
+   echo "--- Finished run #$i ---"
+done
 
-# echo "All '$NUMBER_RUNS' runs completed."
-# echo # Adding a blank line for readability
+echo "All '$NUMBER_RUNS' runs completed."
+echo # Adding a blank line for readability
+
+# Cobine the resulting CSV files 
+echo "Combining 'results' and 'indiv_connectome' CSVs each..."
+python src/utils/combine_csvs.py "$OUTPUT_DIR" 
+echo "Combined individual connectome energy CSVs."
+echo
 
 
-# echo "Combining 'results' and 'indiv_connectome' CSVs each..."
-# python src/utils/combine_csvs.py "$OUTPUT_DIR" 
-# echo "Combined individual connectome energy CSVs."
-# echo
 
-
-
-# --- 4. Clean up unnecessary files ---
+# Clean up unnecessary files 
 echo "Starting cleanup..."
 
 if [ "$CLEANUP_GENERATED_NETWORKS" = true ] ; then
@@ -99,7 +100,7 @@ fi
 echo
 
 
-# --- 5. Process Configs, Calculate Duration, and Save Summary ---
+# Process Configs, Calculate Duration, and Save Summary 
 echo "Processing config files, calculating duration, and saving summary..."
 
 # Define the summary file path
@@ -162,7 +163,7 @@ SUMMARY_FILE="$OUTPUT_DIR/experiment_summary.txt"
 } | tee "$SUMMARY_FILE"
 
 
-# --- 6. Final cleanup of experiment subfolders ---
+# Final cleanup of experiment subfolders
 if [ "$DELETE_SUBFOLDERS" = true ] ; then
     
     # --- 6a. Consolidate 'generated_networks' before deleting ---
@@ -188,8 +189,7 @@ if [ "$DELETE_SUBFOLDERS" = true ] ; then
     echo "Consolidation complete."
     echo
 
-    # --- 6b. Delete the original subfolders ---
-    # Find all original subdirectories, making sure not to target the new consolidated one
+    # Delete the original subfolders. Find all original subdirectories, making sure not to target the new consolidated one
     SUBDIRS_TO_DELETE=($(find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -type d -not -name "$(basename "$DEST_DIR")"))
     
     if [ ${#SUBDIRS_TO_DELETE[@]} -gt 0 ]; then

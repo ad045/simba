@@ -1,8 +1,6 @@
 """
-Data loading and preprocessing utilities for the connectome analysis pipeline.
-Handles loading of connectomes, distance matrices, and data validation.
+Data loading for the connectome analysis pipeline. Handles loading of connectomes, distance matrices, and data validation.
 """
-# -> Used at least for main_pipeline_2_gnm_esn_landscape.py and for main_pipeline_2.py (esn part)
 
 import numpy as np
 from pathlib import Path
@@ -253,6 +251,7 @@ def get_connectome_stats(connectome: np.ndarray) -> Dict[str, float]:
 
 # Example usage
 if __name__ == "__main__":
+    
     # Create a data loader with default configuration
     config = ConfigManager()
     loader = DataLoader(config)
@@ -274,6 +273,19 @@ if __name__ == "__main__":
     # Load weighted connectomes by density
     try:
         weighted_by_density = loader.load_weighted_by_density()
+        print(f"\nLoaded weighted connectomes for densities: {sorted(weighted_by_density.keys())}")
+        
+        for density, conn in weighted_by_density.items():
+            stats = get_connectome_stats(conn[:, :, 0] if conn.ndim == 3 else conn)
+            print(f"  Density {density}%: {conn.shape}, density={stats['density']:.3f}")
+            
+    except Exception as e:
+        print(f"Could not load weighted connectomes: {e}")
+        
+        
+    # Load binarized connectomes by density
+    try:
+        weighted_by_density = loader.load_binary_connectomes()
         print(f"\nLoaded weighted connectomes for densities: {sorted(weighted_by_density.keys())}")
         
         for density, conn in weighted_by_density.items():

@@ -128,7 +128,7 @@ class ESNEvaluator:
     def evaluate_singlce_subject(self, 
                                subject_idx: int,
                                connectome: np.ndarray,
-                               hparams: Dict[str, Any]) -> Dict[str, Any]:
+                               hparams: Dict[str, Any] = None) -> Dict[str, Any]:
         """
         Evaluate memory capacity for a single subject.
         
@@ -140,7 +140,9 @@ class ESNEvaluator:
         Returns:
             Dictionary with evaluation results
         """
-        
+        if hparams is None:
+            hparams = {}
+                        
         mc_result, timing = self._subject_job(
             subject_idx, connectome, hparams, 
             self.config.compute.timing_flag, self.config.compute.random_seed
@@ -461,55 +463,3 @@ def create_esn_evaluator(config_path: Optional[Union[str, Path]] = None,
         data_loader = DataLoader(config_manager)
     
     return ESNEvaluator(config_manager, data_loader)
-
-
-# Example usage and testing
-if __name__ == "__main__":
-    # Example: Quick test with small hyperparameter grid
-    from config import get_gnm_quick_test_config # get_quick_test_config
-    from src.utils.data_loader import create_data_loader
-    
-    # Set up configuration for testing
-    config = get_gnm_quick_test_config()
-    data_loader = create_data_loader(config_manager=config)
-    evaluator = ESNEvaluator(config, data_loader)
-    
-    try:
-        # Generate a small hyperparameter grid
-        small_grid = config.generate_esn_hparam_grid(
-            spectral_radii=[0.8, 0.99],
-            input_lengths=[1000, 2000],
-            input_scalings=[1.0],
-            regularization_methods=["pinv"],
-            n_runs_list=[3],
-            densities=[10]
-        )
-        
-        print(f"Generated grid with {len(small_grid)} combinations")
-        print("Sample hyperparameter combination:", small_grid[0])
-        
-        # Load test data
-        weighted_by_density = data_loader.load_weighted_by_density()
-        
-        if weighted_by_density:
-            test_save_dir = Path("./test_esn_results")
-            
-            # Run evaluation on a subset
-            result_message = evaluator.run_hyperparameter_sweep(
-                connectomes=weighted_by_density,
-                hparam_grid=small_grid[:4],  # Just first 4 combinations for testing
-                save_dir=test_save_dir,
-                search_mode="grid"
-            )
-            
-            # print(result_message)
-            
-            # Analyze results
-            analysis = evaluator.load_and_analyze_results(test_save_dir)
-            print("Analysis results:", analysis)
-        
-        else:
-            print("No data available for testing")
-            
-    except Exception as e:
-        print(f"Test failed: {e}")

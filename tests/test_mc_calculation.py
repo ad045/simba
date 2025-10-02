@@ -91,6 +91,7 @@ def run_mc_tests():
         "n_lags": 50,
         "regression_method": "ridge", # pinv", # "ridge"
         "random_state": 42, 
+        "n_transient": 100, 
     }
 
     # 2. Create the evaluator

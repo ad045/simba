@@ -16,29 +16,19 @@ import uuid
 import os
 from pathlib import Path
 
-import pickle 
-
-# For parallel processing
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
-# GNM library imports
 from gnm import fitting
-# from src.imported_libraries.GenerativeNetworkModels_2.src.gnm.model import GenerativeNetworkModel, BinaryGenerativeParameters
 
-# Import our optimized modules
 from src.config.ESN_and_GNM_config import ConfigManager
 from src.GNMs.gnm_network_generator import GNMGenerator
 from src.utils.data_loader import DataLoader
-# from src.ESNs.alternative_esn_evaluation import ESNEvaluator
-# from src.ESNs.esn_evaluation import ESNEvaluator
 from src.utils.run_logger import get_logger
-
 from src.structural_analysis.graph_measures import analyze_connectomes
-# from src.ESNs.esn_evaluation import evaluate_memory_capacity_from_connectome
 from src.ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
 
-# --- Helper function for interrupt-safe parallel execution ---
+# Helper functions
 
 def _run_and_save_single_simulation(task_data: dict, 
                                     evaluation_criteria, 
@@ -55,8 +45,9 @@ def _run_and_save_single_simulation(task_data: dict,
     """
     from gnm.fitting import perform_run, RunConfig # , BinaryGenerativeParameters
     from gnm import generative_rules # Important import for reconstruction
-    # from gnm.fitting import BinarySweepParameters
     from gnm.model import BinaryGenerativeParameters
+    
+    
     # --- Reconstruct the RunConfig object from the dictionary ---
     bp_data = task_data['binary_parameters']
     
@@ -78,7 +69,6 @@ def _run_and_save_single_simulation(task_data: dict,
         binary_parameters=binary_params,
         distance_matrix=task_data['distance_matrix']
     )
-    # --- End Reconstruction ---
 
     flat_record = {}
     indiv_networks_record = {}
@@ -88,14 +78,13 @@ def _run_and_save_single_simulation(task_data: dict,
         individual_networks = torch.tensor(
                 individual_networks, 
                 dtype=torch.float32,
-                # device=device
             )
         
         # 1. Run the simulation with the newly reconstructed run_config
         experiment = perform_run(
             run_config=run_config,
             binary_evaluations=[evaluation_criteria],
-            real_binary_matrices=individual_networks, # target_network.unsqueeze(0),
+            real_binary_matrices=individual_networks, 
             save_model=True,
             save_run_history=False,
             device=torch.device(device_str),
@@ -261,14 +250,17 @@ class GNMandESNPipelineOrchestrator:
     
     
     def run_gnm_parameter_sweep(self,
-                           target_network: Optional[torch.Tensor] = None,
-                           experiment_name: Optional[str] = None, 
-                           no_wandb: Optional[bool] = False,
-                           random_sample: bool = False,
-                           n_random_samples: int = 30, 
-                           elaborate_analysis: Optional[bool] = False, 
-                           average_connectomes: bool = True, # set to false to only evaluate one connectome
-                           **kwargs) -> Dict[str, Any]:
+                                h_params, 
+                        #    target_network: Optional[torch.Tensor] = None,
+                        #    experiment_name: Optional[str] = None, 
+                        #    no_wandb: Optional[bool] = False,
+                        #    random_sample: bool = False,
+                        #    n_random_samples: int = 30, 
+                        #    elaborate_analysis: Optional[bool] = False, 
+                        #    average_connectomes: bool = True, # set to false to only evaluate one connectome
+                        #    save_indiv_network_energies: bool = False,
+                        #    **kwargs
+                        ) -> Dict[str, Any]:
         """
         Run a parameter sweep in parallel with robust, interrupt-safe saving.
         """
@@ -318,35 +310,22 @@ class GNMandESNPipelineOrchestrator:
         # Create sweep config 
         if no_wandb and random_sample:
             sweep_config = self.config.create_gnm_random_sweep_config(
-                distance_matrix=torch.Tensor(distance_matrix), # distance_matrix
-                num_iterations=num_iterations,
-                num_simulations=num_simulations, method="random",
-                n_random_samples=n_random_samples, include_weights=True
+                h_params=h_params,
+                distance_matrix=torch.Tensor(distance_matrix),
+                # num_iterations=num_iterations,
+                # num_simulations=num_simulations, method="random",
+                # n_random_samples=n_random_samples, 
+                # include_weights=True
             )
         else:
             sweep_config = self.config.create_gnm_sweep_config(
-                distance_matrix=torch.Tensor(distance_matrix), # distance_matrix
+                distance_matrix=torch.Tensor(distance_matrix),
                 num_iterations=num_iterations,
                 num_simulations=num_simulations, method="grid", 
                 include_weights=True
             )
         
         evaluation_criteria = self.config.get_gnm_evaluation_criteria(distance_matrix)
-        
-            
-        # IS THIS UNNECESSARY?? H_PARAMS. check which parameters get through until here... 
-        h_params = {"spectral_radius": self.config.esn.spectral_radius,  #### TODO: HAND A BIG HPARAMS DICT TO THIS FUNCTION!! (instead of doing it all one by one...)
-                    "n_lags": self.config.esn.n_lags,
-                    "train_len": self.config.esn.input_length, # seems to have gotten two names... train_len,
-                    "test_len": self.config.esn.test_len,
-                    "n_runs": self.config.esn.n_runs,
-                    "input_scaling": self.config.esn.input_scaling, 
-                    "regression_method": self.config.esn.regularization_method, 
-                    "n_transient": self.config.esn.n_transient,
-                    "leak_rate": self.config.esn.leak_rate, 
-                    "bias": self.config.esn.bias,  
-                    "random_state": self.config.compute.random_seed,     
-        }
             
         # A HACK: Converted the generator to a list BEFORE the parallel call.
         # This resolves the serialization error by ensuring a simple, picklable list is passed to the workers, not a complex generator object.
@@ -379,11 +358,10 @@ class GNMandESNPipelineOrchestrator:
 
         try:
             
-            save_indiv_network_energies = True # TODO: REPLACE WITH FLAG! 
+            save_indiv_network_energies = h_params["save_indiv_network_energies"]
             
-            # Set number of workers (default: -1 for maximum parallel execution)
-            n_jobs = self.data_loader.config.compute.n_workers if self.data_loader.config.compute.n_workers else -1
-            Parallel(n_jobs=n_jobs)( # TODO: REPLACE WITH NUMBER_JOBS!
+            # Set number of workers (-1 for maximum parallel execution)
+            Parallel(n_jobs=self.data_loader.config.compute.n_workers)( 
                 delayed(_run_and_save_single_simulation)(
                     task_data=task_data, # Pass the deconstructed dictionary
                     evaluation_criteria=evaluation_criteria,

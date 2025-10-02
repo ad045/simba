@@ -119,12 +119,11 @@ class YAMLConfigLoader:
         if 'test_len' in yaml_esn:
             esn_cfg.test_len = yaml_esn['test_len']
         if 'n_transient' in yaml_esn:
-            esn_cfg.n_transient = yaml_esn['n_transient']
+            esn_cfg.n_transient = yaml_esn['n_transient'] 
         if 'leak_rate' in yaml_esn:
             esn_cfg.leak_rate = yaml_esn['leak_rate']
         if 'bias' in yaml_esn:
             esn_cfg.bias = yaml_esn['bias']
-        
         return esn_cfg
     
     def _create_gnm_config(self) -> GNMConfig:
@@ -293,6 +292,8 @@ class YAMLConfigLoader:
             args['evaluate_individual_connectomes'] = exp_cfg['evaluate_individual_connectomes']
         if 'elaborate_analysis' in exp_cfg: 
             args['elaborate_analysis'] = exp_cfg['elaborate_analysis']
+        if 'save_indiv_network_energies' in exp_cfg: 
+            args['save_indiv_network_energies'] = exp_cfg['save_indiv_network_energies']
         
         # Wandb settings
         if 'wandb' in exp_cfg:
@@ -312,8 +313,8 @@ class YAMLConfigLoader:
             if 'fit_weights' in exp_cfg:
                 args['fit_weights'] = exp_cfg['fit_weights']
         
-        if 'elaborate_analysis' in exp_cfg:
-            args['elaborate_analysis'] = exp_cfg['elaborate_analysis']
+        # if 'elaborate_analysis' in exp_cfg:
+        #     args['elaborate_analysis'] = exp_cfg['elaborate_analysis']
             
         # ESN-specific arguments  
         if exp_cfg['type'] == 'esn':

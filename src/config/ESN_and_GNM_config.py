@@ -227,19 +227,34 @@ class ConfigManager:
         self.paths = path_config or PathConfig()
     
     def create_gnm_random_sweep_config(self,
-                                    distance_matrix: torch.Tensor,
-                                    num_iterations: int,
-                                    num_simulations: int = 100,
-                                    method: Optional[str] = "grid", # "random", # "grid",
-                                    n_random_samples: int = 30,
-                                    include_weights: bool = True) -> fitting.SweepConfig:
+                                       h_params, 
+                                       distance_matrix: torch.Tensor,
+                                    #    num_iterations: int,
+                                    #    num_simulations: int = 100,
+                                    #    method: Optional[str] = "grid", # "random", # "grid",
+                                    #    n_random_samples: int = 30,
+                                    #    include_weights: bool = True
+                                    ) -> fitting.SweepConfig:
         """Create GNM sweep configuration with random parameter sampling."""
         
         # Generate random parameter values
-        eta_values = torch.empty(n_random_samples)
-        gamma_values = torch.empty(n_random_samples)
+        eta_values = torch.empty(h_params["n_random_samples"])
+        gamma_values = torch.empty(h_params["n_random_samples"])
         
-        for i in range(n_random_samples):
+        
+        # h_params = {"spectral_radius": self.config.esn.spectral_radius,  #### TODO: HAND A BIG HPARAMS DICT TO THIS FUNCTION!! (instead of doing it all one by one...)
+        #             "n_lags": self.config.esn.n_lags,
+        #             "train_len": self.config.esn.input_length, # seems to have gotten two names... train_len,
+        #             "test_len": self.config.esn.test_len,
+        #             "n_runs": self.config.esn.n_runs,
+        #             "input_scaling": self.config.esn.input_scaling, 
+        #             "regression_method": self.config.esn.regularization_method, 
+        #             "n_transient": self.config.esn.n_transient,
+        #             "leak_rate": self.config.esn.leak_rate, 
+        #             "bias": self.config.esn.bias,  
+        #             "random_state": self.config.compute.random_seed,     
+        # }
+        for i in range(h_params["n_random_samples"]):
             eta_values[i] = torch.rand(1) * (self.gnm.eta_range[1] - self.gnm.eta_range[0]) + self.gnm.eta_range[0]
             gamma_values[i] = torch.rand(1) * (self.gnm.gamma_range[1] - self.gnm.gamma_range[0]) + self.gnm.gamma_range[0]
 
@@ -249,7 +264,7 @@ class ConfigManager:
             if rule_name == "matching_index":
                 rules.append(generative_rules.MatchingIndex())
             elif rule_name == "neighbors":
-                rules.append(generative_rules.Neighbors())
+                rules.append(generative_rules.Neighbors()) # TODO: include those. 
             elif rule_name == "degree_product":
                 rules.append(generative_rules.DegreeProduct())
             elif rule_name == "clustering_coefficient":
@@ -259,7 +274,7 @@ class ConfigManager:
             else:
                 rules.append(generative_rules.MatchingIndex())
         
-        binary_params = fitting.BinarySweepParameters(
+        binary_params = fitting.BinarySweepParameters( # TODO: Change this hardcoding! 
             eta=eta_values,
             gamma=gamma_values,
             lambdah=torch.tensor([0.0]),  # Single lambda value
@@ -277,32 +292,32 @@ class ConfigManager:
         return fitting.SweepConfig(
             binary_sweep_parameters=binary_params,
             weighted_sweep_parameters=weighted_params,
-            num_simulations=num_simulations,
+            num_simulations=h_params["n_random_samples"],
             distance_matrix=[distance_matrix], 
-            method=method, 
-            num_random_samples=n_random_samples, 
+            method=h_params["method"], 
+            num_random_samples=h_params["n_random_samples"], 
         )
 
-    def create_gnm_sweep_config(self, 
-                               distance_matrix: torch.Tensor,
-                               num_iterations: int,
-                               num_simulations: int = 100, # TODO: check if this works 
-                               method="grid", # is always this - combine with function above... 
-                               include_weights: bool = True) -> fitting.SweepConfig:
-        """Create complete GNM sweep configuration."""    
+    # def create_gnm_sweep_config(self, 
+    #                            distance_matrix: torch.Tensor,
+    #                            num_iterations: int,
+    #                            num_simulations: int = 100, # TODO: check if this works 
+    #                            method="grid", # is always this - combine with function above... 
+    #                            include_weights: bool = True) -> fitting.SweepConfig:
+    #     """Create complete GNM sweep configuration."""    
                 
-        binary_params = self.gnm.create_binary_sweep_parameters(distance_matrix, num_iterations)
+    #     binary_params = self.gnm.create_binary_sweep_parameters(distance_matrix, num_iterations)
         
-        weighted_params = None
-        if include_weights:
-            weighted_params = self.gnm.create_weighted_sweep_parameters(distance_matrix)
+    #     weighted_params = None
+    #     if include_weights:
+    #         weighted_params = self.gnm.create_weighted_sweep_parameters(distance_matrix)
         
-        return fitting.SweepConfig(
-            binary_sweep_parameters=binary_params,
-            weighted_sweep_parameters=weighted_params,
-            num_simulations=self.gnm.num_simulations,
-            distance_matrix=[distance_matrix]
-        )
+    #     return fitting.SweepConfig(
+    #         binary_sweep_parameters=binary_params,
+    #         weighted_sweep_parameters=weighted_params,
+    #         num_simulations=self.gnm.num_simulations,
+    #         distance_matrix=[distance_matrix]
+    #     )
     
     def get_gnm_evaluation_criteria(self, distance_matrix: torch.Tensor) -> Any:
         """Get evaluation criteria for GNM."""
@@ -325,9 +340,6 @@ class ConfigManager:
     
     def get_data_paths(self):
         """Get paths to data files."""
-        # if self.data.use_gnm_defaults:
-        #     # Use GNM's default data
-        #     return {"use_gnm_defaults": True}
         
         resolution = self.data.resolution
         
@@ -392,12 +404,5 @@ class ConfigManager:
         
         return hparam_grid
         
-        
-def get_esn_config():
-    """Get configuration specifically for ESN analysis."""
-    config = ConfigManager()
-    # Ensure we use actual data paths, not GNM defaults
-    config.data.use_gnm_defaults = False
-    return config
 
 

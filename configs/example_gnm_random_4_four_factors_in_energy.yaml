@@ -3,10 +3,11 @@
 
 experiment:
   type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
-  name: 23_testing_4_KS_folders # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2
+  name: 25_testing_cleaned_version # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2
   average_connectomes: true 
   elaborate_analysis: true  # check if this is ingored?? (should not be, hopefully)
-  evaluate_individual_connectomes: false # true # include this - this is currently not parsed by yaml...
+  evaluate_individual_connectomes: false # true # include this - this is currently not parsed by yaml... 
+  save_indiv_network_energies: true 
   search:
     method: random # grid  # Options: grid, random, bayesian
     n_samples: 100  # For random search
