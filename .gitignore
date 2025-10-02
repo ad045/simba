@@ -248,6 +248,7 @@ wandb
 wandb/
 wandb*.json
 *.txt
+*.tex
 *.wandb 
 *wandb*
 sweep-*/ */
