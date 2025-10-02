@@ -3,7 +3,13 @@ ESN evaluation module for the connectome analysis pipeline.
 Handles memory capacity evaluation and hyperparameter optimization.
 """
 
+import echoes
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import pearsonr
 import os
+import urllib.request
+import zipfile
 import time
 import warnings
 import multiprocessing as mp
@@ -12,17 +18,13 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any, Union
 from datetime import datetime
 import random
-import numpy as np
 import pandas as pd
 
 from src.config.ESN_and_GNM_config import ConfigManager
 from src.utils.data_loader import DataLoader
-
-# from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes 
-from src.ESNs.alternative_test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes 
+from ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome # needs to be here (even if "unused") - otherwise it defaults to row above??
 from src.utils.saving_and_finding_files import time_stamp_for_saving
 from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
-from src.ESNs.utils_math import _calculate_branching_ratio
 
 
 class ESNEvaluator:
@@ -46,6 +48,44 @@ class ESNEvaluator:
         df = pd.DataFrame(rows, columns=columns)
         df.to_csv(path, mode="a", index=False, header=not path.exists())
     
+    
+    
+
+    def _alternative_evaluate_mc(W, n_lags=50, train_len=4000, test_len=1000):
+        """Evaluates the Memory Capacity of a given reservoir matrix W."""
+        
+        # 1. Generate data for the MC task
+        random_sequence = np.random.uniform(-0.5, 0.5, train_len + test_len)
+        X = random_sequence.reshape(-1, 1)
+        y = np.zeros((len(X), n_lags))
+        for i in range(1, n_lags + 1):
+            y[i:, i - 1] = X[:-i, 0]
+        
+        X_train, X_test = X[:train_len], X[train_len:]
+        y_train, y_test = y[:train_len], y[train_len:]
+
+        # 2. Create and train the ESN
+        esn = echoes.ESNRegressor(
+            W=W, 
+            spectral_radius=0.99, 
+            input_scaling=1e-5, 
+            leak_rate=1, 
+            bias=1,
+            random_state=42
+        )
+        
+        esn.fit(X_train, y_train)
+        y_pred = esn.predict(X_test)
+
+        # 3. Calculate the MC score
+        mc_score = 0
+        for i in range(n_lags):
+            corr, _ = pearsonr(y_test[100:, i], y_pred[100:, i]) # Discard initial transient
+            mc_score += corr**2
+            
+        return mc_score
+    
+
     def _subject_job(self, 
                     subj_idx: int,
                     A_obs: np.ndarray, # rename!
@@ -68,18 +108,18 @@ class ESNEvaluator:
         if timing_flag:
             t_metrics = 0.0  # Placeholder for potential graph metrics timing: TODO
         
-        # Set up hyperparameters with defaults # TODO: Are those defaults things we would like to have, or should we replace them? 
-        esn_hparams = { # THIS IS MOSTLY FILLED WITH DEFAULT VALUES, and not with values from the config file... # TODO 
-            "spectral_radius": hparams.get("spectral_radius", self.config.esn.spectral_radius),
-            "input_length": hparams.get("input_length", self.config.esn.input_length),
-            "input_scaling": hparams.get("input_scaling", self.config.esn.input_scaling),
-            "regularization_method": hparams.get("regularization_method", self.config.esn.regularization_method),
-            "n_runs": hparams.get("n_runs", self.config.esn.n_runs),
-            "n_lags": self.config.esn.n_lags,
-            "test_len": self.config.esn.test_len,
-            "n_transient": self.config.esn.n_transient,
-            "leak_rate": self.config.esn.leak_rate,
-            "bias": self.config.esn.bias,
+        # Set up hyperparameters with defaults
+        esn_hparams = {
+            "spectral_radius": 0, #  hparams.get("spectral_radius", self.config.esn.spectral_radius),
+            "input_length": 0, # hparams.get("input_length", self.config.esn.input_length),
+            "input_scaling": 0, # hparams.get("input_scaling", self.config.esn.input_scaling),
+            "regularization_method": 0, # hparams.get("regularization_method", self.config.esn.regularization_method),
+            "n_runs": 0, # hparams.get("n_runs", self.config.esn.n_runs),
+            "n_lags": 0, # self.config.esn.n_lags,
+            "test_len": 0, # self.config.esn.test_len,
+            "n_transient": 0, # self.config.esn.n_transient,
+            "leak_rate": 0, # self.config.esn.leak_rate,
+            "bias": 0, # self.config.esn.bias,
         }
         
         if timing_flag:
@@ -89,22 +129,73 @@ class ESNEvaluator:
             warnings.simplefilter("ignore", RuntimeWarning)
             np.seterr(over="ignore", divide="ignore", invalid="ignore")
             
-            mc_result_dict = evaluate_memory_capacity_from_connectome( # handover h_params here.... 
-                connectome=A_obs,  # np float 64
-                spectral_radius=esn_hparams["spectral_radius"],
-                n_lags=esn_hparams["n_lags"],
-                train_len=esn_hparams["input_length"],
-                test_len=esn_hparams["test_len"],
-                n_runs=esn_hparams["n_runs"],
-                input_scaling=esn_hparams["input_scaling"],
-                regression_method=esn_hparams["regularization_method"],
-                n_transient=esn_hparams["n_transient"],
-                leak_rate=esn_hparams["leak_rate"],
-                bias=esn_hparams["bias"],
-                random_state=random_seed if random_seed is not None else subj_idx, 
-                calculate_criticality=hparams.get("calculate_criticality", False),
-                calculate_info_dynamics=hparams.get("calculate_info_dynamics", False)
-            )
+            # mc_result_dict = evaluate_memory_capacity_from_connectome(
+            #     connectome=A_obs,  # np float 64
+            #     spectral_radius=esn_hparams["spectral_radius"],
+            #     n_lags=esn_hparams["n_lags"],
+            #     train_len=esn_hparams["input_length"],
+            #     test_len=esn_hparams["test_len"],
+            #     n_runs=esn_hparams["n_runs"],
+            #     input_scaling=esn_hparams["input_scaling"],
+            #     regression_method=esn_hparams["regularization_method"],
+            #     n_transient=esn_hparams["n_transient"],
+            #     leak_rate=esn_hparams["leak_rate"],
+            #     bias=esn_hparams["bias"],
+            #     random_state=random_seed if random_seed is not None else subj_idx, 
+            #     calculate_criticality=hparams.get("calculate_criticality", False),
+            #     calculate_info_dynamics=hparams.get("calculate_info_dynamics", False)
+            # )
+            
+            mc_score = self._alternative_evaluate_mc(A_obs, n_lags=50, train_len=4000, test_len=1000)
+            
+            mc_result_dict = {
+            "mc_mean": mc_score, # float(np.mean(mc_values)), 
+            "mc_std": 0, # float(np.std(mc_values)),
+            "mean_mc_of_individual_runs": 0, # mc_values,  
+            "hparams": {
+                "spectral_radius": 0, # spectral_radius,
+                "n_lags": 0, # n_lags,
+                "train_len": 0, # train_len,
+                "test_len": 0, # test_len,
+                "n_runs": 0, # n_runs,
+                "input_scaling": 0, # input_scaling,
+                "regression_method": 0, # regression_method,
+                "n_transient": 0, #  n_transient,
+                "leak_rate": 0, # leak_rate,
+                "bias": 0, # bias,
+                "random_state": 0, # random_state,
+                },
+            }
+    
+            # if (calculate_criticality or calculate_info_dynamics) and all_states_for_metrics:
+            #     # Concatenate states from all runs for a more robust estimation
+            #     concatenated_states = np.vstack(all_states_for_metrics)
+                
+            mc_result_dict['branching_ratio'] = 0 # branching_ratio
+                    
+                # if calculate_info_dynamics:
+                #     info_dyn_results = _calculate_information_dynamics(concatenated_states)
+                # mc_result_dict.update({"info_dyn_results": 0})
+
+            # return mc_result_dict
+
+
+            # mc_result_dict = evaluate_memory_capacity_from_connectome(
+            #     connectome=A_obs,  # np float 64
+            #     spectral_radius=esn_hparams["spectral_radius"],
+            #     n_lags=esn_hparams["n_lags"],
+            #     train_len=esn_hparams["input_length"],
+            #     test_len=esn_hparams["test_len"],
+            #     n_runs=esn_hparams["n_runs"],
+            #     input_scaling=esn_hparams["input_scaling"],
+            #     regression_method=esn_hparams["regularization_method"],
+            #     n_transient=esn_hparams["n_transient"],
+            #     leak_rate=esn_hparams["leak_rate"],
+            #     bias=esn_hparams["bias"],
+            #     random_state=random_seed if random_seed is not None else subj_idx, 
+            #     calculate_criticality=hparams.get("calculate_criticality", False),
+            #     calculate_info_dynamics=hparams.get("calculate_info_dynamics", False)
+            # )
             
             # Merge all hyperparameters into the result
             returned_hp = mc_result_dict.get("hparams", {})
@@ -125,10 +216,10 @@ class ESNEvaluator:
     
 
     
-    def evaluate_singlce_subject(self, 
+    def evaluate_single_subject(self, 
                                subject_idx: int,
                                connectome: np.ndarray,
-                               hparams: Dict[str, Any] = None) -> Dict[str, Any]:
+                               hparams: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Evaluate memory capacity for a single subject.
         
@@ -142,7 +233,7 @@ class ESNEvaluator:
         """
         if hparams is None:
             hparams = {}
-                        
+        
         mc_result, timing = self._subject_job(
             subject_idx, connectome, hparams, 
             self.config.compute.timing_flag, self.config.compute.random_seed

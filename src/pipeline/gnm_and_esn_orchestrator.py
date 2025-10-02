@@ -26,7 +26,7 @@ from src.GNMs.gnm_network_generator import GNMGenerator
 from src.utils.data_loader import DataLoader
 from src.utils.run_logger import get_logger
 from src.structural_analysis.graph_measures import analyze_connectomes
-from src.ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
+from ESNs.esn_evaluation import evaluate_memory_capacity_from_connectome
 
 # Helper functions
 
