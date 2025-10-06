@@ -183,33 +183,15 @@ class YAMLConfigLoader:
     
     def _create_data_config(self) -> DataConfig:
         """Create DataConfig from YAML."""
-        data_cfg = DataConfig()
         
-        if 'data' not in self.config:
-            return data_cfg
+        config_data_from_yaml = self.config['data']
         
-        yaml_data = self.config['data']
-        
-        if 'dataset_name' in yaml_data: 
-            data_cfg.dataset_name = yaml_data['dataset_name']
-        
-        if 'connectome_resolution' in yaml_data:
-            data_cfg.resolution = yaml_data['connectome_resolution']
-            
-        if 'resolution' in yaml_data:  # Alternative name
-            data_cfg.resolution = yaml_data['resolution']
-        
-        if 'densities' in yaml_data:
-            data_cfg.densities = yaml_data['densities']
-            
-        elif 'density_threshold' in yaml_data:
-            # Convert single threshold to list of densities
-            # This is a simplified conversion - adjust as needed
-            density = int(yaml_data['density_threshold'] * 100)
-            data_cfg.densities = [density]
-        
-        if 'use_weighted' in yaml_data:
-            data_cfg.use_weighted = yaml_data['use_weighted']
+        data_cfg = DataConfig(
+            dataset_name=config_data_from_yaml['dataset_name'], 
+            resolution=config_data_from_yaml['connectome_resolution'],
+            densities=config_data_from_yaml['densities'], 
+            use_weighted=config_data_from_yaml['use_weighted'], 
+        )
             
         return data_cfg
     

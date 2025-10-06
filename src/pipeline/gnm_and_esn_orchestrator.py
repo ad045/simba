@@ -6,36 +6,25 @@ This version is updated for robust, interrupt-safe multiprocessing on macOS.
 import argparse
 import sys
 from typing import Optional, Dict, Any
-import json
 import time
 import numpy as np
 import torch
 import pandas as pd
-from datetime import datetime
 import uuid
 import os
 from pathlib import Path
-
-import pickle 
 
 # For parallel processing
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
-# GNM library imports
-from gnm import fitting
-# from src.imported_libraries.GenerativeNetworkModels_2.src.gnm.model import GenerativeNetworkModel, BinaryGenerativeParameters
-
 # Import our optimized modules
 from config.manager import ConfigManager
 from src.GNMs.gnm_network_generator import GNMGenerator
 from src.utils.data_loader import DataLoader
-# from src.ESNs.alternative_esn_evaluation import ESNEvaluator
-# from src.ESNs.esn_evaluation import ESNEvaluator
 from src.utils.run_logger import get_logger
 
 from src.structural_analysis.graph_measures import analyze_connectomes
-# from src.ESNs.esn_evaluation import evaluate_memory_capacity_from_connectome
 from src.ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
 
 # --- Helper function for interrupt-safe parallel execution ---
@@ -53,10 +42,10 @@ def _run_and_save_single_simulation(task_data: dict,
     """
     Worker function that reconstructs objects from simple data before running the simulation.
     """
-    from gnm.fitting import perform_run, RunConfig # , BinaryGenerativeParameters
-    from gnm import generative_rules # Important import for reconstruction
-    # from gnm.fitting import BinarySweepParameters
+    from gnm.fitting import perform_run, RunConfig
+    from gnm import generative_rules 
     from gnm.model import BinaryGenerativeParameters
+    
     # --- Reconstruct the RunConfig object from the dictionary ---
     bp_data = task_data['binary_parameters']
     
@@ -88,14 +77,13 @@ def _run_and_save_single_simulation(task_data: dict,
         individual_networks = torch.tensor(
                 individual_networks, 
                 dtype=torch.float32,
-                # device=device
             )
         
         # 1. Run the simulation with the newly reconstructed run_config
         experiment = perform_run(
             run_config=run_config,
             binary_evaluations=[evaluation_criteria],
-            real_binary_matrices=individual_networks, # target_network.unsqueeze(0),
+            real_binary_matrices=individual_networks, 
             save_model=True,
             save_run_history=False,
             device=torch.device(device_str),
@@ -119,13 +107,10 @@ def _run_and_save_single_simulation(task_data: dict,
             })
 
         for energy_metric_name in list(experiment.evaluation_results.binary_evaluations.keys()):
-
-            # energy_metric_name = list(experiment.evaluation_results.binary_evaluations.keys())[0]  # TODO: Include all names
-
+            
             # Analze energy compared to mean connectome
             energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()  # TODO: Include all names # check if these values make sense 
             flat_record.update({energy_metric_name: energy_value_mean})
-
 
             # HERE: ADD evaluation results of the individual networks
             if save_indiv_network_energies: # TODO: Figure out if this is efficient
@@ -375,8 +360,10 @@ class GNMandESNPipelineOrchestrator:
             sweep_config = self.config.create_gnm_random_sweep_config(
                 distance_matrix=torch.Tensor(distance_matrix), # distance_matrix
                 num_iterations=num_iterations,
-                num_simulations=num_simulations, method="random",
-                n_random_samples=n_random_samples, include_weights=True
+                num_simulations=num_simulations,
+                method="random",
+                n_random_samples=n_random_samples, 
+                include_weights=True
             )
         else:
             sweep_config = self.config.create_gnm_sweep_config(

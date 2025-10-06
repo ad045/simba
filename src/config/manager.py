@@ -5,17 +5,22 @@ import torch
 # Import GNM configuration structures
 from gnm import fitting, generative_rules
 
-# Import project constants
-from .constants import (
-    CONNECTOMES_WEIGHTED_PATTERN, CONNECTOMES_BINARY_PATTERN, DISTANCE_MATRIX_PATTERN
-)
-
 from config.GNM import GNMConfig
 from src.config.ESN import ESNConfig
 from config.data import DataConfig
 from config.compute import ComputeConfig
 from config.path import PathConfig
 
+# Import project constants
+from .constants import (
+    DEFAULT_RESOLUTION, DEFAULT_RANDOM_SEED, DEFAULT_N_ETA, DEFAULT_N_GAMMA, DEFAULT_N_LAMBDA,
+    DEFAULT_SPECTRAL_RADIUS, DEFAULT_INPUT_LENGTH, DEFAULT_INPUT_SCALING, DEFAULT_N_RUNS,
+    DEFAULT_N_LAGS, DEFAULT_TEST_LENGTH, DEFAULT_N_TRANSIENT, DEFAULT_LEAK_RATE, DEFAULT_BIAS,
+    DEFAULT_DENSITIES, DEFAULT_REGULARIZATION_METHOD, DEFAULT_GENERATIVE_RULES,
+    DEFAULT_EVALUATION_METRICS, DEFAULT_WEIGHT_CRITERION, DEFAULT_ETA_RANGE, DEFAULT_GAMMA_RANGE,
+    DEFAULT_LAMBDA_RANGE, DEFAULT_ALPHA, DEFAULT_NUM_SIMULATIONS, DEFAULT_APPEND_INTERVAL,
+    CONNECTOMES_WEIGHTED_PATTERN, CONNECTOMES_BINARY_PATTERN, DISTANCE_MATRIX_PATTERN
+)
 
 class ConfigManager:
     """Optimized configuration manager using GNM structures."""
@@ -38,10 +43,11 @@ class ConfigManager:
     def create_gnm_random_sweep_config(self, # TODO: Combine with function below (and thus make the label "random" and "grid" useable...)
                                     distance_matrix: torch.Tensor,
                                     num_iterations: int,
-                                    num_simulations: int = 100,
-                                    method: Optional[str] = "random", # "random", # "grid",
-                                    n_random_samples: int = 30,
-                                    include_weights: bool = True) -> fitting.SweepConfig:
+                                    num_simulations: int, 
+                                    method: Optional[str], #  = "random", # "random", # "grid",
+                                    n_random_samples: int, #  = 30,
+                                    include_weights: bool, 
+                                    ) -> fitting.SweepConfig:
         """Create GNM sweep configuration with random parameter sampling."""
         
         # Generate random parameter values

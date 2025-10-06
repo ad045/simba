@@ -14,7 +14,6 @@ from .constants import (
     DEFAULT_LAMBDA_RANGE, DEFAULT_ALPHA, DEFAULT_NUM_SIMULATIONS
 )
 
-
 @dataclass
 class GNMConfig:
     """GNM configuration using library structures."""
