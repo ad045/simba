@@ -1,18 +1,22 @@
 #!/bin/bash
 
-# --- Configuration ---
-CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_4_four_factors_in_energy.yaml"
-# CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_3_indiv_connectomes.yaml"
-NUMBER_RUNS=300 # 250 # 500 # 1 #3 # 250
+###############################################################
+# Configuration
 
-# --- New Flags for Cleanup Control ---
+CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run.yaml" 
+NUMBER_RUNS=100 # 300 # 250 # 500 # 1 #3 # 250
+
+# Flags for clean-up control 
 CLEANUP_GENERATED_NETWORKS=false # Set to false to keep 'generated_networks' folders
 DELETE_SUBFOLDERS=true           # Set to false to keep individual (i.e. the second run of a yaml file) subfolders (e.g., "..._20250913_111422")
 
-# --- Extract experiment name from YAML file ---
+
+###############################################################
+# Extract experiment name from YAML file
+
 echo "Extracting experiment name from '$CONFIG_FILE'..."
 
-# Method 1: Using grep and awk (works on most systems)
+# Using grep and awk (works on most systems)
 EXPERIMENT_NAME=$(grep -E "^\s*name:" "$CONFIG_FILE" | awk -F':' '{gsub(/^[ \t]*/, "", $2); gsub(/[ \t]*#.*$/, "", $2); gsub(/["'"'"']/, "", $2); print $2}')
 
 # Check if experiment name was extracted successfully
@@ -24,15 +28,19 @@ fi
 
 echo "✅ Extracted experiment name: '$EXPERIMENT_NAME'"
 
-# --- Define the main output directory using extracted name ---
+
+###############################################################
+# Define the main output directory using extracted name 
+
 OUTPUT_DIR="output/gnm/$EXPERIMENT_NAME"
 
 echo "Using output directory: '$OUTPUT_DIR'"
 echo
 
 
+###############################################################
+# Run the Python experiment
 
-# --- 2. Run the Python experiment ---
 echo "Running run_experiment with the '$CONFIG_FILE' config file."
 
 for (( i=1; i<=$NUMBER_RUNS; i++ ))
@@ -46,15 +54,15 @@ echo "All '$NUMBER_RUNS' runs completed."
 echo # Adding a blank line for readability
 
 
-
 echo "Combining 'results' and 'indiv_connectome' CSVs each..."
-python src/utils/combine_csvs.py "$OUTPUT_DIR"
+python src/utils/combine_csvs.py "$OUTPUT_DIR" 
 echo "Combined individual connectome energy CSVs."
 echo
 
 
+###############################################################
+# Clean up unnecessary files
 
-# --- 4. Clean up unnecessary files ---
 echo "Starting cleanup..."
 
 if [ "$CLEANUP_GENERATED_NETWORKS" = true ] ; then
@@ -65,14 +73,56 @@ else
     echo "Skipping deletion of 'generated_networks' directories."
 fi
 
-# Delete 'session_summary.json' files
-find "$OUTPUT_DIR" -type f -name "session_summary.json" -exec rm -f {} +
-echo "Deleted 'session_summary.json' files."
+# Find all session summary files, handling spaces/special characters
+readarray -t files < <(find "$OUTPUT_DIR" -type f -name "session_summary.json")
+
+if [ ${#files[@]} -gt 0 ]; then
+  TOTAL_SUMMARY_FILE="$OUTPUT_DIR/session_summary_total.json"
+
+  # 1. Process the new individual files into a single summary object
+  NEW_SUMMARY_DATA=$(jq -s '
+    {
+      "start_time": (map(.start_time) | min),
+      "end_time": (map(.end_time) | max),
+      "durations": map(.duration_seconds)
+    }
+  ' "${files[@]}")
+
+  # 2. Check if a total summary file already exists and update/create it
+  if [ -f "$TOTAL_SUMMARY_FILE" ]; then
+    # Append to the existing file
+    jq --argjson new_data "$NEW_SUMMARY_DATA" '
+      .earliest_start_time = ([.earliest_start_time, $new_data.start_time] | min) |
+      .latest_end_time = ([.latest_end_time, $new_data.end_time] | max) |
+      .sum_of_durations_seconds += ($new_data.durations | add) |
+      .durations_seconds += $new_data.durations
+    ' "$TOTAL_SUMMARY_FILE" > "$TOTAL_SUMMARY_FILE.tmp" && mv "$TOTAL_SUMMARY_FILE.tmp" "$TOTAL_SUMMARY_FILE"
+    echo "Appended run data to 'session_summary_total.json'."
+  else
+    # Create a new total summary file
+    echo "$NEW_SUMMARY_DATA" | jq '
+      {
+        "earliest_start_time": .start_time,
+        "latest_end_time": .end_time,
+        "sum_of_durations_seconds": (.durations | add),
+        "durations_seconds": .durations
+      }
+    ' > "$TOTAL_SUMMARY_FILE"
+    echo "Created 'session_summary_total.json'."
+  fi
+  
+  # 3. Delete the original individual files
+  rm -f "${files[@]}"
+  echo "Deleted individual 'session_summary.json' files."
+else
+  echo "No 'session_summary.json' files found to process."
+fi
 echo
 
 
+###############################################################
+# Process Configs, Calculate Duration, and Save Summary
 
-# --- 5. Process Configs, Calculate Duration, and Save Summary ---
 echo "Processing config files, calculating duration, and saving summary..."
 
 # Define the summary file path
@@ -135,10 +185,12 @@ SUMMARY_FILE="$OUTPUT_DIR/experiment_summary.txt"
 } | tee "$SUMMARY_FILE"
 
 
-# --- 6. Final cleanup of experiment subfolders ---
+###############################################################
+# Final cleanup of experiment subfolders
+
 if [ "$DELETE_SUBFOLDERS" = true ] ; then
     
-    # --- 6a. Consolidate 'generated_networks' before deleting ---
+    # Consolidate 'generated_networks' before deleting 
     DEST_DIR="$OUTPUT_DIR/all_generated_networks"
     echo "Consolidating all 'generated_networks' into '$DEST_DIR'..."
     mkdir -p "$DEST_DIR"
@@ -161,7 +213,7 @@ if [ "$DELETE_SUBFOLDERS" = true ] ; then
     echo "Consolidation complete."
     echo
 
-    # --- 6b. Delete the original subfolders ---
+    # Delete the original subfolders. 
     # Find all original subdirectories, making sure not to target the new consolidated one
     SUBDIRS_TO_DELETE=($(find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -type d -not -name "$(basename "$DEST_DIR")"))
     
