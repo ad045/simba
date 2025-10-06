@@ -79,3 +79,9 @@ OMP: Hint This means that multiple copies of the OpenMP runtime have been linked
 scripts/run_gnm_automated_outp_path_creation_2_3_with_indiv_conns_copy.sh: line 46: 46035 Abort trap: 6           python run_experiment.py "$CONFIG_FILE""
    conda env config vars set KMP_DUPLICATE_LIB_OK=TRUE -n ma_thesis
    conda activate ma_thesis
+
+
+
+# Tools: 
+
+[] Creating a nice tree: To create a nice tree, use the following command - it will create a tree only containing the directories, and excluding specific folders that contain many files: (ma_thesis) adrian@MagicBook 14_4D_lab_code % tree -d -I 'X_*|output_*|*__pycache__*' . 

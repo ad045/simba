@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 
 # Import your existing configuration
-from src.config.ESN_and_GNM_config import (
+from config.manager import (
     ConfigManager, ESNConfig, GNMConfig, DataConfig, 
     ComputeConfig, PathConfig
 )
