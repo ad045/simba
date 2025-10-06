@@ -322,18 +322,42 @@ class GNMandESNPipelineOrchestrator:
 
         # Connectome selection: TODO: Figure out if this is the right approach (i.e. if energies are adding distributive)
         if average_connectomes:
-            print("Averaging all connectomes for the target network.")
-            all_connectomes_for_density = binary_connectomes[first_density]
+            # print("Averaging all connectomes for the target network.")
+            empirical_binary_connectomes = binary_connectomes[first_density]
             
-            # Average across the first dimension (subjects)
-            averaged_connectome = np.mean(all_connectomes_for_density, axis=0)
-            target_network = torch.tensor(
-                averaged_connectome,
-                dtype=torch.float32,
-                device=self.device
-            )
-            # create binary version
-            target_network = torch.where(target_network > 0.5, torch.ones_like(target_network), torch.zeros_like(target_network))
+            # # Average across the first dimension (subjects)
+            # averaged_connectome = np.mean(all_connectomes_for_density, axis=0)
+            # target_network = torch.tensor(
+            #     averaged_connectome,
+            #     dtype=torch.float32,
+            #     device=self.device
+            # )
+            # # create binary version
+            # target_network = torch.where(target_network > 0.5, torch.ones_like(target_network), torch.zeros_like(target_network))
+            
+            
+            ##################################################################
+            
+            
+            # TODO: Currently hardcoded loading of consensus network. Change this! 
+            
+            # target_network_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/00_just_converted_for_matlab_and_python/data_10_consensus/01_weighted_adj_mat_68.csv"
+            # import pandas as pd 
+            # target_network = pd.read_csv(target_network_path, header=None).to_numpy()
+            # target_network = torch.tensor(target_network, dtype=torch.float32)
+            # target_network = torch.where(target_network != 0, torch.ones_like(target_network), torch.zeros_like(target_network))
+            # # Print density
+            # print("Density of the target_network is:", torch.sum(target_network) / (target_network - 1))
+            
+            # Load consensus network with special density # LOADING CONSENSUS (hardcoded)
+            target_network_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/02_calculated_consensus/consensus_68_binarized_density_10_percent.npy"
+            target_network = np.load(target_network_path)
+            target_network = torch.tensor(target_network)
+            print("HARDCODED: Target network is the binary consensus network (68, 10 %).")
+            ##################################################################
+            
+            
+            
             
         else:
             print("Using the first connectome as the target network.")
@@ -433,7 +457,7 @@ class GNMandESNPipelineOrchestrator:
                     evaluation_criteria=evaluation_criteria,
                     # weighted_evaluation_criteria=weighted_criteria, # TODO: STOP HARDCODING THIS (SEE ABOVE)
                     target_network=target_network,
-                    individual_networks=all_connectomes_for_density, 
+                    individual_networks=empirical_binary_connectomes, 
                     elaborate_analysis=elaborate_analysis,
                     save_indiv_network_energies=save_indiv_network_energies, 
                     device_str=self.config.gnm.device,
