@@ -6,7 +6,7 @@ from scipy.stats import pearsonr
 import echoes
 
 # Assuming these imports are available in your project structure
-from src.config.ESN_and_GNM_config import ConfigManager
+from config.manager import ConfigManager
 from src.utils.data_loader import DataLoader
 
 def create_test_matrices(n_nodes: int = 50) -> dict:

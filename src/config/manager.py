@@ -135,9 +135,6 @@ class ConfigManager:
     
     def get_data_paths(self):
         """Get paths to data files."""
-        # if self.data.use_gnm_defaults:
-        #     # Use GNM's default data
-        #     return {"use_gnm_defaults": True}
         
         resolution = self.data.resolution
         
@@ -203,13 +200,4 @@ class ConfigManager:
         return hparam_grid
         
         
-        
-
-# def get_esn_config():
-#     """Get configuration specifically for ESN analysis."""
-#     config = ConfigManager()
-#     # Ensure we use actual data paths, not GNM defaults
-#     config.data.use_gnm_defaults = False
-#     return config
-
-
+ 

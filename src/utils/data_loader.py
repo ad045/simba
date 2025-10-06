@@ -8,7 +8,7 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, Optional, Union
 import warnings
-from src.config.ESN_and_GNM_config import ConfigManager
+from config.manager import ConfigManager
 from src.config.constants import NUMERICAL_TOLERANCE
 
 

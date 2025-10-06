@@ -24,7 +24,7 @@ import random
 import numpy as np
 import pandas as pd
 
-from src.config.ESN_and_GNM_config import ConfigManager
+from config.manager import ConfigManager
 from src.utils.data_loader import DataLoader
 
 # from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes

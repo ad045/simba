@@ -15,7 +15,6 @@ from .constants import (
 )
 
 
-
 @dataclass
 class GNMConfig:
     """GNM configuration using library structures."""

@@ -33,6 +33,7 @@ class YAMLConfigLoader:
         # Validate required sections
         self._validate_config()
     
+    
     def _validate_config(self):
         """Validate that config has required structure."""
         required_sections = ['experiment', 'data', 'output']
@@ -44,9 +45,10 @@ class YAMLConfigLoader:
         if 'type' not in self.config['experiment']:
             raise ValueError("Missing 'type' in experiment section")
         
-        valid_types = ['esn', 'gnm_sweep', 'gnm_comprehensive', 'full_pipeline', 'gnm_esn_grid', 'dynamic_gnm']
+        valid_types = ['gnm_sweep', 'dynamic_gnm']
         if self.config['experiment']['type'] not in valid_types:
             raise ValueError(f"Invalid experiment type. Must be one of: {valid_types}")
+    
     
     def create_config_manager(self) -> ConfigManager:
         """Create a ConfigManager instance from YAML configuration."""
@@ -131,19 +133,13 @@ class YAMLConfigLoader:
         """Create GNMConfig from YAML."""
         gnm_cfg = GNMConfig()
         
-        if 'gnm' not in self.config:
-            return gnm_cfg
-        
         yaml_gnm = self.config['gnm']
         
         # Parameter ranges
-        if 'eta_range' in yaml_gnm:
-            gnm_cfg.eta_range = tuple(yaml_gnm['eta_range'])
-        if 'gamma_range' in yaml_gnm:
-            gnm_cfg.gamma_range = tuple(yaml_gnm['gamma_range'])
-        if 'lambda_range' in yaml_gnm:
-            gnm_cfg.lambda_range = tuple(yaml_gnm['lambda_range'])
-        
+        gnm_cfg.eta_range = tuple(yaml_gnm['eta_range'])
+        gnm_cfg.gamma_range = tuple(yaml_gnm['gamma_range'])
+        gnm_cfg.lambda_range = tuple(yaml_gnm['lambda_range'])
+    
         # Grid points
         if 'n_eta' in yaml_gnm:
             gnm_cfg.n_eta = yaml_gnm['n_eta']
@@ -194,13 +190,18 @@ class YAMLConfigLoader:
         
         yaml_data = self.config['data']
         
+        if 'dataset_name' in yaml_data: 
+            data_cfg.dataset_name = yaml_data['dataset_name']
+        
         if 'connectome_resolution' in yaml_data:
             data_cfg.resolution = yaml_data['connectome_resolution']
+            
         if 'resolution' in yaml_data:  # Alternative name
             data_cfg.resolution = yaml_data['resolution']
         
         if 'densities' in yaml_data:
             data_cfg.densities = yaml_data['densities']
+            
         elif 'density_threshold' in yaml_data:
             # Convert single threshold to list of densities
             # This is a simplified conversion - adjust as needed
@@ -209,10 +210,9 @@ class YAMLConfigLoader:
         
         if 'use_weighted' in yaml_data:
             data_cfg.use_weighted = yaml_data['use_weighted']
-        if 'use_gnm_defaults' in yaml_data:
-            data_cfg.use_gnm_defaults = yaml_data['use_gnm_defaults']
-        
+            
         return data_cfg
+    
     
     def _create_compute_config(self) -> ComputeConfig:
         """Create ComputeConfig from YAML."""

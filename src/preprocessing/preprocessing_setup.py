@@ -16,18 +16,7 @@ def find_project_root(start_path: Path = None) -> Path:
     return current
 
 
-# Find project root dynamically
-PROJECT_ROOT = find_project_root()
-DATA_PATH = PROJECT_ROOT / "data"
-OUTPUT_PATH = PROJECT_ROOT / "output"
-PREPROCESSED_PATH = DATA_PATH / "preprocessed"
-
-# Create directories if they don't exist
-OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
-PREPROCESSED_PATH.mkdir(parents=True, exist_ok=True)
-
-
-def setup():
+def setup(dataset_name):
     """
     Find project root and add src to paths 
     """
@@ -51,13 +40,26 @@ def setup():
         print("Enabled autoreload.")
 
     print("Current path is:", Path.cwd())
-    return dict(
+    
+    # Find project root dynamically
+    PROJECT_ROOT = find_project_root()
+    DATA_PATH = PROJECT_ROOT / "data" 
+    OUTPUT_PATH = PROJECT_ROOT / "output" / dataset_name
+    PREPROCESSED_PATH = DATA_PATH / "preprocessed" / dataset_name
+
+    # Create directories if they don't exist
+    OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
+    PREPROCESSED_PATH.mkdir(parents=True, exist_ok=True)
+
+
+    env = dict( 
         PROJECT_ROOT=root,
         SRC_PATH=src,
         DATA_PATH=DATA_PATH,
         OUTPUT_PATH=OUTPUT_PATH,
         PREPROCESSED_PATH=PREPROCESSED_PATH,
-    )
+    ) 
+    return env
 
 
 # Copy this into notebooks (not relevant for scripts):

@@ -4,7 +4,7 @@
 # Configuration
 
 CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run.yaml" 
-NUMBER_RUNS=100 # 300 # 250 # 500 # 1 #3 # 250
+NUMBER_RUNS=2 # 300 # 250 # 500 # 1 #3 # 250
 
 # Flags for clean-up control 
 CLEANUP_GENERATED_NETWORKS=false # Set to false to keep 'generated_networks' folders

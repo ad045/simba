@@ -27,7 +27,7 @@ from gnm import fitting
 # from src.imported_libraries.GenerativeNetworkModels_2.src.gnm.model import GenerativeNetworkModel, BinaryGenerativeParameters
 
 # Import our optimized modules
-from src.config.ESN_and_GNM_config import ConfigManager
+from config.manager import ConfigManager
 from src.GNMs.gnm_network_generator import GNMGenerator
 from src.utils.data_loader import DataLoader
 # from src.ESNs.alternative_esn_evaluation import ESNEvaluator
@@ -253,7 +253,7 @@ class GNMandESNPipelineOrchestrator:
     def __init__(self, config: ConfigManager):
         self.config = config
         self.device = torch.device(config.gnm.device)
-        self.data_loader = DataLoader(config) if not config.data.use_gnm_defaults else None
+        self.data_loader = DataLoader(config) 
         # self.esn_evaluator = ESNEvaluator(config, self.data_loader) if self.data_loader else None
         self.gnm_generator = GNMGenerator(device=self.config.gnm.device)
         self.logger = get_logger(config.paths.output_dir)
