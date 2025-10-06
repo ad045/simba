@@ -5,10 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
-# ----------------------------
 # Utility helpers
-# ----------------------------
 
 def ensure_dir(p: Path) -> None:
     p.mkdir(parents=True, exist_ok=True)
