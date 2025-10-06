@@ -6,6 +6,9 @@ from tqdm import tqdm
 import sys
 
 
+from netneurotools.networks import struct_consensus, threshold_network
+from bct import density_und
+
 try:
     from src.structural_analysis.graph_measures import analyze_connectomes
     from src.ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
@@ -14,7 +17,10 @@ except ImportError as e:
     print("👉 Please ensure you run this script from your project's root directory.", file=sys.stderr)
     sys.exit(1)
 
-def analyze_empirical_connectomes(connectomes_path: str, distance_matrix_path: str, output_csv_path: str):
+def analyze_empirical_connectomes(connectomes_path: str,
+                                  distance_matrix_path: str, 
+                                  output_csv_path: str, 
+                                  mode): # weighted_original_density, binarized, binarized_but_with_orig_weights
     """
     Loads empirical connectomes, calculates graph and MC metrics for each,
     and saves the combined results to a single CSV file.
@@ -36,13 +42,14 @@ def analyze_empirical_connectomes(connectomes_path: str, distance_matrix_path: s
     # 2. Define default ESN hyperparameters
     # These are based on your original script. Adjust them as needed.
     h_params = {
+        "density": 10, # in percent!
         "spectral_radius": 0.9,
         "n_lags": 50,
         "train_len": 5000, # ?? Is this input lengths?? 2000,
         "test_len": 1000,
         "n_runs": 50,
         "input_scaling": 1.0, # 0.1,
-        "regression_method": "pinv", # "ridge",
+        "regression_method": "pinv", # "ridge", # regularization method
         "n_transient": 100, # a????
         "leak_rate": 1.0, # 0.1,
         "bias": 0.0, # True,
@@ -54,6 +61,24 @@ def analyze_empirical_connectomes(connectomes_path: str, distance_matrix_path: s
     # 3. Process each connectome individually
     for i in tqdm(range(num_subjects), desc="Analyzing individual connectomes"):
         subject_connectome = connectomes[i, :, :]
+        
+        if mode == "weighted_original_density": 
+            pass 
+        
+        elif mode == "binarized": 
+            subject_connectome = threshold_network(subject_connectome, h_params["density"])
+            final_density = density_und(subject_connectome)
+            print(f"Density of subject {i}: {final_density}.")
+        
+        elif mode == "binarized_but_with_orig_weights":  # not sure if this sensible... 
+            bin_connectome = threshold_network(subject_connectome, h_params["density"])
+            final_density = density_und(subject_connectome)
+            subject_connectome = subject_connectome * bin_connectome
+            print(f"Density of subject {i}: {final_density}. Shape is {subject_connectome.shape}.")
+         
+        else: 
+            print("This mode is not implemented.")   
+            
         # Start a record for the current subject
         record = {'subject_id': i}
 
@@ -143,10 +168,26 @@ def main():
     
     args = parser.parse_args()
     
+    # analyze_empirical_connectomes(
+    #     connectomes_path=args.connectomes_path,
+    #     distance_matrix_path=args.distance_matrix_path,
+    #     output_csv_path=args.output
+    # )
+    
+     
+    # Run analysis function
     analyze_empirical_connectomes(
-        connectomes_path=args.connectomes_path,
-        distance_matrix_path=args.distance_matrix_path,
-        output_csv_path=args.output
+        connectomes_path=connectomes_file,
+        distance_matrix_path=distance_matrix_file,
+        output_csv_path=output_base_path / "empirical_analysis_binarized.csv", 
+        mode="binarized"
+    )
+    
+    analyze_empirical_connectomes(
+        connectomes_path=connectomes_file,
+        distance_matrix_path=distance_matrix_file,
+        output_csv_path= output_base_path / "empirical_analysis_weighted.csv", 
+        mode="weighted_original_density"
     )
 
 
@@ -154,17 +195,33 @@ if __name__ == "__main__":
     # main()
     
     # File paths
-    connectomes_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/connectomes_binarized_68x68_density_10_percent.npy" 
+    connectomes_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/all_connectomes_68_68.npy"
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/connectomes_binarized_68x68_density_10_percent.npy" 
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/connectomes_weighted_68x68.npy"
     distance_matrix_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/distance_matrix_68x68.npy"
     
     output_base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/emprirical_analysis")
     output_base_path.mkdir(parents=True, exist_ok=True)
-    output_csv_file = output_base_path / "empirical_analysis.csv"
+    
     
     # Run analysis function
     analyze_empirical_connectomes(
         connectomes_path=connectomes_file,
         distance_matrix_path=distance_matrix_file,
-        output_csv_path=output_csv_file
+        output_csv_path=output_base_path / "empirical_analysis_binarized.csv", 
+        mode="binarized"
+    )
+    
+    analyze_empirical_connectomes(
+        connectomes_path=connectomes_file,
+        distance_matrix_path=distance_matrix_file,
+        output_csv_path= output_base_path / "empirical_analysis_weighted.csv", 
+        mode="weighted_original_density"
+    )
+    
+    analyze_empirical_connectomes(
+        connectomes_path=connectomes_file,
+        distance_matrix_path=distance_matrix_file,
+        output_csv_path=output_base_path / "empirical_analysis_binarized_but_multiplied_with_orig_weights.csv", 
+        mode="binarized_but_with_orig_weights" # i.e.: Also has 10 percent density 
     )

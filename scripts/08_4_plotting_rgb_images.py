@@ -5,6 +5,7 @@ from scipy.spatial import Voronoi
 import matplotlib.patches as patches
 from typing import Literal, List
 
+import os 
 # def normalize_color_channels(df: pd.DataFrame) -> pd.DataFrame:
 #     """Normalizes data columns into 'r', 'g', 'b' channels."""
 #     def _normalize(column):
@@ -116,6 +117,7 @@ def _plot_voronoi(ax: plt.Axes, df: pd.DataFrame, channel: str):
 def create_cmyk_plots(df: pd.DataFrame, 
                       metrics_to_analyze: List[str], 
                       style: Literal['voronoi'] = 'voronoi', 
+                      plot_empirical_connectomes: bool = False, 
                       save_folder = None):
     """Generates and saves the CMYK separation plots in a 2x3 grid."""
     plot_func = _plot_voronoi
@@ -137,21 +139,45 @@ def create_cmyk_plots(df: pd.DataFrame,
     #     'Yellow Channel (Wiring Cost)', 'Black Channel (MC 5)',
     #     'Full CMYK Composite'
     # ]
+    # titles = [] 
+    # for (channel, metric) in zip(channels, metrics_to_analyze + ['Full CMYK Composite']): 
+    #     titles.append(channel.capitalize() + f" Channel\n({title_mapping[metric]}))")
+    # print(titles)
+    
     titles = [] 
-    for (channel, metric) in zip(channels, metrics_to_analyze + ['Full CMYK Composite']): 
-        titles.append(channel.capitalize() + f" Channel ({title_mapping[metric]}))")
+    for (channel, metric) in zip(channels, metrics_to_analyze + ['Full CMYK Composite']):
+        if channel == 'cmyk':
+            titles.append(f"All Channels \n (Full CMYK Composite)") # " + channel.capitalize() + " Channel)")
+        else: 
+            titles.append(f"{title_mapping[metric]}\n (" + channel.capitalize() + " Channel)")
     print(titles)
     
     
     # Change grid to 2x3 to accommodate the 5 plots
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12), sharex=True, sharey=True)
-    fig.suptitle(f'CMYK Color Separation ({style.capitalize()} Style)', fontsize=16)
+    # fig, axes = plt.subplots(2, 3, figsize=(18, 12), sharex=True, sharey=True)
+    fig, axes = plt.subplots(2, 3, figsize=(10, 8), sharex=True, sharey=True)
+    # fig.suptitle(f'CMYK Color Separation ({style.capitalize()} Style)', fontsize=16)
+    fig.suptitle(f'Relating MC, Wiring Costs, Rich-Club Lengths, and Modularity\n Visualization as CMYK Color Separation', fontsize=16)
     
     axes_flat = axes.flatten()
     for i, (channel, title) in enumerate(zip(channels, titles)):
         plot_func(axes_flat[i], df, channel)
         axes_flat[i].set_title(title)
         
+    
+    if plot_empirical_connectomes: # TODO: This is not clean yet!! 
+        path_to_best_gamma_and_eta_estimations = save_folder.parent.parent / "min_energy_results.csv"    # not entirely clean... TODO: Make this clean. 
+        print(path_to_best_gamma_and_eta_estimations)
+        # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/26_testing_4_KS_folders_why_so_fast copy/summary_all_metrics_for_exp_26_testing_4_KS_folders_why_so_fast.csv
+        if os.path.exists(path_to_best_gamma_and_eta_estimations):
+            df_best_gamma_and_eta_estimates = pd.read_csv(path_to_best_gamma_and_eta_estimations)
+            print(df_best_gamma_and_eta_estimates.head)
+        else: 
+            print("Error: Missing 'min_energy_results.csv' file.")
+        
+        axes_flat[-2].scatter(df_best_gamma_and_eta_estimates["eta"], df_best_gamma_and_eta_estimates["gamma"], color="white", 
+                              linewidths=0.5, alpha=0.25, edgecolors="black")
+    
     # Turn off the last unused subplot
     axes_flat[-1].axis('off')
 
@@ -162,7 +188,7 @@ def create_cmyk_plots(df: pd.DataFrame,
     plt.tight_layout(rect=[0.05, 0.05, 1, 0.95])
     
     if save_folder: 
-        filename = f'plot_{style}_cmyk_separation_with_black.png'
+        filename = f'plot_{style}_cmyk_separation_with_black_switched_colors.pdf'
         plt.savefig(save_folder / filename)
         plt.close()
         print(f"Plot saved as {save_folder / filename}")
@@ -173,88 +199,27 @@ def create_cmyk_plots(df: pd.DataFrame,
 def main():
     """Main function to run the plotting script."""
     from pathlib import Path
-    data_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/2423_24rough_combined/summary_all_metrics_for_exp_2423_24rough_combined.csv"
+    data_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/26_testing_4_KS_folders_why_so_fast/summary_all_metrics_for_exp_26_testing_4_KS_folders_why_so_fast.csv"
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/2423_24rough_combined/summary_all_metrics_for_exp_2423_24rough_combined.csv"
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2/summary_all_metrics_for_exp_20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2.csv"
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/18_sweep_with_individual_connectomes_larger_eta_span/summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv" 
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/16_big_sweep_with_individual_connectomes_results.csv"
     save_folder = Path(data_path).parent / "figures/rgb_pictures"
     save_folder.mkdir(parents=True, exist_ok=True)
     
-    metrics_to_analyze = ["mc_mean", "wiring_cost", "avg_communicability", "richclub_avg_length"]  # modularity"]]
-    raw_df = pd.read_csv(data_path)[:500][["eta", "gamma"] + metrics_to_analyze]
+    metrics_to_analyze = ["wiring_cost", "mc_mean", "avg_communicability", "richclub_avg_length"]  # modularity"]]
+    
+    # DRAFT: ONLY 500 SAMPLES FOR SPEED 
+    # raw_df = pd.read_csv(data_path)[:500][["eta", "gamma"] + metrics_to_analyze]
+    
+    # FULL SWEEP 
+    raw_df = pd.read_csv(data_path)[["eta", "gamma"] + metrics_to_analyze]
     df = normalize_color_channels(raw_df, metrics_to_analyze)
     
     # Generate the CMYK separation plot
-    create_cmyk_plots(df, metrics_to_analyze, style='voronoi', 
+    create_cmyk_plots(df, metrics_to_analyze, style='voronoi',
+                      plot_empirical_connectomes=True,  
                       save_folder=save_folder)
 
 if __name__ == "__main__":
     main()
-
-# def create_plots(df: pd.DataFrame, 
-#                  layout: Literal['single', 'subplots'] = 'subplots', 
-#                  style: Literal['voronoi', 'scatter'] = 'voronoi',
-#                  color_model: Literal['additive', 'subtractive'] = 'additive'):
-#     """Generates and saves the requested plot(s)."""
-#     plot_func = _plot_voronoi # Scatter plot logic would need similar updates
-    
-#     if color_model == 'additive':
-#         channels = ['blue', 'yellow', 'red', 'rgb']
-#         titles = ['Wiring Cost (Blue)', 'Communicability (Yellow)', 'MC Mean (Red)', 'RGB Composite']
-#         suptitle = f'Eta vs. Gamma ({style.capitalize()} Style, Additive Model)'
-#     else: # Subtractive
-#         # MODIFIED: Use 'cmyk' for the final composite plot
-#         channels = ['yellow_cmy', 'magenta', 'cyan', 'cmyk']
-#         titles = ['Wiring Cost (Yellow)', 'Communicability (Magenta)', 'MC Mean (Cyan)', 'CMYK Composite']
-#         suptitle = f'Eta vs. Gamma ({style.capitalize()} Style, Subtractive Model)'
-        
-#     if layout == 'single':
-#         fig, ax = plt.subplots(figsize=(8, 6))
-#         # Use the correct composite channel based on the model
-#         composite_channel = 'rgb' if color_model == 'additive' else 'cmyk'
-#         plot_func(ax, df, composite_channel)
-#         ax.set_title(titles[-1])
-#         ax.set_xlabel('eta')
-#         ax.set_ylabel('gamma')
-    
-#     elif layout == 'subplots':
-#         fig, axes = plt.subplots(1, 4, figsize=(24, 6), sharex=True, sharey=True)
-#         for ax, channel, title in zip(axes, channels, titles):
-#             plot_func(ax, df, channel)
-#             ax.set_title(title)
-#             ax.set_xlabel('eta')
-#         axes[0].set_ylabel('gamma')
-
-#     plt.suptitle(suptitle, fontsize=16, y=1.02)
-#     plt.tight_layout()
-    
-#     filename = f'plot_{layout}_{style}_{color_model}.png'
-#     plt.savefig(filename)
-#     plt.close()
-#     print(f"Plot saved as {filename}")
-    
-
-# # --- Main Execution Block ---
-# def main():
-#     """Main function to run the plotting script."""
-#     # raw_df = load_data(num_points=500)
-#     # df = normalize_color_channels(raw_df)
-    
-#     from pathlib import Path
-#     data_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2/summary_all_metrics_for_exp_20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2.csv"
-#     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/18_sweep_with_individual_connectomes_larger_eta_span/summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv" 
-#     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/16_big_sweep_with_individual_connectomes_results.csv"
-#     save_folder = Path(data_path).parent / "figures/rgb_pictures"
-#     save_folder.mkdir(parents=True, exist_ok=True)
-    
-#     raw_df = pd.read_csv(data_path)[["eta", "gamma", "mc_mean", "wiring_cost", "avg_communicability", "mc_5"]]
-#     df = normalize_color_channels(raw_df)
-    
-#     # Example 1: Additive (RGB) model - this is the default
-#     create_plots(df, layout='subplots', style='voronoi', color_model='additive')
-    
-#     # NEW Example 2: Subtractive (CMY) model
-#     create_plots(df, layout='subplots', style='voronoi', color_model='subtractive')
-
-# if __name__ == "__main__":
-#     main()

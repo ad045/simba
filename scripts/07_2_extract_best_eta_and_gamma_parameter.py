@@ -66,7 +66,7 @@ if __name__ == '__main__':
     # Set the path to your input CSV file
     from pathlib import Path
     
-    PROJECT_NAME = "2423_combined" # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2"
+    PROJECT_NAME = "26_testing_4_KS_folders_why_so_fast" # "2423_combined" # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2"
     base_output_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output"
     project_path = base_output_path + "/gnm/" + PROJECT_NAME
     

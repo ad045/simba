@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     ]       
     
-    plot_indiv_connectomes = False # True # False
+    plot_indiv_connectomes = True #  False # True # False
     
     
     ##############
@@ -60,24 +60,29 @@ if __name__ == "__main__":
     
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
     metrics_to_plot = [
+        
         "MaxCriteria",
-        "avg_communicability", 
-        "global_efficiency", 
-        "modularity", 
-        "avg_clustering", 
-        "avg_degree", 
-        "transitivity", 
-        "avg_edge_distance", 
-        "char_path_length", 
-        "richclub_n_edges", 
-        "richclub_avg_length", 
-        "mc_mean", 
-        "mc_std", 
-        "wiring_cost", 
-        "mean_mc_divided_by_wiring_cost",
-        "mc_5_divided_by_wiring_cost", 
-    ] + [f"mc_{lag}" for lag in lags_to_plot]
-    
+        # "avg_communicability", 
+        # "global_efficiency", 
+        # "modularity", 
+        # "avg_clustering", 
+        # "avg_degree", 
+        # "transitivity", 
+        # "avg_edge_distance", 
+        # "char_path_length", 
+        # "richclub_n_edges", 
+        # "richclub_avg_length", 
+        # "mc_mean", 
+        # "mc_std", 
+        # "wiring_cost", 
+        # "mean_mc_divided_by_wiring_cost",
+        # "mc_5_divided_by_wiring_cost", 
+        
+        # "avg_clustering_glob_efficiency_minus_energy", 
+        "avg_clustering_divided_by_global_efficiency", 
+    ] 
+    # + [f"mc_{lag}" for lag in lags_to_plot]
+    plot_combined_lag_plot = False # Plot this comparison plot with different MC lags 
     
     print(f"Starting Voronoi-only visualization process...")
     print(f"Output will be saved to: {save_path}\n")
@@ -119,6 +124,40 @@ if __name__ == "__main__":
                         
             if metric == "mc_5_divided_by_wiring_cost": 
                 df["mc_5_divided_by_wiring_cost"] = pd.to_numeric(df["mc_5"], errors='coerce') / pd.to_numeric(df["wiring_cost"], errors='coerce')
+            
+            
+            if metric == "avg_clustering_divided_by_global_efficiency": 
+                # df["avg_clustering_glob_efficiency"] = pd.to_numeric(df["avg_clustering"], errors='coerce') / pd.to_numeric(df["global_efficiency"], errors='coerce') * pd.to_numeric(df["modularity"], errors='coerce')
+                upper_factor = pd.to_numeric(df["avg_clustering"], errors='coerce')
+                # upper_factor = (upper_factor - upper_factor.min()) / (upper_factor.max() - upper_factor.min())
+                
+                lower_factor = pd.to_numeric(df["global_efficiency"], errors='coerce')
+                # lower_factor = (lower_factor - lower_factor.min()) / (lower_factor.max() - lower_factor.min())
+                
+                total = upper_factor * lower_factor * (-1)
+                total = (total - total.min()) / (total.max() - total.min()) 
+                
+                df["avg_clustering_divided_by_global_efficiency"] = total #  (total - energy) 
+            
+            
+            # if metric == "avg_clustering_glob_efficiency_minus_energy": 
+            #     # df["avg_clustering_glob_efficiency"] = pd.to_numeric(df["avg_clustering"], errors='coerce') / pd.to_numeric(df["global_efficiency"], errors='coerce') * pd.to_numeric(df["modularity"], errors='coerce')
+            #     upper_factor = pd.to_numeric(df["avg_clustering"], errors='coerce')
+            #     upper_factor = (upper_factor - upper_factor.min()) / (upper_factor.max() - upper_factor.min())
+                
+            #     lower_factor = pd.to_numeric(df["global_efficiency"], errors='coerce')
+            #     lower_factor = (lower_factor - lower_factor.min()) / (lower_factor.max() - lower_factor.min())
+                
+            #     energy = pd.to_numeric(df["MaxCriteria(DegreeKS, ClusteringKS, EdgeLengthKS, BetweennessKS)"], errors='coerce')
+            #     energy = (energy - energy.min()) / (energy.max() - energy.min())
+                
+            #     total = upper_factor * lower_factor * (-1)
+            #     total = (total - total.min()) / (total.max() - total.min())
+            #     total = (total - energy) 
+                
+            #     df["avg_clustering_glob_efficiency_minus_energy"] = total 
+                
+                
             
             df["eta"] = pd.to_numeric(df["eta"], errors='coerce')
             df["gamma"] = pd.to_numeric(df["gamma"], errors='coerce')
@@ -181,34 +220,35 @@ if __name__ == "__main__":
 
 
     # --- 5. Generate Combined MC Lag Plot ---
-    print("--- Generating combined Voronoi plot for all MC lags ---")
-    try:
-        save_dir = Path(save_path)
-        save_dir.mkdir(parents=True, exist_ok=True)
-        # Define a base name for the save file, the function will add the extension
-        figure_save_name = "voronoi_landscape_mc_lags_grid"
-        full_save_path = save_dir / figure_save_name
+    if plot_combined_lag_plot: 
+        print("--- Generating combined Voronoi plot for all MC lags ---")
+        try:
+            save_dir = Path(save_path)
+            save_dir.mkdir(parents=True, exist_ok=True)
+            # Define a base name for the save file, the function will add the extension
+            figure_save_name = "voronoi_landscape_mc_lags_grid"
+            full_save_path = save_dir / figure_save_name
 
-        mc_cols_exist = any(f"mc_{lag}" in gnm_results_df.columns for lag in lags_to_plot)
+            mc_cols_exist = any(f"mc_{lag}" in gnm_results_df.columns for lag in lags_to_plot)
 
-        if mc_cols_exist:
-            visualizer.plot_mc_lag_landscapes_voronoi(
-                gnm_results_df,
-                lags=lags_to_plot,
-                n_cols=4, # As requested: 4 columns
-                savepath=full_save_path,
-                save_format="pdf"
-            )
-            matplotlib.pyplot.close() # Close the plot after saving to free memory, if generated figure is not used. 
+            if mc_cols_exist:
+                visualizer.plot_mc_lag_landscapes_voronoi(
+                    gnm_results_df,
+                    lags=lags_to_plot,
+                    n_cols=4, # As requested: 4 columns
+                    savepath=full_save_path,
+                    save_format="pdf"
+                )
+                matplotlib.pyplot.close() # Close the plot after saving to free memory, if generated figure is not used. 
 
-            print("Successfully generated combined MC lag plot.\n")
-        else:
-            print("SKIPPING: No 'mc_lag' columns found to generate a combined plot.\n")
+                print("Successfully generated combined MC lag plot.\n")
+            else:
+                print("SKIPPING: No 'mc_lag' columns found to generate a combined plot.\n")
 
-    except Exception as e:
-        print(f"ERROR: An unexpected error occurred while plotting the combined MC lags.")
-        traceback.print_exc()
-        print("\n")
+        except Exception as e:
+            print(f"ERROR: An unexpected error occurred while plotting the combined MC lags.")
+            traceback.print_exc()
+            print("\n")
 
 
     print("--- Visualization process completed. ---")
