@@ -44,7 +44,7 @@ def setup(dataset_name):
     # Find project root dynamically
     PROJECT_ROOT = find_project_root()
     DATA_PATH = PROJECT_ROOT / "data" 
-    OUTPUT_PATH = PROJECT_ROOT / "output" / dataset_name
+    OUTPUT_PATH = PROJECT_ROOT / "output" 
     PREPROCESSED_PATH = DATA_PATH / "preprocessed" / dataset_name
 
     # Create directories if they don't exist

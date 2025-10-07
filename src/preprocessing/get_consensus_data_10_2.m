@@ -2,8 +2,9 @@
 
 % Paths 
 base_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code"; 
-raw_data_path = base_path + "/data/raw"; 
-preprocessed_data_path = base_path + "/data/preprocessed/00_just_converted_for_matlab_and_python";
+raw_data_path = base_path + "/data/raw/shafiei_human_consensus_dataset"; 
+
+preprocessed_data_path = base_path + "/data/preprocessed/shafiei_human_consensus_dataset/00_preprocessed";
 if ~exist(preprocessed_data_path,'dir'), mkdir(preprocessed_data_path); end % make sure the target folder exists
 
 %% Data 10 mb
@@ -11,7 +12,7 @@ data_10 = load(raw_data_path + "/consensus_connectomes_from_70_young_adults_10mb
 
 %% Extract the data 
 matrix_cells = data_10.LauConsensus.Matrices; 
-preprocessed_data_path_subfolder = preprocessed_data_path + "/data_10_consensus";
+preprocessed_data_path_subfolder = preprocessed_data_path; %  + "/data_10_consensus";
 % make sure the target folder exists
 if ~exist(preprocessed_data_path_subfolder,'dir'), mkdir(preprocessed_data_path_subfolder); end
 extract_data_and_save_to_csv(matrix_cells, preprocessed_data_path_subfolder);
