@@ -148,55 +148,9 @@ def parse_args() -> PipelineConfig:
 #     save_numpy(save_dir / f"connectomes_weighted_{n}.npy", all_connectomes)
 
 
-# def step_graph_measures(
-#     paths: dict,
-#     dist_mat: np.ndarray,
-#     conn: np.array, 
-#     # all_connectomes: np.ndarray,
-#     n: int,
-#     analyze_density: int,
-#     comm_mode: str,
-#     rich_nodes_global: Optional[np.ndarray],
-#     rich_top_percent: float,
-# ) -> Tuple[pd.DataFrame, pd.DataFrame, np.ndarray]:
-#     bin_path = paths["path_01_connectomes"] / f"01_consensus_wei_{n}.npy"
-    
-#     # "bin_connectomes_binarized_{n}x{n}_density_{analyze_density}_percent.npy"
-#     if not bin_path.exists():
-#         raise FileNotFoundError(
-#             f"Expected binarized connectomes for density {analyze_density}% at {bin_path}. "
-#             "Run thresholding with this density or change --analyze-density."
-#         )
-#     conn = np.load(bin_path) # connectomes_binarized = np.load(bin_path)
 
-#     df_graph_measures_bin = pd.DataFrame(
-#         analyze_connectomes(
-#             connectomes=conns,
-#             distance_matrix=dist_mat,
-#             comm_mode=comm_mode,
-#             rich_nodes_global=rich_nodes_global,
-#             rich_top_percent=rich_top_percent,
-#         )
-#     )
-#     df_graph_measures_all = pd.DataFrame(
-#         analyze_connectomes(
-#             connectomes=conns,
-#             distance_matrix=dist_mat,
-#             comm_mode=comm_mode,
-#             rich_nodes_global=rich_nodes_global,
-#             rich_top_percent=rich_top_percent,
-#         )
-#     )
-    
-    
-    
-    
-
-#     return df_graph_measures_bin, df_graph_measures_all, connectomes_binarized
-
-
-def step_load_identifiers(paths: dict, n: int) -> Tuple[pd.DataFrame, np.ndarray]:
-    id_path = paths["INPUT_DATA_PATH"] / f"data_10_consensus/05_roi_names_rsn_name_hemisphere_{n}.csv"
+def step_load_identifiers(paths: dict, resolution: int) -> Tuple[pd.DataFrame, np.ndarray]:
+    id_path = paths["path_00_preprocessed"] / f"05_roi_names_rsn_name_hemisphere_{resolution}.csv"
     df_identifiers = pd.read_csv(
         id_path, header=None, names=["roi_name", "roi_name_short", "rsn_name", "hemisphere"]
     )
@@ -205,9 +159,9 @@ def step_load_identifiers(paths: dict, n: int) -> Tuple[pd.DataFrame, np.ndarray
     df_identifiers["hemi_id"] = hemi_id
 
     # Strip whitespace and stray characters
-    df_identifiers = df_identifiers.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    df_identifiers = df_identifiers.map(lambda x: x.strip() if isinstance(x, str) else x)
 
-    save_dataframe(paths["PREPROCESSED_PATH"] / f"df_identifiers_{n}x{n}.csv", df_identifiers)
+    save_dataframe(paths["path_04_further_info"] / f"df_identifiers_{resolution}.csv", df_identifiers)
     return df_identifiers, hemi_id
 
 
@@ -323,7 +277,7 @@ def main(resolution = None):
     # )
 
     # Identifiers & hemisphere id
-    # df_identifiers, hemi_id = step_load_identifiers(paths, n)
+    df_identifiers, hemi_id = step_load_identifiers(paths, resolution=cfg.resolution)
 
     # Consensus connectomes (binarized @ analyze_density and weighted)
     # consensus_bin, consensus_all, d_bin, d_all = step_consensus_connectomes(
