@@ -44,46 +44,46 @@ def threshold_to_density(consensus_wei, n_nodes, density, output_folder):
     return thres_conn, final_density
         
         
-def calculate_consensus(all_conns, dist, hemi_id, n_nodes, densities, output_folder):
-    """Calculate weighted consensus and threshold at multiple densities."""
-    print(f"\n{'='*60}")
-    print(f"Processing {n_nodes} nodes")
-    print(f"{'='*60}")
-    print(f"Input shape: {all_conns.shape}")
+# def calculate_consensus(all_conns, dist, hemi_id, n_nodes, densities, output_folder):
+#     """Calculate weighted consensus and threshold at multiple densities."""
+#     print(f"\n{'='*60}")
+#     print(f"Processing {n_nodes} nodes")
+#     print(f"{'='*60}")
+#     print(f"Input shape: {all_conns.shape}")
     
-    # Calculate weighted consensus
-    print("Calculating weighted consensus...")
-    weighted_consensus = struct_consensus(all_conns.T, dist, hemi_id, weighted=True)
+#     # Calculate weighted consensus
+#     print("Calculating weighted consensus...")
+#     weighted_consensus = struct_consensus(all_conns.T, dist, hemi_id, weighted=True)
     
-    # Report initial density
-    initial_density = density_und(weighted_consensus)
-    print(f"Initial density: {initial_density[0]:.6f} (edges: {initial_density[2]})")
+#     # Report initial density
+#     initial_density = density_und(weighted_consensus)
+#     print(f"Initial density: {initial_density[0]:.6f} (edges: {initial_density[2]})")
     
-    # Save unthresholded consensus
-    np.save(
-        output_folder / f"consensus_{n_nodes}_weighted_unthresholded.npy",
-        weighted_consensus
-    )
+#     # Save unthresholded consensus
+#     np.save(
+#         output_folder / f"consensus_{n_nodes}_weighted_unthresholded.npy",
+#         weighted_consensus
+#     )
     
-    # Threshold at multiple densities
-    print("\nThresholding at multiple densities:")
-    for density in densities:
-        threshold_to_density(weighted_consensus, n_nodes, density, output_folder)
+#     # Threshold at multiple densities
+#     print("\nThresholding at multiple densities:")
+#     for density in densities:
+#         threshold_to_density(weighted_consensus, n_nodes, density, output_folder)
         
-        # print(f"  Density {density}%...", end=" ")
+#         # print(f"  Density {density}%...", end=" ")
         
-        # thres_conn = threshold_network(weighted_consensus, density)
-        # final_density = density_und(thres_conn)
+#         # thres_conn = threshold_network(weighted_consensus, density)
+#         # final_density = density_und(thres_conn)
         
-        # print(f"Final density: {final_density[0]:.6f} (edges: {final_density[2]})")
+#         # print(f"Final density: {final_density[0]:.6f} (edges: {final_density[2]})")
         
-        # # Save thresholded network
-        # np.save(
-        #     output_folder / f"consensus_{n_nodes}_binarized_density_{density}_percent.npy",
-        #     thres_conn
-        # )
+#         # # Save thresholded network
+#         # np.save(
+#         #     output_folder / f"consensus_{n_nodes}_binarized_density_{density}_percent.npy",
+#         #     thres_conn
+#         # )
 
-def process_consensus_networks():
+def process_consensus_networks(): # -> I will not do this, as we already have the precalculated consensus networks... And these algos do not match... 
     """Main execution function."""
     # Configuration
     # 00_preprocessed

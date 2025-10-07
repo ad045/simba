@@ -59,7 +59,7 @@ from src.preprocessing.preprocessing_setup import setup
 from src.preprocessing.process_01_consensus_networks import threshold_to_density
 
 
-from utils import ensure_dir, save_numpy, save_dataframe # TODO: Remove this again, not needed. 
+from src.preprocessing.utils import setup_paths, ensure_dir, save_numpy, save_dataframe # TODO: Remove this again, not needed. 
 # ----------------------------
 # Config & argument parsing
 # ----------------------------
@@ -108,37 +108,6 @@ def parse_args() -> PipelineConfig:
 # Pipeline steps
 # ----------------------------
 
-def step_setup_paths(dataset_name="shafiei_human_consensus_dataset") -> dict:
-    env = setup(dataset_name=dataset_name)
-    
-    path_raw_data = env["DATA_PATH"] / "raw" / dataset_name
-    
-    path_output_for_logs_and_plots = env["OUTPUT_PATH"] / "00_preprocessing" / dataset_name # for plots and logs 
-    path_preprocessed = env["PREPROCESSED_PATH"] #  / dataset_name 
-    
-    path_00_preprocessed = path_preprocessed / "00_preprocessed" # / dataset_name
-    path_01_connectomes = path_preprocessed / "01_connectomes"  # / dataset_name
-    path_02_distance_matrices = path_preprocessed / "02_distance_matrices"  # / dataset_name
-    path_03_graph_measures = path_preprocessed / "03_graph_measures"  # / dataset_name
-    path_04_further_info = path_preprocessed / "04_further_info" # / dataset_name
-    
-
-    # INPUT_DATA_PATH: Path = env["PREPROCESSED_PATH"] / dataset_name / "00_preprocessed"
-
-
-    for dir_path in [path_00_preprocessed, path_01_connectomes, path_02_distance_matrices, 
-                     path_03_graph_measures, path_04_further_info, path_output_for_logs_and_plots,
-                     path_raw_data]:
-        dir_path.mkdir(parents=True, exist_ok=True)
-
-    return {
-        "path_00_preprocessed": path_00_preprocessed,
-        "path_01_connectomes": path_01_connectomes,
-        "path_02_distance_matrices": path_02_distance_matrices,
-        "path_03_graph_measures": path_03_graph_measures,
-        "path_04_further_info": path_04_further_info,
-        "path_output_for_logs_and_plots": path_output_for_logs_and_plots
-    }
 
 
 # def step_load_individual_connectomes(paths: dict, resolution: int = 68) -> Tuple[np.ndarray, int, int]:
@@ -318,7 +287,7 @@ def main(resolution = None):
     if resolution: 
         cfg.resolution = resolution
 
-    paths = step_setup_paths()
+    paths = setup_paths()
 
     # Distance matrix
     dist_mat = get_distance_matrix_from_coords(
@@ -387,7 +356,7 @@ def main(resolution = None):
             rich_top_percent=cfg.rich_top_percent,
         )
     )
-    analysis_path = paths["path_03_graph_measures"] / f"df_graph_measures_wei_{resolution}_density_{cfg.analyze_density}_percent.csv"
+    analysis_path = paths["path_03_graph_measures"] / f"df_graph_measures_wei_{resolution}_percent.csv"
     save_dataframe(
         analysis_path,
         df_graph_measures,
@@ -439,7 +408,7 @@ def main(resolution = None):
     print(json.dumps(summary, indent=2))
 
     # Save summary to a text file
-    output_file = paths["path_output_for_logs_and_plots"] / "preprocessing_pipeline_summary.json"
+    output_file = paths["path_output_for_logs_and_plots"] / f"preprocessing_pipeline_summary_{resolution}_density_{cfg.analyze_density}_percent.json"
     with open(output_file, 'w') as f:
         json.dump(summary, f, indent=2)
 
