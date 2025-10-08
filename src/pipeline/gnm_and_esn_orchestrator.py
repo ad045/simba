@@ -108,7 +108,7 @@ def _run_and_save_single_simulation(task_data: dict,
 
         for energy_metric_name in list(experiment.evaluation_results.binary_evaluations.keys()):
             
-            # Analze energy compared to mean connectome
+            # @Claude: Here!!!! Analze energy compared to mean connectome. # TODO: maybe add all of them individually to a csv... 
             energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()  # TODO: Include all names # check if these values make sense 
             flat_record.update({energy_metric_name: energy_value_mean})
 
@@ -237,13 +237,11 @@ class GNMandESNPipelineOrchestrator:
     
     def __init__(self, config: ConfigManager):
         self.config = config
-        self.device = torch.device(config.gnm.device)
+        self.device = torch.device(config["compute"]["device"])
         self.data_loader = DataLoader(config) 
         # self.esn_evaluator = ESNEvaluator(config, self.data_loader) if self.data_loader else None
-        self.gnm_generator = GNMGenerator(device=self.config.gnm.device)
-        self.logger = get_logger(config.paths.output_dir)
-        self.config.paths.esn_output_dir.mkdir(parents=True, exist_ok=True)
-        self.config.paths.gnm_output_dir.mkdir(parents=True, exist_ok=True)
+        self.gnm_generator = GNMGenerator(device=config["compute"]["device"])
+        self.logger = get_logger(config["paths"]["output_dir"])
     
     
     def run_gnm_parameter_sweep(self,
@@ -326,7 +324,7 @@ class GNMandESNPipelineOrchestrator:
             
             # TODO: Currently hardcoded loading of consensus network. Change this! 
             
-            # target_network_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/00_just_converted_for_matlab_and_python/data_10_consensus/01_weighted_adj_mat_68.csv"
+            # target_network_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/00_preprocessed/data_10_consensus/01_weighted_adj_mat_68.csv"
             # import pandas as pd 
             # target_network = pd.read_csv(target_network_path, header=None).to_numpy()
             # target_network = torch.tensor(target_network, dtype=torch.float32)
@@ -447,7 +445,7 @@ class GNMandESNPipelineOrchestrator:
                     individual_networks=empirical_binary_connectomes, 
                     elaborate_analysis=elaborate_analysis,
                     save_indiv_network_energies=save_indiv_network_energies, 
-                    device_str=self.config.gnm.device,
+                    device_str=self.config.compute.device,
                     output_dir=self.config.paths.current_projects_output_dir,
                     temp_dir=temp_results_dir,
                     h_params=h_params

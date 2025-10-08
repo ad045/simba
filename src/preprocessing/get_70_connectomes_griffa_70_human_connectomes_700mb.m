@@ -3,8 +3,8 @@
 
 % Paths
 base_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code"; 
-raw_data_path = base_path + "/data/raw"; 
-preprocessed_data_path = base_path + "/data/preprocessed/00_just_converted_for_matlab_and_python/data_700mb_individual_connectomes";
+raw_data_path = base_path + "/data/raw/griffa_70_human_connectomes_dataset"; 
+preprocessed_data_path = base_path + "/data/preprocessed/griffa_70_human_connectomes_dataset/00_preprocessed";
 % make sure the target folder exists
 if ~exist(preprocessed_data_path,'dir'), mkdir(preprocessed_data_path); end
 

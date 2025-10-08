@@ -128,7 +128,7 @@ class ConfigManager:
         """Load default data from GNM library."""
         from gnm import defaults
         
-        device = torch.device(self.gnm.device)
+        device = torch.device(self.compute.device)
         
         # Load default distance matrix and network from GNM
         distance_matrix = defaults.get_distance_matrix(device=device)

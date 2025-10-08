@@ -52,6 +52,7 @@ from netneurotools.networks import threshold_network, struct_consensus
 # Local imports from your codebase
 # from notebook_setup import setup
 from src.preprocessing.preprocess_distance_matrix import get_distance_matrix_from_coords, get_distance_matrix_from_fiber_lengths
+from src.preprocessing.preprocess_70_connectomes import get_individual_connectomes
 from src.structural_analysis.graph_measures import analyze_connectomes
 
 from src.preprocessing.preprocessing_setup import setup
@@ -240,15 +241,12 @@ def main(resolution = None):
     if resolution: 
         cfg.resolution = resolution
 
-    paths = setup_paths(dataset_name="shafiei_human_consensus_dataset")
+    paths = setup_paths()
 
     # Distance matrix
-    coords_csv = paths["path_00_preprocessed"] / f"04_coordinates_{resolution}.csv"
-    coords = np.loadtxt(coords_csv, delimiter=",")
     dist_mat = get_distance_matrix_from_coords(
-        coords=coords, 
-        save_dir=paths["path_02_distance_matrices"], 
-        resolution=cfg.resolution,
+        paths=paths, 
+        resolution=resolution,
         plot=cfg.do_plots,
     )
     
@@ -375,13 +373,5 @@ def main(resolution = None):
 
 
 if __name__ == "__main__":
-    # try:
-    main(resolution=68)
-    main(resolution=114)
-    main(resolution=219)
-    main(resolution=448)
-    main(resolution=1000)
-        
-    # except Exception as e:
-    #     print(f"\n[ERROR] {type(e).__name__}: {e}", file=sys.stderr)
-    #     sys.exit(1)
+    main(resolution=50) # 50,150, 200
+ 

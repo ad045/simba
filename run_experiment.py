@@ -34,7 +34,7 @@ def main():
         # Load and validate config
         loader = YAMLConfigLoader(args.config)
         print(f"✓ Configuration loaded from: {args.config}")
-        print(f"✓ Experiment type: {loader.config['experiment']['type']}")
+        print(f"✓ Experiment type: {loader.config['experiment']['experiment_type']}")
         
         if args.validate_only:
             # Create config to validate it can be built

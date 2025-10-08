@@ -28,7 +28,7 @@ def save_dataframe(path: Path, df: pd.DataFrame) -> None:
 
 
 
-def setup_paths(dataset_name="shafiei_human_consensus_dataset") -> dict:
+def setup_paths(dataset_name) -> dict:
     env = setup(dataset_name=dataset_name)
     
     path_raw_data = env["DATA_PATH"] / "raw" / dataset_name
@@ -52,6 +52,7 @@ def setup_paths(dataset_name="shafiei_human_consensus_dataset") -> dict:
         dir_path.mkdir(parents=True, exist_ok=True)
 
     return {
+        "path_raw_data": path_raw_data, 
         "path_00_preprocessed": path_00_preprocessed,
         "path_01_connectomes": path_01_connectomes,
         "path_02_distance_matrices": path_02_distance_matrices,

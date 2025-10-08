@@ -52,6 +52,7 @@ from netneurotools.networks import threshold_network, struct_consensus
 # Local imports from your codebase
 # from notebook_setup import setup
 from src.preprocessing.preprocess_distance_matrix import get_distance_matrix_from_coords, get_distance_matrix_from_fiber_lengths
+from src.preprocessing.preprocess_70_connectomes import get_individual_connectomes
 from src.structural_analysis.graph_measures import analyze_connectomes
 
 from src.preprocessing.preprocessing_setup import setup
@@ -109,6 +110,54 @@ def parse_args() -> PipelineConfig:
 
 
 
+
+def get_individual_connectomes(raw_data_path, output_path): 
+    """
+    Get individual connectomes from 70 subjects
+    """
+
+    # Open the MAT-file as an HDF5 container. Loading with "sio.loadmat" does not work here, as the matlab version is too new (v7.3+).
+    import h5py
+
+    with h5py.File(raw_data_path, "r") as f:
+        all_connectomes = np.array(f["M"]).T
+        print("Data shape:", all_connectomes.shape) # (68, 68, 70) -> 68 regions, 68 regions, 70 subjects
+
+
+    # Check the minimal value of all connectomes (to ensure no negative distances)
+    print("Statistics of all connectomes:\n",
+        "Min:", np.min(all_connectomes), "\n",
+        "Max:", np.max(all_connectomes), "\n",
+        "Mean:", np.mean(all_connectomes), "\n",
+        "Std:", np.std(all_connectomes))
+
+
+    # The connectomes sometimes have diagonal values that are not zero, so they are now set to zero
+    for i in range(1, all_connectomes.shape[0]):
+        all_connectomes[i,:,:][np.diag_indices_from(all_connectomes[i,:,:])] = 0.0
+        # print(f"Checking connectome {i+1}...")
+        # print(all_connectomes[i,:,:].shape)
+        assert np.all(np.diag(all_connectomes[i,:,:]) == 0), "Diagonal of distance matrix is not zero!"
+
+    # Sanity check:
+    # - check if diagonal is zero for all connectomes
+    for i in range(1, all_connectomes.shape[0]):
+        assert np.all(np.diag(all_connectomes[i,:,:]) == 0), "Diagonal of distance matrix is not zero!"
+
+    # Print information
+    nsub, n, _ = all_connectomes.shape
+    print(f"{nsub} subjects | {n} × {n} matrices")
+
+    # Save the connectomes as numpy arrays
+    np.save(output_path / f"all_connectomes_{n}.npy", all_connectomes)
+
+    return all_connectomes, nsub, n
+
+
+
+get_individual_connectomes
+
+
 # def step_load_individual_connectomes(paths: dict, resolution: int = 68) -> Tuple[np.ndarray, int, int]:
 #     sc_mat_path = paths["INPUT_DATA_PATH"] / f"data_700mb_individual_connectomes/SC_{resolution}.mat"
 #     all_connectomes, nsub, n = get_individual_connectomes(
@@ -147,21 +196,6 @@ def parse_args() -> PipelineConfig:
 #     save_numpy(save_dir / f"connectomes_weighted_{n}.npy", all_connectomes)
 
 
-
-def step_load_identifiers(paths: dict, resolution: int) -> Tuple[pd.DataFrame, np.ndarray]:
-    id_path = paths["path_00_preprocessed"] / f"05_roi_names_rsn_name_hemisphere_{resolution}.csv"
-    df_identifiers = pd.read_csv(
-        id_path, header=None, names=["roi_name", "roi_name_short", "rsn_name", "hemisphere"]
-    )
-
-    hemi_id = np.array([0 if x == "rh" else 1 for x in df_identifiers["hemisphere"]])
-    df_identifiers["hemi_id"] = hemi_id
-
-    # Strip whitespace and stray characters
-    df_identifiers = df_identifiers.map(lambda x: x.strip() if isinstance(x, str) else x)
-
-    save_dataframe(paths["path_04_further_info"] / f"df_identifiers_{resolution}.csv", df_identifiers)
-    return df_identifiers, hemi_id
 
 
 # def step_consensus_connectomes(
@@ -240,18 +274,17 @@ def main(resolution = None):
     if resolution: 
         cfg.resolution = resolution
 
-    paths = setup_paths(dataset_name="shafiei_human_consensus_dataset")
+    paths = setup_paths(dataset_name="griffa_70_human_connectomes_dataset") 
 
     # Distance matrix
-    coords_csv = paths["path_00_preprocessed"] / f"04_coordinates_{resolution}.csv"
-    coords = np.loadtxt(coords_csv, delimiter=",")
     dist_mat = get_distance_matrix_from_coords(
-        coords=coords, 
-        save_dir=paths["path_02_distance_matrices"], 
-        resolution=cfg.resolution,
+        paths=paths, 
+        resolution=resolution,
         plot=cfg.do_plots,
     )
     
+    
+    get_individual_connectomes
     # plt.imshow(dist_mat)
     # plt.show()
     
@@ -278,8 +311,6 @@ def main(resolution = None):
     #     save_dir=paths["PREPROCESSED_PATH"],
     # )
 
-    # Identifiers & hemisphere id
-    df_identifiers, hemi_id = step_load_identifiers(paths, resolution=cfg.resolution)
 
     # Consensus connectomes (binarized @ analyze_density and weighted)
     # consensus_bin, consensus_all, d_bin, d_all = step_consensus_connectomes(

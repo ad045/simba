@@ -94,9 +94,9 @@ class GNMGenerator:
             # "WeightedSumCriteria",
             # "WeightedNodeStrengthKS",
     
-    def __init__(self, device: Optional[str] = None):
+    def __init__(self, device: str):
         """Initialize with device selection."""
-        self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
+        self.device = device # torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
     
     def generate_network(self,
                         n_nodes: int,
@@ -548,15 +548,17 @@ class DynamicGNMGenerator(GNMGenerator):
 
 
 # Convenience functions using GNM library features
-def generate_network_gnm(target_connectome: np.ndarray,
+def generate_network_gnm(self,
+                         target_connectome: np.ndarray,
                          distance_matrix: np.ndarray,
-                         rule: str = "matching_index",
-                         eta: float = -2.0,
-                         gamma: float = 0.3) -> np.ndarray:
+                         rule: str, 
+                         eta: float, 
+                         gamma: float, 
+                         ) -> np.ndarray:
     """
     Quick function to generate a network using GNM library.
     """
-    generator = GNMGenerator()
+    generator = GNMGenerator(self.device)
     
     # Convert to torch tensors
     target_tensor = torch.tensor(target_connectome, dtype=torch.float32)
@@ -564,7 +566,7 @@ def generate_network_gnm(target_connectome: np.ndarray,
     
     # Create parameters
     params = GNMParameters(
-        eta=eta,
+        eta=eta, 
         gamma=gamma,
         generative_rule=generator.AVAILABLE_RULES[rule]()
     )
@@ -581,69 +583,71 @@ def generate_network_gnm(target_connectome: np.ndarray,
     return generated.cpu().numpy()
 
 
-def fit_and_generate_batch(connectomes: np.ndarray,
-                          distance_matrix: np.ndarray,
-                          n_realizations: int = 10,
-                          rule: str = "matching_index") -> Dict[str, Any]:
-    """
-    Fit parameters and generate multiple realizations for each connectome.
-    """
-    generator = GNMGenerator()
+# def fit_and_generate_batch(
+#                           device: str, 
+#                           connectomes: np.ndarray,
+#                           distance_matrix: np.ndarray,
+#                           n_realizations: int = 10,
+#                           rule: str = "matching_index") -> Dict[str, Any]:
+#     """
+#     Fit parameters and generate multiple realizations for each connectome.
+#     """
+#     generator = GNMGenerator(device)
     
-    results = {
-        "fitted_parameters": [],
-        "generated_networks": [],
-        "evaluations": []
-    }
+#     results = {
+#         "fitted_parameters": [],
+#         "generated_networks": [],
+#         "evaluations": []
+#     }
     
-    dist_tensor = torch.tensor(distance_matrix, dtype=torch.float32)
+#     dist_tensor = torch.tensor(distance_matrix, dtype=torch.float32)
     
-    for i in range(connectomes.shape[2]):
-        print(f"Processing connectome {i+1}/{connectomes.shape[2]}")
+#     for i in range(connectomes.shape[2]):
+#         print(f"Processing connectome {i+1}/{connectomes.shape[2]}")
         
-        target = torch.tensor(connectomes[:, :, i], dtype=torch.float32)
+#         target = torch.tensor(connectomes[:, :, i], dtype=torch.float32)
         
-        # Fit parameters
-        fit_result = generator.fit_parameters(
-            target_network=target,
-            distance_matrix=dist_tensor,
-            generative_rule_name=rule,
-            n_eta=15,
-            n_gamma=15,
-            num_simulations=50
-        )
+#         # Fit parameters
+#         fit_result = generator.fit_parameters(
+#             target_network=target,
+#             distance_matrix=dist_tensor,
+#             generative_rule_name=rule,
+#             n_eta=15,
+#             n_gamma=15,
+#             num_simulations=50
+#         )
         
-        results["fitted_parameters"].append(fit_result)
+#         results["fitted_parameters"].append(fit_result)
         
-        # Generate realizations with fitted parameters
-        params = GNMParameters(
-            eta=fit_result["best_eta"],
-            gamma=fit_result["best_gamma"],
-            generative_rule=generator.AVAILABLE_RULES[rule]()
-        )
+#         # Generate realizations with fitted parameters
+#         params = GNMParameters(
+#             eta=fit_result["best_eta"],
+#             gamma=fit_result["best_gamma"],
+#             generative_rule=generator.AVAILABLE_RULES[rule]()
+#         )
         
-        realizations = []
-        evaluations = []
+#         realizations = []
+#         evaluations = []
         
-        for j in range(n_realizations):
-            generated = generator.generate_network(
-                n_nodes=target.shape[0],
-                n_edges=fit_result["n_edges"],
-                distance_matrix=dist_tensor,
-                parameters=params
-            )
+#         for j in range(n_realizations):
+#             generated = generator.generate_network(
+#                 n_nodes=target.shape[0],
+#                 n_edges=fit_result["n_edges"],
+#                 distance_matrix=dist_tensor,
+#                 parameters=params
+#             )
             
-            realizations.append(generated.cpu().numpy())
+#             realizations.append(generated.cpu().numpy())
             
-            # Evaluate
-            eval_result = generator.evaluate_network(
-                generated_network=generated,
-                target_network=target,
-                distance_matrix=dist_tensor
-            )
-            evaluations.append(eval_result)
+#             # Evaluate
+#             eval_result = generator.evaluate_network(
+#                 generated_network=generated,
+#                 target_network=target,
+#                 distance_matrix=dist_tensor
+#             )
+#             evaluations.append(eval_result)
         
-        results["generated_networks"].append(realizations)
-        results["evaluations"].append(evaluations)
+#         results["generated_networks"].append(realizations)
+#         results["evaluations"].append(evaluations)
     
-    return results
+#     return results

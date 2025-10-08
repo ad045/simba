@@ -17,34 +17,15 @@ class DataLoader:
     
     def __init__(self, config: ConfigManager):
         self.config = config
-        self.paths = config.get_data_paths()
-        self._validate_paths()
-    
-    def _validate_paths(self):
-        """Validate that all required data files exist."""
-        missing_files = []
-        
-        # Check weighted connectome
-        print(self.paths.keys())
-        if not self.paths['weighted_connectome'].exists():
-            missing_files.append(str(self.paths['weighted_connectome']))
-        
-        # Check distance matrix
-        if not self.paths['distance_matrix'].exists():
-            missing_files.append(str(self.paths['distance_matrix']))
-        
-        # Check binary connectomes
-        for density, path in self.paths['binary_connectomes'].items():
-            if not path.exists():
-                missing_files.append(f"{path} (density {density}%)")
-        
-        if missing_files:
-            raise FileNotFoundError(f"Missing required data files:\n" + "\n".join(missing_files))
-    
+       
+       
+        # PosixPath('/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/shafiei_human_consensus_dataset')
+       
+       
     def load_distance_matrix(self) -> np.ndarray:
         """Load the distance matrix."""
         try:
-            dist_matrix = np.load(self.paths['distance_matrix'])
+            dist_matrix = np.load(self.config["paths"]['connectome_dir'])
             self._validate_distance_matrix(dist_matrix)
             return dist_matrix
         except Exception as e:
