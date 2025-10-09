@@ -9,7 +9,7 @@ preprocessed_data_path = base_path + "/data/preprocessed/griffa_70_human_connect
 if ~exist(preprocessed_data_path,'dir'), mkdir(preprocessed_data_path); end
 
 %% Data 700 mb
-data_700 = load(raw_data_path + "/consensus_connectomes_from_70_young_adults_700mb.mat"); 
+data_700 = load(raw_data_path + "/connectomes_from_70_young_adults_700mb.mat"); 
 
 % Import data 
 SCcell  = data_700.connMatrices.SC;      % 5×1 cell array shown in the screenshot

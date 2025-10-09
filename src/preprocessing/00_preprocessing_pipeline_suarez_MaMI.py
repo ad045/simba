@@ -215,10 +215,16 @@ output_dist_dir.mkdir(exist_ok=True)
 animal_files = list(conn_dir.glob("*.npy"))
 animal_names = [f.stem for f in animal_files]
 
+# Modified section for the MaMI preprocessing script
+# Replace the animal processing loop with this version
+
 # Storage for combined arrays and all results
 all_conn = []
 all_dist = []
 all_results = []
+
+# Storage for binarized connectomes at each density
+all_bin_by_density = {density: [] for density in cfg.goal_densities}
 
 # Process each animal
 for name in animal_names:
@@ -238,10 +244,28 @@ for name in animal_names:
     np.save(output_conn_dir / f"{name}.npy", new_matrix)
     np.save(output_coords_dir / f"{name}.npy", new_coords)
     np.save(output_dist_dir / f"{name}.npy", distance_matrix)
+    
+    # Create binarized versions at different densities
+    print(f"  Creating binarized versions:")
+    for density in cfg.goal_densities:
+        # Create temporary output folder for this density if needed
+        temp_output = paths["path_00_preprocessed"] / f"temp_bin_{density}"
+        temp_output.mkdir(exist_ok=True)
         
-    # Analyze connectome
+        # Use your existing function
+        thres_conn, final_density = threshold_to_density(
+            consensus_wei=new_matrix, 
+            n_nodes=resolution, 
+            density=density, 
+            output_folder=temp_output
+        )
+        
+        # Store for later combination
+        all_bin_by_density[density].append(thres_conn)
+    
+    # Analyze weighted connectome
     results = analyze_connectomes(
-        new_matrix[np.newaxis, :, :],  # Shape: (1, 100, 100)
+        new_matrix[np.newaxis, :, :],
         distance_matrix,
         comm_mode="estrada_scaled"
     )
@@ -255,14 +279,54 @@ for name in animal_names:
     all_conn.append(new_matrix)
     all_dist.append(distance_matrix)
 
-# Save combined arrays
+# Save combined weighted arrays
 all_conn = np.stack(all_conn)  # Shape: (num_animals, 100, 100)
 all_dist = np.stack(all_dist)  # Shape: (num_animals, 100, 100)
 
 np.save(paths["path_01_connectomes"] / f"00_connectomes_{resolution}.npy", all_conn)
-np.save( paths["path_02_distance_matrices"] / f"distance_matrix_{resolution}.npy", all_dist)
+np.save(paths["path_02_distance_matrices"] / f"distance_matrix_{resolution}.npy", all_dist)
 
-# Save results as CSV
+# Save combined binarized arrays for each density
+print("\nSaving combined binarized arrays...")
+for density in cfg.goal_densities:
+    all_bin = np.stack(all_bin_by_density[density])  # Shape: (num_animals, 100, 100)
+    
+    save_path = paths["path_01_connectomes"] / f"01_consensus_bin_density_{density}_percent_{resolution}.npy"
+    np.save(save_path, all_bin)
+    print(f"  Density {density}%: {all_bin.shape}")
+    
+    # Clean up temporary files
+    temp_output = paths["path_00_preprocessed"] / f"temp_bin_{density}"
+    if temp_output.exists():
+        for file in temp_output.glob("*.npy"):
+            file.unlink()
+        temp_output.rmdir()
+
+# Optionally: Analyze binarized connectomes at the specified density
+if cfg.analyze_density in cfg.goal_densities:
+    print(f"\nAnalyzing binarized connectomes at {cfg.analyze_density}% density...")
+    bin_results = []
+    all_bin_analyze = all_bin_by_density[cfg.analyze_density]
+    
+    for idx, (name, bin_conn) in enumerate(zip(animal_names, all_bin_analyze)):
+        results = analyze_connectomes(
+            np.array([bin_conn]),  # Shape: (1, 100, 100)
+            all_dist[idx],
+            comm_mode="estrada_scaled"
+        )
+        for result in results:
+            result['animal'] = name
+            bin_results.append(result)
+    
+    # Save binary analysis results
+    bin_results_df = pd.DataFrame(bin_results)
+    bin_results_df.to_csv(
+        paths["path_03_graph_measures"] / f"df_graph_measures_bin_{resolution}_density_{cfg.analyze_density}_percent.csv", 
+        index=False
+    )
+    print(f"Binary analysis results saved: {bin_results_df.shape}")
+
+# Save weighted results as CSV (existing code)
 results_df = pd.DataFrame(all_results)
 results_df.to_csv(paths["path_03_graph_measures"] / f"df_graph_measures_{resolution}.csv", index=False)
 
@@ -272,5 +336,5 @@ only_names_df.to_csv(paths["path_04_further_info"] / f"names_of_animals_with_pre
 print(f"\nProcessed {len(animal_names)} animals")
 print(f"Combined connectivity shape: {all_conn.shape}")
 print(f"Combined distances shape: {all_dist.shape}")
-print(f"Results saved to: {paths["path_03_graph_measures"] / f"df_graph_measures_{resolution}.csv"}")
-print(f"Results shape: {results_df.shape}")
+print(f"Binarized versions created for densities: {list(cfg.goal_densities)}")
+print(f"Results saved to: {paths['path_03_graph_measures']}")
