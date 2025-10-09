@@ -2,7 +2,6 @@
 Data loading and preprocessing utilities for the connectome analysis pipeline.
 Handles loading of connectomes, distance matrices, and data validation.
 """
-# -> Used at least for main_pipeline_2_gnm_esn_landscape.py and for main_pipeline_2.py (esn part)
 
 import numpy as np
 from pathlib import Path
@@ -19,11 +18,6 @@ class DataLoader:
         self.config = config
         self.resolution = self.config['data']['connectome_resolution']
        
-       
-        # PosixPath('/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/shafiei_human_consensus_dataset')
-    #    self.config['paths']['connectome_dir']
-    # PosixPath('/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/shafiei_human_consensus_dataset')
-    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/shafiei_human_consensus_dataset/02_distance_matrices/distance_matrix_68x68.npy
        
     def load_distance_matrix(self) -> np.ndarray:
         """Load the distance matrix."""
@@ -63,7 +57,8 @@ class DataLoader:
                     binary_conn = np.load(binary_conn_path)
             
                 elif self.config["data"]["dataset_name"] == "suarez_MaMI_dataset": 
-                    binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/00_connectomes_{resolution}.npy" # 01_consensus_bin_density_{density}_percent_{resolution}.npy"
+                    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_bin_density_10_percent_100.npy
+                    binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/01_consensus_bin_density_{density}_percent_{resolution}.npy" # 00_connectomes_bin_density_{density}_percent_{resolution}.npy" # 01_consensus_bin_density_{density}_percent_{resolution}.npy"
                     print("BINARY_CONN: ", binary_conn_path)
                     binary_conn = np.load(binary_conn_path)[0,:,:] # TODO: THIS ONLY USES THE FIRST CONNECTOME TO GET ENERGY. 
 

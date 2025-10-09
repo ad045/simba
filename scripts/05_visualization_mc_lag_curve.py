@@ -3,6 +3,8 @@ Using the visualization module for connectome analysis pipeline.
 This script generates comparison landscape plots for a predefined list of metrics.
 """
 
+# Now add: Look only at region around best location or such. 
+
 import os
 import traceback
 from pathlib import Path

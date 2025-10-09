@@ -18,7 +18,7 @@ except ImportError as e:
     sys.exit(1)
 
 def analyze_empirical_connectomes(connectomes_path: str,
-                                  distance_matrix_path: str, 
+                                  distance_matrices_path: str, 
                                   output_csv_path: str, 
                                   mode): # weighted_original_density, binarized, binarized_but_with_orig_weights
     """
@@ -33,8 +33,8 @@ def analyze_empirical_connectomes(connectomes_path: str,
     # 1. Load data from specified paths
     print(f"🧠 Loading connectomes from: {connectomes_path}")
     connectomes = np.load(connectomes_path)
-    print(f"📏 Loading distance matrix from: {distance_matrix_path}")
-    distance_matrix = np.load(distance_matrix_path)
+    print(f"📏 Loading distance matrix from: {distance_matrices_path}")
+    distance_matrices = np.load(distance_matrices_path)
     
     num_subjects, num_nodes, _ = connectomes.shape
     print(f"Found {num_subjects} connectomes with {num_nodes} nodes each.")
@@ -61,6 +61,7 @@ def analyze_empirical_connectomes(connectomes_path: str,
     # 3. Process each connectome individually
     for i in tqdm(range(num_subjects), desc="Analyzing individual connectomes"):
         subject_connectome = connectomes[i, :, :]
+        distance_matrix = distance_matrices[i,:,:]
         
         if mode == "weighted_original_density": 
             pass 
@@ -178,14 +179,14 @@ def main():
     # Run analysis function
     analyze_empirical_connectomes(
         connectomes_path=connectomes_file,
-        distance_matrix_path=distance_matrix_file,
+        distance_matrices_path=distance_matrix_file,
         output_csv_path=output_base_path / "empirical_analysis_binarized.csv", 
         mode="binarized"
     )
     
     analyze_empirical_connectomes(
         connectomes_path=connectomes_file,
-        distance_matrix_path=distance_matrix_file,
+        distance_matrices_path=distance_matrix_file,
         output_csv_path= output_base_path / "empirical_analysis_weighted.csv", 
         mode="weighted_original_density"
     )
@@ -195,33 +196,36 @@ if __name__ == "__main__":
     # main()
     
     # File paths
-    connectomes_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/all_connectomes_68_68.npy"
+    # connectomes_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/all_connectomes_68_68.npy"
+    connectomes_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_100.npy"
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/connectomes_binarized_68x68_density_10_percent.npy" 
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/connectomes_weighted_68x68.npy"
-    distance_matrix_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/distance_matrix_68x68.npy"
     
-    output_base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/emprirical_analysis")
+    distance_matrix_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/02_distance_matrices/distance_matrix_100.npy"
+    # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/distance_matrix_68x68.npy"
+    
+    output_base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/emprirical_analysis")
     output_base_path.mkdir(parents=True, exist_ok=True)
     
     
     # Run analysis function
     analyze_empirical_connectomes(
         connectomes_path=connectomes_file,
-        distance_matrix_path=distance_matrix_file,
+        distance_matrices_path=distance_matrix_file,
         output_csv_path=output_base_path / "empirical_analysis_binarized.csv", 
         mode="binarized"
     )
     
     analyze_empirical_connectomes(
         connectomes_path=connectomes_file,
-        distance_matrix_path=distance_matrix_file,
+        distance_matrices_path=distance_matrix_file,
         output_csv_path= output_base_path / "empirical_analysis_weighted.csv", 
         mode="weighted_original_density"
     )
     
     analyze_empirical_connectomes(
         connectomes_path=connectomes_file,
-        distance_matrix_path=distance_matrix_file,
+        distance_matrices_path=distance_matrix_file,
         output_csv_path=output_base_path / "empirical_analysis_binarized_but_multiplied_with_orig_weights.csv", 
         mode="binarized_but_with_orig_weights" # i.e.: Also has 10 percent density 
     )
