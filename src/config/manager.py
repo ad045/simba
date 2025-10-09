@@ -13,12 +13,12 @@ from config.path import PathConfig
 
 # Import project constants
 from .constants import (
-    DEFAULT_RESOLUTION, DEFAULT_RANDOM_SEED, DEFAULT_N_ETA, DEFAULT_N_GAMMA, DEFAULT_N_LAMBDA,
-    DEFAULT_SPECTRAL_RADIUS, DEFAULT_INPUT_LENGTH, DEFAULT_INPUT_SCALING, DEFAULT_N_RUNS,
-    DEFAULT_N_LAGS, DEFAULT_TEST_LENGTH, DEFAULT_N_TRANSIENT, DEFAULT_LEAK_RATE, DEFAULT_BIAS,
-    DEFAULT_DENSITIES, DEFAULT_REGULARIZATION_METHOD, DEFAULT_GENERATIVE_RULES,
-    DEFAULT_EVALUATION_METRICS, DEFAULT_WEIGHT_CRITERION, DEFAULT_ETA_RANGE, DEFAULT_GAMMA_RANGE,
-    DEFAULT_LAMBDA_RANGE, DEFAULT_ALPHA, DEFAULT_NUM_SIMULATIONS, DEFAULT_APPEND_INTERVAL,
+    # DEFAULT_RESOLUTION, DEFAULT_RANDOM_SEED, DEFAULT_N_ETA, DEFAULT_N_GAMMA, DEFAULT_N_LAMBDA,
+    # DEFAULT_SPECTRAL_RADIUS, DEFAULT_INPUT_LENGTH, DEFAULT_INPUT_SCALING, DEFAULT_N_RUNS,
+    # DEFAULT_N_LAGS, DEFAULT_TEST_LENGTH, DEFAULT_N_TRANSIENT, DEFAULT_LEAK_RATE, DEFAULT_BIAS,
+    # DEFAULT_DENSITIES, DEFAULT_REGULARIZATION_METHOD, DEFAULT_GENERATIVE_RULES,
+    # DEFAULT_EVALUATION_METRICS, DEFAULT_WEIGHT_CRITERION, DEFAULT_ETA_RANGE, DEFAULT_GAMMA_RANGE,
+    # DEFAULT_LAMBDA_RANGE, DEFAULT_ALPHA, DEFAULT_NUM_SIMULATIONS, DEFAULT_APPEND_INTERVAL,
     CONNECTOMES_WEIGHTED_PATTERN, CONNECTOMES_BINARY_PATTERN, DISTANCE_MATRIX_PATTERN
 )
 
@@ -62,10 +62,10 @@ def create_gnm_random_sweep_config(config, #  TODO: Combine with function below 
         binary_params = fitting.BinarySweepParameters(
             eta=eta_values,
             gamma=gamma_values,
-            lambdah=torch.tensor([0.0]),  # Single lambda value
-            distance_relationship_type=["powerlaw"],
-            preferential_relationship_type=["powerlaw"],
-            heterochronicity_relationship_type=["powerlaw"],
+            lambdah=torch.tensor([0.0]),  # Single lambda value TODO: DON'T HARDCODE...
+            distance_relationship_type=["powerlaw"], # TODO: DON'T HARDCODE...
+            preferential_relationship_type=["powerlaw"], # TODO: DON'T HARDCODE...
+            heterochronicity_relationship_type=["powerlaw"], # TODO: DON'T HARDCODE...
             generative_rule=rules,
             num_iterations=[num_iterations],
         )
@@ -109,65 +109,6 @@ class ConfigManager:
         )
         self.compute = compute_config or ComputeConfig()
         self.paths = path_config or PathConfig()
-    
-    
-    # def create_gnm_random_sweep_config(self, # TODO: Combine with function below (and thus make the label "random" and "grid" useable...)
-    #                                 distance_matrix: torch.Tensor,
-    #                                 num_iterations: int,
-    #                                 num_simulations: int, 
-    #                                 method: Optional[str], #  = "random", # "random", # "grid",
-    #                                 n_random_samples: int, #  = 30,
-    #                                 include_weights: bool, 
-    #                                 ) -> fitting.SweepConfig:
-    #     """Create GNM sweep configuration with random parameter sampling."""
-        
-    #     # Generate random parameter values
-    #     eta_values = torch.empty(n_random_samples)
-    #     gamma_values = torch.empty(n_random_samples)
-        
-    #     for i in range(n_random_samples):
-    #         eta_values[i] = torch.rand(1) * (self.gnm.eta_range[1] - self.gnm.eta_range[0]) + self.gnm.eta_range[0]
-    #         gamma_values[i] = torch.rand(1) * (self.gnm.gamma_range[1] - self.gnm.gamma_range[0]) + self.gnm.gamma_range[0]
-
-    #     # Get generative rules
-    #     rules = []
-    #     for rule_name in self.gnm.generative_rules_to_test:
-    #         if rule_name == "matching_index":
-    #             rules.append(generative_rules.MatchingIndex())
-    #         elif rule_name == "neighbors":
-    #             rules.append(generative_rules.Neighbors())
-    #         elif rule_name == "degree_product":
-    #             rules.append(generative_rules.DegreeProduct())
-    #         elif rule_name == "clustering_coefficient":
-    #             rules.append(generative_rules.ClusteringCoefficient())
-    #         elif rule_name == "spatial":
-    #             rules.append(generative_rules.Spatial())
-    #         else:
-    #             rules.append(generative_rules.MatchingIndex())
-        
-    #     binary_params = fitting.BinarySweepParameters(
-    #         eta=eta_values,
-    #         gamma=gamma_values,
-    #         lambdah=torch.tensor([0.0]),  # Single lambda value
-    #         distance_relationship_type=["powerlaw"],
-    #         preferential_relationship_type=["powerlaw"],
-    #         heterochronicity_relationship_type=["powerlaw"],
-    #         generative_rule=rules,
-    #         num_iterations=[num_iterations],
-    #     )
-        
-    #     weighted_params = None
-    #     if include_weights:
-    #         weighted_params = self.gnm.create_weighted_sweep_parameters(distance_matrix)
-
-    #     return fitting.SweepConfig(
-    #         binary_sweep_parameters=binary_params,
-    #         weighted_sweep_parameters=weighted_params,
-    #         num_simulations=num_simulations,
-    #         distance_matrix=[distance_matrix], 
-    #         method=method, 
-    #         num_random_samples=n_random_samples, 
-    #     )
 
 
     def create_gnm_sweep_config(self, 

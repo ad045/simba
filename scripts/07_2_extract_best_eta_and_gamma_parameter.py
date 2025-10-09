@@ -17,7 +17,7 @@ def find_min_energy(input_csv_path: str, output_csv_path: str):
         return
 
     # Identify the columns that contain the individual energy values
-    energy_columns = [col for col in df.columns if col.startswith('MaxCriteria')]
+    energy_columns = [col for col in df.columns if col.startswith('MaxCrit')]
 
     if not energy_columns:
         print("Error: No energy columns found. Please check the column names in your CSV file.")
@@ -81,7 +81,11 @@ if __name__ == '__main__':
     # INPUT_FILE = '/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes_indiv_connectome_energies_results.csv'
     # INPUT_FILE = '/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes_results.csv'
     input_file = Path(INPUT_FILE)
-    OUTPUT_FILE = input_file.parent / 'min_energy_results.csv'
+    
     # -------------------
-
-    find_min_energy(INPUT_FILE, OUTPUT_FILE)
+    input_file = Path("output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_copy/summary_indiv_energies_for_exp_31_suarez_MaMI_size_100_copy.csv")
+    OUTPUT_FILE = input_file.parent / 'min_energy_results.csv'
+    find_min_energy(input_file, 
+                    OUTPUT_FILE)
+                    
+                    # INPUT_FILE, OUTPUT_FILE)

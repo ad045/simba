@@ -14,7 +14,7 @@ from typing import Dict, List, Tuple
 from src.config.GNM import create_evaluation_criteria
 from gnm.fitting import RunConfig
 from gnm.model import BinaryGenerativeParameters
-
+from multiprocessing import Pool
 
 def extract_params_from_filename(filename: str) -> Dict[str, float]:
     """
@@ -146,83 +146,178 @@ def evaluate_network_against_empirical(
     return results
 
 
+def process_network(args: Tuple) -> Dict:
+    """
+    Worker function to evaluate a single network against empirical data.
+    This function is designed to be used with multiprocessing.Pool.
+    """
+    network, generated_parameters, distance_matrix, empirical_networks, config_dict = args
+
+    # Create evaluation criteria (this logic is moved from the original loop)
+    if config_dict is not None:
+        evaluation_criteria = create_evaluation_criteria(
+            config=config_dict,
+            distance_matrix=distance_matrix if distance_matrix is not None else torch.zeros((100, 100))
+        )
+    else:
+        from gnm import evaluation
+        if distance_matrix is not None:
+            evaluation_criteria = evaluation.MaxCriteria(
+                evaluation.DegreeKS(),
+                evaluation.ClusteringKS(),
+                evaluation.EdgeLengthKS(distance_matrix),
+                evaluation.BetweennessKS()
+            )
+        else:
+            evaluation_criteria = evaluation.MaxCriteria(
+                evaluation.DegreeKS(),
+                evaluation.ClusteringKS(),
+                evaluation.BetweennessKS()
+            )
+            print("Warning: No distance matrix provided, skipping EdgeLengthKS metric")
+    
+    # Evaluate this network against all empirical networks
+    energy_results = evaluate_network_against_empirical(
+        generated_network=network,
+        empirical_networks=empirical_networks,
+        evaluation_criteria=evaluation_criteria,
+    )
+    
+    # Combine parameters with results and return the row
+    return {**generated_parameters, **energy_results}
+
+
+# def compare_all_networks(
+#     generated_networks: List[Tuple[Dict, np.ndarray]],
+#     generated_network_parameters, 
+#     empirical_networks: np.ndarray,
+#     distance_matrices_path: Path = None,
+#     config_dict: Dict = None,
+#     output_path: Path = None
+# ) -> pd.DataFrame:
+#     """
+#     Compare all generated networks with empirical networks.
+    
+#     Args:
+#         generated_networks: List of (params, network) tuples
+#         empirical_networks: Empirical networks array
+#         distance_matrix_path: Path to distance matrix .npy file
+#         config_dict: Optional config dictionary for custom evaluation metrics
+#         output_path: Path to save results CSV
+        
+#     Returns:
+#         DataFrame with comparison results
+#     """
+    
+#     # Load distance matrix if provided
+#     distance_matrices = None
+#     if distance_matrices_path and Path(distance_matrices_path).exists():
+#         distance_matrices = np.load(distance_matrices_path) # [0,:,:] # TODO: Remove this hardcoding! 
+#         distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
+#         print(f"Loaded distance matrix with shape: {distance_matrices.shape}")
+    
+#     # Collect all results
+#     all_results = []
+    
+#     print(f"\nComparing {len(generated_networks)} generated networks with {empirical_networks.shape[0]} empirical networks...")
+    
+#     for(network, generated_parameters, distance_matrix) in tqdm(zip(generated_networks, generated_network_parameters, distance_matrices), desc="Evaluating networks"):
+        
+        
+#         # Create evaluation criteria
+#         if config_dict is not None:
+#             # Use config to create evaluation criteria
+#             evaluation_criteria = create_evaluation_criteria(
+#                 config=config_dict,
+#                 distance_matrix=distance_matrix if distance_matrix is not None else torch.zeros((100, 100))
+#             )
+#         else:
+#             # Use default evaluation criteria
+#             from gnm import evaluation
+            
+#             if distance_matrix is not None:
+#                 evaluation_criteria = evaluation.MaxCriteria(
+#                     evaluation.DegreeKS(),
+#                     evaluation.ClusteringKS(),
+#                     evaluation.EdgeLengthKS(distance_matrix),
+#                     evaluation.BetweennessKS()
+#                 )
+#             else:
+#                 # Without distance matrix, skip edge_length_ks
+#                 evaluation_criteria = evaluation.MaxCriteria(
+#                     evaluation.DegreeKS(),
+#                     evaluation.ClusteringKS(),
+#                     evaluation.BetweennessKS()
+#                 )
+#                 print("Warning: No distance matrix provided, skipping EdgeLengthKS metric")
+        
+        
+        
+#         # Evaluate this network against all empirical networks
+#         energy_results = evaluate_network_against_empirical(
+#             generated_network=network,
+#             empirical_networks=empirical_networks,
+#             evaluation_criteria=evaluation_criteria,
+#         )
+        
+#         # Combine parameters with results
+#         row = {**generated_parameters, **energy_results}
+#         all_results.append(row)
+    
+#     # Create DataFrame
+#     df_results = pd.DataFrame(all_results)
+    
+#     # Sort by eta and gamma for easier reading
+#     df_results = df_results.sort_values(['eta', 'gamma']).reset_index(drop=True)
+    
+#     # Save results if output path provided
+#     if output_path:
+#         output_path = Path(output_path)
+#         output_path.parent.mkdir(parents=True, exist_ok=True)
+#         df_results.to_csv(output_path, index=False, na_rep="nan")
+#         print(f"\n✅ Results saved to: {output_path}")
+    
+#     return df_results
+
 def compare_all_networks(
-    generated_networks: List[Tuple[Dict, np.ndarray]],
-    generated_network_parameters, 
+    generated_networks: np.ndarray,
+    generated_network_parameters: List[Dict], 
     empirical_networks: np.ndarray,
     distance_matrices_path: Path = None,
     config_dict: Dict = None,
     output_path: Path = None
 ) -> pd.DataFrame:
     """
-    Compare all generated networks with empirical networks.
-    
-    Args:
-        generated_networks: List of (params, network) tuples
-        empirical_networks: Empirical networks array
-        distance_matrix_path: Path to distance matrix .npy file
-        config_dict: Optional config dictionary for custom evaluation metrics
-        output_path: Path to save results CSV
-        
-    Returns:
-        DataFrame with comparison results
+    Compare all generated networks with empirical networks using multiprocessing.
     """
     
-    # Load distance matrix if provided
+    # Load distance matrix once
     distance_matrices = None
     if distance_matrices_path and Path(distance_matrices_path).exists():
-        distance_matrices = np.load(distance_matrices_path) # [0,:,:] # TODO: Remove this hardcoding! 
+        distance_matrices = np.load(distance_matrices_path)
         distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
         print(f"Loaded distance matrix with shape: {distance_matrices.shape}")
     
-    # Collect all results
-    all_results = []
-    
-    print(f"\nComparing {len(generated_networks)} generated networks with {empirical_networks.shape[0]} empirical networks...")
-    
-    for(network, generated_parameters, distance_matrix) in tqdm(zip(generated_networks, generated_network_parameters, distance_matrices), desc="Evaluating networks"):
-        
-        
-        # Create evaluation criteria
-        if config_dict is not None:
-            # Use config to create evaluation criteria
-            evaluation_criteria = create_evaluation_criteria(
-                config=config_dict,
-                distance_matrix=distance_matrix if distance_matrix is not None else torch.zeros((100, 100))
-            )
-        else:
-            # Use default evaluation criteria
-            from gnm import evaluation
-            
-            if distance_matrix is not None:
-                evaluation_criteria = evaluation.MaxCriteria(
-                    evaluation.DegreeKS(),
-                    evaluation.ClusteringKS(),
-                    evaluation.EdgeLengthKS(distance_matrix),
-                    evaluation.BetweennessKS()
-                )
-            else:
-                # Without distance matrix, skip edge_length_ks
-                evaluation_criteria = evaluation.MaxCriteria(
-                    evaluation.DegreeKS(),
-                    evaluation.ClusteringKS(),
-                    evaluation.BetweennessKS()
-                )
-                print("Warning: No distance matrix provided, skipping EdgeLengthKS metric")
-        
-        
-        
-        # Evaluate this network against all empirical networks
-        energy_results = evaluate_network_against_empirical(
-            generated_network=network,
-            empirical_networks=empirical_networks,
-            evaluation_criteria=evaluation_criteria,
+    # Prepare arguments for each parallel task
+    tasks = []
+    for i in range(len(generated_networks)):
+        distance_matrix = distance_matrices[i] if distance_matrices is not None else None
+        task_args = (
+            generated_networks[i],
+            generated_network_parameters[i],
+            distance_matrix,
+            empirical_networks,
+            config_dict
         )
-        
-        # Combine parameters with results
-        row = {**generated_parameters, **energy_results}
-        all_results.append(row)
-    
+        tasks.append(task_args)
+
+    print(f"\nComparing {len(generated_networks)} generated networks with {empirical_networks.shape[0]} empirical networks using multiprocessing...")
+
+    # Use a multiprocessing Pool to process tasks in parallel
+    with Pool() as pool:
+        # Use tqdm to show progress with the imap iterator
+        all_results = list(tqdm(pool.imap(process_network, tasks), total=len(tasks), desc="Evaluating networks"))
+
     # Create DataFrame
     df_results = pd.DataFrame(all_results)
     
@@ -272,9 +367,9 @@ def main():
         generated_networks, generated_network_parameters = load_generated_networks(generated_networks_dir)
         empirical_networks = load_empirical_networks(empirical_networks_path)
         
-        # THIS IS ONLY FOR TESTING!! REMOVE BEFORE USE. 
+        # THIS IS ONLY FOR TESTING!! REMOVE BEFORE USE. DEBUG MODE! 
         generated_networks = generated_networks # [:10, :, :]
-        empirical_networks = empirical_networks[:8, :, :]
+        empirical_networks = empirical_networks # [:8, :, :]
         
         # Validate dimensions
         if generated_networks is not None:

@@ -49,9 +49,9 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/30_shafiei_size_68/all_metrics_for_exp_30_shafiei_size_68.csv"
         
         # size 50 (MaMI)
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100/all_metrics_for_exp_30_shafiei_size_68.csv"
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_copy/all_metrics_for_exp_30_shafiei_size_68.csv"
     ]       
-    plot_indiv_connectomes = False # True #  False # True # False
+    plot_indiv_connectomes = True # False # True #  False # True # False
     
     
     ##############
@@ -59,7 +59,8 @@ if __name__ == "__main__":
     
     # The folder where the final figures will be saved.
     # A new subfolder is used to keep these plots separate.
-    save_path = Path(df_paths[0]).parent / "figures_voronoi_only"
+    parent_folder = Path(df_paths[0]).parent
+    save_path = parent_folder / "figures_voronoi_only"
     
     
     # --- 2. Define Metrics to Plot ---
@@ -106,7 +107,7 @@ if __name__ == "__main__":
         if gnm_results_df.empty:
             raise ValueError("Dataframe is empty after loading.")
 
-        path_to_best_gamma_and_eta_estimations = save_path.parent / "min_energy_results.csv"    # not entirely clean... TODO: Make this clean. 
+        path_to_best_gamma_and_eta_estimations = parent_folder / "min_energy_results.csv"    # not entirely clean... TODO: Make this clean. 
         if os.path.exists(path_to_best_gamma_and_eta_estimations):
             df_best_gamma_and_eta_estimates = pd.read_csv(path_to_best_gamma_and_eta_estimations)
                 

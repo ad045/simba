@@ -19,14 +19,14 @@ class DataLoader:
         self.resolution = self.config['data']['connectome_resolution']
        
        
-    def load_distance_matrix(self) -> np.ndarray:
+    def load_distance_matrix(self, 
+                             connectome_id: int = 0) -> np.ndarray:
         """Load the distance matrix."""
         try:
             dist_matrix = np.load(self.config["paths"]['02_distance_matrices'] / f"distance_matrix_{self.resolution}.npy")
             
             if self.config["data"]["dataset_name"] == "suarez_MaMI_dataset": 
-                dist_matrix = dist_matrix[0,:,:] # TODO: THIS ONLY USES THE FIRST CONNECTOME TO GET ENERGY. 
-            # ATTENTION: REALLY CHANGE THIS! 
+                dist_matrix = dist_matrix[connectome_id,:,:] 
             self._validate_distance_matrix(dist_matrix)
             
             
@@ -43,11 +43,13 @@ class DataLoader:
         except Exception as e:
             raise RuntimeError(f"Failed to load weighted connectome: {e}")
     
-    def load_binary_connectomes(self) -> Dict[int, np.ndarray]:
+    def load_binary_connectomes(self,
+                                connectome_id: int = 0,
+                                ) -> Dict[int, np.ndarray]:
         """Load all binary connectomes for specified densities."""
         binary_connectomes = {}
         
-        for density in self.config["data"]["densities"]: # .{}.densities:
+        for density in self.config["data"]["densities"]: 
             try:
                 resolution = self.config['data']['connectome_resolution']
                 
@@ -60,7 +62,7 @@ class DataLoader:
                     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_bin_density_10_percent_100.npy
                     binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/01_consensus_bin_density_{density}_percent_{resolution}.npy" # 00_connectomes_bin_density_{density}_percent_{resolution}.npy" # 01_consensus_bin_density_{density}_percent_{resolution}.npy"
                     print("BINARY_CONN: ", binary_conn_path)
-                    binary_conn = np.load(binary_conn_path)[0,:,:] # TODO: THIS ONLY USES THE FIRST CONNECTOME TO GET ENERGY. 
+                    binary_conn = np.load(binary_conn_path)[connectome_id,:,:] 
 
                 else: 
                     print("Experiment name was", self.config["data"]["dataset_name"], "but this is not defined. ")
@@ -79,26 +81,26 @@ class DataLoader:
         
         return binary_connectomes
     
-    def load_weighted_by_density(self) -> Dict[int, np.ndarray]:
-        """
-        Load connectomes that combine binary structure with weighted values.
-        Returns dict mapping density -> (binary_mask * weighted_values).T
-        """
-        weighted_connectome = self.load_weighted_connectome()
-        binary_connectomes = self.load_binary_connectomes()
+    # def load_weighted_by_density(self) -> Dict[int, np.ndarray]:
+    #     """
+    #     Load connectomes that combine binary structure with weighted values.
+    #     Returns dict mapping density -> (binary_mask * weighted_values).T
+    #     """
+    #     weighted_connectome = self.load_weighted_connectome()
+    #     binary_connectomes = self.load_binary_connectomes()
         
-        weighted_by_density = {}
+    #     weighted_by_density = {}
         
-        for density, binary_conn in binary_connectomes.items():
-            try:
-                # Element-wise multiplication: binary structure × weighted values
-                combined = (binary_conn * weighted_connectome).T.astype(np.float64, copy=False)
-                weighted_by_density[density] = combined
-            except Exception as e:
-                warnings.warn(f"Failed to create weighted connectome for density {density}%: {e}")
-                continue
+    #     for density, binary_conn in binary_connectomes.items():
+    #         try:
+    #             # Element-wise multiplication: binary structure × weighted values
+    #             combined = (binary_conn * weighted_connectome).T.astype(np.float64, copy=False)
+    #             weighted_by_density[density] = combined
+    #         except Exception as e:
+    #             warnings.warn(f"Failed to create weighted connectome for density {density}%: {e}")
+    #             continue
         
-        return weighted_by_density
+    #     return weighted_by_density
     
     def _validate_distance_matrix(self, dist_matrix: np.ndarray):
         """Validate distance matrix properties."""
@@ -139,35 +141,35 @@ class DataLoader:
         else:
             raise ValueError(f"Connectome ({conn_type}) must be 2D or 3D, got {connectome.ndim}D")
     
-    def get_data_summary(self) -> Dict[str, any]:
-        """Get summary information about loaded data."""
-        summary = {
-            'resolution': self.config.data.resolution,
-            'available_densities': [],
-            'data_shapes': {},
-            'file_paths': self.paths
-        }
+    # def get_data_summary(self) -> Dict[str, any]:
+    #     """Get summary information about loaded data."""
+    #     summary = {
+    #         'resolution': self.config.data.resolution,
+    #         'available_densities': [],
+    #         'data_shapes': {},
+    #         'file_paths': self.paths
+    #     }
         
-        try:
-            # Distance matrix info
-            dist_matrix = self.load_distance_matrix()
-            summary['data_shapes']['distance_matrix'] = dist_matrix.shape
+    #     try:
+    #         # Distance matrix info
+    #         dist_matrix = self.load_distance_matrix()
+    #         summary['data_shapes']['distance_matrix'] = dist_matrix.shape
             
-            # Weighted connectome info
-            weighted_conn = self.load_weighted_connectome()
-            summary['data_shapes']['weighted_connectome'] = weighted_conn.shape
+    #         # Weighted connectome info
+    #         weighted_conn = self.load_weighted_connectome()
+    #         summary['data_shapes']['weighted_connectome'] = weighted_conn.shape
             
-            # Binary connectomes info
-            binary_connectomes = self.load_binary_connectomes()
-            summary['available_densities'] = sorted(binary_connectomes.keys())
+    #         # Binary connectomes info
+    #         binary_connectomes = self.load_binary_connectomes()
+    #         summary['available_densities'] = sorted(binary_connectomes.keys())
             
-            for density, conn in binary_connectomes.items():
-                summary['data_shapes'][f'binary_density_{density}'] = conn.shape
+    #         for density, conn in binary_connectomes.items():
+    #             summary['data_shapes'][f'binary_density_{density}'] = conn.shape
                 
-        except Exception as e:
-            summary['error'] = str(e)
+    #     except Exception as e:
+    #         summary['error'] = str(e)
         
-        return summary
+    #     return summary
 
 
 def create_data_loader(config_path: Optional[Union[str, Path]] = None, 

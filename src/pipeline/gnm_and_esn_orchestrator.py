@@ -136,20 +136,6 @@ def _run_and_save_single_simulation(
                             {energy_metric_name + "_indiv_" + str(i): indiv_energy_values[i]}
                         )
             
-        
-        
-        # individual_network_results = [] # HERE!!! 
-        # if individual_networks: # if individual networks were passed, analyze them 
-        #     print("LOL")
-        #     # for i in range(individual_networks.shape[0]):
-        #         # individual_network_results.append(
-        #         #     experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()
-        #         #         connectome=individual_networks[i],
-        #         #         h_params=h_params
-        #         #     )
-        #         # )
-
-            
 
         # 3. If elaborate_analysis is true, run detailed analysis
         if elaborate_analysis and experiment.model:
@@ -166,31 +152,11 @@ def _run_and_save_single_simulation(
             )
             flat_record.update(pd.DataFrame(graph_measures_list).mean().to_dict())
 
-            # try:
-            #     mc_lags_to_calc = esn_params.get('mc_lags_to_calc', [1, 5, 10, 20, 50])
-            #     esn_results = [evaluate_memory_capacity_from_connectome(
-            #         connectome=net, mc_lengths=mc_lags_to_calc, **esn_params.get('esn_eval_params', {})
-            #     ) for net in networks_np] # THIS ONE...
-            #     df_esn = pd.DataFrame(esn_results)
-            #     numeric_cols = [c for c in df_esn.columns if 'mc' in c and 'indiv' not in c]
-            #     # flat_record.update(df_esn[numeric_cols].mean().to_dict())
-            #     flat_record = flat_record | df_esn[numeric_cols].mean().to_dict()
-            # except Exception as e:
-            #     mc_keys = ["mc_mean", "mc_std"] + [f"mc_lag_{l}" for l in mc_lags_to_calc]
-            #     flat_record.update({key: np.nan for key in mc_keys})
-
-
             try:
-                # mc_lags_to_calc = esn_params.get('mc_lags_to_calc', [1, 5, 10, 20, 50])
-                # esn_eval_params = h_params # esn_params.get('esn_eval_params', {})
                 esn_results = [evaluate_memory_capacity_from_connectome(
                     connectome=net, 
-                    # mc_lengths=mc_lags_to_calc, 
                     h_params=h_params
                 ) for net in networks_np]
-                # df_esn = pd.DataFrame(esn_results)
-                # numeric_cols = [c for c in df_esn.columns if 'mc' in c]
-                # flat_record.update(df_esn[numeric_cols].mean().to_dict())
                 
                 # stuff s.t. hparams are not in lower level anymore 
                 df_esn = pd.json_normalize(esn_results[0], sep='_')
@@ -226,28 +192,6 @@ def _run_and_save_single_simulation(
         pd.DataFrame([indiv_networks_record]).to_csv(result_path, index=False, na_rep="nan") # Added that missing values appear as "nan" for more clarity
 
 
-def _combine_csvs_by_pattern(search_dir, file_pattern, output_name):
-    """Finds, combines, and saves CSVs based on a recursive pattern."""
-    search_path = Path(search_dir) # PosixPath('/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/17_bigger_connectomes_no_individuals_density_10_2/17_bigger_connectomes_no_individuals_density_10_2_20250928_091044/17_bigger_connectomes_no_individuals_density_10_2_temp')
-    # Use rglob to find files in the directory and all subdirectories
-    all_files = list(search_path.rglob(file_pattern))
-
-    if not all_files:
-        print(f"No files found matching pattern: '{file_pattern}'")
-        return
-
-    try:
-        df_list = [pd.read_csv(f) for f in all_files]
-        full_df = pd.concat(df_list, ignore_index=True)
-
-        output_path = search_path.parent / output_name
-        full_df.to_csv(output_path, index=False)
-        print(f"✅ Combined {len(all_files)} files into: {output_path}")
-    except Exception as e:
-        print(f"❌ Error processing pattern '{file_pattern}': {e}")
-
-
-
 class GNMandESNPipelineOrchestrator:
     """Pipeline orchestrator with integrated logging."""
     
@@ -273,12 +217,14 @@ class GNMandESNPipelineOrchestrator:
         print("GNM PARAMETER SWEEP")
         print("=" * 60)
         
+        animal_id = 220 # CHANGE
+        
         experiment_name = config['experiment']['name'] 
         average_connectomes = config['experiment']['average_connectomes'] # set to false to only evaluate one connectome
 
-        binary_connectomes = self.data_loader.load_binary_connectomes()
+        binary_connectomes = self.data_loader.load_binary_connectomes(connectome_id=animal_id)
         distance_matrix = torch.tensor(
-                    self.data_loader.load_distance_matrix(),
+                    self.data_loader.load_distance_matrix(connectome_id=animal_id),
                     dtype=torch.float32,
                     device=self.device
                 )
@@ -292,23 +238,11 @@ class GNMandESNPipelineOrchestrator:
                 consensus_network = binary_connectomes[first_density]
                 target_network = consensus_network
                 
-                #  print("Averaging all connectomes for the target network.")
-                # # Average across the first dimension (subjects)
-                # averaged_connectome = np.mean(all_connectomes_for_density, axis=0)
-                # target_network = torch.tensor(
-                #     averaged_connectome,
-                #     dtype=torch.float32,
-                #     device=self.device
-                # )
-                # # create binary version
-                # target_network = torch.where(target_network > 0.5, torch.ones_like(target_network), torch.zeros_like(target_network))
-                
-                
-                
+            
             else:
                 print("Using the first connectome as the target network.")
                 target_network = torch.tensor(
-                    binary_connectomes[first_density][0, :, :], 
+                    binary_connectomes[first_density][animal_id, :, :], 
                     dtype=torch.float32,
                     device=self.device
                 )
@@ -326,17 +260,12 @@ class GNMandESNPipelineOrchestrator:
             target_network = np.zeros(shape=(resolution, resolution))
             
         # Load the empirical networks, of course! 
-        # if directly_compare_with_empirical_networks: 
-        #     # empirical_binary_connectomes = torch.tensor( # TODO cont_individual_connectomes 
-        # else: 
-        #     empirical_binary_connectomes = np.zeros(shape=(1, resolution, resolution))
         empirical_binary_connectomes = np.zeros(shape=(1, resolution, resolution)) # TODO: THIS IS OBV WRONG! 
         
         # Get number of simulations
         num_simulations = self.config['gnm']['num_simulations'] # 100 
         
         # Create sweep config 
-        # if random_sample:
         sweep_config = create_gnm_random_sweep_config( # add a grid version again? 
             config=self.config,
             distance_matrix=torch.Tensor(distance_matrix), 
