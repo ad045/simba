@@ -69,9 +69,9 @@ class DataLoader:
 
                 else: 
                     print("Experiment name was", self.config["data"]["dataset_name"], "but this is not defined. ")
+                    raise ValueError(f"Unknown dataset: {self.config['data']['dataset_name']}")
                 
-                
-                binary_conn = np.load(binary_conn_path) 
+                # binary_conn = np.load(binary_conn_path) 
                 self._validate_connectome(binary_conn, f"binary (density {density}%)")
                 binary_connectomes[density] = binary_conn
                 
@@ -257,35 +257,3 @@ def get_connectome_stats(connectome: np.ndarray) -> Dict[str, float]:
     
     return stats
 
-
-# Example usage
-if __name__ == "__main__":
-    # Create a data loader with default configuration
-    config = ConfigManager()
-    loader = DataLoader(config)
-    
-    # Print data summary
-    summary = loader.get_data_summary()
-    print("Data Summary:")
-    for key, value in summary.items():
-        print(f"  {key}: {value}")
-    
-    # Load and inspect distance matrix
-    try:
-        dist_matrix = loader.load_distance_matrix()
-        print(f"\nDistance matrix loaded: shape {dist_matrix.shape}")
-        print(f"Distance range: {dist_matrix.min():.3f} to {dist_matrix.max():.3f}")
-    except Exception as e:
-        print(f"Could not load distance matrix: {e}")
-    
-    # Load weighted connectomes by density
-    try:
-        weighted_by_density = loader.load_weighted_by_density()
-        print(f"\nLoaded weighted connectomes for densities: {sorted(weighted_by_density.keys())}")
-        
-        for density, conn in weighted_by_density.items():
-            stats = get_connectome_stats(conn[:, :, 0] if conn.ndim == 3 else conn)
-            print(f"  Density {density}%: {conn.shape}, density={stats['density']:.3f}")
-            
-    except Exception as e:
-        print(f"Could not load weighted connectomes: {e}")

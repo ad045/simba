@@ -54,11 +54,11 @@ from netneurotools.networks import threshold_network, struct_consensus
 
 # Local imports from your codebase
 # from notebook_setup import setup
-from src.preprocessing.preprocess_distance_matrix import get_distance_matrix_from_coords, get_distance_matrix_from_fiber_lengths
+from preprocessing.get_distance_matrix import get_distance_matrix_from_coords, get_distance_matrix_from_fiber_lengths
 from src.structural_analysis.graph_measures import analyze_connectomes
 
 from src.preprocessing.preprocessing_setup import setup
-from src.preprocessing.process_01_consensus_networks import threshold_to_density
+from preprocessing.threshold_to_density import threshold_to_density
 
 
 from src.preprocessing.utils import setup_paths, ensure_dir, save_numpy, save_dataframe # TODO: Remove this again, not needed. 

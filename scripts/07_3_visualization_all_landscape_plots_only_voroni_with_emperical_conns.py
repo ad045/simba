@@ -45,8 +45,8 @@ if __name__ == "__main__":
         
         
         # just testing out the new library. 
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/29_connectomes_of_size_50/summary_all_metrics_for_exp_29_connectomes_of_size_50.csv", 
-        
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/29_connectomes_of_size_50/summary_all_metrics_for_exp_29_connectomes_of_size_50.csv", 
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/30_shafiei_size_68/all_metrics_for_exp_30_shafiei_size_68.csv"
     ]       
     plot_indiv_connectomes = False # True #  False # True # False
     
