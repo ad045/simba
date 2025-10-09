@@ -5,7 +5,7 @@ import torch
 # Import GNM configuration structures
 from gnm import fitting, generative_rules
 
-from config.GNM import GNMConfig
+from config.GNM import GNMConfig, create_weighted_sweep_parameters
 from src.config.ESN import ESNConfig
 from config.data import DataConfig
 from config.compute import ComputeConfig
@@ -22,25 +22,7 @@ from .constants import (
     CONNECTOMES_WEIGHTED_PATTERN, CONNECTOMES_BINARY_PATTERN, DISTANCE_MATRIX_PATTERN
 )
 
-class ConfigManager:
-    """Optimized configuration manager using GNM structures."""
-    
-    
-    def __init__(self, 
-                 esn_config: Optional[ESNConfig] = None,
-                 gnm_config: Optional[GNMConfig] = None,
-                 data_config: Optional[DataConfig] = None,
-                 compute_config: Optional[ComputeConfig] = None,
-                 path_config: Optional[PathConfig] = None):
-        
-        self.esn = esn_config or ESNConfig()
-        self.gnm = gnm_config or GNMConfig()
-        self.data = data_config or DataConfig()
-        self.compute = compute_config or ComputeConfig()
-        self.paths = path_config or PathConfig()
-    
-    
-    def create_gnm_random_sweep_config(self, # TODO: Combine with function below (and thus make the label "random" and "grid" useable...)
+def create_gnm_random_sweep_config(config, #  TODO: Combine with function below (and thus make the label "random" and "grid" useable...)
                                     distance_matrix: torch.Tensor,
                                     num_iterations: int,
                                     num_simulations: int, 
@@ -54,13 +36,16 @@ class ConfigManager:
         eta_values = torch.empty(n_random_samples)
         gamma_values = torch.empty(n_random_samples)
         
+        eta_range = config['gnm']['eta_range']
+        gamma_range = config['gnm']['gamma_range']
+
         for i in range(n_random_samples):
-            eta_values[i] = torch.rand(1) * (self.gnm.eta_range[1] - self.gnm.eta_range[0]) + self.gnm.eta_range[0]
-            gamma_values[i] = torch.rand(1) * (self.gnm.gamma_range[1] - self.gnm.gamma_range[0]) + self.gnm.gamma_range[0]
+            eta_values[i] = torch.rand(1) * (eta_range[1] - eta_range[0]) + eta_range[0]
+            gamma_values[i] = torch.rand(1) * (gamma_range[1] - gamma_range[0]) + gamma_range[0]
 
         # Get generative rules
         rules = []
-        for rule_name in self.gnm.generative_rules_to_test:
+        for rule_name in config['gnm']['generative_rules_to_test']: # self.gnm.generative_rules_to_test:
             if rule_name == "matching_index":
                 rules.append(generative_rules.MatchingIndex())
             elif rule_name == "neighbors":
@@ -87,7 +72,7 @@ class ConfigManager:
         
         weighted_params = None
         if include_weights:
-            weighted_params = self.gnm.create_weighted_sweep_parameters(distance_matrix)
+            weighted_params = create_weighted_sweep_parameters(config, distance_matrix)
 
         return fitting.SweepConfig(
             binary_sweep_parameters=binary_params,
@@ -97,6 +82,92 @@ class ConfigManager:
             method=method, 
             num_random_samples=n_random_samples, 
         )
+
+
+class ConfigManager:
+    """Optimized configuration manager using GNM structures."""
+    
+    
+    def __init__(self, 
+                 dataset_name: str, 
+                 resolution: int, 
+                 densities: List[int], 
+                 use_weighted: bool,
+                 esn_config: Optional[ESNConfig] = None,
+                 gnm_config: Optional[GNMConfig] = None,
+                 data_config: Optional[DataConfig] = None,
+                 compute_config: Optional[ComputeConfig] = None,
+                 path_config: Optional[PathConfig] = None):
+        
+        self.esn = esn_config or ESNConfig()
+        self.gnm = gnm_config or GNMConfig()
+        self.data = data_config or DataConfig(
+                                dataset_name=dataset_name, 
+                                resolution=resolution, 
+                                densities=densities,
+                                use_weighted=use_weighted
+        )
+        self.compute = compute_config or ComputeConfig()
+        self.paths = path_config or PathConfig()
+    
+    
+    # def create_gnm_random_sweep_config(self, # TODO: Combine with function below (and thus make the label "random" and "grid" useable...)
+    #                                 distance_matrix: torch.Tensor,
+    #                                 num_iterations: int,
+    #                                 num_simulations: int, 
+    #                                 method: Optional[str], #  = "random", # "random", # "grid",
+    #                                 n_random_samples: int, #  = 30,
+    #                                 include_weights: bool, 
+    #                                 ) -> fitting.SweepConfig:
+    #     """Create GNM sweep configuration with random parameter sampling."""
+        
+    #     # Generate random parameter values
+    #     eta_values = torch.empty(n_random_samples)
+    #     gamma_values = torch.empty(n_random_samples)
+        
+    #     for i in range(n_random_samples):
+    #         eta_values[i] = torch.rand(1) * (self.gnm.eta_range[1] - self.gnm.eta_range[0]) + self.gnm.eta_range[0]
+    #         gamma_values[i] = torch.rand(1) * (self.gnm.gamma_range[1] - self.gnm.gamma_range[0]) + self.gnm.gamma_range[0]
+
+    #     # Get generative rules
+    #     rules = []
+    #     for rule_name in self.gnm.generative_rules_to_test:
+    #         if rule_name == "matching_index":
+    #             rules.append(generative_rules.MatchingIndex())
+    #         elif rule_name == "neighbors":
+    #             rules.append(generative_rules.Neighbors())
+    #         elif rule_name == "degree_product":
+    #             rules.append(generative_rules.DegreeProduct())
+    #         elif rule_name == "clustering_coefficient":
+    #             rules.append(generative_rules.ClusteringCoefficient())
+    #         elif rule_name == "spatial":
+    #             rules.append(generative_rules.Spatial())
+    #         else:
+    #             rules.append(generative_rules.MatchingIndex())
+        
+    #     binary_params = fitting.BinarySweepParameters(
+    #         eta=eta_values,
+    #         gamma=gamma_values,
+    #         lambdah=torch.tensor([0.0]),  # Single lambda value
+    #         distance_relationship_type=["powerlaw"],
+    #         preferential_relationship_type=["powerlaw"],
+    #         heterochronicity_relationship_type=["powerlaw"],
+    #         generative_rule=rules,
+    #         num_iterations=[num_iterations],
+    #     )
+        
+    #     weighted_params = None
+    #     if include_weights:
+    #         weighted_params = self.gnm.create_weighted_sweep_parameters(distance_matrix)
+
+    #     return fitting.SweepConfig(
+    #         binary_sweep_parameters=binary_params,
+    #         weighted_sweep_parameters=weighted_params,
+    #         num_simulations=num_simulations,
+    #         distance_matrix=[distance_matrix], 
+    #         method=method, 
+    #         num_random_samples=n_random_samples, 
+    #     )
 
 
     def create_gnm_sweep_config(self, 

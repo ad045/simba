@@ -64,12 +64,13 @@
 
 from pathlib import Path
 from dataclasses import dataclass, asdict
-
+import time
 
 @dataclass
 class PathConfig:
     """Path configuration."""
     dataset_name: str
+    experiment_name: str 
     root_dir: Path = None
     connectome_dir: Path = None
     output_dir: Path = None
@@ -83,14 +84,22 @@ class PathConfig:
             self.root_dir = Path.cwd().resolve()
         
         self.connectome_dir = self.root_dir / "data" / "preprocessed" / self.dataset_name 
+        self.dir_01_connectomes = self.connectome_dir / "01_connectomes"
+        self.dir_02_distance_matrices = self.connectome_dir / "02_distance_matrices"
+        
         self.output_dir = self.root_dir / "output" 
         self.output_specific_dataset_dir = self.output_dir / "empirical_data" / self.dataset_name
-        self.output_gnm_dir = self.output_dir / "gnm"
-        self.dynamic_gnm_output_dir = self.output_dir / "dynamic_gnm"
         
+        self.output_gnm_dir = self.output_dir / "gnm" # make this smoother
+        self.output_experiment_dir = self.output_gnm_dir / (self.dataset_name) / self.experiment_name #+ f"_{time.strftime("%Y%m%d_%H%M%S")}")
+        
+        self.dynamic_gnm_output_dir = self.output_dir / "dynamic_gnm" / self.experiment_name
+        
+
         # Create directories
         for dir_path in [self.connectome_dir, self.output_specific_dataset_dir, 
-                         self.output_gnm_dir, self.dynamic_gnm_output_dir]:
+                         self.output_gnm_dir, self.dynamic_gnm_output_dir,
+                         self.output_experiment_dir]:
             dir_path.mkdir(parents=True, exist_ok=True)
     
     
@@ -103,6 +112,13 @@ class PathConfig:
                             'output_dir': self.output_dir,
                             'output_specific_dataset_dir': self.output_specific_dataset_dir,
                             'output_gnm_dir': self.output_gnm_dir,
-                            'dynamic_gnm_output_dir': self.dynamic_gnm_output_dir
+                            'output_experiment_dir': self.output_experiment_dir,
+                            'dynamic_gnm_output_dir': self.dynamic_gnm_output_dir,
+                            
+                            'output_experiment_dir': self.output_experiment_dir,
+                             
+                            '01_connectomes': self.dir_01_connectomes,
+                            '02_distance_matrices': self.dir_02_distance_matrices,
+                        
                         }
                 }

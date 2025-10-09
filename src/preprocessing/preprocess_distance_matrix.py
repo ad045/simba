@@ -32,7 +32,7 @@ def get_distance_matrix_from_coords(coords, save_dir, resolution, plot=True):
     # np.fill_diagonal(dist_mat, 0.0)
 
     # save distance matrix
-    np.save(save_dir / f"distance_matrix_{dist_mat.shape[0]}x{dist_mat.shape[1]}.npy", dist_mat)
+    np.save(save_dir / f"distance_matrix_{dist_mat.shape[0]}.npy", dist_mat)
     
     return dist_mat
 

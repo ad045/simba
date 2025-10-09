@@ -174,9 +174,13 @@ class GNMGenerator:
             Dictionary with fitting results
         """
         # Prepare inputs
-        target_network = target_network.to(self.device)
-        distance_matrix = distance_matrix.to(self.device)
-        n_edges = int(target_network.sum().item() // 2)
+        if target_network.sum() != 0 and target_network is not None: 
+            target_network = target_network.to(self.device)
+            distance_matrix = distance_matrix.to(self.device)
+            n_edges = int(target_network.sum().item() // 2)
+        else: 
+            print("ATTENTION: n_edges will be set to random value")
+            n_edges = 10 
         
         # Get generative rule
         if generative_rule_name not in self.AVAILABLE_RULES:

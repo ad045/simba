@@ -165,8 +165,11 @@ def analyze_connectomes(connectomes,
 
         # Calculate metrics 
         # Communicability (chosen mode)
-        avg_comm = _communicability(A_bin, mode=comm_mode, beta=beta, t=t)
-
+        try: 
+            avg_comm = _communicability(A_bin, mode=comm_mode, beta=beta, t=t)
+        except: 
+            avg_comm = np.nan
+        
         # Global efficiency
         glob_eff = nx.global_efficiency(G)
 

@@ -41,11 +41,14 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/2423_24rough_combined/summary_all_metrics_for_exp_2423_24rough_combined.csv"
         
         # NEW CONSENSUS! 
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/26_testing_4_KS_folders_why_so_fast/summary_all_metrics_for_exp_26_testing_4_KS_folders_why_so_fast.csv"
-
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/26_testing_4_KS_folders_why_so_fast/summary_all_metrics_for_exp_26_testing_4_KS_folders_why_so_fast.csv"
+        
+        
+        # just testing out the new library. 
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/29_connectomes_of_size_50/summary_all_metrics_for_exp_29_connectomes_of_size_50.csv", 
+        
     ]       
-    
-    plot_indiv_connectomes = True #  False # True # False
+    plot_indiv_connectomes = False # True #  False # True # False
     
     
     ##############
@@ -62,26 +65,25 @@ if __name__ == "__main__":
     metrics_to_plot = [
         
         "MaxCriteria",
-        # "avg_communicability", 
-        # "global_efficiency", 
-        # "modularity", 
-        # "avg_clustering", 
-        # "avg_degree", 
-        # "transitivity", 
-        # "avg_edge_distance", 
-        # "char_path_length", 
-        # "richclub_n_edges", 
-        # "richclub_avg_length", 
-        # "mc_mean", 
-        # "mc_std", 
-        # "wiring_cost", 
-        # "mean_mc_divided_by_wiring_cost",
-        # "mc_5_divided_by_wiring_cost", 
+        "avg_communicability", 
+        "global_efficiency", 
+        "modularity", 
+        "avg_clustering", 
+        "avg_degree", 
+        "transitivity", 
+        "avg_edge_distance", 
+        "char_path_length", 
+        "richclub_n_edges", 
+        "richclub_avg_length", 
+        "mc_mean", 
+        "mc_std", 
+        "wiring_cost", 
+        "mean_mc_divided_by_wiring_cost",
+        "mc_5_divided_by_wiring_cost", 
         
         # "avg_clustering_glob_efficiency_minus_energy", 
-        "avg_clustering_divided_by_global_efficiency", 
-    ] 
-    # + [f"mc_{lag}" for lag in lags_to_plot]
+        # "avg_clustering_divided_by_global_efficiency", 
+    ] + [f"mc_{lag}" for lag in lags_to_plot]
     plot_combined_lag_plot = False # Plot this comparison plot with different MC lags 
     
     print(f"Starting Voronoi-only visualization process...")

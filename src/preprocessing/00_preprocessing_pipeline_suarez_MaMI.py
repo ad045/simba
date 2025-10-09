@@ -46,13 +46,15 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from pathlib import Path
+
 import bct
 from netneurotools.networks import threshold_network, struct_consensus
+
 
 # Local imports from your codebase
 # from notebook_setup import setup
 from src.preprocessing.preprocess_distance_matrix import get_distance_matrix_from_coords, get_distance_matrix_from_fiber_lengths
-from src.preprocessing.preprocess_70_connectomes import get_individual_connectomes
 from src.structural_analysis.graph_measures import analyze_connectomes
 
 from src.preprocessing.preprocessing_setup import setup
@@ -103,275 +105,172 @@ def parse_args() -> PipelineConfig:
         rich_top_percent=args.rich_top_percent,
     )
 
+# def main(resolution = None):
+# cfg = parse_args()
 
-# ----------------------------
-# Pipeline steps
-# ----------------------------
-
-
-
-# def step_load_individual_connectomes(paths: dict, resolution: int = 68) -> Tuple[np.ndarray, int, int]:
-#     sc_mat_path = paths["INPUT_DATA_PATH"] / f"data_700mb_individual_connectomes/SC_{resolution}.mat"
-#     all_connectomes, nsub, n = get_individual_connectomes(
-#         raw_data_path=sc_mat_path,
-#         output_path=paths["PREPROCESSED_PATH"],
-#     )
-#     return all_connectomes, nsub, n
+cfg = PipelineConfig(
+        resolution=50, # args.resolution,
+        goal_densities=[10], # tuple(args.goal_densities),
+        analyze_density=10, # args.analyze_density,
+        do_plots=True, # args.do_plots,
+        comm_mode="estrada_scaled", # args.comm_mode,
+        rich_top_percent=0.2) 
 
 
-# def step_threshold_connectomes(
-#     all_connectomes: np.ndarray,
-#     n: int,
-#     goal_densities: Iterable[int],
-#     save_dir: Path,
-# ) -> None:
-#     goal_densities = list(goal_densities)
-#     for gd in goal_densities:
-#         connectomes_binarized = np.array([
-#             threshold_network(all_connectomes[i], retain=gd)
-#             for i in range(len(all_connectomes))
-#         ])
-#         connectome_densities = np.array([
-#             bct.density_und(connectomes_binarized[i])[0]
-#             for i in range(len(connectomes_binarized))
-#         ])
-#         print(
-#             f"Average density over {len(connectomes_binarized)} subjects: "
-#             f"{np.mean(connectome_densities)*100:.3f}% (goal {gd}%)."
-#         )
-#         save_numpy(
-#             save_dir / f"connectomes_binarized_{n}x{n}_density_{gd}_percent.npy",
-#             connectomes_binarized,
-#         )
-
-#     # Save weighted set once
-#     save_numpy(save_dir / f"connectomes_weighted_{n}.npy", all_connectomes)
-
-
-
-def step_load_identifiers(paths: dict, resolution: int) -> Tuple[pd.DataFrame, np.ndarray]:
-    id_path = paths["path_00_preprocessed"] / f"05_roi_names_rsn_name_hemisphere_{resolution}.csv"
-    df_identifiers = pd.read_csv(
-        id_path, header=None, names=["roi_name", "roi_name_short", "rsn_name", "hemisphere"]
-    )
-
-    hemi_id = np.array([0 if x == "rh" else 1 for x in df_identifiers["hemisphere"]])
-    df_identifiers["hemi_id"] = hemi_id
-
-    # Strip whitespace and stray characters
-    df_identifiers = df_identifiers.map(lambda x: x.strip() if isinstance(x, str) else x)
-
-    save_dataframe(paths["path_04_further_info"] / f"df_identifiers_{resolution}.csv", df_identifiers)
-    return df_identifiers, hemi_id
-
-
-# def step_consensus_connectomes(
-#     paths: dict,
-#     connectomes_binarized: np.ndarray,
-#     all_connectomes: np.ndarray,
-#     dist_mat: np.ndarray,
-#     hemi_id: np.ndarray,
-#     n: int,
-#     analyze_density: int,
-# ) -> Tuple[np.ndarray, np.ndarray, float, float]:
-#     # Shapes expected by struct_consensus: nodes x nodes x subjects
-#     # Our arrays are subjects x nodes x nodes, so we transpose with .T
-#     consensus_conn_bin = struct_consensus(
-#         connectomes_binarized.T, distance=dist_mat, hemiid=hemi_id.reshape(-1, 1)
-#     )
-#     consensus_density_bin = bct.density_und(consensus_conn_bin)[0]
-
-#     consensus_conn_all = struct_consensus(
-#         all_connectomes.T, distance=dist_mat, hemiid=hemi_id.reshape(-1, 1)
-#     )
-#     consensus_density_all = bct.density_und(consensus_conn_all)[0]
-
-#     print(f"Consensus (binarized @ {analyze_density}%): {consensus_density_bin*100:.2f}%")
-#     print(f"Consensus (weighted): {consensus_density_all*100:.2f}%")
-
-#     save_numpy(
-#         paths["PREPROCESSED_PATH"]
-#         / f"consensus_connectome_bin_{n}x{n}_density_{analyze_density}_percent.npy",
-#         consensus_conn_bin,
-#     )
-#     save_numpy(paths["PREPROCESSED_PATH"] / f"consensus_connectome_all_{n}x{n}.npy", consensus_conn_all)
-
-#     return consensus_conn_bin, consensus_conn_all, consensus_density_bin, consensus_density_all
-
-
-# def step_plot_consensus(
-#     paths: dict,
-#     conn: Optional[np.ndarray],
-#     dist: Optional[np.ndarray],
-#     analyze_density: int,
-# ) -> None:
-#     fig = plt.figure(figsize=(12, 6))
-
-#     if conn: 
-#         ax1 = fig.add_subplot(1, 2, 1)
-#         im1 = ax1.imshow(conn, cmap="Blues")
-#         fig.colorbar(im1, ax=ax1)
-#         ax1.set(xlabel="Region Index", ylabel="Region Index",
-#                 title=f"Consensus (Binarized at {analyze_density}%)\nDensity: {density_bin*100:.2f}%")
-
-#     if dist: 
-#         ax2 = fig.add_subplot(1, 2, 2)
-#         im2 = ax2.imshow(dist, cmap="Blues")
-#         fig.colorbar(im2, ax=ax2)
-#         ax2.set(xlabel="Region Index", ylabel="Region Index",
-#                 title=f"Consensus (Weighted)\nDensity: {density_all*100:.2f}%")
-
-#     fig.suptitle(
-#         "Consensus differs if binarization is performed before consensus (density differs, too)",
-#         fontsize=12,
-#     )
-
-#     outpng = paths["OUTPUT_PATH"] / f"consensus_connectomes_compare_density_{analyze_density}.png"
-#     fig.tight_layout()
-#     fig.savefig(outpng) 
-#     print(f"Saved plot: {outpng}")
-
-
-# ----------------------------
-# Main orchestrator
-# ----------------------------
-
-def main(resolution = None):
-    cfg = parse_args()
-    if resolution: 
-        cfg.resolution = resolution
-
-    paths = setup_paths()
-
-    # Distance matrix
-    dist_mat = get_distance_matrix_from_coords(
-        paths=paths, 
-        resolution=resolution,
-        plot=cfg.do_plots,
-    )
+paths = setup_paths(dataset_name="suarez_MaMI_dataset") 
     
-    # plt.imshow(dist_mat)
-    # plt.show()
     
-    # dist_mat = get_distance_matrix_from_fiber_lengths(
-    #     paths=paths, 
-    #     resolution=resolution,
-    #     plot=cfg.do_plots,
-    # )
+    
+    
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from scipy.spatial.distance import cdist
+
+def reduce_nodes(connection_matrix, coordinates, resolution=100):
+    """
+    Reduce nodes in a brain connectivity matrix by merging closest pairs.
+    
+    Args:
+        connection_matrix: (200, 200) connectivity matrix
+        coordinates: (200, 3) node coordinates
+        n_target: target number of nodes (default 100)
+    
+    Returns:
+        new_matrix: (n_target, n_target) reduced connectivity matrix
+        new_coords: (n_target, 3) reduced coordinates
+    """
+    n_nodes = len(coordinates)
+    n_per_half = n_nodes // 2
+    n_target_per_half = resolution // 2
+    
+    # Process each hemisphere
+    new_coords_list = []
+    merge_maps = []
+    
+    for half_idx in range(2):
+        start_idx = half_idx * n_per_half
+        end_idx = start_idx + n_per_half
         
-    # plt.imshow(dist_mat)
-    # plt.show()
-
-
-
-
-    # Individual connectomes
-    # all_connectomes, nsub, n = step_load_individual_connectomes(paths, resolution=cfg.resolution)
-
-    # Threshold (binarize) at specified goal densities (hyperparameters)
-    # step_threshold_connectomes(
-    #     all_connectomes=all_connectomes,
-    #     n=n,
-    #     goal_densities=cfg.goal_densities,
-    #     save_dir=paths["PREPROCESSED_PATH"],
-    # )
-
-    # Identifiers & hemisphere id
-    df_identifiers, hemi_id = step_load_identifiers(paths, resolution=cfg.resolution)
-
-    # Consensus connectomes (binarized @ analyze_density and weighted)
-    # consensus_bin, consensus_all, d_bin, d_all = step_consensus_connectomes(
-    #     paths=paths,
-    #     connectomes_binarized=connectomes_binarized,
-    #     all_connectomes=all_connectomes,
-    #     dist_mat=dist_mat,
-    #     hemi_id=hemi_id,
-    #     n=n,
-    #     analyze_density=cfg.analyze_density,
-    # )
+        # Get hemisphere data
+        coords_half = coordinates[start_idx:end_idx].copy()
+        active = np.ones(n_per_half, dtype=bool)
+        merge_map = np.arange(n_per_half)
+        
+        # Merge nodes until target reached
+        n_to_merge = n_per_half - n_target_per_half
+        for _ in range(n_to_merge):
+            active_indices = np.where(active)[0]
+            active_coords = coords_half[active_indices]
+            
+            # Find closest pair
+            distances = cdist(active_coords, active_coords)
+            np.fill_diagonal(distances, np.inf)
+            i, j = np.unravel_index(distances.argmin(), distances.shape)
+            idx_i, idx_j = active_indices[i], active_indices[j]
+            
+            # Merge: keep idx_i, remove idx_j
+            coords_half[idx_i] = (coords_half[idx_i] + coords_half[idx_j]) / 2
+            active[idx_j] = False
+            merge_map[merge_map == idx_j] = idx_i
+        
+        new_coords_list.append(coords_half[active])
+        merge_maps.append(merge_map + start_idx)
     
-   
+    # Combine hemispheres
+    new_coords = np.vstack(new_coords_list)
+    full_merge_map = np.concatenate(merge_maps)
     
+    # Build new connectivity matrix
+    new_matrix = np.zeros((resolution, resolution))
+    for i in range(resolution):
+        for j in range(resolution):
+            mask_i = (full_merge_map == full_merge_map[i])
+            mask_j = (full_merge_map == full_merge_map[j])
+            new_matrix[i, j] = connection_matrix[np.ix_(mask_i, mask_j)].mean()
     
+    return new_matrix, new_coords
+
+
+# Setup paths
+base_path = paths["path_raw_data"] / "connectivity/mami"
+conn_dir = base_path / "conn_100"
+coords_dir = base_path / "coords"
+
+# Intermediate paths 
+output_conn_dir = paths["path_00_preprocessed"] / "connectomes_downsampled_to_50"
+output_coords_dir = paths["path_00_preprocessed"] / "coords_downsampled_to_50"
+output_results_dir = paths["path_output_for_logs_and_plots"] / "results"
+output_dist_dir = paths["path_00_preprocessed"] / "dis_matrices_downsampled_to_50" # paths["path_02_distance_matrices"] 
+
+resolution = 100 # final resolution
+
+# Create output directories
+output_conn_dir.mkdir(exist_ok=True)
+output_coords_dir.mkdir(exist_ok=True)
+output_results_dir.mkdir(exist_ok=True)
+output_dist_dir.mkdir(exist_ok=True)
+
+# Get all animal names
+animal_files = list(conn_dir.glob("*.npy"))
+animal_names = [f.stem for f in animal_files]
+
+# Storage for combined arrays and all results
+all_conn = []
+all_dist = []
+all_results = []
+
+# Process each animal
+for name in animal_names:
+    print(f"Processing {name}...")
     
-    conns = np.loadtxt(paths["path_00_preprocessed"] / f"01_weighted_adj_mat_{resolution}.csv", 
-				delimiter=",", dtype=np.float64) # here only one
-    np.save(paths["path_01_connectomes"] / f"01_consensus_wei_{resolution}.npy", conns) # here only one
+    # Load data
+    connection_matrix = np.load(conn_dir / f"{name}.npy")
+    coordinates = np.load(coords_dir / f"{name}.npy")
     
+    # Reduce resolution
+    new_matrix, new_coords = reduce_nodes(connection_matrix, coordinates, resolution=100)
     
-     
-    # Analyze the weighted connectome
-    df_graph_measures = pd.DataFrame(
-        analyze_connectomes(
-            connectomes=conns,
-            distance_matrix=dist_mat,
-            comm_mode=cfg.comm_mode,
-            rich_nodes_global=cfg.rich_nodes_global,
-            rich_top_percent=cfg.rich_top_percent,
-        )
+    # Calculate distance matrix
+    distance_matrix = cdist(new_coords, new_coords)
+    
+    # Save individual files
+    np.save(output_conn_dir / f"{name}.npy", new_matrix)
+    np.save(output_coords_dir / f"{name}.npy", new_coords)
+    np.save(output_dist_dir / f"{name}.npy", distance_matrix)
+        
+    # Analyze connectome
+    results = analyze_connectomes(
+        new_matrix[np.newaxis, :, :],  # Shape: (1, 100, 100)
+        distance_matrix,
+        comm_mode="estrada_scaled"
     )
-    analysis_path = paths["path_03_graph_measures"] / f"df_graph_measures_wei_{resolution}_percent.csv"
-    save_dataframe(
-        analysis_path,
-        df_graph_measures,
-    )
     
+    # Add animal name to results
+    for result in results:
+        result['animal'] = name
+        all_results.append(result)
     
-    thres_conn, final_density = threshold_to_density(consensus_wei=conns, 
-                                                    n_nodes=resolution, 
-                                                    density=10, 
-                                                    output_folder=paths["path_01_connectomes"])
+    # Store for combined arrays
+    all_conn.append(new_matrix)
+    all_dist.append(distance_matrix)
 
-    # Analyze the binarized and thresholded connectome
-    df_graph_measures = pd.DataFrame(
-        analyze_connectomes(
-            connectomes=thres_conn,
-            distance_matrix=dist_mat,
-            comm_mode=cfg.comm_mode,
-            rich_nodes_global=cfg.rich_nodes_global,
-            rich_top_percent=cfg.rich_top_percent,
-        )
-    )
-    analysis_path = paths["path_03_graph_measures"] / f"df_graph_measures_bin_{resolution}_density_{cfg.analyze_density}_percent.csv"
-    save_dataframe(
-        analysis_path,
-        df_graph_measures,
-    )
+# Save combined arrays
+all_conn = np.stack(all_conn)  # Shape: (num_animals, 100, 100)
+all_dist = np.stack(all_dist)  # Shape: (num_animals, 100, 100)
 
+np.save(paths["path_01_connectomes"] / f"00_connectomes_{resolution}.npy", all_conn)
+np.save( paths["path_02_distance_matrices"] / f"distance_matrix_{resolution}.npy", all_dist)
 
+# Save results as CSV
+results_df = pd.DataFrame(all_results)
+results_df.to_csv(paths["path_03_graph_measures"] / f"df_graph_measures_{resolution}.csv", index=False)
 
-    # if cfg.do_plots:
-    #     step_plot_consensus(
-    #         paths=paths,
-    #         consensus_conn_bin=None, # consensus_bin,
-    #         consensus_conn_wei=consensus_weighted, # consensus_all,
-    #         density_bin=None, # d_bin,
-    #         density_all=None, # d_all,
-    #         analyze_density=cfg.analyze_density,
-    #     )
+only_names_df = results_df["animal"]
+only_names_df.to_csv(paths["path_04_further_info"] / f"names_of_animals_with_preprocessed_connectomes_{resolution}.csv")
 
-    # Print summary to console
-    print("\nPipeline completed successfully. Summary:")
-    summary = {
-        "resolution": cfg.resolution,
-        # "goal_densities": cfg.goal_densities,
-        "analyze_density": cfg.analyze_density,
-        "plots": cfg.do_plots,
-        "paths": {k: str(v) for k, v in paths.items()},
-    }
-    print(json.dumps(summary, indent=2))
-
-    # Save summary to a text file
-    output_file = paths["path_output_for_logs_and_plots"] / f"preprocessing_pipeline_summary_{resolution}_density_{cfg.analyze_density}_percent.json"
-    with open(output_file, 'w') as f:
-        json.dump(summary, f, indent=2)
-
-    print(f"\nSummary saved to: {output_file}")
-    print(f"Analysis CSV saved to: {analysis_path}")
-
-
-
-
-if __name__ == "__main__":
-    main(resolution=50) # 50,150, 200
- 
+print(f"\nProcessed {len(animal_names)} animals")
+print(f"Combined connectivity shape: {all_conn.shape}")
+print(f"Combined distances shape: {all_dist.shape}")
+print(f"Results saved to: {paths["path_03_graph_measures"] / f"df_graph_measures_{resolution}.csv"}")
+print(f"Results shape: {results_df.shape}")

@@ -292,12 +292,10 @@ def main(resolution = None):
     #     analyze_density=cfg.analyze_density,
     # )
     
-   
-    
-    
     
     conns = np.loadtxt(paths["path_00_preprocessed"] / f"01_weighted_adj_mat_{resolution}.csv", 
 				delimiter=",", dtype=np.float64) # here only one
+    
     np.save(paths["path_01_connectomes"] / f"01_consensus_wei_{resolution}.npy", conns) # here only one
     
     

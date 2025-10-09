@@ -90,59 +90,119 @@ class GNMConfig:
             num_iterations=[num_iterations],
         )
     
-    def create_weighted_sweep_parameters(self, 
-                                        distance_matrix: torch.Tensor) -> fitting.WeightedSweepParameters:
+    # def create_weighted_sweep_parameters(self, 
+    #                                     distance_matrix: torch.Tensor) -> fitting.WeightedSweepParameters:
+    #     """Create GNM WeightedSweepParameters from config."""
+    #     # Get weight criterion
+    #     if self.weight_criterion == "distance_weighted_communicability":
+    #         criterion = weight_criteria.DistanceWeightedCommunicability(distance_matrix)
+    #     elif self.weight_criterion == "communicability":
+    #         criterion = weight_criteria.Communicability()
+    #     elif self.weight_criterion == "flow":
+    #         criterion = weight_criteria.Flow()
+    #     else:
+    #         # Default
+    #         criterion = weight_criteria.DistanceWeightedCommunicability(distance_matrix)
+        
+    #     return fitting.WeightedSweepParameters(
+    #         alpha=[self.alpha],
+    #         optimisation_criterion=[criterion]
+    #     )
+    
+    # def create_evaluation_criteria(self, distance_matrix: torch.Tensor) -> Any:
+    #     """Create evaluation criteria from config."""
+    #     criteria = []
+        
+    #     for metric in self.evaluation_metrics:
+    #         if metric == "degree_ks":
+    #             criteria.append(evaluation.DegreeKS())
+    #         elif metric == "clustering_ks":
+    #             criteria.append(evaluation.ClusteringKS())
+    #         elif metric == "betweenness_ks":
+    #             criteria.append(evaluation.BetweennessKS())
+    #         elif metric == "edge_length_ks":
+    #             criteria.append(evaluation.EdgeLengthKS(distance_matrix))
+    #         elif metric == "degree_js":
+    #             criteria.append(evaluation.DegreeJS())
+    #         elif metric == "clustering_js":
+    #             criteria.append(evaluation.ClusteringJS())
+    #         elif metric == "betweenness_js":
+    #             criteria.append(evaluation.BetweennessJS())
+    #         elif metric == "edge_length_js":
+    #             criteria.append(evaluation.EdgeLengthJS(distance_matrix))
+    #         elif metric == "frobenius":
+    #             criteria.append(evaluation.Frobenius())
+        
+    #     # Combine criteria
+    #     if len(criteria) > 1:
+    #         return evaluation.MaxCriteria(criteria)
+    #     elif len(criteria) == 1:
+    #         return criteria[0]
+    #     else:
+    #         # Default
+    #         return evaluation.MaxCriteria([
+    #             evaluation.DegreeKS(),
+    #             evaluation.ClusteringKS(),
+    #             evaluation.EdgeLengthKS(distance_matrix)
+    #         ])
+
+
+
+def create_weighted_sweep_parameters(config, 
+                                     distance_matrix: torch.Tensor) -> fitting.WeightedSweepParameters:
         """Create GNM WeightedSweepParameters from config."""
         # Get weight criterion
-        if self.weight_criterion == "distance_weighted_communicability":
+        if config['gnm']['weight_criterion'] == "distance_weighted_communicability":
             criterion = weight_criteria.DistanceWeightedCommunicability(distance_matrix)
-        elif self.weight_criterion == "communicability":
+        elif config['gnm']['weight_criterion'] == "communicability":
             criterion = weight_criteria.Communicability()
-        elif self.weight_criterion == "flow":
+        elif config['gnm']['weight_criterion'] == "flow":
             criterion = weight_criteria.Flow()
         else:
             # Default
             criterion = weight_criteria.DistanceWeightedCommunicability(distance_matrix)
         
         return fitting.WeightedSweepParameters(
-            alpha=[self.alpha],
+            alpha=[config['gnm']['alpha']],
             optimisation_criterion=[criterion]
         )
-    
-    def create_evaluation_criteria(self, distance_matrix: torch.Tensor) -> Any:
-        """Create evaluation criteria from config."""
-        criteria = []
-        
-        for metric in self.evaluation_metrics:
-            if metric == "degree_ks":
-                criteria.append(evaluation.DegreeKS())
-            elif metric == "clustering_ks":
-                criteria.append(evaluation.ClusteringKS())
-            elif metric == "betweenness_ks":
-                criteria.append(evaluation.BetweennessKS())
-            elif metric == "edge_length_ks":
-                criteria.append(evaluation.EdgeLengthKS(distance_matrix))
-            elif metric == "degree_js":
-                criteria.append(evaluation.DegreeJS())
-            elif metric == "clustering_js":
-                criteria.append(evaluation.ClusteringJS())
-            elif metric == "betweenness_js":
-                criteria.append(evaluation.BetweennessJS())
-            elif metric == "edge_length_js":
-                criteria.append(evaluation.EdgeLengthJS(distance_matrix))
-            elif metric == "frobenius":
-                criteria.append(evaluation.Frobenius())
-        
-        # Combine criteria
-        if len(criteria) > 1:
-            return evaluation.MaxCriteria(criteria)
-        elif len(criteria) == 1:
-            return criteria[0]
-        else:
-            # Default
-            return evaluation.MaxCriteria([
-                evaluation.DegreeKS(),
-                evaluation.ClusteringKS(),
-                evaluation.EdgeLengthKS(distance_matrix)
-            ])
 
+
+
+def create_evaluation_criteria(config, 
+                               distance_matrix: torch.Tensor) -> Any:
+    """Create evaluation criteria from config."""
+    criteria = []
+    
+    for metric in config['gnm']['evaluation_metrics']: # self.evaluation_metrics:
+        if metric == "degree_ks":
+            criteria.append(evaluation.DegreeKS())
+        elif metric == "clustering_ks":
+            criteria.append(evaluation.ClusteringKS())
+        elif metric == "betweenness_ks":
+            criteria.append(evaluation.BetweennessKS())
+        elif metric == "edge_length_ks":
+            criteria.append(evaluation.EdgeLengthKS(distance_matrix))
+        elif metric == "degree_js":
+            criteria.append(evaluation.DegreeJS())
+        elif metric == "clustering_js":
+            criteria.append(evaluation.ClusteringJS())
+        elif metric == "betweenness_js":
+            criteria.append(evaluation.BetweennessJS())
+        elif metric == "edge_length_js":
+            criteria.append(evaluation.EdgeLengthJS(distance_matrix))
+        elif metric == "frobenius":
+            criteria.append(evaluation.Frobenius())
+    
+    # Combine criteria
+    if len(criteria) > 1:
+        return evaluation.MaxCriteria(criteria)
+    elif len(criteria) == 1:
+        return criteria[0]
+    else:
+        # Default
+        return evaluation.MaxCriteria([
+            evaluation.DegreeKS(),
+            evaluation.ClusteringKS(),
+            evaluation.EdgeLengthKS(distance_matrix)
+        ])

@@ -19,23 +19,29 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 
 # Import our optimized modules
-from config.manager import ConfigManager
+from config.manager import ConfigManager, create_gnm_random_sweep_config
 from src.GNMs.gnm_network_generator import GNMGenerator
 from src.utils.data_loader import DataLoader
 from src.utils.run_logger import get_logger
 
+from src.config.GNM import create_evaluation_criteria
+
 from src.structural_analysis.graph_measures import analyze_connectomes
 from src.ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
 
+from src.utils.combine_csvs import merge_csv_files
+
 # --- Helper function for interrupt-safe parallel execution ---
 
-def _run_and_save_single_simulation(task_data: dict, 
+def _run_and_save_single_simulation(
+                                    task_data: dict, 
                                     evaluation_criteria, 
                                     # weighted_evaluation_criteria, 
                                     target_network, # can be one or more?  
                                     individual_networks, # needs to be set: a float32 torch Tensor of shape (num_subjects, n_nodes, n_nodes)
+                                    directly_compare_with_empirical_networks: bool, 
                                     elaborate_analysis: bool, 
-                                    save_indiv_network_energies: bool, 
+                                    evaluate_individual_connectomes: bool, 
                                     device_str: str, 
                                     output_dir: Path, temp_dir: str, 
                                     h_params: dict): # esn_params: dict):
@@ -74,20 +80,30 @@ def _run_and_save_single_simulation(task_data: dict,
     
     try:
         
-        individual_networks = torch.tensor(
-                individual_networks, 
-                dtype=torch.float32,
-            )
-        
         # 1. Run the simulation with the newly reconstructed run_config
-        experiment = perform_run(
-            run_config=run_config,
-            binary_evaluations=[evaluation_criteria],
-            real_binary_matrices=individual_networks, 
-            save_model=True,
-            save_run_history=False,
-            device=torch.device(device_str),
-        )
+        if directly_compare_with_empirical_networks: 
+            # if individual networks are given+
+            
+            individual_networks = torch.tensor(
+                    individual_networks, 
+                    dtype=torch.float32,
+            )
+                        
+            experiment = perform_run(
+                run_config=run_config,
+                binary_evaluations=[evaluation_criteria],
+                real_binary_matrices=individual_networks, 
+                save_model=True,
+                save_run_history=False,
+                device=torch.device(device_str),
+            )
+        else: 
+            experiment = perform_run(
+                run_config=run_config,
+                save_model=True,
+                save_run_history=False,
+                device=torch.device(device_str),
+            )
 
         # 2. Prepare the data record for this iteration
         params = experiment.run_config.binary_parameters
@@ -100,26 +116,26 @@ def _run_and_save_single_simulation(task_data: dict,
             "num_iterations": int(params.num_iterations),
         })
 
-        if save_indiv_network_energies: 
+        if evaluate_individual_connectomes: 
             indiv_networks_record.update({
                 "eta": float(params.eta), 
                 "gamma": float(params.gamma),
             })
 
-        for energy_metric_name in list(experiment.evaluation_results.binary_evaluations.keys()):
-            
-            # @Claude: Here!!!! Analze energy compared to mean connectome. # TODO: maybe add all of them individually to a csv... 
-            energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()  # TODO: Include all names # check if these values make sense 
-            flat_record.update({energy_metric_name: energy_value_mean})
+        if directly_compare_with_empirical_networks: 
+            for energy_metric_name in list(experiment.evaluation_results.binary_evaluations.keys()):
+                 
+                energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()  # TODO: Include all names # check if these values make sense 
+                flat_record.update({energy_metric_name: energy_value_mean})
 
-            # HERE: ADD evaluation results of the individual networks
-            if save_indiv_network_energies: # TODO: Figure out if this is efficient
-                indiv_energy_values = experiment.evaluation_results.binary_evaluations[energy_metric_name].numpy().flatten()
-                for i in range(individual_networks.shape[0]):
-                    indiv_networks_record.update(
-                        {energy_metric_name + "_indiv_" + str(i): indiv_energy_values[i]}
-                    )
-        
+                # HERE: ADD evaluation results of the individual networks
+                if evaluate_individual_connectomes: # TODO: Figure out if this is efficient
+                    indiv_energy_values = experiment.evaluation_results.binary_evaluations[energy_metric_name].numpy().flatten()
+                    for i in range(individual_networks.shape[0]):
+                        indiv_networks_record.update(
+                            {energy_metric_name + "_indiv_" + str(i): indiv_energy_values[i]}
+                        )
+            
         
         
         # individual_network_results = [] # HERE!!! 
@@ -241,18 +257,14 @@ class GNMandESNPipelineOrchestrator:
         self.data_loader = DataLoader(config) 
         # self.esn_evaluator = ESNEvaluator(config, self.data_loader) if self.data_loader else None
         self.gnm_generator = GNMGenerator(device=config["compute"]["device"])
-        self.logger = get_logger(config["paths"]["output_dir"])
+        self.output_dir = config["paths"]["output_experiment_dir"]
+        self.logger = get_logger(self.output_dir) # output_dir"])
     
     
-    def run_gnm_parameter_sweep(self,
-                           target_network: Optional[torch.Tensor] = None,
-                           experiment_name: Optional[str] = None, 
-                           no_wandb: Optional[bool] = False,
-                           random_sample: bool = False,
+    def run_gnm_parameter_sweep(self, config, 
+                           target_network: Optional[torch.Tensor] = None, # TODO: removre all defaults here. 
                            n_random_samples: int = 30, 
-                           elaborate_analysis: Optional[bool] = False, 
-                           average_connectomes: bool = True, # set to false to only evaluate one connectome
-                           **kwargs) -> Dict[str, Any]:
+                           ) -> Dict[str, Any]:
         """
         Run a parameter sweep in parallel with robust, interrupt-safe saving.
         """
@@ -261,41 +273,10 @@ class GNMandESNPipelineOrchestrator:
         print("GNM PARAMETER SWEEP")
         print("=" * 60)
         
-        if not experiment_name:
-            experiment_name = f"gnm_sweep_{time.strftime('%Y%m%d_%H%M%S')}"
-        
-        # --- Data Loading --- # Commented this out to not use the default GNM distance matrices anymore. 
-        # if target_network is None:
-        #     if self.config.data.use_gnm_defaults:
-        #         data = self.config.load_gnm_defaults()
-        #         target_network = data["binary_network"]
-        #         distance_matrix = data["distance_matrix"]
-        #     else: # Should always use this case, actually 
-        #         distance_matrix = torch.tensor(
-        #             self.data_loader.load_distance_matrix(), 
-        #             dtype=torch.float32,
-        #             device=self.device
-        #         )
-        #         binary_connectomes = self.data_loader.load_binary_connectomes()
-        #         first_density = sorted(binary_connectomes.keys())[0]
-        #         target_network = torch.tensor(
-        #             binary_connectomes[first_density][0, :, :], # TODO: So far, we only look at the first network.... 
-        #             dtype=torch.float32,
-        #             device=self.device
-        #         )
-        # else:
-        #     if self.config.data.use_gnm_defaults:
-        #         distance_matrix = self.config.load_gnm_defaults()["distance_matrix"]
-        #     else: # Or alternatively this case 
-        #          distance_matrix = torch.tensor(
-        #             self.data_loader.load_distance_matrix(),
-        #             dtype=torch.float32,
-        #             device=self.device
-        #         )
-                 
+        experiment_name = config['experiment']['name'] 
+        average_connectomes = config['experiment']['average_connectomes'] # set to false to only evaluate one connectome
 
         binary_connectomes = self.data_loader.load_binary_connectomes()
-        # distance_matrix = self.data_loader.load_distance_matrix() 
         distance_matrix = torch.tensor(
                     self.data_loader.load_distance_matrix(),
                     dtype=torch.float32,
@@ -303,102 +284,85 @@ class GNMandESNPipelineOrchestrator:
                 )
         first_density = sorted(binary_connectomes.keys())[0] # TODO: Make this itterable, such that one can do a grid search - or remove this. 
 
-        # Connectome selection: TODO: Figure out if this is the right approach (i.e. if energies are adding distributive)
-        if average_connectomes:
-            # print("Averaging all connectomes for the target network.")
-            empirical_binary_connectomes = binary_connectomes[first_density]
-            
-            # # Average across the first dimension (subjects)
-            # averaged_connectome = np.mean(all_connectomes_for_density, axis=0)
-            # target_network = torch.tensor(
-            #     averaged_connectome,
-            #     dtype=torch.float32,
-            #     device=self.device
-            # )
-            # # create binary version
-            # target_network = torch.where(target_network > 0.5, torch.ones_like(target_network), torch.zeros_like(target_network))
-            
-            
-            ##################################################################
-            
-            
-            # TODO: Currently hardcoded loading of consensus network. Change this! 
-            
-            # target_network_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/00_preprocessed/data_10_consensus/01_weighted_adj_mat_68.csv"
-            # import pandas as pd 
-            # target_network = pd.read_csv(target_network_path, header=None).to_numpy()
-            # target_network = torch.tensor(target_network, dtype=torch.float32)
-            # target_network = torch.where(target_network != 0, torch.ones_like(target_network), torch.zeros_like(target_network))
-            # # Print density
-            # print("Density of the target_network is:", torch.sum(target_network) / (target_network - 1))
-            
-            # Load consensus network with special density # LOADING CONSENSUS (hardcoded)
-            target_network_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/02_calculated_consensus/consensus_68_binarized_density_10_percent.npy"
-            target_network = np.load(target_network_path)
-            target_network = torch.tensor(target_network)
-            print("HARDCODED: Target network is the binary consensus network (68, 10 %).")
-            ##################################################################
-            
-            
-            
-            
-        else:
-            print("Using the first connectome as the target network.")
-            target_network = torch.tensor(
-                binary_connectomes[first_density][0, :, :], 
-                dtype=torch.float32,
-                device=self.device
-            )
+        directly_compare_with_empirical_networks =config['experiment']['directly_compare_with_empirical_networks']
+        if directly_compare_with_empirical_networks: 
+            # Connectome selection: TODO: Figure out if this is the right approach (i.e. if energies are adding distributive)
+            if average_connectomes:
+                
+                consensus_network = binary_connectomes[first_density]
+                target_network = consensus_network
+                
+                #  print("Averaging all connectomes for the target network.")
+                # # Average across the first dimension (subjects)
+                # averaged_connectome = np.mean(all_connectomes_for_density, axis=0)
+                # target_network = torch.tensor(
+                #     averaged_connectome,
+                #     dtype=torch.float32,
+                #     device=self.device
+                # )
+                # # create binary version
+                # target_network = torch.where(target_network > 0.5, torch.ones_like(target_network), torch.zeros_like(target_network))
+                
+                
+                
+            else:
+                print("Using the first connectome as the target network.")
+                target_network = torch.tensor(
+                    binary_connectomes[first_density][0, :, :], 
+                    dtype=torch.float32,
+                    device=self.device
+                )
 
-        num_iterations = int(target_network.sum().item() // 2)
-        num_simulations = 100
+        else: 
+            print("No comparison with empirical networks is performed.")
+            
+        resolution = self.config['data']['connectome_resolution']
+        
+        # Get number itterations where one edge is added
+        if target_network is not None: 
+            num_iterations = int(target_network.sum().item() // 2)
+        else: 
+            num_iterations = resolution**2 * (first_density/100)
+            target_network = np.zeros(shape=(resolution, resolution))
+            
+        # Load the empirical networks, of course! 
+        # if directly_compare_with_empirical_networks: 
+        #     # empirical_binary_connectomes = torch.tensor( # TODO cont_individual_connectomes 
+        # else: 
+        #     empirical_binary_connectomes = np.zeros(shape=(1, resolution, resolution))
+        empirical_binary_connectomes = np.zeros(shape=(1, resolution, resolution)) # TODO: THIS IS OBV WRONG! 
+        
+        # Get number of simulations
+        num_simulations = self.config['gnm']['num_simulations'] # 100 
         
         # Create sweep config 
-        if no_wandb and random_sample:
-            sweep_config = self.config.create_gnm_random_sweep_config(
-                distance_matrix=torch.Tensor(distance_matrix), # distance_matrix
-                num_iterations=num_iterations,
-                num_simulations=num_simulations,
-                method="random",
-                n_random_samples=n_random_samples, 
-                include_weights=True
-            )
-        else:
-            sweep_config = self.config.create_gnm_sweep_config(
-                distance_matrix=torch.Tensor(distance_matrix), # distance_matrix
-                num_iterations=num_iterations,
-                num_simulations=num_simulations, method="grid", 
-                include_weights=True
-            )
+        # if random_sample:
+        sweep_config = create_gnm_random_sweep_config( # add a grid version again? 
+            config=self.config,
+            distance_matrix=torch.Tensor(distance_matrix), 
+            num_iterations=num_iterations,
+            num_simulations=num_simulations,
+            method="random", # TODO: add grid search again.
+            n_random_samples=n_random_samples, 
+            include_weights=True
+        )
         
-        evaluation_criteria = self.config.get_gnm_evaluation_criteria(distance_matrix)
-        
+        evaluation_criteria = create_evaluation_criteria(config=self.config, distance_matrix=distance_matrix)
             
         # IS THIS UNNECESSARY?? H_PARAMS. check which parameters get through until here... 
-        h_params = {"spectral_radius": self.config.esn.spectral_radius,  #### TODO: HAND A BIG HPARAMS DICT TO THIS FUNCTION!! (instead of doing it all one by one...)
-                    "n_lags": self.config.esn.n_lags,
-                    "train_len": self.config.esn.input_length, # seems to have gotten two names... train_len,
-                    "test_len": self.config.esn.test_len,
-                    "n_runs": self.config.esn.n_runs,
-                    "input_scaling": self.config.esn.input_scaling, 
-                    "regression_method": self.config.esn.regularization_method, 
-                    "n_transient": self.config.esn.n_transient,
-                    "leak_rate": self.config.esn.leak_rate, 
-                    "bias": self.config.esn.bias,  
-                    "random_state": self.config.compute.random_seed,     
+        h_params = {"spectral_radius": config['esn']['spectral_radius'], # self.config.esn.spectral_radius,  #### TODO: HAND A BIG HPARAMS DICT TO THIS FUNCTION!! (instead of doing it all one by one...)
+                    "n_lags": config['esn']['n_lags'], # self.config.esn.n_lags,
+                    "train_len": config['esn']['input_lengths'], # self.config.esn.input_length, # seems to have gotten two names... train_len,
+                    "test_len": config['esn']['test_len'], # self.config.esn.test_len,
+                    "n_runs": config['esn']['n_runs'], # self.config.esn.n_runs,
+                    "input_scaling": config['esn']['input_scaling'], # self.config.esn.input_scaling, 
+                    "regression_method": config['esn']['regression_method'], # self.config.esn.regularization_method, 
+                    "n_transient": config['esn']['n_transient'], # self.config.esn.n_transient,
+                    "leak_rate": config['esn']['leak_rate'], # self.config.esn.leak_rate, 
+                    "bias": config['esn']['bias'], # self.config.esn.bias,  
+                    "random_state": config['esn']['random_state'],  # self.config.compute.random_seed,     
         }
-                    
-        # Pack the necessary ESN parameters into a picklable dictionary
-        # esn_params = {
-        #     # 'mc_lags_to_calc': [], # self.config.esn.mc_lags_to_calc,
-        #     'esn_eval_params': 
-        #         # {
-        #         # 'train_len': self.config.esn.input_length,
-        #         # 'n_runs': 5, # prob. self.config.esn.n_runs ? 
-        #         # 'spectral_radius': self.config.esn.spectral_radius, 
-        #         ### add more: 
-        #     }
-        # }
+
           
         # [FIX] Convert the generator to a list *before* the parallel call.
         # This resolves the serialization error by ensuring a simple, picklable list
@@ -406,8 +370,9 @@ class GNMandESNPipelineOrchestrator:
         print("Generating sweep configurations...")
         sweep_config_list = list(sweep_config)
         print(f"{len(sweep_config_list)} configurations generated.")
-          
-        temp_results_dir = self.config.paths.current_projects_output_dir / f"{experiment_name}_temp"
+        
+        # experiment_dir = self.config['paths']['output_gnm_dir'] / self.config['experiment']['name']
+        temp_results_dir = self.output_dir / f"{self.config['experiment']['name']}_temp_{time.strftime("%Y%m%d_%H%M%S")}" # Ugly HACK
         os.makedirs(temp_results_dir, exist_ok=True)
         
         print("Generating and deconstructing sweep configurations for parallel processing...")
@@ -430,23 +395,21 @@ class GNMandESNPipelineOrchestrator:
             }
             deconstructed_tasks.append(task)
 
-        try:
-            
-            save_indiv_network_energies = True # TODO: REPLACE WITH FLAG! 
-            
+        try: 
             # Set number of workers (default: -1 for maximum parallel execution)
-            n_jobs = self.data_loader.config.compute.n_workers if self.data_loader.config.compute.n_workers else -1
-            Parallel(n_jobs=n_jobs)( # TODO: REPLACE WITH NUMBER_JOBS!
+            n_jobs = self.config['compute']['n_workers'] 
+            Parallel(n_jobs=n_jobs)( 
                 delayed(_run_and_save_single_simulation)(
                     task_data=task_data, # Pass the deconstructed dictionary
                     evaluation_criteria=evaluation_criteria,
                     # weighted_evaluation_criteria=weighted_criteria, # TODO: STOP HARDCODING THIS (SEE ABOVE)
                     target_network=target_network,
+                    directly_compare_with_empirical_networks=config['experiment']['directly_compare_with_empirical_networks'], 
                     individual_networks=empirical_binary_connectomes, 
-                    elaborate_analysis=elaborate_analysis,
-                    save_indiv_network_energies=save_indiv_network_energies, 
-                    device_str=self.config.compute.device,
-                    output_dir=self.config.paths.current_projects_output_dir,
+                    elaborate_analysis=config['experiment']['elaborate_analysis'],
+                    evaluate_individual_connectomes=self.config['experiment']['evaluate_individual_connectomes'], 
+                    device_str=self.config['compute']['device'], #self.config.compute.device,
+                    output_dir=self.output_dir, 
                     temp_dir=temp_results_dir,
                     h_params=h_params
                 )
@@ -456,128 +419,33 @@ class GNMandESNPipelineOrchestrator:
         except (KeyboardInterrupt, Exception) as e:
             print(f"\n--- Process interrupted or failed: {e} ---")
 
-        finally:
-            print("\nCombining results...")
+        # finally:
+        #     print("\nCombining results...")
             
-            print(f"\nCombining CSVs for experiment: '{experiment_name}'...")
+        #     print(f"\nCombining CSVs for experiment: '{experiment_name}'...")
 
-            # 1. Combine the 'result_....csv' files
-            try: 
-                _combine_csvs_by_pattern(
-                    search_dir=temp_results_dir,
-                    file_pattern="result_*.csv",
-                    output_name=f"all_metrics_for_exp_{experiment_name}.csv"
-                )
-            except: 
-                print("No results_*.csv were previously generated.")
+        #     # 1. Combine the 'result_....csv' files
+        #     try: 
+        #         _combine_csvs_by_pattern(
+        #             search_dir=temp_results_dir,
+        #             file_pattern="result_*.csv",
+        #             output_name=f"all_metrics_for_exp_{experiment_name}.csv"
+        #         )
+        #     except: 
+        #         print("No results_*.csv were previously generated.")
 
-            # 2. Combine the 'indiv_connectome...' files
-            try: 
-                # output/gnm/15_individual_connectomes/15_individual_connectomes_20250924_140855/15_individual_connectomes_temp/
-                _combine_csvs_by_pattern(
-                    search_dir=temp_results_dir,
-                    # file_pattern="indiv_connectome_energies_results_*.csv",
-                    file_pattern="indiv_connectome_energies_*.csv",
-                    output_name=f"indiv_energies_for_exp_{experiment_name}.csv"
-                )
-            except: 
-                print("No indiv_connectome_energies_*.csv were previously generated.")
+        #     # 2. Combine the 'indiv_connectome...' files
+        #     try: 
+        #         _combine_csvs_by_pattern(
+        #             search_dir=temp_results_dir,
+        #             file_pattern="indiv_connectome_energies_*.csv",
+        #             output_name=f"indiv_energies_for_exp_{experiment_name}.csv"
+        #         )
+        #     except: 
+        #         print("No indiv_connectome_energies_*.csv were previously generated.")
 
-
-            print("\nCombination complete.")
+        #     print("\nCombination complete. Temporary results:", temp_results_dir)
             
-            # for result_type in ["result", "indiv_energies"]:
-                
-            #     all_result_files = [os.path.join(temp_results_dir, f) for f in os.listdir(temp_results_dir) if f.endswith('.csv')]
-                
-            #     if all_result_files:
-            #         df_list = [pd.read_csv(f) for f in all_result_files]
-            #         full_results_df = pd.concat(df_list, ignore_index=True)
-            #         csv_path = self.config.paths.current_projects_output_dir / f"{experiment_name}_results.csv"
-            #         full_results_df.to_csv(csv_path, index=False)
-                    
-            #         #  --- 4. (Optional) Clean up temporary files ---
-            #         for f in all_result_files:
-            #             os.remove(f)
-            #         os.rmdir(temp_results_dir)
-                    
-            #         print(f"Sweep finished. {len(full_results_df)} results saved to: {csv_path}")
-            #     else:
-            #         print("No results were generated.")
-            print(temp_results_dir)
+        merge_csv_files(self.output_dir)
+
             
-            # Delete all files from temp dir         
-            for filename in os.listdir(temp_results_dir): # List all files in the directory
-                file_path = os.path.join(temp_results_dir, filename)
-                if os.path.isfile(file_path): # Check if it is a file (not a subdirectory)
-                    os.remove(file_path)  # Remove the file
-                    # print(f"Deleted file: {filename}")
-            # Delete now-empty folder (it needs to be empty to do so)
-            path = Path(temp_results_dir).rmdir()
-            print("Deleted '%s' successfully" % temp_results_dir)
-
-        return {"status": "completed"}
-
-
-def main():
-    """Main entry point with command-line interface."""
-    parser = argparse.ArgumentParser(description="GNM-Optimized Connectome Analysis Pipeline")
-    parser.add_argument("command", choices=["sweep", "esn", "gnm_esn_grid"],
-                   help="Command to run: 'sweep' for GNM parameter sweep, 'esn' for ESN analysis, 'gnm_esn_grid' for grid evaluation.")
-    
-    parser.add_argument("--experiment-name", help="Custom experiment name for the run.")
-    parser.add_argument("--no-wandb", action="store_true", help="Disable weights and biases logging.")
-    
-    # GNM-specific arguments
-    parser.add_argument("--random-sample", action="store_true",
-                    help="Use random sampling for GNM sweep instead of grid search (only if wandb is disabled).")
-    parser.add_argument("--n-random-samples", type=int, default=30,
-                    help="Number of random samples for GNM parameter sweep.")
-    parser.add_argument("--average-connectomes", action="store_true",
-                        help="Use the average of all connectomes as the target network.")
-
-
-    # ESN-specific arguments
-    parser.add_argument("--esn-search-mode", choices=["grid", "random_sample"], default="random_sample",
-                    help="Search mode for ESN hyperparameter sweep.")
-    
-    args = parser.parse_args()
-    
-    config = ConfigManager()
-        
-    orchestrator = GNMandESNPipelineOrchestrator(config)
-    
-    try:
-        if args.command == "sweep":
-            orchestrator.run_gnm_parameter_sweep(
-                experiment_name=args.experiment_name, 
-                no_wandb=args.no_wandb,
-                random_sample=args.random_sample,
-                n_random_samples=args.n_random_samples, 
-                average_connectomes=args.average_connectomes, 
-            )
-        # elif args.command == "esn":
-        #     orchestrator.run_esn_only_analysis(
-        #         experiment_name=args.experiment_name,
-        #         search_mode=args.esn_search_mode
-        #     )
-        # elif args.command == "gnm_esn_grid": 
-        #     orchestrator.run_gnm_esn_grid_evaluation(
-        #         experiment_name=args.experiment_name
-        #     )
-        
-        orchestrator.logger.finalize()
-
-    except KeyboardInterrupt:
-        print("\nOperation cancelled by user.")
-        orchestrator.logger.finalize()
-        sys.exit(1)
-    except Exception as e:
-        print(f"\nAN ERROR OCCURRED: {e}")
-        import traceback
-        traceback.print_exc()
-        orchestrator.logger.finalize()
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
