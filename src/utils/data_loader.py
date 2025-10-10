@@ -19,20 +19,18 @@ class DataLoader:
         self.resolution = self.config['data']['connectome_resolution']
        
        
-    def load_distance_matrix(self, 
+    def load_distance_matrix(self, # TODO: Add conenctome_id to config file (during runtime initialization) 
                              connectome_id: int = 0) -> np.ndarray:
         """Load the distance matrix."""
         try:
             dist_matrix = np.load(self.config["paths"]['02_distance_matrices'] / f"distance_matrix_{self.resolution}.npy")
-            
             if self.config["data"]["dataset_name"] == "suarez_MaMI_dataset": 
                 dist_matrix = dist_matrix[connectome_id,:,:] 
             self._validate_distance_matrix(dist_matrix)
-            
-            
             return dist_matrix
         except Exception as e:
             raise RuntimeError(f"Failed to load distance matrix: {e}")
+    
     
     def load_weighted_connectome(self) -> np.ndarray:
         """Load the weighted connectome data."""
@@ -42,6 +40,7 @@ class DataLoader:
             return weighted_conn
         except Exception as e:
             raise RuntimeError(f"Failed to load weighted connectome: {e}")
+    
     
     def load_binary_connectomes(self,
                                 connectome_id: int = 0,
@@ -253,4 +252,3 @@ def get_connectome_stats(connectome: np.ndarray) -> Dict[str, float]:
     }
     
     return stats
-
