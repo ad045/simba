@@ -205,9 +205,8 @@ class GNMandESNPipelineOrchestrator:
         self.logger = get_logger(self.output_dir) # output_dir"])
     
     
-    def run_gnm_parameter_sweep(self, config, 
+    def run_gnm_parameter_sweep(self, # config, 
                            target_network: Optional[torch.Tensor] = None, # TODO: removre all defaults here. 
-                           n_random_samples: int = 30, 
                            ) -> Dict[str, Any]:
         """
         Run a parameter sweep in parallel with robust, interrupt-safe saving.
@@ -217,20 +216,22 @@ class GNMandESNPipelineOrchestrator:
         print("GNM PARAMETER SWEEP")
         print("=" * 60)
         
-        animal_id = config['experiment']['animal'] 
+        animal_id = self.config['experiment']['animal'] 
         
-        experiment_name = config['experiment']['name'] 
-        average_connectomes = config['experiment']['average_connectomes'] # set to false to only evaluate one connectome
+        average_connectomes = self.config['experiment']['average_connectomes'] # set to false to only evaluate one connectome
 
+        # CAN THIS BE REMOVED? 
         binary_connectomes = self.data_loader.load_binary_connectomes(connectome_id=animal_id)
+        
         distance_matrix = torch.tensor(
                     self.data_loader.load_distance_matrix(connectome_id=animal_id),
                     dtype=torch.float32,
                     device=self.device
                 )
+        
         first_density = sorted(binary_connectomes.keys())[0] # TODO: Make this itterable, such that one can do a grid search - or remove this. 
 
-        directly_compare_with_empirical_networks =config['experiment']['directly_compare_with_empirical_networks']
+        directly_compare_with_empirical_networks = self.config['experiment']['directly_compare_with_empirical_networks']
         if directly_compare_with_empirical_networks: 
             # Connectome selection: TODO: Figure out if this is the right approach (i.e. if energies are adding distributive)
             if average_connectomes:
@@ -271,26 +272,25 @@ class GNMandESNPipelineOrchestrator:
             distance_matrix=torch.Tensor(distance_matrix), 
             num_iterations=num_iterations,
             num_simulations=num_simulations,
-            method="random", # TODO: add grid search again.
-            n_random_samples=n_random_samples, 
+            method="random", # TODO: add grid search again. 
             include_weights=True
         )
         
         evaluation_criteria = create_evaluation_criteria(config=self.config, distance_matrix=distance_matrix)
             
-        # IS THIS UNNECESSARY?? H_PARAMS. check which parameters get through until here... 
-        h_params = {"spectral_radius": config['esn']['spectral_radius'], # self.config.esn.spectral_radius,  #### TODO: HAND A BIG HPARAMS DICT TO THIS FUNCTION!! (instead of doing it all one by one...)
-                    "n_lags": config['esn']['n_lags'], # self.config.esn.n_lags,
-                    "train_len": config['esn']['input_lengths'], # self.config.esn.input_length, # seems to have gotten two names... train_len,
-                    "test_len": config['esn']['test_len'], # self.config.esn.test_len,
-                    "n_runs": config['esn']['n_runs'], # self.config.esn.n_runs,
-                    "input_scaling": config['esn']['input_scaling'], # self.config.esn.input_scaling, 
-                    "regression_method": config['esn']['regression_method'], # self.config.esn.regularization_method, 
-                    "n_transient": config['esn']['n_transient'], # self.config.esn.n_transient,
-                    "leak_rate": config['esn']['leak_rate'], # self.config.esn.leak_rate, 
-                    "bias": config['esn']['bias'], # self.config.esn.bias,  
-                    "random_state": config['esn']['random_state'],  # self.config.compute.random_seed,     
-        }
+        # # IS THIS UNNECESSARY?? H_PARAMS. check which parameters get through until here... 
+        # h_params = {"spectral_radius": self.config['esn']['spectral_radius'], # self.config.esn.spectral_radius,  #### TODO: HAND A BIG HPARAMS DICT TO THIS FUNCTION!! (instead of doing it all one by one...)
+        #             "n_lags": self.config['esn']['n_lags'], # self.config.esn.n_lags,
+        #             "train_len": self.config['esn']['input_lengths'], # self.config.esn.input_length, # seems to have gotten two names... train_len,
+        #             "test_len": self.config['esn']['test_len'], # self.config.esn.test_len,
+        #             "n_runs": self.config['esn']['n_runs'], # self.config.esn.n_runs,
+        #             "input_scaling": self.config['esn']['input_scaling'], # self.config.esn.input_scaling, 
+        #             "regression_method": self.config['esn']['regression_method'], # self.config.esn.regularization_method, 
+        #             "n_transient": self.config['esn']['n_transient'], # self.config.esn.n_transient,
+        #             "leak_rate": self.config['esn']['leak_rate'], # self.config.esn.leak_rate, 
+        #             "bias": self.config['esn']['bias'], # self.config.esn.bias,  
+        #             "random_state": self.config['esn']['random_state'],  # self.config.compute.random_seed,     
+        # }
 
           
         # [FIX] Convert the generator to a list *before* the parallel call.
@@ -333,14 +333,27 @@ class GNMandESNPipelineOrchestrator:
                     evaluation_criteria=evaluation_criteria,
                     # weighted_evaluation_criteria=weighted_criteria, # TODO: STOP HARDCODING THIS (SEE ABOVE)
                     target_network=target_network,
-                    directly_compare_with_empirical_networks=config['experiment']['directly_compare_with_empirical_networks'], 
+                    directly_compare_with_empirical_networks=self.config['experiment']['directly_compare_with_empirical_networks'], 
                     individual_networks=empirical_binary_connectomes, 
-                    elaborate_analysis=config['experiment']['elaborate_analysis'],
+                    elaborate_analysis=self.config['experiment']['elaborate_analysis'],
                     evaluate_individual_connectomes=self.config['experiment']['evaluate_individual_connectomes'], 
                     device_str=self.config['compute']['device'], #self.config.compute.device,
                     output_dir=self.output_dir, 
                     temp_dir=temp_results_dir,
-                    h_params=h_params
+                    h_params=self.config["esn"]
+                    # {
+                    #     "spectral_radius": self.config['esn']['spectral_radius'], # self.config.esn.spectral_radius,  #### TODO: HAND A BIG HPARAMS DICT TO THIS FUNCTION!! (instead of doing it all one by one...)
+                    #     "n_lags": self.config['esn']['n_lags'], # self.config.esn.n_lags,
+                    #     "train_len": self.config['esn']['input_lengths'], # self.config.esn.input_length, # seems to have gotten two names... train_len,
+                    #     "test_len": self.config['esn']['test_len'], # self.config.esn.test_len,
+                    #     "n_runs": self.config['esn']['n_runs'], # self.config.esn.n_runs,
+                    #     "input_scaling": self.config['esn']['input_scaling'], # self.config.esn.input_scaling, 
+                    #     "regression_method": self.config['esn']['regression_method'], # self.config.esn.regularization_method, 
+                    #     "n_transient": self.config['esn']['n_transient'], # self.config.esn.n_transient,
+                    #     "leak_rate": self.config['esn']['leak_rate'], # self.config.esn.leak_rate, 
+                    #     "bias": self.config['esn']['bias'], # self.config.esn.bias,  
+                    #     "random_state": self.config['esn']['random_state'],  # self.config.compute.random_seed,     
+                    # }
                 )
                 for task_data in tqdm(deconstructed_tasks, desc="Configuration Iterations")
             )
