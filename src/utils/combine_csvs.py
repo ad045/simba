@@ -67,7 +67,7 @@ def merge_csv_files(base_dir):
     for file in result_files:
         try:
             file.unlink()
-            print(f"Deleted file: {file}")
+            # print(f"Deleted file: {file}")
         except Exception as e:
             print(f"Error deleting {file}: {e}")
     

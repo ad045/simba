@@ -48,32 +48,33 @@ class DataLoader:
         """Load all binary connectomes for specified densities."""
         binary_connectomes = {}
         
-        for density in self.config["data"]["densities"]: 
-            try:
-                resolution = self.config['data']['connectome_resolution']
-                
-                # TODO: Fix this HACK or put it somewhere else? Or good where it is?
-                if self.config["data"]["dataset_name"] == "shafiei_human_consensus_dataset":  
-                    binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/01_consensus_bin_density_{density}_percent_{resolution}.npy"
-                    binary_conn = np.load(binary_conn_path)
+        # for density in self.config["data"]["densities"]: 
+        try:
+            resolution = self.config['data']['connectome_resolution']
+            density = self.config["data"]["density"]
             
-                elif self.config["data"]["dataset_name"] == "suarez_MaMI_dataset": 
-                    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_bin_density_10_percent_100.npy
-                    binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/01_consensus_bin_density_{density}_percent_{resolution}.npy" # 00_connectomes_bin_density_{density}_percent_{resolution}.npy" # 01_consensus_bin_density_{density}_percent_{resolution}.npy"
-                    print("BINARY_CONN: ", binary_conn_path)
-                    binary_conn = np.load(binary_conn_path)[connectome_id,:,:] 
+            # TODO: Fix this HACK or put it somewhere else? Or good where it is?
+            if self.config["data"]["dataset_name"] == "shafiei_human_consensus_dataset":  
+                binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/01_consensus_bin_density_{density}_percent_{resolution}.npy"
+                binary_conn = np.load(binary_conn_path)
+        
+            elif self.config["data"]["dataset_name"] == "suarez_MaMI_dataset": 
+                # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_bin_density_10_percent_100.npy
+                binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/01_consensus_bin_density_{density}_percent_{resolution}.npy" # 00_connectomes_bin_density_{density}_percent_{resolution}.npy" # 01_consensus_bin_density_{density}_percent_{resolution}.npy"
+                print("BINARY_CONN: ", binary_conn_path)
+                binary_conn = np.load(binary_conn_path)[connectome_id,:,:] 
 
-                else: 
-                    print("Experiment name was", self.config["data"]["dataset_name"], "but this is not defined. ")
-                    raise ValueError(f"Unknown dataset: {self.config['data']['dataset_name']}")
-                
-                # binary_conn = np.load(binary_conn_path) 
-                self._validate_connectome(binary_conn, f"binary (density {density}%)")
-                binary_connectomes[density] = binary_conn
-                
-            except Exception as e:
-                warnings.warn(f"Failed to load binary connectome for density {density}%: {e}")
-                continue
+            else: 
+                print("Experiment name was", self.config["data"]["dataset_name"], "but this is not defined. ")
+                raise ValueError(f"Unknown dataset: {self.config['data']['dataset_name']}")
+            
+            # binary_conn = np.load(binary_conn_path) 
+            self._validate_connectome(binary_conn, f"binary (density {density}%)")
+            binary_connectomes[density] = binary_conn
+            
+        except Exception as e:
+            warnings.warn(f"Failed to load binary connectome for density {density}%: {e}")
+            # continue
         
         if not binary_connectomes:
             raise RuntimeError("No binary connectomes could be loaded")

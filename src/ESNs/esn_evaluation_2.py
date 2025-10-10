@@ -19,7 +19,7 @@ from config.manager import ConfigManager
 from src.utils.data_loader import DataLoader
 
 # from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes 
-from src.ESNs.alternative_test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes 
+from ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes 
 from utils.saving_and_finding_files import time_stamp_for_saving
 from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
 from src.ESNs.utils_math import _calculate_branching_ratio

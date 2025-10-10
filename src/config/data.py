@@ -1,9 +1,4 @@
 from dataclasses import dataclass
-from typing import List
-
-
-
-
 
 @dataclass
 class DataConfig:
@@ -12,17 +7,13 @@ class DataConfig:
     def __init__(self,         
                  dataset_name: str, 
                  resolution: int, 
-                 densities: List[int], 
+                 density: int, 
                  use_weighted: bool,
                 ):
     
         self.dataset_name = dataset_name
         self.resolution = resolution
-        self.densities = densities
+        self.density = density 
         self.use_weighted = use_weighted 
                     
                 
-
-
-
-

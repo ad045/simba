@@ -41,7 +41,7 @@ def main():
             config = loader.create_config_manager()
             print("✓ Configuration is valid")
             print(f"  - Data resolution: {config.data.resolution}")
-            print(f"  - Densities: {config.data.densities}")
+            print(f"  - Densities: {config.data.density}")
             if loader.config['experiment']['type'] in ['gnm_sweep', 'gnm_comprehensive']:
                 print(f"  - GNM eta range: {config.gnm.eta_range}")
                 print(f"  - GNM gamma range: {config.gnm.gamma_range}")

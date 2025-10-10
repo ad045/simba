@@ -20,7 +20,7 @@ from gnm import (
 # from gnm.model import BinaryGenerativeParameters
 
 # For the dynamicGNMGenerator
-from src.ESNs.esn_evaluation import ESNEvaluator 
+from ESNs.esn_evaluation_2 import ESNEvaluator 
 
 @dataclass
 class GNMParameters:

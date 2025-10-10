@@ -17,7 +17,7 @@ import os
 # print(sys.path)
 
 # from src.ESNs.esn_evaluation import ESNEvaluator
-from src.ESNs.alternative_test_memory_capacity_weighted import alternative_evaluate_mc
+from ESNs.memory_capacity_weighted import alternative_evaluate_mc
 from config.manager import ConfigManager
 from src.utils.data_loader import DataLoader
 

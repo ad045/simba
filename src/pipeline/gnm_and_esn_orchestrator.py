@@ -3,8 +3,6 @@ Main pipeline fully integrated with GNM library and centralized logging.
 This version is updated for robust, interrupt-safe multiprocessing on macOS.
 """
 
-import argparse
-import sys
 from typing import Optional, Dict, Any
 import time
 import numpy as np
@@ -27,7 +25,7 @@ from src.utils.run_logger import get_logger
 from src.config.GNM import create_evaluation_criteria
 
 from src.structural_analysis.graph_measures import analyze_connectomes
-from src.ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
+from ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
 
 from src.utils.combine_csvs import merge_csv_files
 
@@ -37,7 +35,7 @@ def _run_and_save_single_simulation(
                                     task_data: dict, 
                                     evaluation_criteria, 
                                     # weighted_evaluation_criteria, 
-                                    target_network, # can be one or more?  
+                                    target_network, # can be one or more?  # TODO: What do I do with this instead? 
                                     individual_networks, # needs to be set: a float32 torch Tensor of shape (num_subjects, n_nodes, n_nodes)
                                     directly_compare_with_empirical_networks: bool, 
                                     elaborate_analysis: bool, 
@@ -78,12 +76,10 @@ def _run_and_save_single_simulation(
     flat_record = {}
     indiv_networks_record = {}
     
+    # Perform a run - either while evaluating individual connectomes, or not. 
     try:
-        
-        # 1. Run the simulation with the newly reconstructed run_config
         if directly_compare_with_empirical_networks: 
-            # if individual networks are given+
-            
+            # if individual networks are given
             individual_networks = torch.tensor(
                     individual_networks, 
                     dtype=torch.float32,
@@ -142,7 +138,8 @@ def _run_and_save_single_simulation(
             networks_np = experiment.model.adjacency_matrix.cpu().numpy()
 
             rule_name = params.generative_rule.__class__.__name__
-            filename = f"net_eta{params.eta.item():.3f}_gamma{params.gamma.item():.3f}_rule{rule_name}.npy"
+            # filename = f"net_eta{params.eta.item():.3f}_gamma{params.gamma.item():.3f}_rule{rule_name}.npy"
+            filename = f"net_eta{params.eta.item()}_gamma{params.gamma.item()}_rule{rule_name}.npy"
             save_path = output_dir / "generated_networks" / filename
             save_path.parent.mkdir(parents=True, exist_ok=True)
             np.save(save_path, networks_np)
@@ -235,11 +232,10 @@ class GNMandESNPipelineOrchestrator:
         if directly_compare_with_empirical_networks: 
             # Connectome selection: TODO: Figure out if this is the right approach (i.e. if energies are adding distributive)
             if average_connectomes:
-                
+                print(binary_connectomes)
+                print(first_density)
                 consensus_network = binary_connectomes[first_density]
                 target_network = consensus_network
-                
-            
             else:
                 print("Using the first connectome as the target network.")
                 target_network = torch.tensor(
@@ -272,30 +268,12 @@ class GNMandESNPipelineOrchestrator:
             distance_matrix=torch.Tensor(distance_matrix), 
             num_iterations=num_iterations,
             num_simulations=num_simulations,
-            method="random", # TODO: add grid search again. 
             include_weights=True
         )
         
         evaluation_criteria = create_evaluation_criteria(config=self.config, distance_matrix=distance_matrix)
-            
-        # # IS THIS UNNECESSARY?? H_PARAMS. check which parameters get through until here... 
-        # h_params = {"spectral_radius": self.config['esn']['spectral_radius'], # self.config.esn.spectral_radius,  #### TODO: HAND A BIG HPARAMS DICT TO THIS FUNCTION!! (instead of doing it all one by one...)
-        #             "n_lags": self.config['esn']['n_lags'], # self.config.esn.n_lags,
-        #             "train_len": self.config['esn']['input_lengths'], # self.config.esn.input_length, # seems to have gotten two names... train_len,
-        #             "test_len": self.config['esn']['test_len'], # self.config.esn.test_len,
-        #             "n_runs": self.config['esn']['n_runs'], # self.config.esn.n_runs,
-        #             "input_scaling": self.config['esn']['input_scaling'], # self.config.esn.input_scaling, 
-        #             "regression_method": self.config['esn']['regression_method'], # self.config.esn.regularization_method, 
-        #             "n_transient": self.config['esn']['n_transient'], # self.config.esn.n_transient,
-        #             "leak_rate": self.config['esn']['leak_rate'], # self.config.esn.leak_rate, 
-        #             "bias": self.config['esn']['bias'], # self.config.esn.bias,  
-        #             "random_state": self.config['esn']['random_state'],  # self.config.compute.random_seed,     
-        # }
-
           
-        # [FIX] Convert the generator to a list *before* the parallel call.
-        # This resolves the serialization error by ensuring a simple, picklable list
-        # is passed to the workers, not a complex generator object.
+        # Convert the generator to a list *before* the parallel call
         print("Generating sweep configurations...")
         sweep_config_list = list(sweep_config)
         print(f"{len(sweep_config_list)} configurations generated.")
@@ -331,7 +309,6 @@ class GNMandESNPipelineOrchestrator:
                 delayed(_run_and_save_single_simulation)(
                     task_data=task_data, # Pass the deconstructed dictionary
                     evaluation_criteria=evaluation_criteria,
-                    # weighted_evaluation_criteria=weighted_criteria, # TODO: STOP HARDCODING THIS (SEE ABOVE)
                     target_network=target_network,
                     directly_compare_with_empirical_networks=self.config['experiment']['directly_compare_with_empirical_networks'], 
                     individual_networks=empirical_binary_connectomes, 
@@ -341,19 +318,6 @@ class GNMandESNPipelineOrchestrator:
                     output_dir=self.output_dir, 
                     temp_dir=temp_results_dir,
                     h_params=self.config["esn"]
-                    # {
-                    #     "spectral_radius": self.config['esn']['spectral_radius'], # self.config.esn.spectral_radius,  #### TODO: HAND A BIG HPARAMS DICT TO THIS FUNCTION!! (instead of doing it all one by one...)
-                    #     "n_lags": self.config['esn']['n_lags'], # self.config.esn.n_lags,
-                    #     "train_len": self.config['esn']['input_lengths'], # self.config.esn.input_length, # seems to have gotten two names... train_len,
-                    #     "test_len": self.config['esn']['test_len'], # self.config.esn.test_len,
-                    #     "n_runs": self.config['esn']['n_runs'], # self.config.esn.n_runs,
-                    #     "input_scaling": self.config['esn']['input_scaling'], # self.config.esn.input_scaling, 
-                    #     "regression_method": self.config['esn']['regression_method'], # self.config.esn.regularization_method, 
-                    #     "n_transient": self.config['esn']['n_transient'], # self.config.esn.n_transient,
-                    #     "leak_rate": self.config['esn']['leak_rate'], # self.config.esn.leak_rate, 
-                    #     "bias": self.config['esn']['bias'], # self.config.esn.bias,  
-                    #     "random_state": self.config['esn']['random_state'],  # self.config.compute.random_seed,     
-                    # }
                 )
                 for task_data in tqdm(deconstructed_tasks, desc="Configuration Iterations")
             )
