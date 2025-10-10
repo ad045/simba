@@ -217,7 +217,7 @@ class GNMandESNPipelineOrchestrator:
         print("GNM PARAMETER SWEEP")
         print("=" * 60)
         
-        animal_id = 220 # CHANGE
+        animal_id = config['experiment']['animal'] 
         
         experiment_name = config['experiment']['name'] 
         average_connectomes = config['experiment']['average_connectomes'] # set to false to only evaluate one connectome
@@ -348,33 +348,6 @@ class GNMandESNPipelineOrchestrator:
         except (KeyboardInterrupt, Exception) as e:
             print(f"\n--- Process interrupted or failed: {e} ---")
 
-        # finally:
-        #     print("\nCombining results...")
-            
-        #     print(f"\nCombining CSVs for experiment: '{experiment_name}'...")
-
-        #     # 1. Combine the 'result_....csv' files
-        #     try: 
-        #         _combine_csvs_by_pattern(
-        #             search_dir=temp_results_dir,
-        #             file_pattern="result_*.csv",
-        #             output_name=f"all_metrics_for_exp_{experiment_name}.csv"
-        #         )
-        #     except: 
-        #         print("No results_*.csv were previously generated.")
-
-        #     # 2. Combine the 'indiv_connectome...' files
-        #     try: 
-        #         _combine_csvs_by_pattern(
-        #             search_dir=temp_results_dir,
-        #             file_pattern="indiv_connectome_energies_*.csv",
-        #             output_name=f"indiv_energies_for_exp_{experiment_name}.csv"
-        #         )
-        #     except: 
-        #         print("No indiv_connectome_energies_*.csv were previously generated.")
-
-        #     print("\nCombination complete. Temporary results:", temp_results_dir)
-            
         merge_csv_files(self.output_dir)
 
             

@@ -49,9 +49,15 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/30_shafiei_size_68/all_metrics_for_exp_30_shafiei_size_68.csv"
         
         # size 50 (MaMI)
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_copy/all_metrics_for_exp_30_shafiei_size_68.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_copy/all_metrics_for_exp_30_shafiei_size_68.csv"
+        
+        # 220
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_220/all_metrics_for_exp_30_shafiei_size_68.csv"
+        
+        # 57
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_57/all_metrics_for_exp_30_shafiei_size_68.csv"
     ]       
-    plot_indiv_connectomes = True # False # True #  False # True # False
+    plot_indiv_connectomes = False # True # False # True #  False # True # False
     
     
     ##############
