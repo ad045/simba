@@ -1,5 +1,3 @@
-# CHANGE THE SETUP FUNCTION!! (Is quite unprofessional - it was previously created to allow easy work in notebooks)
-
 """
 Connectome Preprocessing Pipeline.
 
@@ -36,29 +34,22 @@ Notes:
 from __future__ import annotations
 
 import argparse
-import sys
 import json
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Iterable, List, Tuple, Optional
+from typing import Tuple, Optional
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-import bct
-from netneurotools.networks import threshold_network, struct_consensus
-
-# Local imports from your codebase
-# from notebook_setup import setup
-from preprocessing.get_distance_matrix import get_distance_matrix_from_coords, get_distance_matrix_from_fiber_lengths
+from preprocessing.get_distance_matrix import get_distance_matrix_from_coords
 from src.structural_analysis.graph_measures import analyze_connectomes
 
 from src.preprocessing.preprocessing_setup import setup
 from preprocessing.threshold_to_density import threshold_to_density
 
 
-from src.preprocessing.utils import setup_paths, ensure_dir, save_numpy, save_dataframe # TODO: Remove this again, not needed. 
+from src.preprocessing.utils import setup_paths, save_dataframe # TODO: Remove this again, not needed. 
 # ----------------------------
 # Config & argument parsing
 # ----------------------------
@@ -103,51 +94,6 @@ def parse_args() -> PipelineConfig:
     )
 
 
-# ----------------------------
-# Pipeline steps
-# ----------------------------
-
-
-
-# def step_load_individual_connectomes(paths: dict, resolution: int = 68) -> Tuple[np.ndarray, int, int]:
-#     sc_mat_path = paths["INPUT_DATA_PATH"] / f"data_700mb_individual_connectomes/SC_{resolution}.mat"
-#     all_connectomes, nsub, n = get_individual_connectomes(
-#         raw_data_path=sc_mat_path,
-#         output_path=paths["PREPROCESSED_PATH"],
-#     )
-#     return all_connectomes, nsub, n
-
-
-# def step_threshold_connectomes(
-#     all_connectomes: np.ndarray,
-#     n: int,
-#     goal_densities: Iterable[int],
-#     save_dir: Path,
-# ) -> None:
-#     goal_densities = list(goal_densities)
-#     for gd in goal_densities:
-#         connectomes_binarized = np.array([
-#             threshold_network(all_connectomes[i], retain=gd)
-#             for i in range(len(all_connectomes))
-#         ])
-#         connectome_densities = np.array([
-#             bct.density_und(connectomes_binarized[i])[0]
-#             for i in range(len(connectomes_binarized))
-#         ])
-#         print(
-#             f"Average density over {len(connectomes_binarized)} subjects: "
-#             f"{np.mean(connectome_densities)*100:.3f}% (goal {gd}%)."
-#         )
-#         save_numpy(
-#             save_dir / f"connectomes_binarized_{n}x{n}_density_{gd}_percent.npy",
-#             connectomes_binarized,
-#         )
-
-#     # Save weighted set once
-#     save_numpy(save_dir / f"connectomes_weighted_{n}.npy", all_connectomes)
-
-
-
 def step_load_identifiers(paths: dict, resolution: int) -> Tuple[pd.DataFrame, np.ndarray]:
     id_path = paths["path_00_preprocessed"] / f"05_roi_names_rsn_name_hemisphere_{resolution}.csv"
     df_identifiers = pd.read_csv(
@@ -162,73 +108,6 @@ def step_load_identifiers(paths: dict, resolution: int) -> Tuple[pd.DataFrame, n
 
     save_dataframe(paths["path_04_further_info"] / f"df_identifiers_{resolution}.csv", df_identifiers)
     return df_identifiers, hemi_id
-
-
-# def step_consensus_connectomes(
-#     paths: dict,
-#     connectomes_binarized: np.ndarray,
-#     all_connectomes: np.ndarray,
-#     dist_mat: np.ndarray,
-#     hemi_id: np.ndarray,
-#     n: int,
-#     analyze_density: int,
-# ) -> Tuple[np.ndarray, np.ndarray, float, float]:
-#     # Shapes expected by struct_consensus: nodes x nodes x subjects
-#     # Our arrays are subjects x nodes x nodes, so we transpose with .T
-#     consensus_conn_bin = struct_consensus(
-#         connectomes_binarized.T, distance=dist_mat, hemiid=hemi_id.reshape(-1, 1)
-#     )
-#     consensus_density_bin = bct.density_und(consensus_conn_bin)[0]
-
-#     consensus_conn_all = struct_consensus(
-#         all_connectomes.T, distance=dist_mat, hemiid=hemi_id.reshape(-1, 1)
-#     )
-#     consensus_density_all = bct.density_und(consensus_conn_all)[0]
-
-#     print(f"Consensus (binarized @ {analyze_density}%): {consensus_density_bin*100:.2f}%")
-#     print(f"Consensus (weighted): {consensus_density_all*100:.2f}%")
-
-#     save_numpy(
-#         paths["PREPROCESSED_PATH"]
-#         / f"consensus_connectome_bin_{n}x{n}_density_{analyze_density}_percent.npy",
-#         consensus_conn_bin,
-#     )
-#     save_numpy(paths["PREPROCESSED_PATH"] / f"consensus_connectome_all_{n}x{n}.npy", consensus_conn_all)
-
-#     return consensus_conn_bin, consensus_conn_all, consensus_density_bin, consensus_density_all
-
-
-# def step_plot_consensus(
-#     paths: dict,
-#     conn: Optional[np.ndarray],
-#     dist: Optional[np.ndarray],
-#     analyze_density: int,
-# ) -> None:
-#     fig = plt.figure(figsize=(12, 6))
-
-#     if conn: 
-#         ax1 = fig.add_subplot(1, 2, 1)
-#         im1 = ax1.imshow(conn, cmap="Blues")
-#         fig.colorbar(im1, ax=ax1)
-#         ax1.set(xlabel="Region Index", ylabel="Region Index",
-#                 title=f"Consensus (Binarized at {analyze_density}%)\nDensity: {density_bin*100:.2f}%")
-
-#     if dist: 
-#         ax2 = fig.add_subplot(1, 2, 2)
-#         im2 = ax2.imshow(dist, cmap="Blues")
-#         fig.colorbar(im2, ax=ax2)
-#         ax2.set(xlabel="Region Index", ylabel="Region Index",
-#                 title=f"Consensus (Weighted)\nDensity: {density_all*100:.2f}%")
-
-#     fig.suptitle(
-#         "Consensus differs if binarization is performed before consensus (density differs, too)",
-#         fontsize=12,
-#     )
-
-#     outpng = paths["OUTPUT_PATH"] / f"consensus_connectomes_compare_density_{analyze_density}.png"
-#     fig.tight_layout()
-#     fig.savefig(outpng) 
-#     print(f"Saved plot: {outpng}")
 
 
 # ----------------------------
@@ -252,46 +131,8 @@ def main(resolution = None):
         plot=cfg.do_plots,
     )
     
-    # plt.imshow(dist_mat)
-    # plt.show()
-    
-    # dist_mat = get_distance_matrix_from_fiber_lengths(
-    #     paths=paths, 
-    #     resolution=resolution,
-    #     plot=cfg.do_plots,
-    # )
-        
-    # plt.imshow(dist_mat)
-    # plt.show()
-
-
-
-
-    # Individual connectomes
-    # all_connectomes, nsub, n = step_load_individual_connectomes(paths, resolution=cfg.resolution)
-
-    # Threshold (binarize) at specified goal densities (hyperparameters)
-    # step_threshold_connectomes(
-    #     all_connectomes=all_connectomes,
-    #     n=n,
-    #     goal_densities=cfg.goal_densities,
-    #     save_dir=paths["PREPROCESSED_PATH"],
-    # )
-
     # Identifiers & hemisphere id
     df_identifiers, hemi_id = step_load_identifiers(paths, resolution=cfg.resolution)
-
-    # Consensus connectomes (binarized @ analyze_density and weighted)
-    # consensus_bin, consensus_all, d_bin, d_all = step_consensus_connectomes(
-    #     paths=paths,
-    #     connectomes_binarized=connectomes_binarized,
-    #     all_connectomes=all_connectomes,
-    #     dist_mat=dist_mat,
-    #     hemi_id=hemi_id,
-    #     n=n,
-    #     analyze_density=cfg.analyze_density,
-    # )
-    
     
     conns = np.loadtxt(paths["path_00_preprocessed"] / f"01_weighted_adj_mat_{resolution}.csv", 
 				delimiter=",", dtype=np.float64) # here only one
@@ -337,24 +178,11 @@ def main(resolution = None):
         analysis_path,
         df_graph_measures,
     )
-
-
-
-    # if cfg.do_plots:
-    #     step_plot_consensus(
-    #         paths=paths,
-    #         consensus_conn_bin=None, # consensus_bin,
-    #         consensus_conn_wei=consensus_weighted, # consensus_all,
-    #         density_bin=None, # d_bin,
-    #         density_all=None, # d_all,
-    #         analyze_density=cfg.analyze_density,
-    #     )
-
+    
     # Print summary to console
     print("\nPipeline completed successfully. Summary:")
     summary = {
         "resolution": cfg.resolution,
-        # "goal_densities": cfg.goal_densities,
         "analyze_density": cfg.analyze_density,
         "plots": cfg.do_plots,
         "paths": {k: str(v) for k, v in paths.items()},
@@ -370,16 +198,9 @@ def main(resolution = None):
     print(f"Analysis CSV saved to: {analysis_path}")
 
 
-
-
 if __name__ == "__main__":
-    # try:
     main(resolution=68)
     main(resolution=114)
     main(resolution=219)
     main(resolution=448)
     main(resolution=1000)
-        
-    # except Exception as e:
-    #     print(f"\n[ERROR] {type(e).__name__}: {e}", file=sys.stderr)
-    #     sys.exit(1)

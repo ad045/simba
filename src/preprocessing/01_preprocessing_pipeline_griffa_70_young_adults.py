@@ -10,7 +10,6 @@ import pandas as pd
 import json
 
 from preprocessing.threshold_to_density import threshold_to_density
-from preprocessing.get_distance_matrix import get_distance_matrix_from_coords, get_distance_matrix_from_fiber_lengths
 from preprocessing.preprocessing_setup import setup
 
 from netneurotools.networks import struct_consensus
@@ -18,7 +17,7 @@ from preprocessing.threshold_to_density import threshold_to_density
 
 from src.structural_analysis.graph_measures import analyze_connectomes
 
-from src.preprocessing.utils import setup_paths, ensure_dir, save_numpy, save_dataframe
+from src.preprocessing.utils import setup_paths, save_dataframe
 
 
 def _load_mat_connectomes(mat_path: Path) -> Tuple[np.ndarray, int, int, int]:
@@ -256,13 +255,8 @@ def main(resolution=None) -> None:
 
 
 if __name__ == "__main__":
-
-    # Possibility to add density here as well
+    # preprocessing of shafiei must have been run first, as this script steals the distance matrix from there... 
     main(resolution=68) 
-    # main(analyze_density=12)
-    # main(analyze_density=14)
-    # main(analyze_density=16)
-    # main(analyze_density=18)
-    # main(analyze_density=20)
+
 
 
