@@ -1,13 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
 from scipy.stats import pearsonr
 import echoes
-
-# Assuming these imports are available in your project structure
-from config.manager import ConfigManager
-from src.utils.data_loader import DataLoader
 
 def create_test_matrices(n_nodes: int = 50) -> dict:
     """
@@ -148,8 +143,6 @@ def plot_mc_curves():
             results[name] = np.zeros(n_lags) # Assign zero array on error
 
     # Plotting the results
-    # plt.style.use('seaborn-v0_8-whitegrid')
-    print("-------")
     plt.figure(figsize=(12, 8))
     
     for name, r2_scores in results.items():
@@ -159,8 +152,6 @@ def plot_mc_curves():
     plt.xlabel("Lag Duration (k)", fontsize=12)
     plt.ylabel("Squared Pearson Correlation (R²)", fontsize=12)
     plt.legend(title="Matrix Type", fontsize=10)
-    # plt.ylim(0, 1) # R^2 is always between 0 and 1
-    # plt.xlim(1, n_lags)
     plt.tight_layout()
     
     output_folder = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/testing") 

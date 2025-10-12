@@ -1,25 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
 
-
-import sys
-import os
-
-# Get the absolute path of the script's directory
-# script_dir = os.path.dirname(os.path.abspath(__file__))
-# # Get the path of the parent directory (the project root)
-# project_root = os.path.dirname(script_dir)
-# # Add the project root to the Python path
-# sys.path.insert(0, project_root)
-# sys.path.insert(0, project_root + "/GenerativeNetworkModels/src/gnm")
-# print(sys.path)
-
-# from src.ESNs.esn_evaluation import ESNEvaluator
 from ESNs.memory_capacity_weighted import alternative_evaluate_mc
-from config.manager import ConfigManager
-from src.utils.data_loader import DataLoader
 
 
 def create_test_matrices(n_nodes: int = 50) -> dict:
@@ -68,15 +51,6 @@ def run_mc_tests():
     """
     Runs MC evaluation on the test matrices and prints the results.
     """
-    # 1. Setup a minimal configuration for the evaluator
-    # We create a temporary config to avoid loading from a file.
-    # You may need to adjust these paths if your project structure is different.
-    # base_dir = Path(__file__).parent.parent 
-    config = ConfigManager(
-        # base_dir=str(base_dir),
-        # data_dir=str(base_dir / "data"),
-        # results_dir=str(base_dir / "results")
-    )
 
     # You can customize ESN hyperparameters here for the test
     hparams = {
@@ -93,11 +67,6 @@ def run_mc_tests():
         "random_state": 42, 
     }
 
-    # 2. Create the evaluator
-    # The DataLoader is needed but we won't use it to load data here.
-    # data_loader = DataLoader(config)
-    # evaluator = ESNEvaluator(config, data_loader)
-
     # 3. Generate test matrices
     test_matrices = create_test_matrices()
 
@@ -112,9 +81,6 @@ def run_mc_tests():
                 W=matrix,
                 h_params=hparams,
             )
-            # mc_mean = result.get('mc_mean', 'N/A')
-            # mc_std = result.get('mc_std', 'N/A')
-            # results[name] = mc_mean
             print(f"MC Mean: {mc_mean:.4f}")
             results_dir[name] = mc_mean
             # print(f"  MC Std: {mc_std:.4f}")
@@ -145,24 +111,12 @@ def run_mc_tests():
     
     # 5. Visualize results
     plt.figure(figsize=(12, 7))
-    # plt.bar(listresults.keys(), results.values()
     D = results_dir
     # replace all nan values in D with zeros 
     D = {k: v if not np.isnan(v) else 0 for k, v in D.items()}
     plt.bar(range(len(D)), list(D.values()), align='center')
     plt.xticks(range(len(D)), list(D.keys()))
-    # )
-    # import pandas as pd
-    # results_keys = list(results.keys())
-    # results_values = list(results.values())
-    # df_results = pd.DataFrame([results_keys, results_values].T)
-    
-    # print(df_results)
-    # df_results.columns = ["Matrix Type", "Mean Memory Capacity (MC)"]
 
-    # df_results = pd.DataFrame(results) # , index=[0])
-    # sns.barplot(x=list(results.keys()), y=list(results.values()))
-    # sns.barplot(data=df_results, orient="v")
     plt.title("Memory Capacity (MC) for Different Matrix Types")
     plt.xlabel("Matrix Type")
     plt.ylabel("Mean Memory Capacity (MC)")
@@ -172,40 +126,8 @@ def run_mc_tests():
     plt.savefig(output_path / "mc_test_results.png")
     print(f"Results visualization saved to {output_path / "mc_test_results.png"}")
     
-    
     plt.show()
     
-    
-    # print("\n")
-    # print("-------")
-    
-    
-    #  # Plotting the results
-    # plt.style.use('seaborn-v0_8-whitegrid')
-    # plt.figure(figsize=(12, 8))
-    
-    # n_lags = len(mc_array)
-    
-    # for name, r2_scores in zip(test_matrices.keys(), mc_array):
-    #     print(f"--- Testing: {name} ---")
-    #     plt.plot(range(1, n_lags + 1), r2_scores, marker='o', linestyle='-', markersize=4, label=name)
-
-    # plt.title("Memory Capacity (R²) vs. Lag Duration", fontsize=16)
-    # plt.xlabel("Lag Duration (k)", fontsize=12)
-    # plt.ylabel("Squared Pearson Correlation (R²)", fontsize=12)
-    # plt.legend(title="Matrix Type", fontsize=10)
-    # # plt.ylim(0, 1) # R^2 is always between 0 and 1
-    # # plt.xlim(1, n_lags)
-    # plt.tight_layout()
-    
-    # output_path = Path("./mc_curves_comparison.png")
-    # plt.savefig(output_path)
-    # print(f"\nResults visualization saved to {output_path}")
-    # plt.show()
-
-
-    # print("-------")
-    # print("\n")
 
 if __name__ == "__main__":
     run_mc_tests()
