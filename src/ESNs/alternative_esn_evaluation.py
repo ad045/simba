@@ -27,7 +27,6 @@ import pandas as pd
 from config.manager import ConfigManager
 from src.utils.data_loader import DataLoader
 
-# from src.ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes
 from ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome # needs to be here (even if "unused") - otherwise it defaults to row above??
 from utils.saving_and_finding_files import time_stamp_for_saving
 from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
@@ -135,24 +134,7 @@ class ESNEvaluator:
         with warnings.catch_warnings(): # This one fails... 
             warnings.simplefilter("ignore", RuntimeWarning)
             np.seterr(over="ignore", divide="ignore", invalid="ignore")
-            
-            # mc_result_dict = evaluate_memory_capacity_from_connectome(
-            #     connectome=A_obs,  # np float 64
-            #     spectral_radius=esn_hparams["spectral_radius"],
-            #     n_lags=esn_hparams["n_lags"],
-            #     train_len=esn_hparams["input_length"],
-            #     test_len=esn_hparams["test_len"],
-            #     n_runs=esn_hparams["n_runs"],
-            #     input_scaling=esn_hparams["input_scaling"],
-            #     regression_method=esn_hparams["regularization_method"],
-            #     n_transient=esn_hparams["n_transient"],
-            #     leak_rate=esn_hparams["leak_rate"],
-            #     bias=esn_hparams["bias"],
-            #     random_state=random_seed if random_seed is not None else subj_idx, 
-            #     calculate_criticality=hparams.get("calculate_criticality", False),
-            #     calculate_info_dynamics=hparams.get("calculate_info_dynamics", False)
-            # )
-            
+
             mc_score = self._alternative_evaluate_mc(A_obs, n_lags=50, train_len=4000, test_len=1000)
             
             mc_result_dict = {
@@ -184,26 +166,7 @@ class ESNEvaluator:
                 #     info_dyn_results = _calculate_information_dynamics(concatenated_states)
                 # mc_result_dict.update({"info_dyn_results": 0})
 
-            # return mc_result_dict
-
-
-            # mc_result_dict = evaluate_memory_capacity_from_connectome(
-            #     connectome=A_obs,  # np float 64
-            #     spectral_radius=esn_hparams["spectral_radius"],
-            #     n_lags=esn_hparams["n_lags"],
-            #     train_len=esn_hparams["input_length"],
-            #     test_len=esn_hparams["test_len"],
-            #     n_runs=esn_hparams["n_runs"],
-            #     input_scaling=esn_hparams["input_scaling"],
-            #     regression_method=esn_hparams["regularization_method"],
-            #     n_transient=esn_hparams["n_transient"],
-            #     leak_rate=esn_hparams["leak_rate"],
-            #     bias=esn_hparams["bias"],
-            #     random_state=random_seed if random_seed is not None else subj_idx, 
-            #     calculate_criticality=hparams.get("calculate_criticality", False),
-            #     calculate_info_dynamics=hparams.get("calculate_info_dynamics", False)
-            # )
-            
+        
             # Merge all hyperparameters into the result
             returned_hp = mc_result_dict.get("hparams", {})
             mc_result_dict["hparams"] = {**returned_hp, **hparams, **esn_hparams}
