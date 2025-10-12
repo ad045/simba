@@ -8,12 +8,10 @@ This bridges YAML files with the existing config.py structure.
     
 import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional, List
 
 # Import your existing configuration
-from src.config.ESN_and_GNM_config import (
-    ConfigManager, ESNConfig, GNMConfig, DataConfig, 
-    ComputeConfig, PathConfig
+from config.manager import (
+    ConfigManager, PathConfig
 )
 
 class YAMLConfigLoader:
@@ -33,45 +31,37 @@ class YAMLConfigLoader:
     
     def _validate_config(self):
         """Validate that config has required structure."""
-        required_sections = ['experiment', 'data', 'output']
+        required_sections = ['experiment', 'data', 'gnm', 'compute', 'output']
         for section in required_sections:
             if section not in self.config:
                 raise ValueError(f"Missing required section '{section}' in config")
         
         # Validate experiment type
-        if 'type' not in self.config['experiment']:
-            raise ValueError("Missing 'type' in experiment section")
+        if 'experiment_type' not in self.config['experiment']:
+            raise ValueError("Missing 'experiment_type' in experiment section")
         
         valid_types = ['gnm_sweep', 'dynamic_gnm']
+<<<<<<< HEAD
         if self.config['experiment']['type'] not in valid_types:
+=======
+        if self.config['experiment']['experiment_type'] not in valid_types:
+>>>>>>> through_back_to_write_report_quickly
             raise ValueError(f"Invalid experiment type. Must be one of: {valid_types}")
+    
     
     def create_config_manager(self) -> ConfigManager:
         """Create a ConfigManager instance from YAML configuration."""
         
-        # Create component configs
-        esn_cfg = self._create_esn_config()
-        gnm_cfg = self._create_gnm_config()
-        data_cfg = self._create_data_config()
-        compute_cfg = self._create_compute_config()
-        path_cfg = self._create_path_config()
-        
-        # Create and return ConfigManager
-        return ConfigManager(
-            esn_config=esn_cfg,
-            gnm_config=gnm_cfg,
-            data_config=data_cfg,
-            compute_config=compute_cfg,
-            path_config=path_cfg
+        config = self.config
+        path_config = PathConfig(
+            dataset_name=self.config['data']['dataset_name'], 
+            experiment_name=self.config['experiment']['name'], 
         )
-    
-    def _create_esn_config(self) -> ESNConfig:
-        """Create ESNConfig from YAML."""
-        esn_cfg = ESNConfig()
         
-        if 'esn' not in self.config:
-            return esn_cfg
+        # self._create_path_config()
+        config.update(path_config.to_dict())
         
+<<<<<<< HEAD
         yaml_esn = self.config['esn']
         
         # Map YAML fields to ESNConfig fields
@@ -346,3 +336,7 @@ class YAMLConfigLoader:
             regularization_methods=reg_methods,
             densities=densities
         )
+=======
+        return config
+    
+>>>>>>> through_back_to_write_report_quickly

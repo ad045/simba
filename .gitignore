@@ -250,3 +250,6 @@ config*.yaml
 visualizations/
 output/
 *output*
+
+*-workspace
+

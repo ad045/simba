@@ -33,8 +33,25 @@ def main():
     try:
         # Load and validate config
         loader = YAMLConfigLoader(args.config)
+<<<<<<< HEAD
         print(f"✅ Configuration loaded from: {args.config}")
         print(f"✅ Experiment type: {loader.config['experiment']['type']}")
+=======
+        print(f"✓ Configuration loaded from: {args.config}")
+        print(f"✓ Experiment type: {loader.config['experiment']['experiment_type']}")
+        
+        if args.validate_only:
+            # Create config to validate it can be built
+            config = loader.create_config_manager()
+            print("✓ Configuration is valid")
+            print(f"  - Data resolution: {config.data.resolution}")
+            print(f"  - Densities: {config.data.density}")
+            if loader.config['experiment']['type'] in ['gnm_sweep', 'gnm_comprehensive']:
+                print(f"  - GNM eta range: {config.gnm.eta_range}")
+                print(f"  - GNM gamma range: {config.gnm.gamma_range}")
+                print(f"  - Wiring rules: {config.gnm.generative_rules_to_test}")
+            sys.exit(0)
+>>>>>>> through_back_to_write_report_quickly
         
         # Run the experiment
         run_from_yaml(args.config)

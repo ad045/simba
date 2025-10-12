@@ -69,7 +69,7 @@ def plot_landscape_with_points_of_visualized_connectomes(path_to_experiment):
 if __name__ == "__main__":
     
         
-    path_to_experiment = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/23_testing_4_KS_folders") # /all_generated_networks")
+    path_to_experiment = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/26_testing_4_KS_folders_why_so_fast") # /all_generated_networks")
     result_folder = path_to_experiment / "connectome_plots"
     evaluated_combinations_path = result_folder / "evaluated_eta_and_gamma_combinations.csv"
 

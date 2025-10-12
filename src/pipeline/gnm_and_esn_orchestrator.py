@@ -3,19 +3,16 @@ Main pipeline fully integrated with GNM library and centralized logging.
 This version is updated for robust, interrupt-safe multiprocessing on macOS.
 """
 
-import argparse
-import sys
 from typing import Optional, Dict, Any
-import json
 import time
 import numpy as np
 import torch
 import pandas as pd
-from datetime import datetime
 import uuid
 import os
 from pathlib import Path
 
+<<<<<<< HEAD
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
@@ -27,27 +24,54 @@ from src.utils.data_loader import DataLoader
 from src.utils.run_logger import get_logger
 from src.structural_analysis.graph_measures import analyze_connectomes
 from ESNs.esn_evaluation import evaluate_memory_capacity_from_connectome
+=======
+# For parallel processing
+from joblib import Parallel, delayed
+from tqdm import tqdm
+
+# Import our optimized modules
+from config.manager import ConfigManager, create_gnm_random_sweep_config
+from src.GNMs.gnm_network_generator import GNMGenerator
+from src.utils.data_loader import DataLoader
+from src.utils.run_logger import get_logger
+
+from src.config.GNM import create_evaluation_criteria
+
+from src.structural_analysis.graph_measures import analyze_connectomes
+from ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
+
+from src.utils.combine_csvs import merge_csv_files
+>>>>>>> through_back_to_write_report_quickly
 
 # Helper functions
 
-def _run_and_save_single_simulation(task_data: dict, 
+def _run_and_save_single_simulation(
+                                    task_data: dict, 
                                     evaluation_criteria, 
                                     # weighted_evaluation_criteria, 
-                                    target_network, # can be one or more?  
+                                    target_network, # can be one or more?  # TODO: What do I do with this instead? 
                                     individual_networks, # needs to be set: a float32 torch Tensor of shape (num_subjects, n_nodes, n_nodes)
+                                    directly_compare_with_empirical_networks: bool, 
                                     elaborate_analysis: bool, 
-                                    save_indiv_network_energies: bool, 
+                                    evaluate_individual_connectomes: bool, 
                                     device_str: str, 
                                     output_dir: Path, temp_dir: str, 
                                     h_params: dict): # esn_params: dict):
     """
     Worker function that reconstructs objects from simple data before running the simulation.
     """
+<<<<<<< HEAD
     from gnm.fitting import perform_run, RunConfig # , BinaryGenerativeParameters
     from gnm import generative_rules # Important import for reconstruction
     from gnm.model import BinaryGenerativeParameters
     
     
+=======
+    from gnm.fitting import perform_run, RunConfig
+    from gnm import generative_rules 
+    from gnm.model import BinaryGenerativeParameters
+    
+>>>>>>> through_back_to_write_report_quickly
     # --- Reconstruct the RunConfig object from the dictionary ---
     bp_data = task_data['binary_parameters']
     
@@ -73,7 +97,9 @@ def _run_and_save_single_simulation(task_data: dict,
     flat_record = {}
     indiv_networks_record = {}
     
+    # Perform a run - either while evaluating individual connectomes, or not. 
     try:
+<<<<<<< HEAD
         
         individual_networks = torch.tensor(
                 individual_networks, 
@@ -89,6 +115,30 @@ def _run_and_save_single_simulation(task_data: dict,
             save_run_history=False,
             device=torch.device(device_str),
         )
+=======
+        if directly_compare_with_empirical_networks: 
+            # if individual networks are given
+            individual_networks = torch.tensor(
+                    individual_networks, 
+                    dtype=torch.float32,
+            )
+                        
+            experiment = perform_run(
+                run_config=run_config,
+                binary_evaluations=[evaluation_criteria],
+                real_binary_matrices=individual_networks, 
+                save_model=True,
+                save_run_history=False,
+                device=torch.device(device_str),
+            )
+        else: 
+            experiment = perform_run(
+                run_config=run_config,
+                save_model=True,
+                save_run_history=False,
+                device=torch.device(device_str),
+            )
+>>>>>>> through_back_to_write_report_quickly
 
         # 2. Prepare the data record for this iteration
         params = experiment.run_config.binary_parameters
@@ -101,42 +151,25 @@ def _run_and_save_single_simulation(task_data: dict,
             "num_iterations": int(params.num_iterations),
         })
 
-        if save_indiv_network_energies: 
+        if evaluate_individual_connectomes: 
             indiv_networks_record.update({
                 "eta": float(params.eta), 
                 "gamma": float(params.gamma),
             })
 
-        for energy_metric_name in list(experiment.evaluation_results.binary_evaluations.keys()):
+        if directly_compare_with_empirical_networks: 
+            for energy_metric_name in list(experiment.evaluation_results.binary_evaluations.keys()):
+                 
+                energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()  # TODO: Include all names # check if these values make sense 
+                flat_record.update({energy_metric_name: energy_value_mean})
 
-            # energy_metric_name = list(experiment.evaluation_results.binary_evaluations.keys())[0]  # TODO: Include all names
-
-            # Analze energy compared to mean connectome
-            energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()  # TODO: Include all names # check if these values make sense 
-            flat_record.update({energy_metric_name: energy_value_mean})
-
-
-            # HERE: ADD evaluation results of the individual networks
-            if save_indiv_network_energies: # TODO: Figure out if this is efficient
-                indiv_energy_values = experiment.evaluation_results.binary_evaluations[energy_metric_name].numpy().flatten()
-                for i in range(individual_networks.shape[0]):
-                    indiv_networks_record.update(
-                        {energy_metric_name + "_indiv_" + str(i): indiv_energy_values[i]}
-                    )
-        
-        
-        
-        # individual_network_results = [] # HERE!!! 
-        # if individual_networks: # if individual networks were passed, analyze them 
-        #     print("LOL")
-        #     # for i in range(individual_networks.shape[0]):
-        #         # individual_network_results.append(
-        #         #     experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()
-        #         #         connectome=individual_networks[i],
-        #         #         h_params=h_params
-        #         #     )
-        #         # )
-
+                # HERE: ADD evaluation results of the individual networks
+                if evaluate_individual_connectomes: # TODO: Figure out if this is efficient
+                    indiv_energy_values = experiment.evaluation_results.binary_evaluations[energy_metric_name].numpy().flatten()
+                    for i in range(individual_networks.shape[0]):
+                        indiv_networks_record.update(
+                            {energy_metric_name + "_indiv_" + str(i): indiv_energy_values[i]}
+                        )
             
 
         # 3. If elaborate_analysis is true, run detailed analysis
@@ -144,7 +177,8 @@ def _run_and_save_single_simulation(task_data: dict,
             networks_np = experiment.model.adjacency_matrix.cpu().numpy()
 
             rule_name = params.generative_rule.__class__.__name__
-            filename = f"net_eta{params.eta.item():.3f}_gamma{params.gamma.item():.3f}_rule{rule_name}.npy"
+            # filename = f"net_eta{params.eta.item():.3f}_gamma{params.gamma.item():.3f}_rule{rule_name}.npy"
+            filename = f"net_eta{params.eta.item()}_gamma{params.gamma.item()}_rule{rule_name}.npy"
             save_path = output_dir / "generated_networks" / filename
             save_path.parent.mkdir(parents=True, exist_ok=True)
             np.save(save_path, networks_np)
@@ -154,31 +188,11 @@ def _run_and_save_single_simulation(task_data: dict,
             )
             flat_record.update(pd.DataFrame(graph_measures_list).mean().to_dict())
 
-            # try:
-            #     mc_lags_to_calc = esn_params.get('mc_lags_to_calc', [1, 5, 10, 20, 50])
-            #     esn_results = [evaluate_memory_capacity_from_connectome(
-            #         connectome=net, mc_lengths=mc_lags_to_calc, **esn_params.get('esn_eval_params', {})
-            #     ) for net in networks_np] # THIS ONE...
-            #     df_esn = pd.DataFrame(esn_results)
-            #     numeric_cols = [c for c in df_esn.columns if 'mc' in c and 'indiv' not in c]
-            #     # flat_record.update(df_esn[numeric_cols].mean().to_dict())
-            #     flat_record = flat_record | df_esn[numeric_cols].mean().to_dict()
-            # except Exception as e:
-            #     mc_keys = ["mc_mean", "mc_std"] + [f"mc_lag_{l}" for l in mc_lags_to_calc]
-            #     flat_record.update({key: np.nan for key in mc_keys})
-
-
             try:
-                # mc_lags_to_calc = esn_params.get('mc_lags_to_calc', [1, 5, 10, 20, 50])
-                # esn_eval_params = h_params # esn_params.get('esn_eval_params', {})
                 esn_results = [evaluate_memory_capacity_from_connectome(
                     connectome=net, 
-                    # mc_lengths=mc_lags_to_calc, 
                     h_params=h_params
                 ) for net in networks_np]
-                # df_esn = pd.DataFrame(esn_results)
-                # numeric_cols = [c for c in df_esn.columns if 'mc' in c]
-                # flat_record.update(df_esn[numeric_cols].mean().to_dict())
                 
                 # stuff s.t. hparams are not in lower level anymore 
                 df_esn = pd.json_normalize(esn_results[0], sep='_')
@@ -214,33 +228,12 @@ def _run_and_save_single_simulation(task_data: dict,
         pd.DataFrame([indiv_networks_record]).to_csv(result_path, index=False, na_rep="nan") # Added that missing values appear as "nan" for more clarity
 
 
-def _combine_csvs_by_pattern(search_dir, file_pattern, output_name):
-    """Finds, combines, and saves CSVs based on a recursive pattern."""
-    search_path = Path(search_dir) # PosixPath('/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/17_bigger_connectomes_no_individuals_density_10_2/17_bigger_connectomes_no_individuals_density_10_2_20250928_091044/17_bigger_connectomes_no_individuals_density_10_2_temp')
-    # Use rglob to find files in the directory and all subdirectories
-    all_files = list(search_path.rglob(file_pattern))
-
-    if not all_files:
-        print(f"No files found matching pattern: '{file_pattern}'")
-        return
-
-    try:
-        df_list = [pd.read_csv(f) for f in all_files]
-        full_df = pd.concat(df_list, ignore_index=True)
-
-        output_path = search_path.parent / output_name
-        full_df.to_csv(output_path, index=False)
-        print(f"✅ Combined {len(all_files)} files into: {output_path}")
-    except Exception as e:
-        print(f"❌ Error processing pattern '{file_pattern}': {e}")
-
-
-
 class GNMandESNPipelineOrchestrator:
     """Pipeline orchestrator with integrated logging."""
     
     def __init__(self, config: ConfigManager):
         self.config = config
+<<<<<<< HEAD
         self.device = torch.device(config.gnm.device)
         self.data_loader = DataLoader(config) if not config.data.use_gnm_defaults else None
         self.gnm_generator = GNMGenerator(device=self.config.gnm.device)
@@ -261,6 +254,19 @@ class GNMandESNPipelineOrchestrator:
                         #    save_indiv_network_energies: bool = False,
                         #    **kwargs
                         ) -> Dict[str, Any]:
+=======
+        self.device = torch.device(config["compute"]["device"])
+        self.data_loader = DataLoader(config) 
+        # self.esn_evaluator = ESNEvaluator(config, self.data_loader) if self.data_loader else None
+        self.gnm_generator = GNMGenerator(device=config["compute"]["device"])
+        self.output_dir = config["paths"]["output_experiment_dir"]
+        self.logger = get_logger(self.output_dir) # output_dir"])
+    
+    
+    def run_gnm_parameter_sweep(self, # config, 
+                           target_network: Optional[torch.Tensor] = None, # TODO: removre all defaults here. 
+                           ) -> Dict[str, Any]:
+>>>>>>> through_back_to_write_report_quickly
         """
         Run a parameter sweep in parallel with robust, interrupt-safe saving.
         """
@@ -269,45 +275,65 @@ class GNMandESNPipelineOrchestrator:
         print("GNM PARAMETER SWEEP")
         print("=" * 60)
         
+<<<<<<< HEAD
         if not experiment_name:
             experiment_name = f"gnm_sweep_{time.strftime('%Y%m%d_%H%M%S')}"
 
         # Load data (binary connectomes, distance matrix) 
         binary_connectomes = self.data_loader.load_binary_connectomes()
+=======
+        animal_id = self.config['experiment']['animal'] 
+        
+        average_connectomes = self.config['experiment']['average_connectomes'] # set to false to only evaluate one connectome
+
+        # CAN THIS BE REMOVED? 
+        binary_connectomes = self.data_loader.load_binary_connectomes(connectome_id=animal_id)
+        
+>>>>>>> through_back_to_write_report_quickly
         distance_matrix = torch.tensor(
-                    self.data_loader.load_distance_matrix(),
+                    self.data_loader.load_distance_matrix(connectome_id=animal_id),
                     dtype=torch.float32,
                     device=self.device
                 )
+        
         first_density = sorted(binary_connectomes.keys())[0] # TODO: Make this itterable, such that one can do a grid search - or remove this. 
 
-        # Connectome selection: TODO: Figure out if this is the right approach (i.e. if energies are adding distributive)
-        if average_connectomes:
-            print("Averaging all connectomes for the target network.")
-            all_connectomes_for_density = binary_connectomes[first_density]
-            
-            # Average across the first dimension (subjects)
-            averaged_connectome = np.mean(all_connectomes_for_density, axis=0)
-            target_network = torch.tensor(
-                averaged_connectome,
-                dtype=torch.float32,
-                device=self.device
-            )
-            # create binary version
-            target_network = torch.where(target_network > 0.5, torch.ones_like(target_network), torch.zeros_like(target_network))
-            
-        else:
-            print("Using the first connectome as the target network.")
-            target_network = torch.tensor(
-                binary_connectomes[first_density][0, :, :], 
-                dtype=torch.float32,
-                device=self.device
-            )
+        directly_compare_with_empirical_networks = self.config['experiment']['directly_compare_with_empirical_networks']
+        if directly_compare_with_empirical_networks: 
+            # Connectome selection: TODO: Figure out if this is the right approach (i.e. if energies are adding distributive)
+            if average_connectomes:
+                print(binary_connectomes)
+                print(first_density)
+                consensus_network = binary_connectomes[first_density]
+                target_network = consensus_network
+            else:
+                print("Using the first connectome as the target network.")
+                target_network = torch.tensor(
+                    binary_connectomes[first_density][animal_id, :, :], 
+                    dtype=torch.float32,
+                    device=self.device
+                )
 
-        num_iterations = int(target_network.sum().item() // 2)
-        num_simulations = 100
+        else: 
+            print("No comparison with empirical networks is performed.")
+            
+        resolution = self.config['data']['connectome_resolution']
+        
+        # Get number itterations where one edge is added
+        if target_network is not None: 
+            num_iterations = int(target_network.sum().item() // 2)
+        else: 
+            num_iterations = resolution**2 * (first_density/100)
+            target_network = np.zeros(shape=(resolution, resolution))
+            
+        # Load the empirical networks, of course! 
+        empirical_binary_connectomes = np.zeros(shape=(1, resolution, resolution)) # TODO: THIS IS OBV WRONG! 
+        
+        # Get number of simulations
+        num_simulations = self.config['gnm']['num_simulations'] # 100 
         
         # Create sweep config 
+<<<<<<< HEAD
         if no_wandb and random_sample:
             sweep_config = self.config.create_gnm_random_sweep_config(
                 h_params=h_params,
@@ -329,11 +355,25 @@ class GNMandESNPipelineOrchestrator:
             
         # A HACK: Converted the generator to a list BEFORE the parallel call.
         # This resolves the serialization error by ensuring a simple, picklable list is passed to the workers, not a complex generator object.
+=======
+        sweep_config = create_gnm_random_sweep_config( # add a grid version again? 
+            config=self.config,
+            distance_matrix=torch.Tensor(distance_matrix), 
+            num_iterations=num_iterations,
+            num_simulations=num_simulations,
+            include_weights=True
+        )
+        
+        evaluation_criteria = create_evaluation_criteria(config=self.config, distance_matrix=distance_matrix)
+          
+        # Convert the generator to a list *before* the parallel call
+>>>>>>> through_back_to_write_report_quickly
         print("Generating sweep configurations...")
         sweep_config_list = list(sweep_config)
         print(f"{len(sweep_config_list)} configurations generated.")
-          
-        temp_results_dir = self.config.paths.current_projects_output_dir / f"{experiment_name}_temp"
+        
+        # experiment_dir = self.config['paths']['output_gnm_dir'] / self.config['experiment']['name']
+        temp_results_dir = self.output_dir / f"{self.config['experiment']['name']}_temp_{time.strftime("%Y%m%d_%H%M%S")}" # Ugly HACK
         os.makedirs(temp_results_dir, exist_ok=True)
         
         print("Generating and deconstructing sweep configurations for parallel processing...")
@@ -356,24 +396,31 @@ class GNMandESNPipelineOrchestrator:
             }
             deconstructed_tasks.append(task)
 
+<<<<<<< HEAD
         try:
             
             save_indiv_network_energies = h_params["save_indiv_network_energies"]
             
             # Set number of workers (-1 for maximum parallel execution)
             Parallel(n_jobs=self.data_loader.config.compute.n_workers)( 
+=======
+        try: 
+            # Set number of workers (default: -1 for maximum parallel execution)
+            n_jobs = self.config['compute']['n_workers'] 
+            Parallel(n_jobs=n_jobs)( 
+>>>>>>> through_back_to_write_report_quickly
                 delayed(_run_and_save_single_simulation)(
                     task_data=task_data, # Pass the deconstructed dictionary
                     evaluation_criteria=evaluation_criteria,
-                    # weighted_evaluation_criteria=weighted_criteria, # TODO: STOP HARDCODING THIS (SEE ABOVE)
                     target_network=target_network,
-                    individual_networks=all_connectomes_for_density, 
-                    elaborate_analysis=elaborate_analysis,
-                    save_indiv_network_energies=save_indiv_network_energies, 
-                    device_str=self.config.gnm.device,
-                    output_dir=self.config.paths.current_projects_output_dir,
+                    directly_compare_with_empirical_networks=self.config['experiment']['directly_compare_with_empirical_networks'], 
+                    individual_networks=empirical_binary_connectomes, 
+                    elaborate_analysis=self.config['experiment']['elaborate_analysis'],
+                    evaluate_individual_connectomes=self.config['experiment']['evaluate_individual_connectomes'], 
+                    device_str=self.config['compute']['device'], #self.config.compute.device,
+                    output_dir=self.output_dir, 
                     temp_dir=temp_results_dir,
-                    h_params=h_params
+                    h_params=self.config["esn"]
                 )
                 for task_data in tqdm(deconstructed_tasks, desc="Configuration Iterations")
             )
@@ -381,6 +428,7 @@ class GNMandESNPipelineOrchestrator:
         except (KeyboardInterrupt, Exception) as e:
             print(f"\n--- Process interrupted or failed: {e} ---")
 
+<<<<<<< HEAD
         finally:
             print("\nCombining results...")
             
@@ -423,3 +471,8 @@ class GNMandESNPipelineOrchestrator:
             print("Deleted '%s' successfully" % temp_results_dir)
 
         return {"status": "completed"}
+=======
+        merge_csv_files(self.output_dir)
+
+            
+>>>>>>> through_back_to_write_report_quickly

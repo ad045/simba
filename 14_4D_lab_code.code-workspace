@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../GenerativeNetworkModels"
+		},
+		{
+			"path": "../Latex_project"
+		}
+	],
+	"settings": {}
+}

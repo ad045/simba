@@ -1,8 +1,7 @@
 import numpy as np
 import networkx as nx
 from networkx.algorithms import community as nx_comm
-
-# is used in preprocessing pipeline. 
+from bct import density_und
 
 def _largest_component_char_path_length(G):
     """
@@ -166,8 +165,11 @@ def analyze_connectomes(connectomes,
 
         # Calculate metrics 
         # Communicability (chosen mode)
-        avg_comm = _communicability(A_bin, mode=comm_mode, beta=beta, t=t)
-
+        try: 
+            avg_comm = _communicability(A_bin, mode=comm_mode, beta=beta, t=t)
+        except: 
+            avg_comm = np.nan
+        
         # Global efficiency
         glob_eff = nx.global_efficiency(G)
 
@@ -179,7 +181,10 @@ def analyze_connectomes(connectomes,
         avg_clust = nx.average_clustering(G) if G.number_of_nodes() > 0 else np.nan # is if statment ok?
         avg_deg = float(np.mean([d for _, d in G.degree()])) if G.number_of_nodes() > 0 else np.nan # is if statment ok?
         trans = nx.transitivity(G) if G.number_of_nodes() > 0 else np.nan # is if statment ok?
-
+        
+        # Density as calculated by BCT 
+        density_bct = density_und(A)[0] # 0 is density. Entire output would be for example: (0.28138718173836696, 68, 641)
+    
         # Average edge distance
         edge_d = [distance_matrix[i, j] for i, j in G.edges()]
         avg_dist = float(np.mean(edge_d)) if edge_d else np.nan
@@ -205,6 +210,7 @@ def analyze_connectomes(connectomes,
             "modularity": modu,
             "avg_clustering": avg_clust,
             "avg_degree": avg_deg,
+            "density_bct": density_bct, 
             "transitivity": trans,
             "avg_edge_distance": avg_dist,
             "wiring_cost": wiring_cost,

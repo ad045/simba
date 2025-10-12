@@ -47,12 +47,12 @@ def plot_tradeoff(df, pareto_df, required_col_1, required_col_2, save_path):
     fig, ax = plt.subplots(figsize=(10, 7))
 
     # Plot all the generated networks
-    if "MaxCriteria(DegreeKS, ClusteringKS, EdgeLengthKS)" in df.columns:
+    if "MaxCriteria(DegreeKS, ClusteringKS, EdgeLengthKS, BetweennessKS)" in df.columns:
         scatter_ax = ax.scatter(
             df[required_col_1],
             df[required_col_2],
             alpha=0.6,
-            c=df["MaxCriteria(DegreeKS, ClusteringKS, EdgeLengthKS)"], 
+            c=df["MaxCriteria(DegreeKS, ClusteringKS, EdgeLengthKS, BetweennessKS)"], 
             cmap='hot',
             edgecolor='k',
             s=20,
@@ -60,7 +60,7 @@ def plot_tradeoff(df, pareto_df, required_col_1, required_col_2, save_path):
         )
         # ax.set_colorbar(label='Energy')
         # Add the colorbar using the figure object
-        cbar = fig.colorbar(scatter_ax, ax=ax)
+        cbar = fig.colorbar(scatter_ax, ax=ax) # Add again? 
 
         # Optional: Add a label to the colorbar
         cbar.set_label('Energy') 
@@ -75,7 +75,7 @@ def plot_tradeoff(df, pareto_df, required_col_1, required_col_2, save_path):
             s=20,
             label='Generated Networks'
         )
-        plt.colorbar(ax=ax, label='Energy')
+        # plt.colorbar(ax=ax, label='Energy')
 
     # Highlight the optimal networks (Pareto front)
     # ax.plot(
@@ -126,7 +126,8 @@ def main():
     try:
         # Load the dataset
         # Make sure your data file is named 'network_data.csv' and is in the same directory
-        file_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/16_big_sweep_with_individual_connectomes_results.csv"
+        file_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/26_testing_4_KS_folders_why_so_fast/summary_all_metrics_for_exp_26_testing_4_KS_folders_why_so_fast.csv"
+        # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/26_testing_4_KS_folders_why_so_fast.csv"
         data = pd.read_csv(file_path)
         
         # filter entries to only include entries that have energies lower than the average energy

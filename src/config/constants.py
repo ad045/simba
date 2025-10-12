@@ -3,7 +3,8 @@ Configuration constants for the 14_4D_lab project.
 Centralizes magic numbers and commonly used values.
 """
 
-# Default resolution for connectome data
+# Default dataset + resolution for connectome data
+DEFAULT_DATASET_NAME = "shafiei_human_consensus_dataset"
 DEFAULT_RESOLUTION = 68
 
 # Random seed for reproducibility

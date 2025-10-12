@@ -71,3 +71,17 @@ should be somewhere here: /opt/miniconda3/envs/ma_thesis/lib/python3.13/site-pac
         /Users/adrian/Documents/01_projects/14_4D_lab/GenerativeNetworkModels/src/gnm
 
         (and maybe add even more of them) 
+
+
+If there's a weird error like this: 
+"OMP: Error #15: Initializing libomp.dylib, but found libomp.dylib already initialized.
+OMP: Hint This means that multiple copies of the OpenMP runtime have been linked into the program. That is dangerous, since it can degrade performance or cause incorrect results. The best thing to do is to ensure that only a single OpenMP runtime is linked into the process, e.g. by avoiding static linking of the OpenMP runtime in any library. As an unsafe, unsupported, undocumented workaround you can set the environment variable KMP_DUPLICATE_LIB_OK=TRUE to allow the program to continue to execute, but that may cause crashes or silently produce incorrect results. For more information, please see http://openmp.llvm.org/
+scripts/run_gnm_automated_outp_path_creation_2_3_with_indiv_conns_copy.sh: line 46: 46035 Abort trap: 6           python run_experiment.py "$CONFIG_FILE""
+   conda env config vars set KMP_DUPLICATE_LIB_OK=TRUE -n ma_thesis
+   conda activate ma_thesis
+
+
+
+# Tools: 
+
+[] Creating a nice tree: To create a nice tree, use the following command - it will create a tree only containing the directories, and excluding specific folders that contain many files: (ma_thesis) adrian@MagicBook 14_4D_lab_code % tree -d -I 'X_*|output_*|*__pycache__*' . 

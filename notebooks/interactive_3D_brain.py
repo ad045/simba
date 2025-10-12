@@ -11,9 +11,9 @@ from nilearn.surface import load_surf_mesh
 
 # --- User Configuration ---
 # Update these file paths to match your files
-COORDINATES_FILE = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/00_just_converted_for_matlab_and_python/data_10_consensus/04_coordinates_68.csv"
+COORDINATES_FILE = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/00_preprocessed/data_10_consensus/04_coordinates_68.csv"
 CONNECTION_MATRIX_FILE = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed_old/01_first_analysises/connectomes_weighted_68x68.npy"
-ROI_NAMES_FILE = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/00_just_converted_for_matlab_and_python/data_10_consensus/05_roi_names_rsn_name_hemisphere_68.csv"
+ROI_NAMES_FILE = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/00_preprocessed/data_10_consensus/05_roi_names_rsn_name_hemisphere_68.csv"
 
 save_folder = Path(CONNECTION_MATRIX_FILE).parent / "3D_visualizations"
 save_folder.mkdir(parents=True, exist_ok=True)

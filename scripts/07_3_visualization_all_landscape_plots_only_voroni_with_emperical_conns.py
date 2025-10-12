@@ -38,10 +38,26 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2/summary_all_metrics_for_exp_20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2/summary_all_metrics_for_exp_20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/2423_combined/summary_all_metrics_for_exp_2423_combined.csv"
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/2423_24rough_combined/summary_all_metrics_for_exp_2423_24rough_combined.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/2423_24rough_combined/summary_all_metrics_for_exp_2423_24rough_combined.csv"
+        
+        # NEW CONSENSUS! 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/26_testing_4_KS_folders_why_so_fast/summary_all_metrics_for_exp_26_testing_4_KS_folders_why_so_fast.csv"
+        
+        
+        # just testing out the new library. 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/29_connectomes_of_size_50/summary_all_metrics_for_exp_29_connectomes_of_size_50.csv", 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/30_shafiei_size_68/all_metrics_for_exp_30_shafiei_size_68.csv"
+        
+        # size 50 (MaMI)
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_copy/all_metrics_for_exp_30_shafiei_size_68.csv"
+        
+        # 220
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_220/all_metrics_for_exp_30_shafiei_size_68.csv"
+        
+        # 57
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_57/all_metrics_for_exp_30_shafiei_size_68.csv"
     ]       
-    
-    plot_indiv_connectomes = True # False
+    plot_indiv_connectomes = False # True # False # True #  False # True # False
     
     
     ##############
@@ -49,13 +65,15 @@ if __name__ == "__main__":
     
     # The folder where the final figures will be saved.
     # A new subfolder is used to keep these plots separate.
-    save_path = Path(df_paths[0]).parent / "figures_voronoi_only"
+    parent_folder = Path(df_paths[0]).parent
+    save_path = parent_folder / "figures_voronoi_only"
     
     
     # --- 2. Define Metrics to Plot ---
     
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
     metrics_to_plot = [
+        
         "MaxCriteria",
         "avg_communicability", 
         "global_efficiency", 
@@ -72,8 +90,11 @@ if __name__ == "__main__":
         "wiring_cost", 
         "mean_mc_divided_by_wiring_cost",
         "mc_5_divided_by_wiring_cost", 
+        
+        # "avg_clustering_glob_efficiency_minus_energy", 
+        # "avg_clustering_divided_by_global_efficiency", 
     ] + [f"mc_{lag}" for lag in lags_to_plot]
-    
+    plot_combined_lag_plot = False # Plot this comparison plot with different MC lags 
     
     print(f"Starting Voronoi-only visualization process...")
     print(f"Output will be saved to: {save_path}\n")
@@ -92,7 +113,7 @@ if __name__ == "__main__":
         if gnm_results_df.empty:
             raise ValueError("Dataframe is empty after loading.")
 
-        path_to_best_gamma_and_eta_estimations = save_path.parent / "min_energy_results.csv"    # not entirely clean... TODO: Make this clean. 
+        path_to_best_gamma_and_eta_estimations = parent_folder / "min_energy_results.csv"    # not entirely clean... TODO: Make this clean. 
         if os.path.exists(path_to_best_gamma_and_eta_estimations):
             df_best_gamma_and_eta_estimates = pd.read_csv(path_to_best_gamma_and_eta_estimations)
                 
@@ -115,6 +136,40 @@ if __name__ == "__main__":
                         
             if metric == "mc_5_divided_by_wiring_cost": 
                 df["mc_5_divided_by_wiring_cost"] = pd.to_numeric(df["mc_5"], errors='coerce') / pd.to_numeric(df["wiring_cost"], errors='coerce')
+            
+            
+            if metric == "avg_clustering_divided_by_global_efficiency": 
+                # df["avg_clustering_glob_efficiency"] = pd.to_numeric(df["avg_clustering"], errors='coerce') / pd.to_numeric(df["global_efficiency"], errors='coerce') * pd.to_numeric(df["modularity"], errors='coerce')
+                upper_factor = pd.to_numeric(df["avg_clustering"], errors='coerce')
+                # upper_factor = (upper_factor - upper_factor.min()) / (upper_factor.max() - upper_factor.min())
+                
+                lower_factor = pd.to_numeric(df["global_efficiency"], errors='coerce')
+                # lower_factor = (lower_factor - lower_factor.min()) / (lower_factor.max() - lower_factor.min())
+                
+                total = upper_factor * lower_factor * (-1)
+                total = (total - total.min()) / (total.max() - total.min()) 
+                
+                df["avg_clustering_divided_by_global_efficiency"] = total #  (total - energy) 
+            
+            
+            # if metric == "avg_clustering_glob_efficiency_minus_energy": 
+            #     # df["avg_clustering_glob_efficiency"] = pd.to_numeric(df["avg_clustering"], errors='coerce') / pd.to_numeric(df["global_efficiency"], errors='coerce') * pd.to_numeric(df["modularity"], errors='coerce')
+            #     upper_factor = pd.to_numeric(df["avg_clustering"], errors='coerce')
+            #     upper_factor = (upper_factor - upper_factor.min()) / (upper_factor.max() - upper_factor.min())
+                
+            #     lower_factor = pd.to_numeric(df["global_efficiency"], errors='coerce')
+            #     lower_factor = (lower_factor - lower_factor.min()) / (lower_factor.max() - lower_factor.min())
+                
+            #     energy = pd.to_numeric(df["MaxCriteria(DegreeKS, ClusteringKS, EdgeLengthKS, BetweennessKS)"], errors='coerce')
+            #     energy = (energy - energy.min()) / (energy.max() - energy.min())
+                
+            #     total = upper_factor * lower_factor * (-1)
+            #     total = (total - total.min()) / (total.max() - total.min())
+            #     total = (total - energy) 
+                
+            #     df["avg_clustering_glob_efficiency_minus_energy"] = total 
+                
+                
             
             df["eta"] = pd.to_numeric(df["eta"], errors='coerce')
             df["gamma"] = pd.to_numeric(df["gamma"], errors='coerce')
@@ -177,34 +232,35 @@ if __name__ == "__main__":
 
 
     # --- 5. Generate Combined MC Lag Plot ---
-    print("--- Generating combined Voronoi plot for all MC lags ---")
-    try:
-        save_dir = Path(save_path)
-        save_dir.mkdir(parents=True, exist_ok=True)
-        # Define a base name for the save file, the function will add the extension
-        figure_save_name = "voronoi_landscape_mc_lags_grid"
-        full_save_path = save_dir / figure_save_name
+    if plot_combined_lag_plot: 
+        print("--- Generating combined Voronoi plot for all MC lags ---")
+        try:
+            save_dir = Path(save_path)
+            save_dir.mkdir(parents=True, exist_ok=True)
+            # Define a base name for the save file, the function will add the extension
+            figure_save_name = "voronoi_landscape_mc_lags_grid"
+            full_save_path = save_dir / figure_save_name
 
-        mc_cols_exist = any(f"mc_{lag}" in gnm_results_df.columns for lag in lags_to_plot)
+            mc_cols_exist = any(f"mc_{lag}" in gnm_results_df.columns for lag in lags_to_plot)
 
-        if mc_cols_exist:
-            visualizer.plot_mc_lag_landscapes_voronoi(
-                gnm_results_df,
-                lags=lags_to_plot,
-                n_cols=4, # As requested: 4 columns
-                savepath=full_save_path,
-                save_format="pdf"
-            )
-            matplotlib.pyplot.close() # Close the plot after saving to free memory, if generated figure is not used. 
+            if mc_cols_exist:
+                visualizer.plot_mc_lag_landscapes_voronoi(
+                    gnm_results_df,
+                    lags=lags_to_plot,
+                    n_cols=4, # As requested: 4 columns
+                    savepath=full_save_path,
+                    save_format="pdf"
+                )
+                matplotlib.pyplot.close() # Close the plot after saving to free memory, if generated figure is not used. 
 
-            print("Successfully generated combined MC lag plot.\n")
-        else:
-            print("SKIPPING: No 'mc_lag' columns found to generate a combined plot.\n")
+                print("Successfully generated combined MC lag plot.\n")
+            else:
+                print("SKIPPING: No 'mc_lag' columns found to generate a combined plot.\n")
 
-    except Exception as e:
-        print(f"ERROR: An unexpected error occurred while plotting the combined MC lags.")
-        traceback.print_exc()
-        print("\n")
+        except Exception as e:
+            print(f"ERROR: An unexpected error occurred while plotting the combined MC lags.")
+            traceback.print_exc()
+            print("\n")
 
 
     print("--- Visualization process completed. ---")

@@ -22,7 +22,6 @@ def get_latest_file_name_of_data(dir_path, pattern="gnm_grid_results_*.csv"):
 
     # Glob all matching files
     dir_path = Path(dir_path)
-    # files = list(dir_path.glob(pattern))
     files = list(dir_path.rglob(pattern)) # recursive search in subdirectories, such that all files are found
 
     # Parse the timestamp in the filename
