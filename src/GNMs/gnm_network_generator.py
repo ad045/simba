@@ -16,13 +16,10 @@ from gnm import (
     evaluation, 
     weight_criteria
 )
-<<<<<<< HEAD
-=======
 # from gnm.model import BinaryGenerativeParameters
 
 # For the dynamicGNMGenerator
 from ESNs.esn_evaluation_2 import ESNEvaluator 
->>>>>>> through_back_to_write_report_quickly
 
 @dataclass
 class GNMParameters:

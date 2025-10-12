@@ -5,11 +5,8 @@ Handles memory capacity evaluation and hyperparameter optimization.
 
 import echoes
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 import os
-import urllib.request
-import zipfile
 import time
 import warnings
 import multiprocessing as mp
@@ -22,14 +19,9 @@ import pandas as pd
 
 from config.manager import ConfigManager
 from src.utils.data_loader import DataLoader
-<<<<<<< HEAD:src/ESNs/esn_evaluation.py
-from ESNs.test_memory_capacity_weighted import evaluate_memory_capacity_from_connectome # needs to be here (even if "unused") - otherwise it defaults to row above??
-from src.utils.saving_and_finding_files import time_stamp_for_saving
-=======
 
-from ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes 
+# from ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome # this uses echoes 
 from utils.saving_and_finding_files import time_stamp_for_saving
->>>>>>> through_back_to_write_report_quickly:src/ESNs/esn_evaluation_2.py
 from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
 
 
@@ -372,7 +364,6 @@ class ESNEvaluator:
                     mc_result_dict.get("mc_mean"),
                     mc_result_dict.get("mc_std"),
                     mc_result_dict.get("mean_mc_of_individual_runs"),
-                    # mc_result_dict.get("r2_array_from_0_to_n_lags_minus_1"), # TODO: R2 array could be added, but code currently "nearly stops", when added? (TODO_R2_array for searching)
                     hp_from_job,
                 ]
                 self._append_rows_csv([mc_values], mc_columns, mc_values_csv_path)

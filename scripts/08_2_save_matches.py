@@ -68,7 +68,7 @@ if __name__ == "__main__":
     find_and_save_matches(mode="select_generated_conns",
                           file_estimated_eta_and_gamma=file_emp_connectome_estimated_eta_and_gamma, 
                           file_calculated_graph_metrics=file_generated_connectome_calculated_graph_metrics, 
-                          output_file=output_file / "comparison_generated_connectomes_with_eta_and_gamma_and_graph_analysis.csv")
+                          output_file=output_file / "eval_most_similar_gen_conns_with_graph_analysis.csv") # comparison_generated_connectomes_with_eta_and_gamma_and_graph_analysis.csv")
 #     /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/16_big_sweep_with_individual_connectomes_results.csv
 # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/18_sweep_with_individual_connectomes_larger_eta_span/summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv
 # '/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv'

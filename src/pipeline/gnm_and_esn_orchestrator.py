@@ -12,19 +12,6 @@ import uuid
 import os
 from pathlib import Path
 
-<<<<<<< HEAD
-from joblib import Parallel, delayed
-from tqdm import tqdm
-
-from gnm import fitting
-
-from src.config.ESN_and_GNM_config import ConfigManager
-from src.GNMs.gnm_network_generator import GNMGenerator
-from src.utils.data_loader import DataLoader
-from src.utils.run_logger import get_logger
-from src.structural_analysis.graph_measures import analyze_connectomes
-from ESNs.esn_evaluation import evaluate_memory_capacity_from_connectome
-=======
 # For parallel processing
 from joblib import Parallel, delayed
 from tqdm import tqdm
@@ -41,7 +28,6 @@ from src.structural_analysis.graph_measures import analyze_connectomes
 from ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
 
 from src.utils.combine_csvs import merge_csv_files
->>>>>>> through_back_to_write_report_quickly
 
 # Helper functions
 
@@ -60,18 +46,10 @@ def _run_and_save_single_simulation(
     """
     Worker function that reconstructs objects from simple data before running the simulation.
     """
-<<<<<<< HEAD
-    from gnm.fitting import perform_run, RunConfig # , BinaryGenerativeParameters
-    from gnm import generative_rules # Important import for reconstruction
-    from gnm.model import BinaryGenerativeParameters
-    
-    
-=======
     from gnm.fitting import perform_run, RunConfig
     from gnm import generative_rules 
     from gnm.model import BinaryGenerativeParameters
     
->>>>>>> through_back_to_write_report_quickly
     # --- Reconstruct the RunConfig object from the dictionary ---
     bp_data = task_data['binary_parameters']
     
@@ -99,23 +77,6 @@ def _run_and_save_single_simulation(
     
     # Perform a run - either while evaluating individual connectomes, or not. 
     try:
-<<<<<<< HEAD
-        
-        individual_networks = torch.tensor(
-                individual_networks, 
-                dtype=torch.float32,
-            )
-        
-        # 1. Run the simulation with the newly reconstructed run_config
-        experiment = perform_run(
-            run_config=run_config,
-            binary_evaluations=[evaluation_criteria],
-            real_binary_matrices=individual_networks, 
-            save_model=True,
-            save_run_history=False,
-            device=torch.device(device_str),
-        )
-=======
         if directly_compare_with_empirical_networks: 
             # if individual networks are given
             individual_networks = torch.tensor(
@@ -138,7 +99,6 @@ def _run_and_save_single_simulation(
                 save_run_history=False,
                 device=torch.device(device_str),
             )
->>>>>>> through_back_to_write_report_quickly
 
         # 2. Prepare the data record for this iteration
         params = experiment.run_config.binary_parameters
@@ -233,28 +193,6 @@ class GNMandESNPipelineOrchestrator:
     
     def __init__(self, config: ConfigManager):
         self.config = config
-<<<<<<< HEAD
-        self.device = torch.device(config.gnm.device)
-        self.data_loader = DataLoader(config) if not config.data.use_gnm_defaults else None
-        self.gnm_generator = GNMGenerator(device=self.config.gnm.device)
-        self.logger = get_logger(config.paths.output_dir)
-        self.config.paths.esn_output_dir.mkdir(parents=True, exist_ok=True)
-        self.config.paths.gnm_output_dir.mkdir(parents=True, exist_ok=True)
-    
-    
-    def run_gnm_parameter_sweep(self,
-                                h_params, 
-                        #    target_network: Optional[torch.Tensor] = None,
-                        #    experiment_name: Optional[str] = None, 
-                        #    no_wandb: Optional[bool] = False,
-                        #    random_sample: bool = False,
-                        #    n_random_samples: int = 30, 
-                        #    elaborate_analysis: Optional[bool] = False, 
-                        #    average_connectomes: bool = True, # set to false to only evaluate one connectome
-                        #    save_indiv_network_energies: bool = False,
-                        #    **kwargs
-                        ) -> Dict[str, Any]:
-=======
         self.device = torch.device(config["compute"]["device"])
         self.data_loader = DataLoader(config) 
         # self.esn_evaluator = ESNEvaluator(config, self.data_loader) if self.data_loader else None
@@ -266,7 +204,6 @@ class GNMandESNPipelineOrchestrator:
     def run_gnm_parameter_sweep(self, # config, 
                            target_network: Optional[torch.Tensor] = None, # TODO: removre all defaults here. 
                            ) -> Dict[str, Any]:
->>>>>>> through_back_to_write_report_quickly
         """
         Run a parameter sweep in parallel with robust, interrupt-safe saving.
         """
@@ -275,13 +212,6 @@ class GNMandESNPipelineOrchestrator:
         print("GNM PARAMETER SWEEP")
         print("=" * 60)
         
-<<<<<<< HEAD
-        if not experiment_name:
-            experiment_name = f"gnm_sweep_{time.strftime('%Y%m%d_%H%M%S')}"
-
-        # Load data (binary connectomes, distance matrix) 
-        binary_connectomes = self.data_loader.load_binary_connectomes()
-=======
         animal_id = self.config['experiment']['animal'] 
         
         average_connectomes = self.config['experiment']['average_connectomes'] # set to false to only evaluate one connectome
@@ -289,7 +219,6 @@ class GNMandESNPipelineOrchestrator:
         # CAN THIS BE REMOVED? 
         binary_connectomes = self.data_loader.load_binary_connectomes(connectome_id=animal_id)
         
->>>>>>> through_back_to_write_report_quickly
         distance_matrix = torch.tensor(
                     self.data_loader.load_distance_matrix(connectome_id=animal_id),
                     dtype=torch.float32,
@@ -333,29 +262,6 @@ class GNMandESNPipelineOrchestrator:
         num_simulations = self.config['gnm']['num_simulations'] # 100 
         
         # Create sweep config 
-<<<<<<< HEAD
-        if no_wandb and random_sample:
-            sweep_config = self.config.create_gnm_random_sweep_config(
-                h_params=h_params,
-                distance_matrix=torch.Tensor(distance_matrix),
-                # num_iterations=num_iterations,
-                # num_simulations=num_simulations, method="random",
-                # n_random_samples=n_random_samples, 
-                # include_weights=True
-            )
-        else:
-            sweep_config = self.config.create_gnm_sweep_config(
-                distance_matrix=torch.Tensor(distance_matrix),
-                num_iterations=num_iterations,
-                num_simulations=num_simulations, method="grid", 
-                include_weights=True
-            )
-        
-        evaluation_criteria = self.config.get_gnm_evaluation_criteria(distance_matrix)
-            
-        # A HACK: Converted the generator to a list BEFORE the parallel call.
-        # This resolves the serialization error by ensuring a simple, picklable list is passed to the workers, not a complex generator object.
-=======
         sweep_config = create_gnm_random_sweep_config( # add a grid version again? 
             config=self.config,
             distance_matrix=torch.Tensor(distance_matrix), 
@@ -367,7 +273,6 @@ class GNMandESNPipelineOrchestrator:
         evaluation_criteria = create_evaluation_criteria(config=self.config, distance_matrix=distance_matrix)
           
         # Convert the generator to a list *before* the parallel call
->>>>>>> through_back_to_write_report_quickly
         print("Generating sweep configurations...")
         sweep_config_list = list(sweep_config)
         print(f"{len(sweep_config_list)} configurations generated.")
@@ -396,19 +301,10 @@ class GNMandESNPipelineOrchestrator:
             }
             deconstructed_tasks.append(task)
 
-<<<<<<< HEAD
-        try:
-            
-            save_indiv_network_energies = h_params["save_indiv_network_energies"]
-            
-            # Set number of workers (-1 for maximum parallel execution)
-            Parallel(n_jobs=self.data_loader.config.compute.n_workers)( 
-=======
         try: 
             # Set number of workers (default: -1 for maximum parallel execution)
             n_jobs = self.config['compute']['n_workers'] 
             Parallel(n_jobs=n_jobs)( 
->>>>>>> through_back_to_write_report_quickly
                 delayed(_run_and_save_single_simulation)(
                     task_data=task_data, # Pass the deconstructed dictionary
                     evaluation_criteria=evaluation_criteria,
@@ -428,51 +324,6 @@ class GNMandESNPipelineOrchestrator:
         except (KeyboardInterrupt, Exception) as e:
             print(f"\n--- Process interrupted or failed: {e} ---")
 
-<<<<<<< HEAD
-        finally:
-            print("\nCombining results...")
-            
-            # Combine the 'result_....csv' files
-            print(f"\nStep 1: Combining 'result_...csv' CSVs for experiment: '{experiment_name}'...")
-            try: 
-                _combine_csvs_by_pattern(
-                    search_dir=temp_results_dir,
-                    file_pattern="result_*.csv",
-                    output_name=f"all_metrics_for_exp_{experiment_name}.csv"
-                )
-            except: 
-                print("No results_*.csv were previously generated.")
-
-
-            # Combine the 'indiv_connectome...' files
-            print(f"\nStep 2: Combining 'indiv_connectome....csv'CSVs for experiment: '{experiment_name}'...")
-            try: 
-                # output/gnm/15_individual_connectomes/15_individual_connectomes_20250924_140855/15_individual_connectomes_temp/
-                _combine_csvs_by_pattern(
-                    search_dir=temp_results_dir,
-                    # file_pattern="indiv_connectome_energies_results_*.csv",
-                    file_pattern="indiv_connectome_energies_*.csv",
-                    output_name=f"indiv_energies_for_exp_{experiment_name}.csv"
-                )
-            except: 
-                print("No indiv_connectome_energies_*.csv were previously generated.")
-
-            print("\nCombination complete.")
-            print(temp_results_dir)
-            
-            # Delete all files from temp dir         
-            for filename in os.listdir(temp_results_dir): # List all files in the directory
-                file_path = os.path.join(temp_results_dir, filename)
-                if os.path.isfile(file_path): # Check if it is a file (not a subdirectory)
-                    os.remove(file_path)  # Remove the file
-                    
-            # Delete now-empty folder (it needs to be empty to do so)
-            path = Path(temp_results_dir).rmdir()
-            print("Deleted '%s' successfully" % temp_results_dir)
-
-        return {"status": "completed"}
-=======
         merge_csv_files(self.output_dir)
 
             
->>>>>>> through_back_to_write_report_quickly

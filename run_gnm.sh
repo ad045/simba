@@ -49,9 +49,3 @@ done
 
 echo "All '$NUMBER_RUNS' runs completed."
 echo # Adding a blank line for readability
-
-
-echo "Combining 'results' and 'indiv_connectome' CSVs each..."
-python src/utils/combine_csvs.py "$OUTPUT_DIR" 
-echo "Combined individual connectome energy CSVs."
-echo

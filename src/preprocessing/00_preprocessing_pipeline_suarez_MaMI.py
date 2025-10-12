@@ -50,6 +50,7 @@ from pathlib import Path
 
 import bct
 from netneurotools.networks import threshold_network, struct_consensus
+from scipy.spatial.distance import cdist
 
 
 # Local imports from your codebase
@@ -122,10 +123,121 @@ paths = setup_paths(dataset_name="suarez_MaMI_dataset")
     
     
     
-import numpy as np
-import pandas as pd
-from pathlib import Path
-from scipy.spatial.distance import cdist
+
+# def enrich_animal_metadata(animal_names_df, info_csv_path):
+#     """
+#     Enrich animal names dataframe with taxonomic information.
+    
+#     Args:
+#         animal_names_df: DataFrame with 'animal' column
+#         info_csv_path: Path to the info.csv file with taxonomic data
+    
+#     Returns:
+#         DataFrame with added taxonomic columns
+#     """
+#     # Load the info CSV
+#     info_df = pd.read_csv(info_csv_path)
+    
+#     # Standardize column names (remove spaces, lowercase)
+#     info_df.columns = [col.strip().replace('-', '_').replace(' ', '_').lower() for col in info_df.columns]
+    
+#     # Create mapping from filename to taxonomic info
+#     info_df['filename_clean'] = info_df['filename'].str.lower()
+#     animal_names_df['animal_clean'] = animal_names_df['animal'].str.lower()
+    
+#     # Merge on filename/animal name
+#     enriched_df = animal_names_df.merge(
+#         info_df[['filename_clean', 
+#                 #  'common_name', 
+#                  'name', 'species', 'genus', 
+#                  'sub_family', 'family', 'sub_order', 'order', 'super_order']],
+#         left_on='animal_clean',
+#         right_on='filename_clean',
+#         how='left'
+#     )
+    
+#     # Drop temporary columns
+#     enriched_df = enriched_df.drop(columns=['animal_clean', 'filename_clean'])
+    
+#     return enriched_df
+
+
+def enrich_animal_metadata(animal_names_df, info_csv_path):
+    """
+    Enrich animal names dataframe with taxonomic information.
+    
+    Args:
+        animal_names_df: DataFrame with 'animal' column
+        info_csv_path: Path to the info.csv file with taxonomic data
+    
+    Returns:
+        DataFrame with added taxonomic columns
+    """
+    # Load the info CSV
+    info_df = pd.read_csv(info_csv_path)
+    
+    # Standardize column names (remove spaces, lowercase)
+    info_df.columns = [col.strip().replace('-', '_').replace(' ', '_').lower() for col in info_df.columns]
+    
+    # Remove double (or multiple) spaces from all string columns in info_df
+    for col in info_df.columns:
+        if info_df[col].dtype == 'object':  # String columns
+            info_df[col] = info_df[col].str.replace(r'\s+', ' ', regex=True).str.strip()
+    
+    # Clean animal names in both dataframes
+    for col in animal_names_df.columns:
+        if animal_names_df[col].dtype == 'object':
+            animal_names_df[col] = animal_names_df[col].str.replace(r'\s+', ' ', regex=True).str.strip()
+    
+    # Add phylogenetic grouping column based on the tree structure
+    def assign_phylogenetic_group(row):
+        """Assign phylogenetic group based on order."""
+        order = row.get('order', '')
+        if pd.isna(order):
+            return 'Unknown'
+        
+        order = str(order).strip()
+        
+        # Map orders to major phylogenetic groups
+        order_to_group = {
+            'Xenarthra': 'Xenarthra',
+            'Dermoptera': 'Euarchontoglires',
+            'Scandentia': 'Euarchontoglires', 
+            'Primates': 'Euarchontoglires',
+            'Lagomorpha': 'Euarchontoglires',
+            'Rodentia': 'Euarchontoglires',
+            'Eulipotyphla': 'Laurasiatheria',
+            'Carnivora': 'Laurasiatheria',
+            'Pholidota': 'Laurasiatheria',
+            'Perissodactyla': 'Laurasiatheria',
+            'Cetartiodactyla': 'Laurasiatheria',
+            'Chiroptera': 'Laurasiatheria'
+        }
+        
+        return order_to_group.get(order, 'Other')
+    
+    # Create mapping from filename to taxonomic info
+    info_df['filename_clean'] = info_df['filename'].str.lower()
+    animal_names_df['animal_clean'] = animal_names_df['animal'].str.lower()
+    
+    # Merge on filename/animal name
+    enriched_df = animal_names_df.merge(
+        info_df[['filename_clean', 'common_name', 'name', 'species', 'genus', 
+                 'sub_family', 'family', 'sub_order', 'order', 'super_order']],
+        left_on='animal_clean',
+        right_on='filename_clean',
+        how='left'
+    )
+    
+    # Add phylogenetic group column
+    enriched_df['phylogenetic_group'] = enriched_df.apply(assign_phylogenetic_group, axis=1)
+    
+    # Drop temporary columns
+    enriched_df = enriched_df.drop(columns=['animal_clean', 'filename_clean'])
+    
+    return enriched_df
+
+
 
 def reduce_nodes(connection_matrix, coordinates, resolution=100):
     """
@@ -330,8 +442,19 @@ if cfg.analyze_density in cfg.goal_densities:
 results_df = pd.DataFrame(all_results)
 results_df.to_csv(paths["path_03_graph_measures"] / f"df_graph_measures_{resolution}.csv", index=False)
 
-only_names_df = results_df["animal"]
-only_names_df.to_csv(paths["path_04_further_info"] / f"names_of_animals_with_preprocessed_connectomes_{resolution}.csv")
+
+# Extract animal names
+only_names_df = results_df[["animal"]].drop_duplicates().reset_index(drop=True)
+
+# Enrich with taxonomic information
+info_csv_path = paths["path_raw_data"] / "info" / "info.csv"
+enriched_names_df = enrich_animal_metadata(only_names_df, info_csv_path)
+
+# Save enriched dataframe
+enriched_names_df.to_csv(
+    paths["path_04_further_info"] / f"names_of_animals_with_preprocessed_connectomes_{resolution}.csv",
+    index=True
+)
 
 print(f"\nProcessed {len(animal_names)} animals")
 print(f"Combined connectivity shape: {all_conn.shape}")

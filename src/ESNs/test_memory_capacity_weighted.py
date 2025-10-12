@@ -1,8 +1,7 @@
 # Modelled after damicelli's work. 
 
 import numpy as np
-from typing import List, Tuple, Dict, Optional, Any
-from echoes.esn import ESNRegressor
+from typing import List, Dict, Optional, Any
 
 import warnings
 

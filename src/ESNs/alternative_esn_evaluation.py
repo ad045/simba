@@ -1,17 +1,7 @@
-import echoes
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import pearsonr
-import os
-import urllib.request
-import zipfile
-
-
 """
 ESN evaluation module for the connectome analysis pipeline.
 Handles memory capacity evaluation and hyperparameter optimization.
 """
-
 import os
 import time
 import warnings
@@ -24,10 +14,12 @@ import random
 import numpy as np
 import pandas as pd
 
+import echoes
+from scipy.stats import pearsonr
 from config.manager import ConfigManager
 from src.utils.data_loader import DataLoader
 
-from ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome # needs to be here (even if "unused") - otherwise it defaults to row above??
+from ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome # needs to be here (even if "unused") - why?? 
 from utils.saving_and_finding_files import time_stamp_for_saving
 from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
 # from src.ESNs.utils_math import _calculate_branching_ratio
@@ -57,7 +49,10 @@ class ESNEvaluator:
     
     
 
-    def _alternative_evaluate_mc(W, n_lags=50, train_len=4000, test_len=1000):
+    def _alternative_evaluate_mc(W, 
+                                 n_lags=50, 
+                                 train_len=4000, 
+                                 test_len=1000):
         """Evaluates the Memory Capacity of a given reservoir matrix W."""
         
         # 1. Generate data for the MC task
@@ -94,10 +89,11 @@ class ESNEvaluator:
 
     def _subject_job(self, 
                     subj_idx: int,
-                    A_obs: np.ndarray, # rename!
+                    A_obs: np.ndarray, 
                     hparams: Dict[str, Any],
                     timing_flag: bool = True,
-                    random_seed: Optional[int] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+                    random_seed: Optional[int] = None
+                    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Evaluate memory capacity for a single subject with given hyperparameters.
         
@@ -115,18 +111,18 @@ class ESNEvaluator:
             t_metrics = 0.0  # Placeholder for potential graph metrics timing: TODO
         
         # Set up hyperparameters with defaults
-        esn_hparams = {
-            "spectral_radius": 0, #  hparams.get("spectral_radius", self.config.esn.spectral_radius),
-            "input_length": 0, # hparams.get("input_length", self.config.esn.input_length),
-            "input_scaling": 0, # hparams.get("input_scaling", self.config.esn.input_scaling),
-            "regularization_method": 0, # hparams.get("regularization_method", self.config.esn.regularization_method),
-            "n_runs": 0, # hparams.get("n_runs", self.config.esn.n_runs),
-            "n_lags": 0, # self.config.esn.n_lags,
-            "test_len": 0, # self.config.esn.test_len,
-            "n_transient": 0, # self.config.esn.n_transient,
-            "leak_rate": 0, # self.config.esn.leak_rate,
-            "bias": 0, # self.config.esn.bias,
-        }
+        # esn_hparams = {
+        #     "spectral_radius": 0, #  hparams.get("spectral_radius", self.config.esn.spectral_radius),
+        #     "input_length": 0, # hparams.get("input_length", self.config.esn.input_length),
+        #     "input_scaling": 0, # hparams.get("input_scaling", self.config.esn.input_scaling),
+        #     "regularization_method": 0, # hparams.get("regularization_method", self.config.esn.regularization_method),
+        #     "n_runs": 0, # hparams.get("n_runs", self.config.esn.n_runs),
+        #     "n_lags": 0, # self.config.esn.n_lags,
+        #     "test_len": 0, # self.config.esn.test_len,
+        #     "n_transient": 0, # self.config.esn.n_transient,
+        #     "leak_rate": 0, # self.config.esn.leak_rate,
+        #     "bias": 0, # self.config.esn.bias,
+        # }
         
         if timing_flag:
             t_esn0 = time.perf_counter()
@@ -169,7 +165,7 @@ class ESNEvaluator:
         
             # Merge all hyperparameters into the result
             returned_hp = mc_result_dict.get("hparams", {})
-            mc_result_dict["hparams"] = {**returned_hp, **hparams, **esn_hparams}
+            mc_result_dict["hparams"] = {**returned_hp, **hparams} # , **esn_hparams}
         
         if timing_flag:
             t_esn = time.perf_counter() - t_esn0
@@ -524,61 +520,3 @@ def create_esn_evaluator(config_path: Optional[Union[str, Path]] = None,
         data_loader = DataLoader(config_manager)
     
     return ESNEvaluator(config_manager, data_loader)
-   
-   
-   
-
-
-
-
-# Example usage and testing
-if __name__ == "__main__":
-    # Example: Quick test with small hyperparameter grid
-    from config import get_gnm_quick_test_config # get_quick_test_config
-    from src.utils.data_loader import create_data_loader
-    
-    # Set up configuration for testing
-    config = get_gnm_quick_test_config()
-    data_loader = create_data_loader(config_manager=config)
-    evaluator = ESNEvaluator(config, data_loader)
-    
-    try:
-        # Generate a small hyperparameter grid
-        small_grid = config.generate_esn_hparam_grid(
-            spectral_radii=[0.8, 0.99],
-            input_lengths=[1000, 2000],
-            input_scalings=[1.0],
-            regularization_methods=["pinv"],
-            n_runs_list=[3],
-            densities=[10]
-        )
-        
-        print(f"Generated grid with {len(small_grid)} combinations")
-        print("Sample hyperparameter combination:", small_grid[0])
-        
-        # Load test data
-        weighted_by_density = data_loader.load_weighted_by_density()
-        
-        if weighted_by_density:
-            test_save_dir = Path("./test_esn_results")
-            
-            # Run evaluation on a subset
-            result_message = evaluator.run_hyperparameter_sweep(
-                connectomes=weighted_by_density,
-                hparam_grid=small_grid[:4],  # Just first 4 combinations for testing
-                save_dir=test_save_dir,
-                search_mode="grid"
-            )
-            
-            # print(result_message)
-            
-            # Analyze results
-            analysis = evaluator.load_and_analyze_results(test_save_dir)
-            print("Analysis results:", analysis)
-        
-        else:
-            print("No data available for testing")
-            
-    except Exception as e:
-        print(f"Test failed: {e}")
-     

@@ -33,10 +33,6 @@ def main():
     try:
         # Load and validate config
         loader = YAMLConfigLoader(args.config)
-<<<<<<< HEAD
-        print(f"✅ Configuration loaded from: {args.config}")
-        print(f"✅ Experiment type: {loader.config['experiment']['type']}")
-=======
         print(f"✓ Configuration loaded from: {args.config}")
         print(f"✓ Experiment type: {loader.config['experiment']['experiment_type']}")
         
@@ -51,7 +47,6 @@ def main():
                 print(f"  - GNM gamma range: {config.gnm.gamma_range}")
                 print(f"  - Wiring rules: {config.gnm.generative_rules_to_test}")
             sys.exit(0)
->>>>>>> through_back_to_write_report_quickly
         
         # Run the experiment
         run_from_yaml(args.config)
