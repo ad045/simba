@@ -47,6 +47,7 @@ class PathManager:
         self.project_path.mkdir(parents=True, exist_ok=True)
         self.visualization_output_dir.mkdir(parents=True, exist_ok=True)
 
+
 def run_script(script_path: str, args: list):
     """Helper function to run a python script as a subprocess."""
     command = [sys.executable, script_path] + [str(arg) for arg in args]
@@ -58,33 +59,43 @@ def run_script(script_path: str, args: list):
         print(f"❌ Error running {script_path}: {e}", file=sys.stderr)
         sys.exit(1)
 
+
+
 if __name__ == "__main__":
+    
+    # Parse 
     parser = argparse.ArgumentParser(description="Run the full GNM analysis pipeline.")
     parser.add_argument("config", type=str, help="Path to the YAML configuration file.")
     args = parser.parse_args()
 
+    # Load 
     print("--- Loading configuration and setting up paths ---")
     loader = YAMLConfigLoader(args.config)
     config = loader.config
     paths = PathManager(config)
     paths.ensure_dirs()
     
+    # Get steps
     steps = config.get('pipeline_steps', {})
     print(f"--- Starting pipeline for experiment: {paths.exp_name} ---")
 
+    # Run experiment 
     if steps.get('run_experiment'):
         num_runs = config.get('experiment', {}).get('num_runs', 1)
         run_script('run_experiment.py', [args.config, '-n', num_runs])
 
+    # Run evaluation
     if steps.get('run_evaluation'):
         run_script('run_evaluation.py', ['--config', args.config])
 
+    # Extract best eta and gamma parameters 
     if steps.get('extract_best_params'):
         run_script('07_2_extract_best_eta_and_gamma_parameter.py', [
             '--input', paths.individual_energies,
             '--output', paths.best_params
         ])
-
+        
+    # Save matches 
     if steps.get('save_matches'):
         run_script('08_2_save_matches.py', [
             '--estimated-params', paths.best_params,
@@ -94,6 +105,7 @@ if __name__ == "__main__":
             '--output-generated', paths.matched_generated,
         ])
 
+    # Visualize 
     if steps.get('run_visualization'):
         run_script('07_4_visualization_with_colored_dots.py', [
             '--metrics-file', paths.combined_metrics,
