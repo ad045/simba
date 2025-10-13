@@ -1117,7 +1117,7 @@ def get_ordered_tasks(
     # Create mapping from (eta, gamma) to network data
     network_map = {}
     for i, (params, filename) in enumerate(zip(generated_network_parameters, filenames)):
-        key = (round(params['eta'], 10), round(params['gamma'], 10))
+        key = (params['eta'], params['gamma']) # round(params['eta'], 10), round(params['gamma'], 10))
         network_map[key] = (i, generated_networks[i], params, filename)
     
     # Prioritize reference CSV for ordering
@@ -1127,8 +1127,8 @@ def get_ordered_tasks(
     if order_source is not None and not order_source.empty:
         # Get unique parameter combinations in their existing order
         existing_params = list(zip(
-            order_source['eta'].round(3),  # TODO: Increase this resolution! 
-            order_source['gamma'].round(3), 
+            order_source['eta'], # .round(3),  # TODO: Increase this resolution! 
+            order_source['gamma'], # .round(3), 
         ))
         
         # Add networks in the order they appear (TODO: skip processed ones)
@@ -1213,7 +1213,7 @@ def evaluate_network_against_empirical_optimized(
         
         # Store results for this subject
         for energy_value in energy_dict:
-            column_name = f"MaxCrit(etc)_indiv_{subject_idx}"
+            column_name = f"MaxCrit_indiv_{subject_idx}" # TODO: Add maxcrit criteria here?
             results[column_name] = float(energy_value.mean().item())
     
     return results
@@ -1316,6 +1316,7 @@ def compare_all_networks(
         reference_df=reference_df
     )
     
+    
     if not ordered_tasks_data:
         print("✅ All networks have already been processed!")
         if existing_df is not None:
@@ -1416,8 +1417,8 @@ def main():
     
     # Define paths
     dataset_name = "suarez_MaMI_dataset"
-    experiment_name = "31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation"
-    
+    experiment_name = "33_suarez_MaMI_size_100_extensive_220_300_iter" # 31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation"
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/33_suarez_MaMI_size_100_extensive_220_300_iter/all_metrics_for_exp_30_shafiei_size_68.csv
     path_experiment = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm") / dataset_name / experiment_name
     generated_networks_dir = path_experiment / "generated_networks"
     empirical_networks_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed") / dataset_name / "01_connectomes/01_consensus_bin_density_10_percent_100.npy"
@@ -1427,7 +1428,7 @@ def main():
     
     # Reference CSV with desired parameter order
     # TODO: Change this later! 
-    reference_csv_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm") / dataset_name / experiment_name / "all_metrics_for_exp_30_shafiei_size_68.csv"
+    reference_csv_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm") / dataset_name / experiment_name / f"all_metrics_for_exp_30_shafiei_size_68.csv" # f"all_metrics_for_{experiment_name}.csv"
     
     # Optional: Load a config for custom evaluation metrics
     config_dict = {

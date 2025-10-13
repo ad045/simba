@@ -250,7 +250,7 @@ class GNMandESNPipelineOrchestrator:
         
         # Get number itterations where one edge is added
         if target_network is not None: 
-            num_iterations = int(target_network.sum().item() // 2)
+            num_iterations = int(target_network[first_density].sum().item() // 2)
         else: 
             num_iterations = resolution**2 * (first_density/100)
             target_network = np.zeros(shape=(resolution, resolution))
@@ -269,7 +269,7 @@ class GNMandESNPipelineOrchestrator:
             num_simulations=num_simulations,
             include_weights=True
         )
-        
+        print("SWEEP CONFIG", sweep_config)
         evaluation_criteria = create_evaluation_criteria(config=self.config, distance_matrix=distance_matrix)
           
         # Convert the generator to a list *before* the parallel call

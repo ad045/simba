@@ -51,7 +51,7 @@ def create_gnm_random_sweep_config(config, #  TODO: Combine with function below 
         binary_params = fitting.BinarySweepParameters(
             eta=eta_values,
             gamma=gamma_values,
-            lambdah=torch.tensor(config["gnm"]["lambda"]), 
+            lambdah=torch.tensor([config["gnm"]["lambda"]]), 
             distance_relationship_type=config["gnm"]["distance_relationship_type"], 
             preferential_relationship_type=config["gnm"]["preferential_relationship_type"], 
             heterochronicity_relationship_type=config["gnm"]["heterochronicity_relationship_type"],

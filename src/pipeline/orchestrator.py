@@ -58,6 +58,6 @@ def run_from_yaml(yaml_path: str):
     
     # TODO: Add logger again
     # Finalize logger
-    # orchestrator.logger.finalize(config['paths']['output_experiment_dir'])
-    #                                              # output_gnm_dir'] / config['experiment']['name'])
+    orchestrator.logger.finalize(config['paths']['output_experiment_dir'])
+                                                 # output_gnm_dir'] / config['experiment']['name'])
 
