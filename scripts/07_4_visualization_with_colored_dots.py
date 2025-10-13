@@ -215,7 +215,8 @@ if __name__ == "__main__":
     # --- 1. Define Input and Output ---
     
     df_paths = [
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation/all_metrics_for_exp_30_shafiei_size_68.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation/all_metrics_for_exp_30_shafiei_size_68.csv"
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/33_suarez_MaMI_size_100_extensive_220_300_iter/all_metrics_for_exp_30_shafiei_size_68_interim_copy.csv"
     ]
     
     # Path to the enriched animal metadata
@@ -358,15 +359,16 @@ if __name__ == "__main__":
                 print(f"SKIPPING: No valid data for '{metric}' after cleaning.")
                 continue
 
-            # --- Setup taxonomic coloring ---
-            if COLOR_BY and COLOR_BY in df.columns:
+            # --- Setup taxonomic coloring --- is done on df -> but should be done on best fit thingy. 
+            if COLOR_BY and COLOR_BY in df_best_gamma_and_eta_estimates.columns: # df.columns:
                 # Remove rows with missing taxonomic data
-                df = df.dropna(subset=[COLOR_BY])
-                if df.empty:
+                # df = df.dropna(subset=[COLOR_BY])
+                df_best_gamma_and_eta_estimates = df_best_gamma_and_eta_estimates.dropna(subset=[COLOR_BY])
+                if df_best_gamma_and_eta_estimates.empty:
                     print(f"SKIPPING: No data after removing missing {COLOR_BY} values.")
                     continue
                     
-                color_mapper = TaxonomicColorMapper(COLOR_BY, df)
+                color_mapper = TaxonomicColorMapper(COLOR_BY, df_best_gamma_and_eta_estimates)
                 print(f"Found {color_mapper.n_categories} unique {COLOR_BY} categories")
             else:
                 print("SKIPPING: Cannot color by taxonomy - column not found")

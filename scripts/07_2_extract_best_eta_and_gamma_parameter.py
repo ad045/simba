@@ -65,10 +65,11 @@ def find_min_energy(input_csv_path: str, output_csv_path: str):
 if __name__ == '__main__':
     
     dataset_name = "suarez_MaMI_dataset"
-    experiment_name = "31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation"
+    experiment_name = "33_suarez_MaMI_size_100_extensive_220_300_iter" # 31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation"
     
     base_output_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/") / dataset_name / experiment_name
-    input_file = base_output_path / ("summary_indiv_energies_for_exp_" + experiment_name + ".csv")
+    # input_file = base_output_path / ("summary_indiv_energies_for_exp_" + experiment_name + ".csv")
+    input_file = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/33_suarez_MaMI_size_100_extensive_220_300_iter/summary_indiv_energies_for_exp_33_suarez_MaMI_size_100_extensive_220_300_iter_intermediate_copy.csv")
     save_file_path = input_file.parent / 'min_energy_results.csv'
     
     find_min_energy(input_csv_path=input_file, 

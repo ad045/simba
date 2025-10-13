@@ -55,10 +55,16 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_220/all_metrics_for_exp_30_shafiei_size_68.csv"
         
         # 57
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation/all_metrics_for_exp_30_shafiei_size_68.csv" 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation/all_metrics_for_exp_30_shafiei_size_68.csv" 
         # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_57/all_metrics_for_exp_30_shafiei_size_68.csv"
+        
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/33_suarez_MaMI_size_100_extensive_220_300_iter/all_metrics_for_exp_30_shafiei_size_68_interim_copy.csv"
+        
+        
+        # Testing
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/34_suarez_MaMI_100_testing_5_2/all_metrics_for_exp_30_shafiei_size_68.csv"
     ]       
-    plot_indiv_connectomes = True #  False # True # False # True #  False # True # False
+    plot_indiv_connectomes = False # True # False # True #  False # True # False
     
     
     ##############
@@ -115,7 +121,7 @@ if __name__ == "__main__":
             raise ValueError("Dataframe is empty after loading.")
 
         path_to_best_gamma_and_eta_estimations = parent_folder / "min_energy_results.csv"    # not entirely clean... TODO: Make this clean. 
-        if os.path.exists(path_to_best_gamma_and_eta_estimations):
+        if os.path.exists(path_to_best_gamma_and_eta_estimations) and plot_indiv_connectomes:
             df_best_gamma_and_eta_estimates = pd.read_csv(path_to_best_gamma_and_eta_estimations)
                 
     except Exception as e:
@@ -189,6 +195,9 @@ if __name__ == "__main__":
 
             df[metric_col_name] = pd.to_numeric(df[metric_col_name], errors='coerce')
             df = df.dropna(subset=['eta', 'gamma', metric_col_name])
+            
+            print(len(df))
+            
             
             if df.empty:
                 print(f"SKIPPING: No valid data for '{metric}' after cleaning.\n")

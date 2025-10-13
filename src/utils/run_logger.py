@@ -331,7 +331,7 @@ class RunLogger:
     
     def _save_session_summary(self, current_projects_output_dir) -> None:
         """Save the session summary to JSON."""
-        summary_session_path = current_projects_output_dir / "session_summary.json"
+        summary_session_path = Path(current_projects_output_dir) / "session_summary.json"
         with open(summary_session_path, 'w') as f: 
             json.dump(self.session_summary, f, indent=2, default=str)
         print("Saved session summary to", summary_session_path)
