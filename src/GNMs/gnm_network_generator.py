@@ -22,7 +22,7 @@ from gnm import (
 from ESNs.esn_evaluation_2 import ESNEvaluator 
 
 @dataclass
-class GNMParameters:
+class GNMParameters: # TODO: Remove hardcoded stuff. 
     """Parameters for GNM generation - matches GNM library structure."""
     eta: Union[float, torch.Tensor] = -2.0                    # Distance parameter
     gamma: Union[float, torch.Tensor] = 0.3                   # Homophily parameter
@@ -97,54 +97,54 @@ class GNMGenerator:
         """Initialize with device selection."""
         self.device = device # torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
     
-    def generate_network(self,
-                        n_nodes: int,
-                        n_edges: int,
-                        distance_matrix: torch.Tensor,
-                        parameters: GNMParameters,
-                        seed_network: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """
-        Generate a network using GNM library's binary model.
+    # def generate_network(self,
+    #                     n_nodes: int,
+    #                     n_edges: int,
+    #                     distance_matrix: torch.Tensor,
+    #                     parameters: GNMParameters,
+    #                     seed_network: Optional[torch.Tensor] = None) -> torch.Tensor:
+    #     """
+    #     Generate a network using GNM library's binary model.
         
-        Args:
-            n_nodes: Number of nodes
-            n_edges: Target number of edges
-            distance_matrix: Distance matrix between nodes
-            parameters: GNM parameters
-            seed_network: Optional seed network to start from
+    #     Args:
+    #         n_nodes: Number of nodes
+    #         n_edges: Target number of edges
+    #         distance_matrix: Distance matrix between nodes
+    #         parameters: GNM parameters
+    #         seed_network: Optional seed network to start from
             
-        Returns:
-            Generated binary network
-        """
-        # Ensure inputs are on correct device
-        distance_matrix = distance_matrix.to(self.device)
+    #     Returns:
+    #         Generated binary network
+    #     """
+    #     # Ensure inputs are on correct device
+    #     distance_matrix = distance_matrix.to(self.device)
         
-        if seed_network is not None:
-            seed_network = seed_network.to(self.device)
-        else:
-            seed_network = torch.zeros((n_nodes, n_nodes), device=self.device)
+    #     if seed_network is not None:
+    #         seed_network = seed_network.to(self.device)
+    #     else:
+    #         seed_network = torch.zeros((n_nodes, n_nodes), device=self.device)
         
-        # Create binary model using GNM library
-        model = GNMBinary(
-            eta=parameters.eta,
-            gamma=parameters.gamma,
-            lambdah=parameters.lambdah,
-            distance_relationship_type=parameters.distance_relationship_type,
-            preferential_relationship_type=parameters.preferential_relationship_type,
-            heterochronicity_relationship_type=parameters.heterochronicity_relationship_type,
-            generative_rule=parameters.generative_rule,
-            distance_matrix=distance_matrix,
-            adjacency_matrix=seed_network,
-            device=self.device
-        )
+    #     # Create binary model using GNM library
+    #     model = GNMBinary(
+    #         eta=parameters.eta,
+    #         gamma=parameters.gamma,
+    #         lambdah=parameters.lambdah,
+    #         distance_relationship_type=parameters.distance_relationship_type,
+    #         preferential_relationship_type=parameters.preferential_relationship_type,
+    #         heterochronicity_relationship_type=parameters.heterochronicity_relationship_type,
+    #         generative_rule=parameters.generative_rule,
+    #         distance_matrix=distance_matrix,
+    #         adjacency_matrix=seed_network,
+    #         device=self.device
+    #     )
         
-        # Run the model for specified iterations
-        model.run(n_edges)
+    #     # Run the model for specified iterations
+    #     model.run(n_edges)
         
-        # Get the generated network
-        return model.get_adjacency_matrix()
+    #     # Get the generated network
+    #     return model.get_adjacency_matrix()
     
-    def fit_parameters(self,
+    def fit_parameters(self, # TODO: Remove hardcoded stuff # TODO: Is this even used?? 
                       target_network: torch.Tensor,
                       distance_matrix: torch.Tensor,
                       eta_range: Tuple[float, float] = (-5.0, 0.0),
@@ -154,6 +154,7 @@ class GNMGenerator:
                       generative_rule_name: str = "matching_index",
                       given_output_path: Optional[Path] = None, 
                       num_simulations: int = 100,
+                      density: float = 0.1, 
                       evaluation_metrics: Optional[List[str]] = None) -> Dict[str, Any]:
         """
         Fit GNM parameters using the library's sweep functionality.
@@ -173,13 +174,15 @@ class GNMGenerator:
             Dictionary with fitting results
         """
         # Prepare inputs
+        distance_matrix = distance_matrix.to(self.device) # CHECK: IS THIS EVEN ENTERED??
+        
+        # Calculate number of edges to be generated 
         if target_network.sum() != 0 and target_network is not None: 
             target_network = target_network.to(self.device)
-            distance_matrix = distance_matrix.to(self.device)
             n_edges = int(target_network.sum().item() // 2)
         else: 
-            print("ATTENTION: n_edges will be set to random value")
-            n_edges = 10 
+            print("ATTENTION: n_edges will be set to random value!")
+            n_edges = density * distance_matrix.shape[-1]**2
         
         # Get generative rule
         if generative_rule_name not in self.AVAILABLE_RULES:
@@ -188,6 +191,7 @@ class GNMGenerator:
         
         # Set up evaluation metrics
         if evaluation_metrics is None:
+            print("Attention: Evaluation metrics were not given, and will be set to default.")
             evaluation_metrics = ["degree_ks", "clustering_ks", "edge_length_ks"]
         
         criteria = []
@@ -203,7 +207,7 @@ class GNMGenerator:
         binary_sweep_parameters = fitting.BinarySweepParameters(
             eta=torch.linspace(eta_range[0], eta_range[1], n_eta),
             gamma=torch.linspace(gamma_range[0], gamma_range[1], n_gamma),
-            lambdah=torch.tensor([0.0]),
+            lambdah=torch.tensor([0.0]), # TODO: REMVOE HARDCODING! 
             distance_relationship_type=["powerlaw"],
             preferential_relationship_type=["powerlaw"],
             heterochronicity_relationship_type=["powerlaw"],
@@ -249,68 +253,68 @@ class GNMGenerator:
         else:
             raise RuntimeError("No optimal parameters found")
     
-    def batch_generate_with_weights(self,
-                                  binary_networks: List[torch.Tensor],
-                                  distance_matrix: torch.Tensor,
-                                  binary_params: GNMParameters,
-                                  weight_criterion: Optional[Any] = None,
-                                  alpha: float = 0.01) -> List[torch.Tensor]:
-        """
-        Generate binary networks and optimize their weights.
+    # def batch_generate_with_weights(self,
+    #                               binary_networks: List[torch.Tensor],
+    #                               distance_matrix: torch.Tensor,
+    #                               binary_params: GNMParameters,
+    #                               weight_criterion: Optional[Any] = None,
+    #                               alpha: float = 0.01) -> List[torch.Tensor]:
+    #     """
+    #     Generate binary networks and optimize their weights.
         
-        Args:
-            binary_networks: List of target binary networks
-            distance_matrix: Distance matrix
-            binary_params: Parameters for binary generation
-            weight_criterion: Weight optimization criterion (from weight_criteria module)
-            alpha: Learning rate for weight optimization
+    #     Args:
+    #         binary_networks: List of target binary networks
+    #         distance_matrix: Distance matrix
+    #         binary_params: Parameters for binary generation
+    #         weight_criterion: Weight optimization criterion (from weight_criteria module)
+    #         alpha: Learning rate for weight optimization
             
-        Returns:
-            List of weighted networks
-        """
-        if weight_criterion is None:
-            weight_criterion = weight_criteria.DistanceWeightedCommunicability(distance_matrix)
+    #     Returns:
+    #         List of weighted networks
+    #     """
+    #     if weight_criterion is None:
+    #         weight_criterion = weight_criteria.DistanceWeightedCommunicability(distance_matrix)
         
-        weighted_networks = []
+    #     weighted_networks = []
         
-        for binary_net in binary_networks:
-            n_edges = int(binary_net.sum().item() // 2)
+    #     for binary_net in binary_networks:
+    #         n_edges = int(binary_net.sum().item() // 2)
             
-            # Generate binary network
-            generated_binary = self.generate_network(
-                n_nodes=binary_net.shape[0],
-                n_edges=n_edges,
-                distance_matrix=distance_matrix,
-                parameters=binary_params
-            )
+    #         # Generate binary network
+    #         generated_binary = self.generate_network(
+    #             n_nodes=binary_net.shape[0],
+    #             n_edges=n_edges,
+    #             distance_matrix=distance_matrix,
+    #             parameters=binary_params
+    #         )
             
-            # Optimize weights using GNM's weight optimization
-            weighted_sweep_params = fitting.WeightedSweepParameters(
-                alpha=[alpha],
-                optimisation_criterion=[weight_criterion]
-            )
+    #         # Optimize weights using GNM's weight optimization
+    #         weighted_sweep_params = fitting.WeightedSweepParameters(
+    #             alpha=[alpha],
+    #             optimisation_criterion=[weight_criterion]
+    #         )
             
-            sweep_config = fitting.SweepConfig(
-                binary_sweep_parameters=None,
-                weighted_sweep_parameters=weighted_sweep_params,
-                num_simulations=1,
-                distance_matrix=[distance_matrix]
-            )
+    #         sweep_config = fitting.SweepConfig(
+    #             binary_sweep_parameters=None,
+    #             weighted_sweep_parameters=weighted_sweep_params,
+    #             num_simulations=1,
+    #             distance_matrix=[distance_matrix]
+    #         )
             
-            # Create weighted model
-            from gnm.models import GNMWeighted
-            weighted_model = GNMWeighted(
-                binary_adjacency_matrix=generated_binary,
-                alpha=alpha,
-                optimisation_criterion=weight_criterion,
-                device=self.device
-            )
+    #         # Create weighted model
+    #         from gnm.models import GNMWeighted
+    #         weighted_model = GNMWeighted(
+    #             binary_adjacency_matrix=generated_binary,
+    #             alpha=alpha,
+    #             optimisation_criterion=weight_criterion,
+    #             device=self.device
+    #         )
             
-            # Run weight optimization
-            weighted_model.run(num_iterations=1000)
-            weighted_networks.append(weighted_model.get_adjacency_matrix())
+    #         # Run weight optimization
+    #         weighted_model.run(num_iterations=1000)
+    #         weighted_networks.append(weighted_model.get_adjacency_matrix())
         
-        return weighted_networks
+    #     return weighted_networks
     
     def evaluate_network(self,
                         generated_network: torch.Tensor,
@@ -349,64 +353,64 @@ class GNMGenerator:
         
         return results
     
-    def compare_generative_rules(self,
-                                target_network: torch.Tensor,
-                                distance_matrix: torch.Tensor,
-                                rules_to_test: Optional[List[str]] = None,
-                                n_simulations: int = 50) -> Dict[str, Any]:
-        """
-        Compare different generative rules for a target network.
+    # def compare_generative_rules(self,
+    #                             target_network: torch.Tensor,
+    #                             distance_matrix: torch.Tensor,
+    #                             rules_to_test: Optional[List[str]] = None,
+    #                             n_simulations: int = 50) -> Dict[str, Any]:
+    #     """
+    #     Compare different generative rules for a target network.
         
-        Args:
-            target_network: Target network
-            distance_matrix: Distance matrix
-            rules_to_test: List of rule names to test
-            n_simulations: Number of simulations per rule
+    #     Args:
+    #         target_network: Target network
+    #         distance_matrix: Distance matrix
+    #         rules_to_test: List of rule names to test
+    #         n_simulations: Number of simulations per rule
             
-        Returns:
-            Comparison results
-        """
-        if rules_to_test is None:
-            # Test the most common rules
-            rules_to_test = ["matching_index", "neighbors", "degree_product", 
-                           "clustering_coefficient", "spatial"]
+    #     Returns:
+    #         Comparison results
+    #     """
+    #     if rules_to_test is None:
+    #         # Test the most common rules
+    #         rules_to_test = ["matching_index", "neighbors", "degree_product", 
+    #                        "clustering_coefficient", "spatial"]
         
-        results = {}
+    #     results = {}
         
-        for rule_name in rules_to_test:
-            if rule_name not in self.AVAILABLE_RULES:
-                warnings.warn(f"Skipping unknown rule: {rule_name}")
-                continue
+    #     for rule_name in rules_to_test:
+    #         if rule_name not in self.AVAILABLE_RULES:
+    #             warnings.warn(f"Skipping unknown rule: {rule_name}")
+    #             continue
             
-            print(f"Testing {rule_name}...")
+    #         print(f"Testing {rule_name}...")
             
-            try:
-                fit_result = self.fit_parameters(
-                    target_network=target_network,
-                    distance_matrix=distance_matrix,
-                    generative_rule_name=rule_name,
-                    n_eta=10,  # Reduced for speed
-                    n_gamma=10,
-                    num_simulations=n_simulations
-                )
+    #         try:
+    #             fit_result = self.fit_parameters(
+    #                 target_network=target_network,
+    #                 distance_matrix=distance_matrix,
+    #                 generative_rule_name=rule_name,
+    #                 n_eta=10,  # Reduced for speed
+    #                 n_gamma=10,
+    #                 num_simulations=n_simulations
+    #             )
                 
-                results[rule_name] = {
-                    "best_eta": fit_result["best_eta"],
-                    "best_gamma": fit_result["best_gamma"],
-                    "best_energy": fit_result["best_energy"]
-                }
-            except Exception as e:
-                results[rule_name] = {"error": str(e)}
+    #             results[rule_name] = {
+    #                 "best_eta": fit_result["best_eta"],
+    #                 "best_gamma": fit_result["best_gamma"],
+    #                 "best_energy": fit_result["best_energy"]
+    #             }
+    #         except Exception as e:
+    #             results[rule_name] = {"error": str(e)}
         
-        # Find best rule
-        best_rule = min(
-            [k for k, v in results.items() if "best_energy" in v],
-            key=lambda x: results[x]["best_energy"]
-        )
+    #     # Find best rule
+    #     best_rule = min(
+    #         [k for k, v in results.items() if "best_energy" in v],
+    #         key=lambda x: results[x]["best_energy"]
+    #     )
         
-        results["best_rule"] = best_rule
+    #     results["best_rule"] = best_rule
         
-        return results
+    #     return results
 
 
 ############## 
@@ -564,7 +568,7 @@ def generate_network_gnm(self,
     generator = GNMGenerator(self.device)
     
     # Convert to torch tensors
-    target_tensor = torch.tensor(target_connectome, dtype=torch.float32)
+    target_tensor = torch.tensor(target_connectome, dtype=torch.float32) # CHECK: IS THIS EVEN ENTERED???
     dist_tensor = torch.tensor(distance_matrix, dtype=torch.float32)
     
     # Create parameters

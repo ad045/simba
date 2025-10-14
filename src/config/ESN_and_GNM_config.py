@@ -226,77 +226,77 @@ class ConfigManager:
         self.compute = compute_config or ComputeConfig()
         self.paths = path_config or PathConfig()
     
-    def create_gnm_random_sweep_config(self,
-                                       h_params, 
-                                       distance_matrix: torch.Tensor,
-                                    #    num_iterations: int,
-                                    #    num_simulations: int = 100,
-                                    #    method: Optional[str] = "grid", # "random", # "grid",
-                                    #    n_random_samples: int = 30,
-                                    #    include_weights: bool = True
-                                    ) -> fitting.SweepConfig:
-        """Create GNM sweep configuration with random parameter sampling."""
+    # def create_gnm_random_sweep_config(self,
+    #                                    h_params, 
+    #                                    distance_matrix: torch.Tensor,
+    #                                 #    num_iterations: int,
+    #                                 #    num_simulations: int = 100,
+    #                                 #    method: Optional[str] = "grid", # "random", # "grid",
+    #                                 #    n_random_samples: int = 30,
+    #                                 #    include_weights: bool = True
+    #                                 ) -> fitting.SweepConfig:
+    #     """Create GNM sweep configuration with random parameter sampling."""
         
-        # Generate random parameter values
-        eta_values = torch.empty(h_params["n_random_samples"])
-        gamma_values = torch.empty(h_params["n_random_samples"])
+    #     # Generate random parameter values
+    #     eta_values = torch.empty(h_params["n_random_samples"])
+    #     gamma_values = torch.empty(h_params["n_random_samples"])
         
         
-        # h_params = {"spectral_radius": self.config.esn.spectral_radius,  #### TODO: HAND A BIG HPARAMS DICT TO THIS FUNCTION!! (instead of doing it all one by one...)
-        #             "n_lags": self.config.esn.n_lags,
-        #             "train_len": self.config.esn.input_length, # seems to have gotten two names... train_len,
-        #             "test_len": self.config.esn.test_len,
-        #             "n_runs": self.config.esn.n_runs,
-        #             "input_scaling": self.config.esn.input_scaling, 
-        #             "regression_method": self.config.esn.regularization_method, 
-        #             "n_transient": self.config.esn.n_transient,
-        #             "leak_rate": self.config.esn.leak_rate, 
-        #             "bias": self.config.esn.bias,  
-        #             "random_state": self.config.compute.random_seed,     
-        # }
-        for i in range(h_params["n_random_samples"]):
-            eta_values[i] = torch.rand(1) * (self.gnm.eta_range[1] - self.gnm.eta_range[0]) + self.gnm.eta_range[0]
-            gamma_values[i] = torch.rand(1) * (self.gnm.gamma_range[1] - self.gnm.gamma_range[0]) + self.gnm.gamma_range[0]
+    #     # h_params = {"spectral_radius": self.config.esn.spectral_radius,  #### TODO: HAND A BIG HPARAMS DICT TO THIS FUNCTION!! (instead of doing it all one by one...)
+    #     #             "n_lags": self.config.esn.n_lags,
+    #     #             "train_len": self.config.esn.input_length, # seems to have gotten two names... train_len,
+    #     #             "test_len": self.config.esn.test_len,
+    #     #             "n_runs": self.config.esn.n_runs,
+    #     #             "input_scaling": self.config.esn.input_scaling, 
+    #     #             "regression_method": self.config.esn.regularization_method, 
+    #     #             "n_transient": self.config.esn.n_transient,
+    #     #             "leak_rate": self.config.esn.leak_rate, 
+    #     #             "bias": self.config.esn.bias,  
+    #     #             "random_state": self.config.compute.random_seed,     
+    #     # }
+    #     for i in range(h_params["n_random_samples"]):
+    #         eta_values[i] = torch.rand(1) * (self.gnm.eta_range[1] - self.gnm.eta_range[0]) + self.gnm.eta_range[0]
+    #         gamma_values[i] = torch.rand(1) * (self.gnm.gamma_range[1] - self.gnm.gamma_range[0]) + self.gnm.gamma_range[0]
 
-        # Get generative rules
-        rules = []
-        for rule_name in self.gnm.generative_rules_to_test:
-            if rule_name == "matching_index":
-                rules.append(generative_rules.MatchingIndex())
-            elif rule_name == "neighbors":
-                rules.append(generative_rules.Neighbors()) # TODO: include those. 
-            elif rule_name == "degree_product":
-                rules.append(generative_rules.DegreeProduct())
-            elif rule_name == "clustering_coefficient":
-                rules.append(generative_rules.ClusteringCoefficient())
-            elif rule_name == "spatial":
-                rules.append(generative_rules.Spatial())
-            else:
-                rules.append(generative_rules.MatchingIndex())
+    #     # Get generative rules
+    #     rules = []
+    #     for rule_name in self.gnm.generative_rules_to_test:
+    #         if rule_name == "matching_index":
+    #             rules.append(generative_rules.MatchingIndex())
+    #         elif rule_name == "neighbors":
+    #             rules.append(generative_rules.Neighbors()) # TODO: include those. 
+    #         elif rule_name == "degree_product":
+    #             rules.append(generative_rules.DegreeProduct())
+    #         elif rule_name == "clustering_coefficient":
+    #             rules.append(generative_rules.ClusteringCoefficient())
+    #         elif rule_name == "spatial":
+    #             rules.append(generative_rules.Spatial())
+    #         else:
+    #             rules.append(generative_rules.MatchingIndex())
         
-        binary_params = fitting.BinarySweepParameters( # TODO: Change this hardcoding! 
-            eta=eta_values,
-            gamma=gamma_values,
-            lambdah=torch.tensor([0.0]),  # Single lambda value
-            distance_relationship_type=["powerlaw"],
-            preferential_relationship_type=["powerlaw"],
-            heterochronicity_relationship_type=["powerlaw"],
-            generative_rule=rules,
-            num_iterations=[num_iterations],
-        )
+    #     binary_params = fitting.BinarySweepParameters( # TODO: Change this hardcoding! 
+    #         eta=eta_values,
+    #         gamma=gamma_values,
+    #         lambdah=torch.tensor([0.0]),  # Single lambda value
+    #         distance_relationship_type=["powerlaw"],
+    #         preferential_relationship_type=["powerlaw"],
+    #         heterochronicity_relationship_type=["powerlaw"],
+    #         generative_rule=rules,
+    #         num_iterations=[num_iterations],
+    #     )
         
-        weighted_params = None
-        if include_weights:
-            weighted_params = self.gnm.create_weighted_sweep_parameters(distance_matrix)
+    #     weighted_params = None
+    #     if include_weights:
+    #         weighted_params = self.gnm.create_weighted_sweep_parameters(distance_matrix)
 
-        return fitting.SweepConfig(
-            binary_sweep_parameters=binary_params,
-            weighted_sweep_parameters=weighted_params,
-            num_simulations=h_params["n_random_samples"],
-            distance_matrix=[distance_matrix], 
-            method=h_params["method"], 
-            num_random_samples=h_params["n_random_samples"], 
-        )
+    #     return fitting.SweepConfig(
+    #         binary_sweep_parameters=binary_params,
+    #         weighted_sweep_parameters=weighted_params,
+    #         num_simulations=h_params["n_random_samples"],
+    #         distance_matrix=[distance_matrix], 
+    #         method=h_params["method"], 
+    #         num_random_samples=h_params["n_random_samples"], 
+    #     )
 
     # def create_gnm_sweep_config(self, 
     #                            distance_matrix: torch.Tensor,

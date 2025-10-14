@@ -245,7 +245,7 @@ wandb*.json
 *.wandb 
 *wandb*
 sweep-*/ */
-config*.yaml
+# config*.yaml
 
 visualizations/
 output/

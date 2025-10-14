@@ -1381,7 +1381,7 @@ def compare_all_networks(
     # Use multiprocessing Pool to process tasks in parallel
     results_count = 0
     
-    with Pool() as pool:
+    with Pool(processes=4) as pool:
         # Use tqdm to show progress with imap
         for i, result in enumerate(tqdm(
             pool.imap(process_network_optimized, tasks), 
@@ -1416,8 +1416,9 @@ def main():
     """Main execution function."""
     
     # Define paths
+    # TODO: use Path class 
     dataset_name = "suarez_MaMI_dataset"
-    experiment_name = "33_suarez_MaMI_size_100_extensive_220_300_iter" # 31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation"
+    experiment_name = "45_suarez_MaMI_100_big_sweep_over_night" # 33_suarez_MaMI_size_100_extensive_220_300_iter" # 31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation"
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/33_suarez_MaMI_size_100_extensive_220_300_iter/all_metrics_for_exp_30_shafiei_size_68.csv
     path_experiment = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm") / dataset_name / experiment_name
     generated_networks_dir = path_experiment / "generated_networks"
@@ -1428,7 +1429,7 @@ def main():
     
     # Reference CSV with desired parameter order
     # TODO: Change this later! 
-    reference_csv_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm") / dataset_name / experiment_name / f"all_metrics_for_exp_30_shafiei_size_68.csv" # f"all_metrics_for_{experiment_name}.csv"
+    reference_csv_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm") / dataset_name / experiment_name / f"all_metrics_{experiment_name}.csv" # f"all_metrics_for_{experiment_name}.csv"
     
     # Optional: Load a config for custom evaluation metrics
     config_dict = {
