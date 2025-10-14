@@ -1,0 +1,59 @@
+# Note: Not every parameter is relevant for every experiment type.
+experiment:
+  experiment_type: gnm_sweep
+  name: 35_suarez_MaMI_pipeline_test
+  num_runs: 300
+  search:
+  method: random
+  n_samples: 100
+  wandb:
+  enabled: false
+  project: GNM_project
+
+# --- Control which parts of the pipeline to run ---
+pipeline_steps:
+run_experiment: true
+run_evaluation: true
+extract_best_params: true
+save_matches: true
+run_visualization: true
+
+# --- Centralized Path Management ---
+paths:
+  # The single root directory for your project
+  project_root: "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code"
+
+  # --- Relative file names/paths within the project structure ---
+  # Relative to: {project_root}/data/preprocessed/{dataset_name}/
+  empirical_connectomes_file: "01_connectomes/01_consensus_bin_density_10_percent_100.npy"
+  distance_matrix_file: "02_distance_matrices/distance_matrix_100.npy"
+  animal_metadata_file: "04_further_info/names_of_animals_with_preprocessed_connectomes_100.csv"
+
+  # Relative to: {project_root}/output/
+  empirical_analysis_file: "emprirical_analysis/empirical_analysis.csv"
+
+data:
+  dataset_name: suarez_MaMI_dataset
+  connectome_resolution: 100
+  density: 10
+
+gnm:
+  eta_range: [-11.0, 10.0]
+  gamma_range: [-1, 1.0]
+  generative_rules_to_test:
+  - matching_index
+  num_simulations: 10
+  evaluation_metrics:
+  - degree_ks
+  - clustering_ks
+  - edge_length_ks
+  - betweenness_ks
+
+compute:
+  device: "cpu"
+  n_workers: 4
+  random_seed: 42
+
+output:
+  figure_format: pdf
+  verbosity: INFO

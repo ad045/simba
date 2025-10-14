@@ -1,0 +1,150 @@
+# Note: Not every parameter is relevant for every experiment type. 
+# Note: Not all parameter configurations are tested yet. 
+
+experiment:
+  experiment_type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
+  type: gnm_sweep
+  name: 34_suarez_MaMI_100_testing
+  animal: 220 # later: should be name. BUT I still need to that
+  compare_to_connectome_from_dist_matrix: true # false does not work!! false
+  average_connectomes: true  # TODO: should be indented. 
+  elaborate_analysis: true  # check if this is ingored?? (should not be, hopefully)
+  evaluate_individual_empirical_connectomes: false # true # false # true # include this - this is currently not parsed by yaml... TODO: See if it duplicates with directly_comp_with_emp_networks
+  search:
+    method: random # grid  # Options: grid, random, bayesian
+    n_samples: 100  # For random search
+  wandb:
+    enabled: false
+    project: GNM_project # GNM_Pipeline
+  compare_rules: true  # For gnm_comprehensive
+  fit_weights: true    # For gnm_comprehensive
+
+data:
+  dataset_name: suarez_MaMI_dataset # shafiei_human_consensus_dataset
+  connectome_resolution: 100 # 50 # 68 # 1000 # 114, 68
+  density: 10
+
+gnm:
+  eta_range: [-11.0, 10.0] # [-7.0, 0.0] # [-3.0, 0.0] # Attention: Too big values may lead to numerical instabilities! e.g.: [-5.0, 0.0] 
+  gamma_range: [-1, 1.0] # Attention: Too big values may lead to numerical instabilities! e.g.: [0.0, 1.0]
+  lambda: 0.0 # [0.0, 0,0]
+  n_eta: 100 # 10  # Number of eta grid points. Only relevant if "grid" is chosen. 
+  n_gamma: 100 # 10  # Number of gamma grid points. Only relevant if "grid" is chosen. 
+  generative_rules_to_test:  # wiring rules!! 
+    - matching_index
+    # - degree_product # clustering_coefficient does not work yet... 
+    # - communicability 
+  num_simulations: 10 # 00
+  evaluation_metrics:
+    - degree_ks
+    - clustering_ks
+    - edge_length_ks
+    - betweenness_ks
+  weight_criterion: distance_weighted_communicability
+  alpha: 0.01
+  distance_relationship_type: ["powerlaw"]
+  preferential_relationship_type: ["powerlaw"]
+  heterochronicity_relationship_type: ["powerlaw"]
+
+dyn_gnm: # optional, only relevant for DynGNM
+  dynamic_fitness_metric: "mc_mean" # Metric to optimize during dynamic generation.  "mc_mean", "branching_ratio", "info_balance", ...
+
+esn: # (optional section)
+  spectral_radius: 0.9 # 1.0] # [0.5, 1.0, 1.5, 2.0]  # List for grid search. Everything above around 1 is prob stable 
+  input_scaling: 1.0 # 1.5 1.02] # [1e-5] #[0.5] # 1.0] # , 1.5]
+  train_len: 5000 # [500, 1000, 2000, 3000, 4000]
+  regression_method: "pinv"
+  # regularization_methods: [pinv] # pinv] # pinv] #ridge] #pinv] #, ridge] #maybe ridge does not work? 
+  n_runs: 50
+  n_lags: 50
+  test_len: 1000
+  leak_rate: 1.0 # only relies on input data, not older data
+  bias: 0.0 # 1.0 no constant bias added. 
+  n_transient: 0 
+  random_state: 42 #### IS THIS SENSIBLE??? TODO 
+
+compute:
+  device: "cpu"
+  n_workers: 4 # 1 for debugging!!  # -1 for maximum parallelization # 12 # 14 cores - 10 normal, 4 efficiency. TODO: Is not satisfactory implemented, I guess... 
+  timing_flag: true
+  random_seed: 42
+
+
+output:
+  # root_dir: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code  # Override root directory
+  # base_dir: ./output  # Possibility to override base output directory
+  # experiment_name: my_experiment # TODO: TAKE THIS FROM ABOVE! 
+  # save_intermediate: true # TODO: REMOVE THIS AGAIN! 
+  figure_format: pdf # png
+  verbosity: INFO
+
+
+
+
+
+# """
+# Configuration constants for the 14_4D_lab project.
+# Centralizes magic numbers and commonly used values.
+# """
+
+# # Default dataset + resolution for connectome data
+# DEFAULT_DATASET_NAME = "shafiei_human_consensus_dataset"
+# DEFAULT_RESOLUTION = 68
+
+# # Random seed for reproducibility
+# DEFAULT_RANDOM_SEED = 42
+
+# # GNM parameter defaults
+# DEFAULT_N_ETA = 200
+# DEFAULT_N_GAMMA = 200
+# DEFAULT_N_LAMBDA = 1
+# DEFAULT_NUM_SIMULATIONS = 10
+
+# # ESN parameter defaults
+# DEFAULT_SPECTRAL_RADIUS = 0.99
+# DEFAULT_INPUT_LENGTH = 4000
+# DEFAULT_INPUT_SCALING = 0.0001 # 1.0
+# DEFAULT_N_RUNS = 10
+# DEFAULT_N_LAGS = 50
+# DEFAULT_TEST_LENGTH = 1000
+# DEFAULT_N_TRANSIENT = 0
+# DEFAULT_LEAK_RATE = 1.0
+# DEFAULT_BIAS = 1.0
+
+# # Default density percentages for connectivity analysis
+# DEFAULT_DENSITIES = [10, 12, 14, 16, 18, 20]
+
+# # Default methods and algorithms
+# DEFAULT_REGULARIZATION_METHOD = "pinv"
+# DEFAULT_GENERATIVE_RULES = ["matching_index"]
+# DEFAULT_EVALUATION_METRICS = ["degree_ks", "clustering_ks", "edge_length_ks"]
+# DEFAULT_WEIGHT_CRITERION = "distance_weighted_communicability"
+
+# # Default parameter ranges
+# DEFAULT_ETA_RANGE = (-3.0, 0.0)
+# DEFAULT_GAMMA_RANGE = (0.001, 0.6)
+# DEFAULT_LAMBDA_RANGE = (0.0, 0.0)
+# DEFAULT_ALPHA = 0.01
+
+# # Plotting defaults
+# DEFAULT_COLORMAP_CONTINUOUS = "viridis"
+# DEFAULT_COLORMAP_DIVERGING = "RdBu_r"
+# DEFAULT_FIGURE_FORMAT = "pdf"
+# DEFAULT_DPI = 300
+
+# # Default figure sizes
+# DEFAULT_FIGSIZE_SINGLE = (8, 6)
+# DEFAULT_FIGSIZE_DOUBLE = (12, 6)
+# DEFAULT_FIGSIZE_LANDSCAPE = (10, 8)
+# DEFAULT_FIGSIZE_HUGE = (18, 5)
+
+# # Computational defaults
+# DEFAULT_APPEND_INTERVAL = 10
+
+# # File naming patterns
+# CONNECTOMES_WEIGHTED_PATTERN = "connectomes_weighted_{resolution}x{resolution}.npy"
+# CONNECTOMES_BINARY_PATTERN = "connectomes_binarized_{resolution}x{resolution}_density_{density}_percent.npy"
+# DISTANCE_MATRIX_PATTERN = "distance_matrix_{resolution}x{resolution}.npy"
+
+# # Tolerance values for numerical comparisons
+# NUMERICAL_TOLERANCE = 1e-10
