@@ -68,7 +68,8 @@ if __name__ == "__main__":
         
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/45_shafiei_size_68_testing_4/all_metrics_for_exp_30_shafiei_size_68.csv"
         
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/45_shafiei_size_68_testing_5/all_metrics_for_exp_30_shafiei_size_68.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/45_shafiei_size_68_testing_5/all_metrics_for_exp_30_shafiei_size_68.csv"
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/48_suarez_MaMI_100/all_metrics_for_48_suarez_MaMI_100.csv"
     ]       
     plot_indiv_connectomes = False # True # False # True #  False # True # False
     
@@ -201,9 +202,6 @@ if __name__ == "__main__":
 
             df[metric_col_name] = pd.to_numeric(df[metric_col_name], errors='coerce')
             df = df.dropna(subset=['eta', 'gamma', metric_col_name])
-            
-            print(len(df))
-            
             
             if df.empty:
                 print(f"SKIPPING: No valid data for '{metric}' after cleaning.\n")

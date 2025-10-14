@@ -5,12 +5,12 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 46_suarez_MaMI_100_big_sweep_over_night
+  name: 48_suarez_MaMI_100
   animal: 220
   compare_to_connectome_of_distance_matrix: true
   average_connectomes: true
   elaborate_analysis: true
-  compare_to_all_individual_empirical_connectomes: true #  false
+  compare_to_all_individual_empirical_connectomes: true #  false # not sure if this currently does anything....
   
   search:
     method: random
@@ -130,7 +130,7 @@ esn:
 
 compute:
   device: cpu
-  n_workers: -1 # 4
+  n_workers: 4
   timing_flag: true
   random_seed: 42
 
