@@ -216,7 +216,8 @@ if __name__ == "__main__":
     
     df_paths = [
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation/all_metrics_for_exp_30_shafiei_size_68.csv"
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/33_suarez_MaMI_size_100_extensive_220_300_iter/all_metrics_for_exp_30_shafiei_size_68_interim_copy.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/33_suarez_MaMI_size_100_extensive_220_300_iter/all_metrics_for_exp_30_shafiei_size_68_interim_copy.csv"
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/49_suarez_MaMI_100/all_metrics_for_49_suarez_MaMI_100.csv"
     ]
     
     # Path to the enriched animal metadata

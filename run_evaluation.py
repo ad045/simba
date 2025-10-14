@@ -159,14 +159,14 @@ def get_ordered_tasks(
         network_map[key] = (i, generated_networks[i], params, filename)
     
     # Prioritize reference CSV for ordering
-    order_source = reference_df if reference_df is not None else existing_results_df
+    order_source = reference_df.copy() if reference_df is not None else existing_results_df.copy()
     
     # If we have a reference or existing results, follow their order first
     if order_source is not None and not order_source.empty:
         # Get unique parameter combinations in their existing order
         existing_params = list(zip(
-            order_source['eta'], # .round(3),  # TODO: Increase this resolution! 
-            order_source['gamma'], # .round(3), 
+            order_source['eta'], 
+            order_source['gamma'], 
         ))
         
         # Add networks in the order they appear (TODO: skip processed ones)
@@ -311,7 +311,8 @@ def compare_all_networks(
     distance_matrices_path: Path = None,
     config_dict: Dict = None,
     output_path: Path = None,
-    reference_csv_path: Path = None
+    reference_csv_path: Path = None, 
+    number_multiprocessing_processes: int = -1, 
 ) -> pd.DataFrame:
     """
     Compare all generated networks with empirical networks using optimized multiprocessing.
@@ -338,7 +339,7 @@ def compare_all_networks(
     reference_df = None
     if reference_csv_path and reference_csv_path.exists():
         try:
-            reference_df = pd.read_csv(reference_csv_path)
+            reference_df = pd.read_csv(reference_csv_path).copy()
             print(f"📖 Using parameter order from: {reference_csv_path.name}")
         except Exception as e:
             print(f"Warning: Could not load reference CSV: {e}")
@@ -419,7 +420,7 @@ def compare_all_networks(
     # Use multiprocessing Pool to process tasks in parallel
     results_count = 0
     
-    with Pool(processes=4) as pool:
+    with Pool(processes=number_multiprocessing_processes) as pool:
         # Use tqdm to show progress with imap
         for i, result in enumerate(tqdm(
             pool.imap(process_network_optimized, tasks), 
@@ -453,29 +454,30 @@ def compare_all_networks(
 def main():
     """Main execution function."""
     
-    # Define paths
-    # TODO: use Path class 
+    ##########################################################################
+    ########### HARDCODED STUFF ##############################################
+
     dataset_name = "suarez_MaMI_dataset"
-    experiment_name = "45_suarez_MaMI_100_big_sweep_over_night" # 33_suarez_MaMI_size_100_extensive_220_300_iter" # 31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation"
-    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/33_suarez_MaMI_size_100_extensive_220_300_iter/all_metrics_for_exp_30_shafiei_size_68.csv
+    experiment_name = "49_suarez_MaMI_100" 
+    number_multiprocessing_processes = 8 # "must be at least 1" - so I guess no -1 then? 
     
+    ##########################################################################
        
     path_config = PathConfig( 
         dataset_name=dataset_name,
         experiment_name=experiment_name, 
     )
     
-    
     generated_networks_dir = path_config.output_experiment_dir / "generated_networks"
     empirical_networks_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed") / dataset_name / "01_connectomes/01_consensus_bin_density_10_percent_100.npy"
     
     # Distance matrix path
-    distance_matrix_path = path_config.dir_01_connectomes /"distance_matrix_100.npy"
+    distance_matrix_path = path_config.dir_02_distance_matrices /"distance_matrix_100.npy"
     
     # Reference CSV with desired parameter order
-    reference_csv_path = path_config.output_experiment_dir / f"all_metrics_{experiment_name}.csv" # f"all_metrics_for_{experiment_name}.csv"
+    reference_csv_path = path_config.output_experiment_dir / f"all_metrics_for_{experiment_name}.csv" # f"all_metrics_for_{experiment_name}.csv"
     
-    # Optional: Load a config for custom evaluation metrics
+    # Load a config for custom evaluation metrics
     config_dict = {
         'gnm': {
             'evaluation_metrics': ['degree_ks', 'clustering_ks', 'edge_length_ks', 'betweenness_ks']
@@ -516,7 +518,8 @@ def main():
             distance_matrices_path=distance_matrix_path if distance_matrix_path.exists() else None,
             config_dict=config_dict,
             output_path=output_path,
-            reference_csv_path=reference_csv_path if reference_csv_path.exists() else None
+            reference_csv_path=reference_csv_path if reference_csv_path.exists() else None, 
+            number_multiprocessing_processes=number_multiprocessing_processes, 
         )
         
         # Display summary
@@ -530,8 +533,10 @@ def main():
             print(f"  gamma: [{results_df['gamma'].min():.3f}, {results_df['gamma'].max():.3f}]")
             print(f"\nFirst few rows of results:")
             print(results_df.head())
-        
+        else: 
+            print("⚠️ Attention: results_df is empty.")
         print("\n✅ Comparison complete!")
+
         
         return results_df
         
