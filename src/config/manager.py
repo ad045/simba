@@ -13,7 +13,7 @@ from config.path import PathConfig
 
 def create_gnm_random_sweep_config(config, #  TODO: Combine with function below (and thus make the label "random" and "grid" useable...)
                                     distance_matrix: torch.Tensor,
-                                    num_iterations: int,
+                                    num_iterations: int, # TODO: Turn this into how many matrices are GENERATED per run... 
                                     num_simulations: int, 
                                     include_weights: bool, 
                                     ) -> fitting.SweepConfig:
@@ -48,6 +48,11 @@ def create_gnm_random_sweep_config(config, #  TODO: Combine with function below 
             else:
                 rules.append(generative_rules.MatchingIndex())
         
+        
+        
+        density = config["data"]["density"] / 100  # TODO: Turn everything into non-percent but true values?
+        n = distance_matrix.shape[-1]
+        
         binary_params = fitting.BinarySweepParameters(
             eta=eta_values,
             gamma=gamma_values,
@@ -56,7 +61,7 @@ def create_gnm_random_sweep_config(config, #  TODO: Combine with function below 
             preferential_relationship_type=config["gnm"]["preferential_relationship_type"], 
             heterochronicity_relationship_type=config["gnm"]["heterochronicity_relationship_type"],
             generative_rule=rules,
-            num_iterations=[num_iterations],
+            num_iterations=[int(density * n * n)] # TODO: check this! NUMBER EDGES!!!!  If this is set to 10, then "added_edges" will have in the end 9 "elements": torch.Size([9, 1, 2]) # , [num_iterations],
         )
         
         weighted_params = None

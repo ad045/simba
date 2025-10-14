@@ -1,8 +1,8 @@
 import pandas as pd
 
-def merge_csv_files(base_dir):
+def merge_csv_files(base_dir, experiment_name):
     # Define paths
-    target_file = base_dir / 'all_metrics_for_exp_30_shafiei_size_68.csv'
+    target_file = base_dir / f'all_metrics_for_{experiment_name}.csv'
     
     # Collect all result CSV files from base directory (recursively)
     result_files = list(base_dir.glob('**/result_*.csv'))

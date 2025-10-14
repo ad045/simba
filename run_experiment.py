@@ -3,6 +3,33 @@ YAML-based configuration system integrated with existing ConfigManager.
 This script orchestrates running an experiment multiple times, manages configuration
 files, and records the total execution time.
 """
+
+
+
+###########################################################################################
+# ============================================================================
+# CRITICAL: Set multiprocessing method BEFORE any other imports
+# This must be the very first code that runs (after docstring)
+# ============================================================================
+import multiprocessing as mp
+import os
+import sys
+
+if __name__ == "__main__":
+    # Force spawn method for macOS compatibility
+    mp.set_start_method('spawn', force=True)
+    
+    # Disable threading in numeric libraries
+    os.environ['OMP_NUM_THREADS'] = '1'
+    os.environ['MKL_NUM_THREADS'] = '1'
+    os.environ['OPENBLAS_NUM_THREADS'] = '1'
+    os.environ['VECLIB_MAXIMUM_THREADS'] = '1'
+    os.environ['NUMEXPR_NUM_THREADS'] = '1'
+###########################################################################################
+
+
+
+
 import argparse
 import filecmp
 import json
@@ -18,14 +45,20 @@ from src.config.yaml_loader import YAMLConfigLoader
 from src.pipeline.orchestrator import run_from_yaml
 
 
+from config.manager import ConfigManager, PathConfig
+
 ###########################################################################################
 # HARDCODED CONFIGURATION
 # Set the path to your configuration file here.
 # All command-line arguments will be ignored when these are set.
 ###########################################################################################
-HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
+HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_shafiei_human_consensus_dataset.yaml" 
+# HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
 HARDCODED_NUM_RUNS = 2
 ###########################################################################################
+
+
+
 
 
 class ExperimentRunner:
@@ -41,12 +74,19 @@ class ExperimentRunner:
         """Load YAML config and extract experiment name."""
         print(f"Loading configuration from '{self.config_path}'...")
         loader = YAMLConfigLoader(self.config_path)
-        experiment_name = loader.config.get("experiment", {}).get("name")
+        experiment_name = loader.config["experiment"]["name"]
+        dataset_name = loader.config["data"]["dataset_name"]
+        
+        
+        self.path_config = PathConfig( # is this even necessary? 
+            dataset_name=dataset_name,
+            experiment_name=experiment_name, 
+        )
         
         if not experiment_name:
             raise ValueError("'name' not found under 'experiment' in the config file.")
         
-        self.output_dir = os.path.join("output", "gnm", experiment_name)
+        self.output_dir = self.path_config.output_experiment_dir # os.path.join("output", "gnm", experiment_name)
         print(f"✅ Experiment name: '{experiment_name}'")
         print(f"✅ Output directory set to: '{self.output_dir}'")
         
@@ -111,8 +151,9 @@ class ExperimentRunner:
         
         timing_file = os.path.join(self.output_dir, "run_duration.json")
         try:
-            with open(timing_file, 'w') as f:
+            with open(timing_file, 'a') as f:
                 json.dump(timing_info, f, indent=4)
+                f.write("\n")
             print(f"✅ Timing information saved to '{timing_file}'")
         except Exception as e:
             print(f"⚠️  Could not save timing information: {e}", file=sys.stderr)
@@ -191,5 +232,5 @@ def main():
     runner.run()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
     main()
