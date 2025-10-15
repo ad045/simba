@@ -46,13 +46,12 @@ class ESNEvaluator:
         df = pd.DataFrame(rows, columns=columns)
         df.to_csv(path, mode="a", index=False, header=not path.exists())
     
-    
-    
 
     def _alternative_evaluate_mc(W,  # it gets to this one
-                                 n_lags=50, 
-                                 train_len=4000, 
-                                 test_len=1000):
+                                 n_lags, 
+                                 train_len, 
+                                 test_len, 
+                                 n_transient):
         """Evaluates the Memory Capacity of a given reservoir matrix W."""
         
         # 1. Generate data for the MC task
@@ -81,7 +80,7 @@ class ESNEvaluator:
         # 3. Calculate the MC score
         mc_score = 0
         for i in range(n_lags):
-            corr, _ = pearsonr(y_test[100:, i], y_pred[100:, i]) # Discard initial transient
+            corr, _ = pearsonr(y_test[n_transient:, i], y_pred[n_transient:, i]) # Discard initial transient
             mc_score += corr**2
             
         return mc_score
@@ -91,8 +90,8 @@ class ESNEvaluator:
                     subj_idx: int,
                     A_obs: np.ndarray, 
                     hparams: Dict[str, Any],
-                    timing_flag: bool = True,
-                    random_seed: Optional[int] = None
+                    timing_flag: bool,
+                    random_seed: Optional[int], 
                     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Evaluate memory capacity for a single subject with given hyperparameters.
@@ -108,32 +107,21 @@ class ESNEvaluator:
             Tuple of (mc_result_dict, timing_dict)
         """
         if timing_flag:
-            t_metrics = 0.0  # Placeholder for potential graph metrics timing: TODO
-        
-        # Set up hyperparameters with defaults
-        # esn_hparams = {
-        #     "spectral_radius": 0, #  hparams.get("spectral_radius", self.config.esn.spectral_radius),
-        #     "input_length": 0, # hparams.get("input_length", self.config.esn.input_length),
-        #     "input_scaling": 0, # hparams.get("input_scaling", self.config.esn.input_scaling),
-        #     "regularization_method": 0, # hparams.get("regularization_method", self.config.esn.regularization_method),
-        #     "n_runs": 0, # hparams.get("n_runs", self.config.esn.n_runs),
-        #     "n_lags": 0, # self.config.esn.n_lags,
-        #     "test_len": 0, # self.config.esn.test_len,
-        #     "n_transient": 0, # self.config.esn.n_transient,
-        #     "leak_rate": 0, # self.config.esn.leak_rate,
-        #     "bias": 0, # self.config.esn.bias,
-        # }
-        
-        if timing_flag:
+            t_metrics = 0.0  
             t_esn0 = time.perf_counter()
         
         with warnings.catch_warnings(): # This one fails... 
             warnings.simplefilter("ignore", RuntimeWarning)
             np.seterr(over="ignore", divide="ignore", invalid="ignore")
 
-            mc_score = self._alternative_evaluate_mc(A_obs, n_lags=50, train_len=4000, test_len=1000)
+            # TODO: Check what the hparams are and then use them to replace this hardcoding. 
+            mc_score = self._alternative_evaluate_mc(A_obs,  
+                                                     n_lags=50, 
+                                                     train_len=4000, 
+                                                     test_len=1000, 
+                                                     n_transient=100)
             
-            mc_result_dict = {
+            mc_result_dict = { # What happens if I remove this? 
             "mc_mean": mc_score, # float(np.mean(mc_values)), 
             "mc_std": 0, # float(np.std(mc_values)),
             "mean_mc_of_individual_runs": 0, # mc_values,  
@@ -202,12 +190,13 @@ class ESNEvaluator:
         
         mc_result, timing = self._subject_job(
             subject_idx, connectome, hparams, 
-            self.config.compute.timing_flag, self.config.compute.random_seed
+            self.config.compute.timing_flag, 
+            self.config.compute.random_seed
         )
         
         return {**mc_result, "timing": timing}
     
-    def run_hyperparameter_sweep(self,
+    def run_hyperparameter_sweep(self, # TODO: Remove defaults. 
                                 connectomes: Union[np.ndarray, Dict[int, np.ndarray]],
                                 hparam_grid: List[Dict[str, Any]],
                                 save_dir: Path,
@@ -306,7 +295,8 @@ class ESNEvaluator:
             futures = [
                 pool.submit(
                     self._subject_job, 
-                    subj_idx, A_i, hp, 
+                    subj_idx, 
+                    A_i, hp, 
                     self.config.compute.timing_flag, 
                     self.config.compute.random_seed
                 )

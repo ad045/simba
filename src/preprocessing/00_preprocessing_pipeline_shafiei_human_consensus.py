@@ -159,7 +159,7 @@ def main(resolution = None):
     
     
     thres_conn, final_density = threshold_to_density(consensus_wei=conns, 
-                                                    n_nodes=resolution, 
+                                                    # n_nodes=resolution, 
                                                     density=10, 
                                                     output_folder=paths["path_01_connectomes"])
 

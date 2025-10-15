@@ -28,15 +28,15 @@ if __name__ == "__main__":
 ###########################################################################################
 
 
-# ###########################################################################################
-# # HARDCODED CONFIGURATION
-# # Set the path to your configuration file here.
-# # All command-line arguments will be ignored when these are set.
-# ###########################################################################################
-# HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_shafiei_human_consensus_dataset.yaml" 
+###########################################################################################
+# HARDCODED CONFIGURATION
+# Set the path to your configuration file here.
+# All command-line arguments will be ignored when these are set.
+###########################################################################################
+HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_shafiei_human_consensus_dataset.yaml" 
 # HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
-# HARDCODED_NUM_RUNS = 2
-# ###########################################################################################
+HARDCODED_NUM_RUNS = 2
+###########################################################################################
 
 
 
@@ -55,7 +55,7 @@ from src.config.yaml_loader import YAMLConfigLoader
 from src.pipeline.orchestrator import run_from_yaml
 
 
-from config.manager import PathConfig
+from config.manager import ConfigManager, PathConfig
 
 
 
@@ -165,7 +165,7 @@ class ExperimentRunner:
         
         try:
             self.load_config()
-            self.manage_config_file() # Seems to have issues?
+            self.manage_config_file()
             self.run_experiments()
             self.combine_csv_files()
             
@@ -197,22 +197,17 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run an experiment series from a YAML configuration file."
     )
-    
-    # HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_shafiei_human_consensus_dataset.yaml" 
-    HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
-    HARDCODED_NUM_RUNS = 2
-    
     parser.add_argument(
         "config",
         type=str,
         nargs='?',
-        default=HARDCODED_CONFIG_PATH, # None,
+        default=None,
         help="Path to the YAML configuration file (overridden by HARDCODED_CONFIG_PATH if set)."
     )
     parser.add_argument(
         "-n", "--num_runs",
         type=int,
-        default=HARDCODED_NUM_RUNS, # 1,
+        default=1,
         help="Number of times to run the experiment (overridden by HARDCODED_NUM_RUNS if set)."
     )
     return parser.parse_args()
@@ -223,12 +218,13 @@ def main():
     args = parse_arguments()
     
     # Use hardcoded values if set, otherwise fall back to command-line arguments
-    config_path = args.config
-    num_runs = args.num_runs
+    config_path = HARDCODED_CONFIG_PATH or args.config
+    num_runs = HARDCODED_NUM_RUNS if HARDCODED_NUM_RUNS is not None else args.num_runs
     
     if not config_path:
         print(
-            "❌ Error: No configuration file specified. Provide one via command-line.",
+            "❌ Error: No configuration file specified. "
+            "Provide one via command-line or set HARDCODED_CONFIG_PATH.",
             file=sys.stderr
         )
         sys.exit(1)

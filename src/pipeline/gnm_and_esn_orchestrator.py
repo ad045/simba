@@ -25,7 +25,7 @@ from src.utils.run_logger import get_logger
 from src.config.GNM import create_evaluation_criteria
 
 from src.structural_analysis.graph_measures import analyze_connectomes
-from ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
+from ESNs.esn_evaluation import evaluate_memory_capacity_from_connectome
 
 from src.utils.combine_csvs import merge_csv_files
 
@@ -333,25 +333,6 @@ class GNMandESNPipelineOrchestrator: # IS USED1
                 )
                 for task_data in tqdm(deconstructed_tasks, desc="Configuration Iterations")
             )
-            
-            # Pot improvement (did not try yet)
-            #  with parallel_backend('loky', n_jobs=n_workers):
-            #     Parallel()(
-            #         delayed(_run_and_save_single_simulation)(
-            #             task_data=task_data,
-            #             evaluation_criteria=evaluation_criteria,
-            #             target_network=target_network_np,
-            #             compare_to_connectome_of_distance_matrix=self.config['experiment']['compare_to_connectome_of_distance_matrix'], 
-            #             individual_networks=empirical_binary_connectomes, 
-            #             elaborate_analysis=self.config['experiment']['elaborate_analysis'],
-            #             compare_to_all_individual_empirical_connectomes=self.config['experiment']['compare_to_all_individual_empirical_connectomes'], 
-            #             device_str=self.config['compute']['device'],
-            #             output_dir=self.output_dir, 
-            #             temp_dir=temp_results_dir,
-            #             h_params=self.config["esn"]
-            #         )
-            #         for task_data in tqdm(deconstructed_tasks, desc="Configuration Iterations")
-            #     )
 
         except (KeyboardInterrupt, Exception) as e:
             print(f"\n--- Process interrupted or failed: {e} ---")

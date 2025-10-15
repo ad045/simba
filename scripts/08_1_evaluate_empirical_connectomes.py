@@ -11,7 +11,7 @@ from bct import density_und
 
 try:
     from src.structural_analysis.graph_measures import analyze_connectomes
-    from ESNs.alternative_esn_evaluation import evaluate_memory_capacity_from_connectome
+    from ESNs.esn_evaluation import evaluate_memory_capacity_from_connectome
 except ImportError as e:
     print(f"❌ Error importing project modules: {e}", file=sys.stderr)
     print("👉 Please ensure you run this script from your project's root directory.", file=sys.stderr)

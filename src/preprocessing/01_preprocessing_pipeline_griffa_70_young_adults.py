@@ -173,7 +173,7 @@ def main(resolution=None) -> None:
 
 
     thres_conn, final_density = threshold_to_density(conn_wei=consensus_weighted, 
-                                                    n_nodes=resolution, 
+                                                    # n_nodes=resolution, 
                                                     density=args.analyze_density, 
                                                     output_folder=paths["path_01_connectomes"], 
                                                     conn_type="consensus") # TODO: Think about calling this actually differently... 
@@ -183,7 +183,7 @@ def main(resolution=None) -> None:
     print(f"Final density: {final_density[0]*100:.2f}%")
 
     _, _ = threshold_to_density(conn_wei=all_connectomes, 
-                                n_nodes=resolution, 
+                                # n_nodes=resolution, 
                                 density=args.analyze_density, 
                                 output_folder=paths["path_01_connectomes"], 
                                 conn_type="indiv_connectomes")

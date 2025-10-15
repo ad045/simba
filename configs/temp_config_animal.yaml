@@ -1,8 +1,8 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 52_suarez_MaMI_100_animal_0
-  animal: 0
+  name: 53_suarez_MaMI_100_testing_with_100_sample_points_animal_5
+  animal: 5
   compare_to_connectome_of_distance_matrix: true
   average_connectomes: true
   elaborate_analysis: true
@@ -77,7 +77,7 @@ pipeline:
     - mc_5_divided_by_wiring_cost
 data:
   dataset_name: suarez_MaMI_dataset
-  connectome_resolution: 100
+  connectome_resolution: 50
   density: 10
   paths:
     project_root: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code

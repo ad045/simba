@@ -50,7 +50,7 @@ class GNMConfig:
     dynamic_fitness_metric: str = "mc_mean"  # Metric to optimize during dynamic generation.  "mc_mean", "branching_ratio", "info_balance", ...
     
     # Fast ESN evaluation configuration for dynamic generation
-    fast_esn_eval: Dict[str, Any] = field(default_factory=lambda: {
+    fast_esn_eval: Dict[str, Any] = field(default_factory=lambda: { # TODO: Remove defaults. 
         "input_length": 500,
         "n_runs": 3,
         "spectral_radius": DEFAULT_SPECTRAL_RADIUS,
@@ -182,7 +182,7 @@ def create_evaluation_criteria(config,
         elif metric == "betweenness_ks":
             criteria.append(evaluation.BetweennessKS())
         elif metric == "edge_length_ks":
-            criteria.append(evaluation.EdgeLengthKS(distance_matrix))
+            criteria.append(evaluation.EdgeLengthKS(distance_matrix)) 
         elif metric == "degree_js":
             criteria.append(evaluation.DegreeJS())
         elif metric == "clustering_js":

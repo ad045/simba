@@ -31,14 +31,14 @@ class DataLoader:
             raise RuntimeError(f"Failed to load distance matrix: {e}")
     
     
-    def load_weighted_connectome(self) -> np.ndarray:
-        """Load the weighted connectome data."""
-        try:
-            weighted_conn = np.load(self.config['paths']['01_connectomes'] / f"01_consensus_wei_{self.resolution}.npy") # subj, resolution, resolution
-            self._validate_connectome(weighted_conn, "weighted")
-            return weighted_conn
-        except Exception as e:
-            raise RuntimeError(f"Failed to load weighted connectome: {e}")
+    # def load_weighted_connectome(self) -> np.ndarray:
+    #     """Load the weighted connectome data."""
+    #     try:
+    #         weighted_conn = np.load(self.config['paths']['01_connectomes'] / f"01_consensus_wei_{self.resolution}.npy") # subj, resolution, resolution
+    #         self._validate_connectome(weighted_conn, "weighted")
+    #         return weighted_conn
+    #     except Exception as e:
+    #         raise RuntimeError(f"Failed to load weighted connectome: {e}")
     
     
     def load_binary_connectomes(self,
@@ -59,6 +59,7 @@ class DataLoader:
             elif self.config["data"]["dataset_name"] == "suarez_MaMI_dataset": 
                 # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_bin_density_10_percent_100.npy
                 binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/01_consensus_bin_density_{density}_percent_{resolution}.npy" # 00_connectomes_bin_density_{density}_percent_{resolution}.npy" # 01_consensus_bin_density_{density}_percent_{resolution}.npy"
+                print(binary_conn_path)
                 binary_conn = np.load(binary_conn_path)[connectome_id,:,:] 
 
             else: 
@@ -87,7 +88,7 @@ class DataLoader:
         if dist_matrix.shape[0] != dist_matrix.shape[1]:
             raise ValueError(f"Distance matrix must be square, got shape {dist_matrix.shape}")
         
-        if dist_matrix.shape[0] != self.config['data']['connectome_resolution']: # self.config.data.resolution:
+        if dist_matrix.shape[0] != self.config['data']['connectome_resolution'] * 2: # self.config.data.resolution:
             raise ValueError(f"Distance matrix size {dist_matrix.shape[0]} doesn't match "
                            f"expected resolution {self.config.data.resolution}")
         
@@ -105,7 +106,7 @@ class DataLoader:
     
     def _validate_connectome(self, connectome: np.ndarray, conn_type: str):
         """Validate connectome properties."""
-        expected_shape = (self.config['data']['connectome_resolution'], self.config['data']['connectome_resolution']) # , self.config.data.resolution)
+        expected_shape = (self.config['data']['connectome_resolution'] * 2, self.config['data']['connectome_resolution'] * 2) # , self.config.data.resolution)
         
         if connectome.ndim == 2:
             if connectome.shape != expected_shape:
