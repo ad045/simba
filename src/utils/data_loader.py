@@ -18,8 +18,8 @@ class DataLoader:
         self.resolution = self.config['data']['connectome_resolution']
        
        
-    def load_distance_matrix(self, # TODO: Add conenctome_id to config file (during runtime initialization) 
-                             connectome_id: int = 0) -> np.ndarray:
+    def load_distance_matrix(self, # USED2 This works. TODO: Add conenctome_id to config file (during runtime initialization) 
+                             connectome_id) -> np.ndarray:
         """Load the distance matrix."""
         try:
             dist_matrix = np.load(self.config["paths"]['02_distance_matrices'] / f"distance_matrix_{self.resolution}.npy")
@@ -48,24 +48,17 @@ class DataLoader:
         binary_connectomes = {}
         
         try:
-            print("test")
-            print(self.config["data"])
             resolution = self.config['data']['connectome_resolution']
             density = self.config["data"]["density"] 
             
-            print("test2")
             # TODO: Fix this HACK or put it somewhere else? Or good where it is?
             if self.config["data"]["dataset_name"] == "shafiei_human_consensus_dataset":  
                 binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/01_consensus_bin_density_{density}_percent_{resolution}.npy"
-                print(binary_conn_path)
                 binary_conn = np.load(binary_conn_path)
         
-                print("test3")
             elif self.config["data"]["dataset_name"] == "suarez_MaMI_dataset": 
                 # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_bin_density_10_percent_100.npy
                 binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/01_consensus_bin_density_{density}_percent_{resolution}.npy" # 00_connectomes_bin_density_{density}_percent_{resolution}.npy" # 01_consensus_bin_density_{density}_percent_{resolution}.npy"
-                print(binary_conn_path)
-                print(connectome_id)
                 binary_conn = np.load(binary_conn_path)[connectome_id,:,:] 
 
             else: 

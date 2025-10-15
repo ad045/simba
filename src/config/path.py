@@ -71,6 +71,7 @@ class PathConfig:
     """Path configuration."""
     dataset_name: str
     experiment_name: str 
+    animal: int = None
     root_dir: Path = None
     connectome_dir: Path = None
     output_dir: Path = None
@@ -82,17 +83,23 @@ class PathConfig:
     def __post_init__(self): # instead of init, due to dataclass
         if self.root_dir is None:
             self.root_dir = Path.cwd().resolve()
-
+            
         self.connectome_dir = self.root_dir / "data" / "preprocessed" / self.dataset_name 
         self.dir_01_connectomes = self.connectome_dir / "01_connectomes"
         self.dir_02_distance_matrices = self.connectome_dir / "02_distance_matrices"
         
+        # if self.animal is not None: 
+        #     self.output_dir = self.root_dir / f"output_{self.animal}" 
+        # else: 
         self.output_dir = self.root_dir / "output" 
         self.output_specific_dataset_dir = self.output_dir / "empirical_data" / self.dataset_name
         
         self.output_gnm_dir = self.output_dir / "gnm" # make this smoother
-        self.output_experiment_dir = self.output_gnm_dir / self.dataset_name / self.experiment_name #+ f"_{time.strftime("%Y%m%d_%H%M%S")}")
-        
+        if self.animal is not None: 
+            self.output_experiment_dir = self.output_gnm_dir / self.dataset_name / f"{self.experiment_name}" # _{self.animal}" #+ f"_{time.strftime("%Y%m%d_%H%M%S")}")
+        else: 
+            self.output_experiment_dir = self.output_gnm_dir / self.dataset_name / self.experiment_name #+ f"_{time.strftime("%Y%m%d_%H%M%S")}")
+            
         self.dynamic_gnm_output_dir = self.output_dir / "dynamic_gnm" / self.experiment_name
         
 

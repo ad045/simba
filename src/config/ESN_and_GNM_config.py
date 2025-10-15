@@ -210,7 +210,7 @@ class PathConfig:
         self.dynamic_gnm_output_dir = self.output_dir / "dynamic_gnm"
 
 
-class ConfigManager:
+class ConfigManager: # Is it used? Unsure. 
     """Optimized configuration manager using GNM structures."""
     
     def __init__(self, 

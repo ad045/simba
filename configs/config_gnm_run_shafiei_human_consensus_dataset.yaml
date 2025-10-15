@@ -4,7 +4,7 @@
 experiment:
   experiment_type: gnm_sweep  # Options: esn, gnm_sweep, gnm_comprehensive, full_pipeline, gnm_esn_grid
   type: gnm_sweep
-  name: 45_shafiei_size_68_testing_5 # _with_eval_of_emp_conns # connectomes_of_size_50
+  name: 49_shafiei # _with_eval_of_emp_conns # connectomes_of_size_50
   animal: 0 # Change this somehow: Make it not necessary for the shafiei dataset, and make it indented
   compare_to_connectome_of_distance_matrix: true
   average_connectomes: true 
@@ -70,7 +70,7 @@ esn: # (optional section)
 
 compute:
   device: "cpu"
-  n_workers: -1 # 1 for debugging!!  # -1 for maximum parallelization # 12 # 14 cores - 10 normal, 4 efficiency. TODO: Is not satisfactory implemented, I guess... 
+  n_workers: 8 # 1 for debugging!!  # -1 for maximum parallelization # 12 # 14 cores - 10 normal, 4 efficiency. TODO: Is not satisfactory implemented, I guess... 
   timing_flag: true
   random_seed: 42
 

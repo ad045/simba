@@ -28,6 +28,16 @@ if __name__ == "__main__":
 ###########################################################################################
 
 
+# ###########################################################################################
+# # HARDCODED CONFIGURATION
+# # Set the path to your configuration file here.
+# # All command-line arguments will be ignored when these are set.
+# ###########################################################################################
+# HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_shafiei_human_consensus_dataset.yaml" 
+# # HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
+# HARDCODED_NUM_RUNS = 2
+# ###########################################################################################
+
 
 
 import argparse
@@ -45,17 +55,7 @@ from src.config.yaml_loader import YAMLConfigLoader
 from src.pipeline.orchestrator import run_from_yaml
 
 
-from config.manager import ConfigManager, PathConfig
-
-###########################################################################################
-# HARDCODED CONFIGURATION
-# Set the path to your configuration file here.
-# All command-line arguments will be ignored when these are set.
-###########################################################################################
-# HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_shafiei_human_consensus_dataset.yaml" 
-HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
-HARDCODED_NUM_RUNS = 300
-###########################################################################################
+from config.manager import PathConfig
 
 
 
@@ -81,6 +81,7 @@ class ExperimentRunner:
         self.path_config = PathConfig( # is this even necessary? 
             dataset_name=dataset_name,
             experiment_name=experiment_name, 
+            # animal=self.config['experiment']['animal']
         )
         
         if not experiment_name:
@@ -164,7 +165,7 @@ class ExperimentRunner:
         
         try:
             self.load_config()
-            self.manage_config_file()
+            self.manage_config_file() # Seems to have issues?
             self.run_experiments()
             self.combine_csv_files()
             
@@ -217,8 +218,8 @@ def main():
     args = parse_arguments()
     
     # Use hardcoded values if set, otherwise fall back to command-line arguments
-    config_path = HARDCODED_CONFIG_PATH or args.config
-    num_runs = HARDCODED_NUM_RUNS if HARDCODED_NUM_RUNS is not None else args.num_runs
+    config_path = args.config
+    num_runs = args.num_runs
     
     if not config_path:
         print(

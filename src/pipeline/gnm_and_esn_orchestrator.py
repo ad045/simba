@@ -31,7 +31,7 @@ from src.utils.combine_csvs import merge_csv_files
 
 # Helper functions
 
-def _run_and_save_single_simulation(
+def _run_and_save_single_simulation( # is USED1. 
                                     task_data: dict, 
                                     evaluation_criteria, 
                                     # weighted_evaluation_criteria, 
@@ -56,20 +56,30 @@ def _run_and_save_single_simulation(
     # Get the rule class from the gnm library using its name
     RuleClass = getattr(generative_rules, bp_data['generative_rule_name'])
     
+    #     n_edges = int(target_tensor.sum().item() // 2) / 2 # not sure why this / 2 would be needed, but let's try. (TODO)
+#                                                         #    Density according to GNM library 
+#                                                                 # CIJ = c[0,:,:]
+#                                                                 # n = len(CIJ)
+#                                                                 # k = np.size(np.where(np.triu(CIJ).flatten()))
+#                                                                 # kden = k / ((n * n - n) / 2)
+#                                         # kden * ((n * n - n) / 2) = k = n_edges * 2? 
+    n_edges = int(target_network.sum().item() // 2)
     binary_params = BinaryGenerativeParameters( # BinaryGenerativeParameters
         eta=bp_data['eta'],
         gamma=bp_data['gamma'],
         lambdah=bp_data['lambdah'], 
         heterochronicity_relationship_type=bp_data['heterochronicity_relationship_type'],
         generative_rule=RuleClass(),
-        num_iterations=bp_data['num_iterations'],
+        # num_iterations=# bp_data['num_iterations'], -> !!! No, num_iterations is the number of edges put into the network... 
+        num_iterations=n_edges,
         distance_relationship_type=bp_data['distance_relationship_type'],
         preferential_relationship_type=bp_data['preferential_relationship_type']
     )
     
     run_config = RunConfig(
+        num_simulations=None, # TODO: is currently hardcoded - is supposed to run in parallel? Check if it actually does that... 
         binary_parameters=binary_params,
-        distance_matrix=task_data['distance_matrix']
+        distance_matrix=task_data['distance_matrix'] #  still correct
     )
 
     flat_record = {}
@@ -146,8 +156,9 @@ def _run_and_save_single_simulation(
 
             graph_measures_list = analyze_connectomes(
                 connectomes=networks_np, 
-                distance_matrix=run_config.distance_matrix.cpu().numpy()
+                distance_matrix=run_config.distance_matrix.cpu().numpy() # WORKS. 
             )
+    
             flat_record.update(pd.DataFrame(graph_measures_list).mean().to_dict())
 
             try:
@@ -191,7 +202,7 @@ def _run_and_save_single_simulation(
         pd.DataFrame([indiv_networks_record]).to_csv(result_path, index=False, na_rep="nan") # Added that missing values appear as "nan" for more clarity
 
 
-class GNMandESNPipelineOrchestrator:
+class GNMandESNPipelineOrchestrator: # IS USED1 
     """Pipeline orchestrator with integrated logging."""
     
     def __init__(self, config: ConfigManager):
@@ -204,7 +215,7 @@ class GNMandESNPipelineOrchestrator:
         self.logger = get_logger(self.output_dir) # output_dir"])
     
     
-    def run_gnm_parameter_sweep(self, # config, 
+    def run_gnm_parameter_sweep(self, # IS USED1 # config, 
                            target_network: Optional[torch.Tensor] = None, # TODO: removre all defaults here. 
                            ) -> Dict[str, Any]:
         """
@@ -222,9 +233,9 @@ class GNMandESNPipelineOrchestrator:
         # CAN THIS BE REMOVED? 
         binary_connectomes = self.data_loader.load_binary_connectomes(connectome_id=animal_id)
         
-        distance_matrix = torch.tensor(
+        distance_matrix = torch.tensor( # Typing deviation (from float64 to float32) 
                     self.data_loader.load_distance_matrix(connectome_id=animal_id),
-                    dtype=torch.float32,
+                    dtype=torch.float32, # here it gets 10e-6 differences... Normal difference between e.g. loaded 42 and orig 0: max. 40
                     device=self.device
                 )
         
@@ -265,23 +276,23 @@ class GNMandESNPipelineOrchestrator:
         num_simulations = self.config['gnm']['num_simulations'] # 100 
         
         # Create sweep config 
-        sweep_config = create_gnm_random_sweep_config( # add a grid version again? 
+        sweep_config = create_gnm_random_sweep_config( # this is used # add a grid version again? 
             config=self.config,
-            distance_matrix=torch.Tensor(distance_matrix), 
+            distance_matrix=torch.Tensor(distance_matrix),  # still working
             num_iterations=num_iterations,
             num_simulations=num_simulations,
-            include_weights=True
+            include_weights=False # True
         )
-        print("SWEEP CONFIG", sweep_config)
+        # print("SWEEP CONFIG", sweep_config)
         evaluation_criteria = create_evaluation_criteria(config=self.config, distance_matrix=distance_matrix)
           
         # Convert the generator to a list *before* the parallel call
         print("Generating sweep configurations...")
-        sweep_config_list = list(sweep_config)
+        sweep_config_list = list(sweep_config) # already the issue. 
         print(f"{len(sweep_config_list)} configurations generated.")
         
         # experiment_dir = self.config['paths']['output_gnm_dir'] / self.config['experiment']['name']
-        temp_results_dir = self.output_dir / f"{self.config['experiment']['name']}_temp_{time.strftime("%Y%m%d_%H%M%S")}" # Ugly HACK
+        temp_results_dir = self.output_dir / "_temp_results" / f"{self.config['experiment']['name']}_batch_{time.strftime("%Y%m%d_%H%M%S")}" # Ugly HACK
         os.makedirs(temp_results_dir, exist_ok=True)
         
         print("Generating and deconstructing sweep configurations for parallel processing...")
@@ -300,7 +311,7 @@ class GNMandESNPipelineOrchestrator:
                     "distance_relationship_type": str(run_config.binary_parameters.distance_relationship_type),
                     "preferential_relationship_type": str(run_config.binary_parameters.preferential_relationship_type),
                 },
-                "distance_matrix": run_config.distance_matrix
+                "distance_matrix": run_config.distance_matrix # already the issue. Works.
             }
             deconstructed_tasks.append(task)
 
@@ -311,7 +322,7 @@ class GNMandESNPipelineOrchestrator:
                     task_data=task_data, # Pass the deconstructed dictionary
                     evaluation_criteria=evaluation_criteria,
                     target_network=target_network,
-                    compare_to_connectome_of_distance_matrix=self.config['experiment']['compare_to_connectome_of_distance_matrix'], 
+                    compare_to_connectome_of_distance_matrix=self.config['experiment']['compare_to_connectome_of_distance_matrix'],  # THIS IS WRONG. 
                     individual_networks=empirical_binary_connectomes, 
                     elaborate_analysis=self.config['experiment']['elaborate_analysis'],
                     compare_to_all_individual_empirical_connectomes=self.config['experiment']['compare_to_all_individual_empirical_connectomes'], 

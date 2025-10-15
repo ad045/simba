@@ -144,114 +144,121 @@ class GNMGenerator:
     #     # Get the generated network
     #     return model.get_adjacency_matrix()
     
-    def fit_parameters(self, # TODO: Remove hardcoded stuff # TODO: Is this even used?? 
-                      target_network: torch.Tensor,
-                      distance_matrix: torch.Tensor,
-                      eta_range: Tuple[float, float] = (-5.0, 0.0),
-                      gamma_range: Tuple[float, float] = (0.0, 1.0),
-                      n_eta: int = 20,
-                      n_gamma: int = 20,
-                      generative_rule_name: str = "matching_index",
-                      given_output_path: Optional[Path] = None, 
-                      num_simulations: int = 100,
-                      density: float = 0.1, 
-                      evaluation_metrics: Optional[List[str]] = None) -> Dict[str, Any]:
-        """
-        Fit GNM parameters using the library's sweep functionality.
+    # def fit_parameters(self, # TODO: Remove hardcoded stuff # TODO: Is this even used?? 
+    #                   target_network: torch.Tensor,
+    #                   distance_matrix: torch.Tensor,
+    #                   eta_range: Tuple[float, float] = (-5.0, 0.0),
+    #                   gamma_range: Tuple[float, float] = (0.0, 1.0),
+    #                   n_eta: int = 20,
+    #                   n_gamma: int = 20,
+    #                   generative_rule_name: str = "matching_index",
+    #                   given_output_path: Optional[Path] = None, 
+    #                   num_simulations: int = 100,
+    #                   density: float = 0.1, 
+    #                   evaluation_metrics: Optional[List[str]] = None) -> Dict[str, Any]:
+    #     """
+    #     Fit GNM parameters using the library's sweep functionality.
         
-        Args:
-            target_network: Target network to fit
-            distance_matrix: Distance matrix
-            eta_range: Range for eta parameter
-            gamma_range: Range for gamma parameter
-            n_eta: Number of eta values to test
-            n_gamma: Number of gamma values to test
-            generative_rule_name: Name of generative rule to use
-            num_simulations: Number of simulations per parameter set
-            evaluation_metrics: List of evaluation metric names
+    #     Args:
+    #         target_network: Target network to fit
+    #         distance_matrix: Distance matrix
+    #         eta_range: Range for eta parameter
+    #         gamma_range: Range for gamma parameter
+    #         n_eta: Number of eta values to test
+    #         n_gamma: Number of gamma values to test
+    #         generative_rule_name: Name of generative rule to use
+    #         num_simulations: Number of simulations per parameter set
+    #         evaluation_metrics: List of evaluation metric names
             
-        Returns:
-            Dictionary with fitting results
-        """
-        # Prepare inputs
-        distance_matrix = distance_matrix.to(self.device) # CHECK: IS THIS EVEN ENTERED??
+    #     Returns:
+    #         Dictionary with fitting results
+    #     """
+    #     # Prepare inputs
+    #     distance_matrix = distance_matrix.to(self.device) # CHECK: IS THIS EVEN ENTERED??
         
-        # Calculate number of edges to be generated 
-        if target_network.sum() != 0 and target_network is not None: 
-            target_network = target_network.to(self.device)
-            n_edges = int(target_network.sum().item() // 2)
-        else: 
-            print("ATTENTION: n_edges will be set to random value!")
-            n_edges = density * distance_matrix.shape[-1]**2
+    #     # Calculate number of edges to be generated 
+    #     if target_network.sum() != 0 and target_network is not None: 
+    #         target_network = target_network.to(self.device)
+    #         n_edges = int(target_network.sum().item() // 2) / 2 # not sure why this / 2 would be needed, but let's try. (TODO: EITHER ONE OF THOSE WILL PROBABLY BE WRONG)
+    #     else: 
+    #         print("ATTENTION: n_edges will be set to random value!")
+    #         # n_edges = density * distance_matrix.shape[-1]**2 
+    #         n_edges = int(density * (distance_matrix.shape[-1] * (distance_matrix.shape[-1] - 1) / 2) / 4) # Density according to GNM library 
+    #                                                                                                         # CIJ = c[0,:,:]
+    #                                                                                                         # n = len(CIJ)
+    #                                                                                                         # k = np.size(np.where(np.triu(CIJ).flatten()))
+    #                                                                                                         # kden = k / ((n * n - n) / 2)
+    #                                                                                                         # kden * ((n * n - n) / 2) = k = n_edges * 2? 
+    #         print("N_EDGES IS NOW SET TO:", n_edges)
         
-        # Get generative rule
-        if generative_rule_name not in self.AVAILABLE_RULES:
-            raise ValueError(f"Unknown rule: {generative_rule_name}. Available: {list(self.AVAILABLE_RULES.keys())}")
-        generative_rule = self.AVAILABLE_RULES[generative_rule_name]()
+    #     # Get generative rule
+    #     if generative_rule_name not in self.AVAILABLE_RULES:
+    #         raise ValueError(f"Unknown rule: {generative_rule_name}. Available: {list(self.AVAILABLE_RULES.keys())}")
+    #     generative_rule = self.AVAILABLE_RULES[generative_rule_name]()
         
-        # Set up evaluation metrics
-        if evaluation_metrics is None:
-            print("Attention: Evaluation metrics were not given, and will be set to default.")
-            evaluation_metrics = ["degree_ks", "clustering_ks", "edge_length_ks"]
+    #     # Set up evaluation metrics
+    #     if evaluation_metrics is None:
+    #         print("Attention: Evaluation metrics were not given, and will be set to default.")
+    #         evaluation_metrics = ["degree_ks", "clustering_ks", "edge_length_ks"]
         
-        criteria = []
-        for metric_name in evaluation_metrics:
-            if metric_name == "edge_length_ks":
-                criteria.append(self.AVAILABLE_METRICS[metric_name](distance_matrix))
-            elif metric_name in self.AVAILABLE_METRICS:
-                criteria.append(self.AVAILABLE_METRICS[metric_name]())
+    #     criteria = []
+    #     for metric_name in evaluation_metrics:
+    #         if metric_name == "edge_length_ks":
+    #             criteria.append(self.AVAILABLE_METRICS[metric_name](distance_matrix))
+    #         elif metric_name in self.AVAILABLE_METRICS:
+    #             criteria.append(self.AVAILABLE_METRICS[metric_name]())
         
-        energy_equation = evaluation.MaxCriteria(criteria)
+    #     energy_equation = evaluation.MaxCriteria(criteria)
         
-        # Create parameter sweep using GNM library
-        binary_sweep_parameters = fitting.BinarySweepParameters(
-            eta=torch.linspace(eta_range[0], eta_range[1], n_eta),
-            gamma=torch.linspace(gamma_range[0], gamma_range[1], n_gamma),
-            lambdah=torch.tensor([0.0]), # TODO: REMVOE HARDCODING! 
-            distance_relationship_type=["powerlaw"],
-            preferential_relationship_type=["powerlaw"],
-            heterochronicity_relationship_type=["powerlaw"],
-            generative_rule=[generative_rule],
-            num_iterations=[n_edges],
-        )
+    #     # Create parameter sweep using GNM library
+    #     binary_sweep_parameters = fitting.BinarySweepParameters(
+    #         eta=torch.linspace(eta_range[0], eta_range[1], n_eta),
+    #         gamma=torch.linspace(gamma_range[0], gamma_range[1], n_gamma),
+    #         lambdah=torch.tensor([0.0]), # TODO: REMVOE HARDCODING! 
+    #         distance_relationship_type=["powerlaw"],
+    #         preferential_relationship_type=["powerlaw"],
+    #         heterochronicity_relationship_type=["powerlaw"],
+    #         generative_rule=[generative_rule],
+    #         num_iterations=[n_edges],
+    #     )
         
-        sweep_config = fitting.SweepConfig(
-            binary_sweep_parameters=binary_sweep_parameters,
-            weighted_sweep_parameters=None,
-            num_simulations=num_simulations,
-            distance_matrix=[distance_matrix]
-        )
+    #     sweep_config = fitting.SweepConfig(
+    #         binary_sweep_parameters=binary_sweep_parameters,
+    #         weighted_sweep_parameters=None,
+    #         num_simulations=num_simulations,
+    #         distance_matrix=[distance_matrix]
+    #     )
         
-        # Run parameter sweep
-        experiments = fitting.perform_sweep(
-            sweep_config=sweep_config,
-            binary_evaluations=[energy_equation],
-            real_binary_matrices=target_network,
-            given_output_path=given_output_path, 
-            save_model=False,
-            save_run_history=False,
-            # experiment_name=experiment_name, (added by me)
-            verbose=False
-        )
+    #     # Run parameter sweep
+    #     experiments = fitting.perform_sweep(
+    #         sweep_config=sweep_config,
+    #         binary_evaluations=[energy_equation],
+    #         real_binary_matrices=target_network,
+    #         given_output_path=given_output_path, 
+    #         save_model=False,
+    #         save_run_history=False,
+    #         # experiment_name=experiment_name, (added by me)
+    #         verbose=False
+    #     )
         
-        # Find optimal parameters
-        optimal_experiments, optimal_energies = fitting.optimise_evaluation(
-            experiments=experiments,
-            criterion=energy_equation,
-        )
+    #     # Find optimal parameters
+    #     optimal_experiments, optimal_energies = fitting.optimise_evaluation(
+    #         experiments=experiments,
+    #         criterion=energy_equation,
+    #     )
         
-        if optimal_experiments:
-            best_exp = optimal_experiments[0]
-            return {
-                "best_eta": float(best_exp.run_config.binary_parameters.eta),
-                "best_gamma": float(best_exp.run_config.binary_parameters.gamma),
-                "best_energy": float(optimal_energies[0]),
-                "all_experiments": experiments,
-                "generative_rule": generative_rule_name,
-                "n_edges": n_edges
-            }
-        else:
-            raise RuntimeError("No optimal parameters found")
+    #     if optimal_experiments:
+    #         best_exp = optimal_experiments[0]
+    #         return {
+    #             "best_eta": float(best_exp.run_config.binary_parameters.eta),
+    #             "best_gamma": float(best_exp.run_config.binary_parameters.gamma),
+    #             "best_energy": float(optimal_energies[0]),
+    #             "all_experiments": experiments,
+    #             "generative_rule": generative_rule_name,
+    #             "n_edges": n_edges
+    #         }
+    #     else:
+    #         raise RuntimeError("No optimal parameters found")
     
     # def batch_generate_with_weights(self,
     #                               binary_networks: List[torch.Tensor],
@@ -316,7 +323,7 @@ class GNMGenerator:
         
     #     return weighted_networks
     
-    def evaluate_network(self,
+    def evaluate_network(self, # Is this here even used??? Yup. 
                         generated_network: torch.Tensor,
                         target_network: torch.Tensor,
                         distance_matrix: torch.Tensor,
@@ -555,40 +562,61 @@ class GNMGenerator:
 
 
 # Convenience functions using GNM library features
-def generate_network_gnm(self,
-                         target_connectome: np.ndarray,
-                         distance_matrix: np.ndarray,
-                         rule: str, 
-                         eta: float, 
-                         gamma: float, 
-                         ) -> np.ndarray:
-    """
-    Quick function to generate a network using GNM library.
-    """
-    generator = GNMGenerator(self.device)
+# def generate_network_gnm(self,
+#                          target_connectome: np.ndarray,
+#                          distance_matrix: np.ndarray,
+#                          rule: str, 
+#                          eta: float, 
+#                          gamma: float, 
+#                          ) -> np.ndarray:
+#     """
+#     Quick function to generate a network using GNM library.
+#     """
+#     generator = GNMGenerator(self.device)
     
-    # Convert to torch tensors
-    target_tensor = torch.tensor(target_connectome, dtype=torch.float32) # CHECK: IS THIS EVEN ENTERED???
-    dist_tensor = torch.tensor(distance_matrix, dtype=torch.float32)
+#     # Convert to torch tensors
+#     target_tensor = torch.tensor(target_connectome, dtype=torch.float32) # CHECK: IS THIS EVEN ENTERED???
+#     dist_tensor = torch.tensor(distance_matrix, dtype=torch.float32)
     
-    # Create parameters
-    params = GNMParameters(
-        eta=eta, 
-        gamma=gamma,
-        generative_rule=generator.AVAILABLE_RULES[rule]()
-    )
+#     # Create parameters
+#     params = GNMParameters(
+#         eta=eta, 
+#         gamma=gamma,
+#         generative_rule=generator.AVAILABLE_RULES[rule]()
+#     )
     
-    # Generate network
-    n_edges = int(target_tensor.sum().item() // 2)
-    generated = generator.generate_network(
-        n_nodes=target_connectome.shape[0],
-        n_edges=n_edges,
-        distance_matrix=dist_tensor,
-        parameters=params
-    )
+#     # Generate network
+#     n_edges = int(target_tensor.sum().item() // 2) / 2 # not sure why this / 2 would be needed, but let's try. (TODO)
+#                                                         #    Density according to GNM library 
+#                                                                 # CIJ = c[0,:,:]
+#                                                                 # n = len(CIJ)
+#                                                                 # k = np.size(np.where(np.triu(CIJ).flatten()))
+#                                                                 # kden = k / ((n * n - n) / 2)
+#                                                                 # kden * ((n * n - n) / 2) = k = n_edges * 2? 
+#     generated = generator.generate_network(
+#         n_nodes=target_connectome.shape[0],
+#         n_edges=n_edges,
+#         distance_matrix=dist_tensor,
+#         parameters=params
+#     )
     
-    return generated.cpu().numpy()
+#     return generated.cpu().numpy()
 
+
+    #     # Calculate number of edges to be generated 
+    #     if target_network.sum() != 0 and target_network is not None: 
+    #         target_network = target_network.to(self.device)
+    #         n_edges = int(target_network.sum().item() // 2) / 2 # not sure why this / 2 would be needed, but let's try. (TODO: EITHER ONE OF THOSE WILL PROBABLY BE WRONG)
+    #     else: 
+    #         print("ATTENTION: n_edges will be set to random value!")
+    #         # n_edges = density * distance_matrix.shape[-1]**2 
+    #         n_edges = int(density * (distance_matrix.shape[-1] * (distance_matrix.shape[-1] - 1) / 2) / 4) # Density according to GNM library 
+    #                                                                                                         # CIJ = c[0,:,:]
+    #                                                                                                         # n = len(CIJ)
+    #                                                                                                         # k = np.size(np.where(np.triu(CIJ).flatten()))
+    #                                                                                                         # kden = k / ((n * n - n) / 2)
+    #                                                                                                         # kden * ((n * n - n) / 2) = k = n_edges * 2? 
+    #         print("N_EDGES IS NOW SET TO:", n_edges)
 
 # def fit_and_generate_batch(
 #                           device: str, 

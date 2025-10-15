@@ -49,6 +49,7 @@ class YAMLConfigLoader:
         path_config = PathConfig(
             dataset_name=self.config['data']['dataset_name'], 
             experiment_name=self.config['experiment']['name'], 
+            animal=self.config['experiment']['animal']
         )
         
         # self._create_path_config()

@@ -244,7 +244,7 @@ def evaluate_network_against_empirical_optimized(
         empirical_single = empirical_networks_tensor[subject_idx:subject_idx+1, :, :]
         
         # Use pre-created evaluation criteria
-        evaluation_criteria = evaluation_criteria_list[subject_idx]
+        evaluation_criteria = evaluation_criteria_list[0] # [<gnm.evaluation.composite_criteria.MaxCriteria object at 0x32b7963c0>]    ### subject_idx]
         
         # Calculate energy
         energy_dict = evaluation_criteria(generated_network_tensor, empirical_single)
@@ -312,6 +312,7 @@ def compare_all_networks(
     config_dict: Dict = None,
     output_path: Path = None,
     reference_csv_path: Path = None, 
+    dataset_name: Path = "", 
     number_multiprocessing_processes: int = -1, 
 ) -> pd.DataFrame:
     """
@@ -373,6 +374,9 @@ def compare_all_networks(
         print("Loading distance matrices...")
         distance_matrices = np.load(distance_matrices_path)
         distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
+        if dataset_name == "shafiei_human_consensus_dataset": 
+            distance_matrices = distance_matrices.unsqueeze(0)
+            print("Attention: as assumed that it's the Shafiei dataset, this distance matrix will be unsqueezed.")
         print(f"Loaded distance matrix with shape: {distance_matrices.shape}")
         
         # Pre-create evaluation criteria for all subjects
@@ -457,22 +461,39 @@ def main():
     ##########################################################################
     ########### HARDCODED STUFF ##############################################
 
-    dataset_name = "suarez_MaMI_dataset"
-    experiment_name = "49_suarez_MaMI_100" 
-    number_multiprocessing_processes = 8 # "must be at least 1" - so I guess no -1 then? 
+    # dataset_name = "suarez_MaMI_dataset"
+    # experiment_name = "49_suarez_MaMI_100" 
+    dataset_name = "shafiei_human_consensus_dataset"
+    experiment_name = "49_shafiei" # 49_suarez_MaMI_100" 
     
-    ##########################################################################
-       
+    
     path_config = PathConfig( 
         dataset_name=dataset_name,
         experiment_name=experiment_name, 
     )
     
-    generated_networks_dir = path_config.output_experiment_dir / "generated_networks"
-    empirical_networks_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed") / dataset_name / "01_connectomes/01_consensus_bin_density_10_percent_100.npy"
+    if dataset_name == "suarez_MaMI_dataset": 
+        empirical_networks_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/01_consensus_bin_density_10_percent_100.npy") 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed") / dataset_name / "01_connectomes/01_consensus_bin_density_10_percent_100.npy"
+        
+        # Distance matrix path
+        distance_matrix_path = path_config.dir_02_distance_matrices /"distance_matrix_100.npy"
     
-    # Distance matrix path
-    distance_matrix_path = path_config.dir_02_distance_matrices /"distance_matrix_100.npy"
+    if dataset_name == "shafiei_human_consensus_dataset": 
+        empirical_networks_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/griffa_70_human_connectomes_dataset/01_connectomes/01_indiv_connectomes_bin_density_10_percent_68.npy") 
+        # Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed") / dataset_name / "01_connectomes/01_indiv_connectomes_bin_density_10_percent_68.npy"
+        
+        # Distance matrix path
+        distance_matrix_path = path_config.dir_02_distance_matrices /"distance_matrix_68.npy"
+    
+    number_multiprocessing_processes = 8 # "must be at least 1" - so I guess no -1 then? 
+    
+    ##########################################################################
+       
+    
+    
+    generated_networks_dir = path_config.output_experiment_dir / "generated_networks"
+
     
     # Reference CSV with desired parameter order
     reference_csv_path = path_config.output_experiment_dir / f"all_metrics_for_{experiment_name}.csv" # f"all_metrics_for_{experiment_name}.csv"
@@ -518,6 +539,7 @@ def main():
             distance_matrices_path=distance_matrix_path if distance_matrix_path.exists() else None,
             config_dict=config_dict,
             output_path=output_path,
+            dataset_name=dataset_name, 
             reference_csv_path=reference_csv_path if reference_csv_path.exists() else None, 
             number_multiprocessing_processes=number_multiprocessing_processes, 
         )
