@@ -15,6 +15,7 @@ ANIMAL_START = 0
 ANIMAL_END = 255
 RUN_SCRIPT = "run_experiment.py"
 
+NUMBER_RUNS_PER_ANIMAL = 50 # number of LOOPS - total number is: this times n_samples multiplied. 
 
 def modify_config_for_animal(base_config_path: str, temp_config_path: str, animal_id: int):
     """
@@ -61,7 +62,7 @@ def run_experiment_for_animal(animal_id: int, temp_config_path: str, run_script:
         # Note: The script uses HARDCODED_CONFIG_PATH, so we need to modify that
         # or pass the config path as an argument
         result = subprocess.run(
-            [sys.executable, run_script, temp_config_path],
+            [sys.executable, run_script, temp_config_path, "--num_runs", str(NUMBER_RUNS_PER_ANIMAL)],
             check=True,
             capture_output=False,  # Show output in real-time
             text=True
@@ -75,6 +76,9 @@ def run_experiment_for_animal(animal_id: int, temp_config_path: str, run_script:
     except KeyboardInterrupt:
         print(f"\n⚠️ Interrupted during Animal {animal_id}")
         raise
+
+
+
 
 
 def cleanup_temp_config(temp_config_path: str):
@@ -116,6 +120,27 @@ def main():
                 # Clean up after each run
                 cleanup_temp_config(TEMP_CONFIG_PATH)
                 
+                
+                # ############
+                
+                # # Create modified config
+                # TEMP_CONFIG_PATH_2 = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset_focused.yaml"
+                # modify_config_for_animal(BASE_CONFIG_PATH, TEMP_CONFIG_PATH_2, animal_id)
+                
+                # # Run experiment
+                # success = run_experiment_for_animal(animal_id, TEMP_CONFIG_PATH_2, RUN_SCRIPT)
+                
+                # if success:
+                #     successful += 1
+                # else:
+                #     failed += 1
+                
+                # # Clean up after each run
+                # cleanup_temp_config(TEMP_CONFIG_PATH_2)
+                
+                
+                #############
+                
             except KeyboardInterrupt:
                 print("\n\n⚠️ User interrupted the batch run")
                 cleanup_temp_config(TEMP_CONFIG_PATH)
@@ -125,6 +150,36 @@ def main():
                 failed += 1
                 cleanup_temp_config(TEMP_CONFIG_PATH)
                 continue
+            
+            #########################################################################
+            # try:
+            #     # Create modified config
+            #     TEMP_CONFIG_PATH_2 = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset_focused.yaml"
+            #     modify_config_for_animal(BASE_CONFIG_PATH, TEMP_CONFIG_PATH_2, animal_id)
+                
+            #     # Run experiment
+            #     success = run_experiment_for_animal(animal_id, TEMP_CONFIG_PATH_2, RUN_SCRIPT)
+                
+            #     if success:
+            #         successful += 1
+            #     else:
+            #         failed += 1
+                
+            #     # Clean up after each run
+            #     cleanup_temp_config(TEMP_CONFIG_PATH_2)
+                
+            # except KeyboardInterrupt:
+            #     print("\n\n⚠️ User interrupted the batch run")
+            #     cleanup_temp_config(TEMP_CONFIG_PATH_2)
+            #     break
+            # except Exception as e:
+            #     print(f"\n❌ Unexpected error for Animal {animal_id}: {e}")
+            #     failed += 1
+            #     cleanup_temp_config(TEMP_CONFIG_PATH_2)
+            #     continue
+            
+            
+            
     
     finally:
         duration = time.time() - start_time

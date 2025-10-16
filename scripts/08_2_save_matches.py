@@ -46,14 +46,16 @@ if __name__ == "__main__":
     # Define the file names
     from pathlib import Path
     
-    PROJECT_NAME ="26_testing_4_KS_folders_why_so_fast" # #  "2423_24rough_combined" # 24_testing_4_KS_folders_rougher_grid" # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2"
-    base_output_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output"
-    project_path = base_output_path + "/gnm/" + PROJECT_NAME
+    DATASET_NAME = "suarez_MaMI_dataset"
+    PROJECT_NAME ="60_generally_finer_search_animal_0" # 26_testing_4_KS_folders_why_so_fast" # #  "2423_24rough_combined" # 24_testing_4_KS_folders_rougher_grid" # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2"
+    base_output_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output")
+    project_path = base_output_path / "gnm" / DATASET_NAME / PROJECT_NAME
     
 
-    file_emp_connectome_estimated_eta_and_gamma = project_path + "/min_energy_results.csv"
-    file_emp_connectome_calculated_graph_metrics = base_output_path + "/emprirical_analysis/empirical_analysis.csv"
-    file_generated_connectome_calculated_graph_metrics = project_path + "/summary_all_metrics_for_exp_" + PROJECT_NAME + ".csv" # summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv"
+    file_emp_connectome_estimated_eta_and_gamma = project_path / "min_energy_results.csv"
+    # file_emp_connectome_calculated_graph_metrics = base_output_path + "/emprirical_analysis/empirical_analysis.csv"
+    file_emp_connectome_calculated_graph_metrics = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm_old/suarez_MaMI_dataset/emprirical_analysis/empirical_analysis_weighted.csv"
+    file_generated_connectome_calculated_graph_metrics = project_path / f"summary_all_metrics_for_exp_{PROJECT_NAME}.csv" # summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv"
     
     output_file = Path(project_path)
 

@@ -19,7 +19,7 @@ if __name__ == "__main__":
     
     # --- 1. Define Input and Output ---
     
-    animal_id = 4
+    animal_id = 25
     # List of CSV files containing the GNM sweep results.
     df_paths = [ 
         # 12: Medium sweep (250) with matching index and communicability
@@ -85,7 +85,8 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/52_suarez_MaMI_100_animal_0/all_metrics_for_52_suarez_MaMI_100_animal_0.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/53_suarez_MaMI_100_testing_with_100_sample_points_animal_0/all_metrics_for_53_suarez_MaMI_100_testing_with_100_sample_points_animal_0.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/49_suarez_MaMI_100_animal_0/all_metrics_for_49_suarez_MaMI_100_animal_0.csv"
-        f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/53_suarez_MaMI_100_testing_with_100_sample_points_animal_{animal_id}/all_metrics_for_53_suarez_MaMI_100_testing_with_100_sample_points_animal_{animal_id}.csv"
+        # f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/53_suarez_MaMI_100_testing_with_100_sample_points_animal_{animal_id}/all_metrics_for_53_suarez_MaMI_100_testing_with_100_sample_points_animal_{animal_id}.csv"
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0.csv"
     ]       
     plot_indiv_connectomes = False # True # False # True # False # True #  False # True # False
     

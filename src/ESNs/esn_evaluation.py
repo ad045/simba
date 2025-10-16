@@ -121,7 +121,7 @@ class ESNEvaluator:
                                                      test_len=1000, 
                                                      n_transient=100)
             
-            mc_result_dict = { # What happens if I remove this? 
+            mc_result_dict = { # What happens if I remove this?
             "mc_mean": mc_score, # float(np.mean(mc_values)), 
             "mc_std": 0, # float(np.std(mc_values)),
             "mean_mc_of_individual_runs": 0, # mc_values,  

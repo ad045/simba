@@ -278,12 +278,10 @@ class GNMandESNPipelineOrchestrator: # IS USED1
         # Create sweep config 
         sweep_config = create_gnm_random_sweep_config( # this is used # add a grid version again? 
             config=self.config,
-            distance_matrix=torch.Tensor(distance_matrix),  # still working
+            distance_matrix=torch.Tensor(distance_matrix),
             num_iterations=num_iterations,
             num_simulations=num_simulations,
-            include_weights=False # True
         )
-        # print("SWEEP CONFIG", sweep_config)
         evaluation_criteria = create_evaluation_criteria(config=self.config, distance_matrix=distance_matrix)
           
         # Convert the generator to a list *before* the parallel call

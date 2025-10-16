@@ -390,12 +390,19 @@ def compare_all_networks(
         from gnm import evaluation
         n_subjects = empirical_networks.shape[0]
         evaluation_criteria_list = []
-        for _ in range(n_subjects):
+        for _ in range(n_subjects): # attention: does not and should not work! 
             criteria = evaluation.MaxCriteria(
                 evaluation.DegreeKS(),
                 evaluation.ClusteringKS(),
                 evaluation.BetweennessKS()
             )
+            # from gnm import evaluation
+            # criteria = evaluation.MaxCriteria(
+            #     evaluation.DegreeKS(),
+            #     evaluation.ClusteringKS(),
+            #     evaluation.EdgeLengthKS(distance_matrix),
+            #     evaluation.BetweennessKS()
+            # )
             evaluation_criteria_list.append(criteria)
     
     # Convert empirical networks to torch tensor once
@@ -461,23 +468,23 @@ def main():
     ##########################################################################
     ########### HARDCODED STUFF ##############################################
 
-    # dataset_name = "suarez_MaMI_dataset"
-    # experiment_name = "49_suarez_MaMI_100" 
-    dataset_name = "shafiei_human_consensus_dataset"
-    experiment_name = "49_shafiei" # 49_suarez_MaMI_100" 
+    dataset_name = "suarez_MaMI_dataset"
+    # experiment_name = 
+    experiment_name = "60_generally_finer_search_animal_0" # 49_shafiei" # 49_suarez_MaMI_100" 
     
-    
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0.csv
     path_config = PathConfig( 
         dataset_name=dataset_name,
         experiment_name=experiment_name, 
     )
     
     if dataset_name == "suarez_MaMI_dataset": 
-        empirical_networks_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/01_consensus_bin_density_10_percent_100.npy") 
+        empirical_networks_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/01_consensus_bin_density_10_percent_50.npy") #
+        # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/01_consensus_bin_density_10_percent_100.npy") 
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed") / dataset_name / "01_connectomes/01_consensus_bin_density_10_percent_100.npy"
         
         # Distance matrix path
-        distance_matrix_path = path_config.dir_02_distance_matrices /"distance_matrix_100.npy"
+        distance_matrix_path = path_config.dir_02_distance_matrices /"distance_matrix_50.npy"
     
     if dataset_name == "shafiei_human_consensus_dataset": 
         empirical_networks_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/griffa_70_human_connectomes_dataset/01_connectomes/01_indiv_connectomes_bin_density_10_percent_68.npy") 

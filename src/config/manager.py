@@ -15,7 +15,6 @@ def create_gnm_random_sweep_config(config, #  TODO: Combine with function below 
                                     distance_matrix: torch.Tensor,
                                     num_iterations: int, # TODO: Turn this into how many matrices are GENERATED per run... 
                                     num_simulations: int, 
-                                    include_weights: bool, 
                                     ) -> fitting.SweepConfig:
         """Create GNM sweep configuration with random parameter sampling."""
         
@@ -64,13 +63,8 @@ def create_gnm_random_sweep_config(config, #  TODO: Combine with function below 
             num_iterations=[int(density * n * n)] # TODO: check this! NUMBER EDGES!!!!  If this is set to 10, then "added_edges" will have in the end 9 "elements": torch.Size([9, 1, 2]) # , [num_iterations],
         )
         
-        # weighted_params = None
-        # if include_weights:
-        #     weighted_params = create_weighted_sweep_parameters(config, distance_matrix)
-
         return fitting.SweepConfig(
             binary_sweep_parameters=binary_params,
-            # weighted_sweep_parameters=weighted_params,
             num_simulations=num_simulations, # Number of simulations to run in parallel. Each simulation generates a separate network using the same parameters.
             distance_matrix=[distance_matrix], # still the correct distance matrix. 
             method=config["experiment"]["search"]["method"], 

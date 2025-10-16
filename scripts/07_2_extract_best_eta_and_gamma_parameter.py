@@ -63,8 +63,9 @@ def find_min_energy(input_csv_path: str, output_csv_path: str):
 
 
 if __name__ == '__main__':
-    dataset_name = "shafiei_human_consensus_dataset" # "suarez_MaMI_dataset"
-    experiment_name = "49_shafiei" # 49_suarez_MaMI_100" # 33_suarez_MaMI_size_100_extensive_220_300_iter" # 31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation"
+    # dataset_name = "shafiei_human_consensus_dataset" # 
+    dataset_name = "suarez_MaMI_dataset"
+    experiment_name = "60_generally_finer_search_animal_0" # 49_shafiei" # 49_suarez_MaMI_100" # 33_suarez_MaMI_size_100_extensive_220_300_iter" # 31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation"
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/46_shafiei/all_metrics_for_46_shafiei.csv
     # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/49_suarez_MaMI_100/summary_indiv_energies_for_exp_49_suarez_MaMI_100.csv"
     base_output_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/") / dataset_name / experiment_name
