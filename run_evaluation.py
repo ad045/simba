@@ -37,29 +37,23 @@ def extract_params_from_filename(filename: str) -> Dict[str, float]:
         raise ValueError(f"Could not extract parameters from filename: {filename}")
 
 
-def load_generated_networks(networks_dir: Path) -> Tuple[np.ndarray, List[Dict], List[str]]:
+def load_generated_networks(network_filenames_set) -> Tuple[np.ndarray, List[Dict], List[str]]:
     """
     Load all generated networks from directory.
     
     Args:
-        networks_dir: Directory containing .npy network files
+        network_filenames_set: Set with all PosixPaths of the different networks 
         
     Returns:
         Tuple of (networks array, parameters list, filenames list)
     """
-    networks_dir = Path(networks_dir)
-    network_files = sorted(networks_dir.glob("net_eta*.npy"))
-    
-    if not network_files:
-        raise FileNotFoundError(f"No network files found in {networks_dir}")
-    
-    print(f"Found {len(network_files)} generated network files")
     
     networks = []
     network_parameters = []
     filenames = []
     
-    for net_file in network_files:
+    for net_file in network_filenames_set:
+        networks
         try:
             params = extract_params_from_filename(net_file.name)
             network = np.load(net_file)
@@ -126,58 +120,6 @@ def load_existing_results(output_path: Path) -> Tuple[Optional[pd.DataFrame], se
         print(f"Warning: Could not load existing results: {e}")
         return None, set()
 
-
-def get_ordered_tasks(
-    generated_networks: np.ndarray,
-    generated_network_parameters: List[Dict],
-    filenames: List[str],
-    existing_results_df: Optional[pd.DataFrame],
-    processed_params: set,
-    reference_df: Optional[pd.DataFrame] = None
-) -> List[Tuple[int, np.ndarray, Dict, str]]:
-    """
-    Create ordered list of tasks, following the order from reference CSV if available,
-    otherwise from existing results. Skip already processed networks.
-    
-    Args:
-        generated_networks: Array of networks
-        generated_network_parameters: List of parameter dicts
-        filenames: List of network filenames
-        existing_results_df: Existing results DataFrame or None
-        processed_params: Set of already processed (eta, gamma) tuples
-        reference_df: Reference DataFrame with desired parameter order
-        
-    Returns:
-        List of (index, network, params, filename) tuples in proper order
-    """
-    tasks = []
-    
-    # Create mapping from (eta, gamma) to network data
-    network_map = {}
-    for i, (params, filename) in enumerate(zip(generated_network_parameters, filenames)):
-        key = (params['eta'], params['gamma']) # round(params['eta'], 10), round(params['gamma'], 10))
-        network_map[key] = (i, generated_networks[i], params, filename)
-    
-    # Prioritize reference CSV for ordering
-    order_source = reference_df.copy() if reference_df is not None else existing_results_df.copy()
-    
-    # If we have a reference or existing results, follow their order first
-    if order_source is not None and not order_source.empty:
-        # Get unique parameter combinations in their existing order
-        existing_params = list(zip(
-            order_source['eta'], 
-            order_source['gamma'], 
-        ))
-        
-        # Add networks in the order they appear (TODO: skip processed ones)
-        # seen_keys = set()
-        for key in existing_params:
-            if key in network_map: #  and key not in seen_keys:
-                if key not in processed_params:
-                    tasks.append(network_map[key])
-                # seen_keys.add(key)
-    
-    return tasks
 
 
 def create_evaluation_criteria_list(
@@ -262,10 +204,10 @@ def process_network_optimized(args: Tuple) -> Dict:
     Worker function to evaluate a single network against empirical data.
     Optimized version that receives pre-converted tensors and pre-created criteria.
     """
-    network_idx, network, generated_parameters, filename, empirical_networks_tensor, evaluation_criteria_list = args
+    network_idx, network, generated_parameters, empirical_networks_tensor, evaluation_criteria_list = args
     
     # Convert generated network to tensor
-    gen_network_tensor = torch.tensor(network, dtype=torch.float32).unsqueeze(0)
+    gen_network_tensor = torch.tensor(network, dtype=torch.float32) # .unsqueeze(0)
     
     # Evaluate this network against all empirical networks
     energy_results = evaluate_network_against_empirical_optimized(
@@ -277,7 +219,6 @@ def process_network_optimized(args: Tuple) -> Dict:
     # Combine parameters with results and metadata
     result = {
         'network_index': network_idx,
-        'filename': filename,
         **generated_parameters, 
         **energy_results
     }
@@ -303,165 +244,6 @@ def append_result_to_csv(result: Dict, output_path: Path, write_header: bool = F
         writer.writerow(result)
 
 
-def compare_all_networks(
-    generated_networks: np.ndarray,
-    generated_network_parameters: List[Dict],
-    filenames: List[str],
-    empirical_networks: np.ndarray,
-    distance_matrices_path: Path = None,
-    config_dict: Dict = None,
-    output_path: Path = None,
-    reference_csv_path: Path = None, 
-    dataset_name: Path = "", 
-    number_multiprocessing_processes: int = -1, 
-) -> pd.DataFrame:
-    """
-    Compare all generated networks with empirical networks using optimized multiprocessing.
-    Supports resumption and appends results line-by-line.
-    
-    Args:
-        generated_networks: Array of generated networks
-        generated_network_parameters: List of parameter dicts
-        filenames: List of network filenames
-        empirical_networks: Empirical networks array
-        distance_matrices_path: Path to distance matrix file
-        config_dict: Optional config dictionary
-        output_path: Path to save results CSV
-        reference_csv_path: Path to reference CSV for parameter ordering
-        
-    Returns:
-        DataFrame with comparison results
-    """
-    
-    # Check for existing results and determine what's already processed
-    existing_df, processed_params = load_existing_results(output_path)
-    
-    # Load reference CSV for parameter ordering if provided
-    reference_df = None
-    if reference_csv_path and reference_csv_path.exists():
-        try:
-            reference_df = pd.read_csv(reference_csv_path).copy()
-            print(f"📖 Using parameter order from: {reference_csv_path.name}")
-        except Exception as e:
-            print(f"Warning: Could not load reference CSV: {e}")
-            reference_df = None
-    
-    # Get ordered tasks, skipping already processed ones
-    ordered_tasks_data = get_ordered_tasks(
-        generated_networks=generated_networks,
-        generated_network_parameters=generated_network_parameters,
-        filenames=filenames,
-        existing_results_df=existing_df,
-        processed_params=processed_params,
-        reference_df=reference_df
-    )
-    
-    
-    if not ordered_tasks_data:
-        print("✅ All networks have already been processed!")
-        if existing_df is not None:
-            return existing_df
-        else:
-            return pd.DataFrame()
-    
-    print(f"\n🔄 {len(ordered_tasks_data)} networks to process ({len(processed_params)} already done)")
-    
-    # Load distance matrices once
-    distance_matrices = None
-    evaluation_criteria_list = None
-    
-    if distance_matrices_path and Path(distance_matrices_path).exists():
-        print("Loading distance matrices...")
-        distance_matrices = np.load(distance_matrices_path)
-        distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
-        if dataset_name == "shafiei_human_consensus_dataset": 
-            distance_matrices = distance_matrices.unsqueeze(0)
-            print("Attention: as assumed that it's the Shafiei dataset, this distance matrix will be unsqueezed.")
-        print(f"Loaded distance matrix with shape: {distance_matrices.shape}")
-        
-        # Pre-create evaluation criteria for all subjects
-        evaluation_criteria_list = create_evaluation_criteria_list(
-            distance_matrices=distance_matrices,
-            config_dict=config_dict
-        )
-    else:
-        print("No distance matrices provided, creating criteria without edge length...")
-        # Create evaluation criteria without distance matrix
-        from gnm import evaluation
-        n_subjects = empirical_networks.shape[0]
-        evaluation_criteria_list = []
-        for _ in range(n_subjects): # attention: does not and should not work! 
-            criteria = evaluation.MaxCriteria(
-                evaluation.DegreeKS(),
-                evaluation.ClusteringKS(),
-                evaluation.BetweennessKS()
-            )
-            # from gnm import evaluation
-            # criteria = evaluation.MaxCriteria(
-            #     evaluation.DegreeKS(),
-            #     evaluation.ClusteringKS(),
-            #     evaluation.EdgeLengthKS(distance_matrix),
-            #     evaluation.BetweennessKS()
-            # )
-            evaluation_criteria_list.append(criteria)
-    
-    # Convert empirical networks to torch tensor once
-    print("Converting empirical networks to torch tensors...")
-    empirical_networks_tensor = torch.tensor(empirical_networks, dtype=torch.float32)
-    
-    # Prepare tasks
-    print("Preparing tasks...")
-    tasks = []
-    for net_idx, network, params, filename in ordered_tasks_data:
-        task_args = (
-            net_idx,
-            network,
-            params,
-            filename,
-            empirical_networks_tensor,
-            evaluation_criteria_list
-        )
-        tasks.append(task_args)
-    
-    print(f"\nProcessing {len(tasks)} networks...")
-    
-    # Determine if we need to write header
-    write_header = existing_df is None or not output_path.exists()
-    
-    # Use multiprocessing Pool to process tasks in parallel
-    results_count = 0
-    
-    with Pool(processes=number_multiprocessing_processes) as pool:
-        # Use tqdm to show progress with imap
-        for i, result in enumerate(tqdm(
-            pool.imap(process_network_optimized, tasks), 
-            total=len(tasks), 
-            desc="Evaluating networks"
-        )):
-            # Append result to CSV immediately
-            if output_path:
-                append_result_to_csv(
-                    result=result,
-                    output_path=output_path,
-                    write_header=(write_header and i == 0)
-                )
-            
-            results_count += 1
-            
-            # Progress update every 10 networks
-            if results_count % 10 == 0:
-                print(f"💾 Saved {results_count}/{len(tasks)} results to disk. Path: {output_path}")
-    
-    print(f"\n✅ All {results_count} new results saved to: {output_path}")
-    
-    # Load and return final results
-    if output_path and output_path.exists():
-        final_df = pd.read_csv(output_path)
-        return final_df
-    else:
-        return pd.DataFrame()
-
-
 def main():
     """Main execution function."""
     
@@ -484,27 +266,25 @@ def main():
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed") / dataset_name / "01_connectomes/01_consensus_bin_density_10_percent_100.npy"
         
         # Distance matrix path
-        distance_matrix_path = path_config.dir_02_distance_matrices /"distance_matrix_50.npy"
+        distance_matrices_path = path_config.dir_02_distance_matrices /"distance_matrix_50.npy"
     
     if dataset_name == "shafiei_human_consensus_dataset": 
         empirical_networks_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/griffa_70_human_connectomes_dataset/01_connectomes/01_indiv_connectomes_bin_density_10_percent_68.npy") 
         # Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed") / dataset_name / "01_connectomes/01_indiv_connectomes_bin_density_10_percent_68.npy"
         
         # Distance matrix path
-        distance_matrix_path = path_config.dir_02_distance_matrices /"distance_matrix_68.npy"
+        distance_matrices_path = path_config.dir_02_distance_matrices /"distance_matrix_68.npy"
     
     number_multiprocessing_processes = 8 # "must be at least 1" - so I guess no -1 then? 
     
     ##########################################################################
        
     
-    
     generated_networks_dir = path_config.output_experiment_dir / "generated_networks"
 
-    
     # Reference CSV with desired parameter order
     reference_csv_path = path_config.output_experiment_dir / f"all_metrics_for_{experiment_name}.csv" # f"all_metrics_for_{experiment_name}.csv"
-    
+
     # Load a config for custom evaluation metrics
     config_dict = {
         'gnm': {
@@ -521,9 +301,151 @@ def main():
         print("\n" + "=" * 60)
         print("LOADING NETWORKS")
         print("=" * 60)
+
+        df_prior_results = pd.read_csv(output_path)
+        already_processed_files = set(df_prior_results.filename)
+
+
+        networks_dir = Path(generated_networks_dir)
+        network_files = sorted(networks_dir.glob("net_eta*.npy"))
+        if not network_files:
+            raise FileNotFoundError(f"No network files found in {networks_dir}")
+        network_files = set([str(file).split("/")[-1] for file in network_files]) # network_files)
+
+        to_analyze_files = network_files.difference(already_processed_files)
+
+        print(f"Found {len(to_analyze_files)} generated network files that are not yet preprocessed.")
+
+        df_reference_order = pd.read_csv(reference_csv_path)
+        list_eta_gamma_true_order = []
+        for (eta, gamma) in zip(list(df_reference_order["eta"]), list(df_reference_order["gamma"])): 
+            list_eta_gamma_true_order.append((eta, gamma))
+
+        to_analyze_eta_gamma_pairs = []
+        for file in list(to_analyze_files): 
+            eta = str(file).split("/")[-1].split("_")[1].split("a")[-1]
+            gamma = str(file).split("/")[-1].split("_")[2].split("a")[-1]
+            to_analyze_eta_gamma_pairs.append((eta, gamma))
+
+        list_eta_gamma_true_order_files = [f'/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/generated_networks/net_eta{pair[0]}_gamma{pair[1]}_ruleMatchingIndex.npy' for pair in list_eta_gamma_true_order]
+            # 50000
+        to_analyze_eta_and_gamma_files = [f'/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/generated_networks/net_eta{pair[0]}_gamma{pair[1]}_ruleMatchingIndex.npy' for pair in to_analyze_eta_gamma_pairs]
+
+        ordered_and_selected_eta_and_gamma_pairs_files = [path for path in list_eta_gamma_true_order_files if path in to_analyze_eta_and_gamma_files]
+            # 24572
+        # len(list(set(list_eta_gamma_true_order_files)))
+
+        ordered_and_selected_eta_and_gamma_pairs_files_parameters = []
+        for file in list(ordered_and_selected_eta_and_gamma_pairs_files): 
+            eta = str(file).split("/")[-1].split("_")[1].split("a")[-1]
+            gamma = str(file).split("/")[-1].split("_")[2].split("a")[-1]
+            ordered_and_selected_eta_and_gamma_pairs_files_parameters.append((eta, gamma))
+
+        generated_network_parameters = ordered_and_selected_eta_and_gamma_pairs_files_parameters
+
+        generated_networks = []
+        for file in ordered_and_selected_eta_and_gamma_pairs_files: 
+            gen = np.load(file)
+            generated_networks.append(gen)
+        generated_networks = np.stack(generated_networks)
         
-        generated_networks, generated_network_parameters, filenames = load_generated_networks(generated_networks_dir)
+        # filenames = ordered_and_selected_eta_and_gamma_pairs_files
+        # generated_networks, generated_network_parameters, filenames = load_generated_networks(ordered_and_selected_eta_and_gamma_pairs_files)
         empirical_networks = load_empirical_networks(empirical_networks_path)
+        
+        
+        
+        # #################################################
+
+
+        # networks_dir = Path(generated_networks_dir)
+        # network_files = sorted(networks_dir.glob("net_eta*.npy"))
+        # if not network_files:
+        #     raise FileNotFoundError(f"No network files found in {networks_dir}")
+        # network_files = set([str(file).split("/")[-1] for file in network_files]) # network_files)
+
+        # to_analyze_files = network_files.difference(already_processed_files)
+
+        # print(f"Found {len(to_analyze_files)} generated network files that are not yet preprocessed.")
+
+        # df_reference_order = pd.read_csv(reference_csv_path)
+        # list_eta_gamma_true_order = []
+        # for (eta, gamma) in zip(list(df_reference_order["eta"]), list(df_reference_order["gamma"])): 
+        #     list_eta_gamma_true_order.append((eta, gamma))
+
+        # to_analyze_eta_gamma_pairs = []
+        # for file in list(to_analyze_files): 
+        #     eta = str(file).split("/")[-1].split("_")[1].split("a")[-1]
+        #     gamma = str(file).split("/")[-1].split("_")[2].split("a")[-1]
+        #     to_analyze_eta_gamma_pairs.append((eta, gamma))
+
+        # list_eta_gamma_true_order_files = [f'/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/generated_networks/net_eta{pair[0]}_gamma{pair[1]}_ruleMatchingIndex.npy' for pair in list_eta_gamma_true_order]
+        #     # 50000
+        # to_analyze_eta_and_gamma_files = [f'/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/generated_networks/net_eta{pair[0]}_gamma{pair[1]}_ruleMatchingIndex.npy' for pair in to_analyze_eta_gamma_pairs]
+
+        # ordered_and_selected_eta_and_gamma_pairs_files = [path for path in list_eta_gamma_true_order_files if path in to_analyze_eta_and_gamma_files]
+        #     # 24572
+        # # len(list(set(list_eta_gamma_true_order_files)))
+
+        # ordered_and_selected_eta_and_gamma_pairs_files_parameters = []
+        # for file in list(ordered_and_selected_eta_and_gamma_pairs_files): 
+        #     eta = str(file).split("/")[-1].split("_")[1].split("a")[-1]
+        #     gamma = str(file).split("/")[-1].split("_")[2].split("a")[-1]
+        #     ordered_and_selected_eta_and_gamma_pairs_files_parameters.append((eta, gamma))
+
+        # generated_network_parameters = ordered_and_selected_eta_and_gamma_pairs_files_parameters
+        # generated_network_files = ordered_and_selected_eta_and_gamma_pairs_files
+
+        # generated_networks = []
+        # for file in ordered_and_selected_eta_and_gamma_pairs_files: 
+        #     gen = np.load(file)
+        #     generated_networks.append(gen)
+        # generated_networks = np.stack(generated_networks)
+        
+        # # filenames = ordered_and_selected_eta_and_gamma_pairs_files
+        # # generated_networks, generated_network_parameters, filenames = load_generated_networks(ordered_and_selected_eta_and_gamma_pairs_files)
+        # empirical_networks = load_empirical_networks(empirical_networks_path)
+        
+        
+        ###############################
+        
+        
+        # networks_dir = Path(generated_networks_dir)
+        # network_files = sorted(networks_dir.glob("net_eta*.npy"))
+        # if not network_files:
+        #     raise FileNotFoundError(f"No network files found in {networks_dir}")
+        # network_files = set([str(file).split("/")[-1] for file in network_files]) # network_files)
+
+        # to_analyze_files = network_files.difference(already_processed_files)
+
+        # print(f"Found {len(to_analyze_files)} generated network files that are not yet preprocessed.")
+
+        # df_reference_order = pd.read_csv(reference_csv_path)
+        # list_eta_gamma_true_order = []
+        # for (eta, gamma) in zip(list(df_reference_order["eta"]), list(df_reference_order["gamma"])): 
+        #     list_eta_gamma_true_order.append((eta, gamma))
+
+        # to_analyze_eta_gamma_pairs = []
+        # for file in list(to_analyze_files): 
+        #     eta = str(file).split("/")[-1].split("_")[1].split("a")[-1]
+        #     gamma = str(file).split("/")[-1].split("_")[2].split("a")[-1]
+        #     to_analyze_eta_gamma_pairs.append((eta, gamma))
+
+        # list_eta_gamma_true_order_files = [f'/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/generated_networks/net_eta{pair[0]}_gamma{pair[1]}_ruleMatchingIndex.npy' for pair in list_eta_gamma_true_order]
+        #     # 50000
+        # to_analyze_eta_and_gamma_files = [f'/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/generated_networks/net_eta{pair[0]}_gamma{pair[1]}_ruleMatchingIndex.npy' for pair in to_analyze_eta_gamma_pairs]
+
+        # ordered_and_selected_eta_and_gamma_pairs_files = [path for path in list_eta_gamma_true_order_files if path in to_analyze_eta_and_gamma_files]
+        #     # 24572
+        # # len(list(set(list_eta_gamma_true_order_files)))
+        # # generated_networks, generated_network_parameters, filenames = load_generated_networks(ordered_and_selected_eta_and_gamma_pairs_files)
+        
+        # generated_networks = []
+        # for file in ordered_and_selected_eta_and_gamma_pairs_files: 
+        #     generated_networks.append(np.load(file))
+        # generated_networks = np.stack(generated_networks)
+            
+        # empirical_networks = load_empirical_networks(empirical_networks_path)
         
         # Validate dimensions
         if generated_networks is not None:
@@ -538,19 +460,93 @@ def main():
         print("COMPARING NETWORKS")
         print("=" * 60)
         
-        results_df = compare_all_networks(
-            generated_networks=generated_networks,
-            generated_network_parameters=generated_network_parameters,
-            filenames=filenames,
-            empirical_networks=empirical_networks,
-            distance_matrices_path=distance_matrix_path if distance_matrix_path.exists() else None,
-            config_dict=config_dict,
-            output_path=output_path,
-            dataset_name=dataset_name, 
-            reference_csv_path=reference_csv_path if reference_csv_path.exists() else None, 
-            number_multiprocessing_processes=number_multiprocessing_processes, 
+        # results_df = compare_all_networks(
+        #     generated_networks=generated_networks,
+        #     generated_network_parameters=generated_network_parameters,
+        #     empirical_networks=empirical_networks,
+        #     distance_matrices_path=distance_matrix_path if distance_matrix_path.exists() else None,
+        #     config_dict=config_dict,
+        #     output_path=output_path,
+        #     dataset_name=dataset_name, 
+        #     reference_csv_path=reference_csv_path if reference_csv_path.exists() else None, 
+        #     number_multiprocessing_processes=number_multiprocessing_processes, 
+        # )
+        
+        
+        # Load distance matrices once
+        distance_matrices = None
+        evaluation_criteria_list = None
+        
+        # Distance Matrices
+        print("Loading distance matrices...")
+        distance_matrices = np.load(distance_matrices_path)
+        distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
+        if dataset_name == "shafiei_human_consensus_dataset": 
+            distance_matrices = distance_matrices.unsqueeze(0)
+            print("Attention: as assumed that it's the Shafiei dataset, this distance matrix will be unsqueezed.")
+        print(f"Loaded distance matrix with shape: {distance_matrices.shape}")
+        
+        # Pre-create evaluation criteria for all subjects
+        evaluation_criteria_list = create_evaluation_criteria_list(
+            distance_matrices=distance_matrices,
+            config_dict=config_dict
         )
         
+        # Convert empirical networks to torch tensor once
+        print("Converting empirical networks to torch tensors...")
+        empirical_networks_tensor = torch.tensor(empirical_networks, dtype=torch.float32)
+        
+        # Prepare tasks
+        print("Preparing tasks...")
+        tasks = []
+        for net_idx, (network, params) in enumerate(zip(generated_networks, generated_network_parameters)): 
+            task_args = (
+                net_idx,
+                network,
+                params,
+                empirical_networks_tensor,
+                evaluation_criteria_list
+            )
+            tasks.append(task_args)
+        
+        print(f"\nProcessing {len(tasks)} networks...")
+        
+        # Determine if we need to write header
+        write_header = df_prior_results is None or not output_path.exists() # df_prior_results if df_prior_results is not None and output_path.exists() else None
+        
+        # Use multiprocessing Pool to process tasks in parallel
+        results_count = 0
+        
+        with Pool(processes=number_multiprocessing_processes) as pool:
+            # Use tqdm to show progress with imap
+            for i, result in enumerate(tqdm(
+                pool.imap(process_network_optimized, tasks), 
+                total=len(tasks), 
+                desc="Evaluating networks"
+            )):
+                # Append result to CSV immediately
+                if output_path:
+                    append_result_to_csv(
+                        result=result,
+                        output_path=output_path,
+                        write_header=(write_header and i == 0)
+                    )
+                
+                results_count += 1
+                
+                # Progress update every 10 networks
+                if results_count % 10 == 0:
+                    print(f"💾 Saved {results_count}/{len(tasks)} results to disk. Path: {output_path}")
+        
+        print(f"\n✅ All {results_count} new results saved to: {output_path}")
+        
+        # Load and return final results
+        if output_path and output_path.exists():
+            results_df = pd.read_csv(output_path)
+        else: 
+            results_df = None
+
+
         # Display summary
         print("\n" + "=" * 60)
         print("SUMMARY")

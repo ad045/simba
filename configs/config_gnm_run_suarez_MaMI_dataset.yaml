@@ -1,7 +1,7 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 60_generally_finer_search
+  name: 61_testing_with_kayson # 60_generally_finer_search
   animal: 0
   compare_to_connectome_of_distance_matrix: true
   average_connectomes: true
@@ -84,10 +84,14 @@ data:
     animal_metadata: data/preprocessed/suarez_MaMI_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_100.csv
 gnm:
   eta_range:
-  - -7.5
-  - 2.5
+  - 0.0
+  - 2.0
+  # - -7.5
+  # - 2.5
   gamma_range:
-  - -0.125
+  # - -0.125
+  # - 1.0
+  - 0.8
   - 1.0
   lambda:
   - 0.0

@@ -165,7 +165,7 @@ class ExperimentRunner:
         
         try:
             self.load_config()
-            self.manage_config_file() # Seems to have issues?
+            self.manage_config_file()
             self.run_experiments()
             self.combine_csv_files()
             
