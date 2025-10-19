@@ -17,7 +17,7 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 
 # Import our optimized modules
-from config.manager import ConfigManager, create_gnm_random_sweep_config
+from config.manager import ConfigManager, create_gnm_sweep_config
 from src.GNMs.gnm_network_generator import GNMGenerator
 from src.utils.data_loader import DataLoader
 from src.utils.run_logger import get_logger
@@ -276,9 +276,10 @@ class GNMandESNPipelineOrchestrator: # IS USED1
         num_simulations = self.config['gnm']['num_simulations'] # 100 
         
         # Create sweep config 
-        sweep_config = create_gnm_random_sweep_config( # this is used # add a grid version again? 
+        sweep_config = create_gnm_sweep_config( # this is used # add a grid version again? 
             config=self.config,
             distance_matrix=torch.Tensor(distance_matrix),
+            mode=self.config['experiment']['search']['method'], # "random" or "grid"
             num_iterations=num_iterations,
             num_simulations=num_simulations,
         )
@@ -288,7 +289,11 @@ class GNMandESNPipelineOrchestrator: # IS USED1
         print("Generating sweep configurations...")
         sweep_config_list = list(sweep_config) # already the issue. 
         print(f"{len(sweep_config_list)} configurations generated.")
-        
+        # print(sweep_config_list[0])
+        # print(sweep_config_list[-1])
+        print(f"Sampling method: {self.config['experiment']['search']['method']}")
+        print(f"Total configurations to evaluate: {len(sweep_config_list)}")
+
         # experiment_dir = self.config['paths']['output_gnm_dir'] / self.config['experiment']['name']
         temp_results_dir = self.output_dir / "_temp_results" / f"{self.config['experiment']['name']}_batch_{time.strftime("%Y%m%d_%H%M%S")}" # Ugly HACK
         os.makedirs(temp_results_dir, exist_ok=True)

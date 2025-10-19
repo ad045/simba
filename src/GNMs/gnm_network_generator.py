@@ -2,37 +2,32 @@
 Optimized GNM-based network generation fully leveraging Edward's GNM library.
 """
 
-import numpy as np
 import torch
 import warnings
-from typing import Optional, Dict, Any, List, Tuple, Union
-from dataclasses import dataclass
-from pathlib import Path 
+from typing import Optional, Dict, List
 
 # Import everything we need from GNM library
 from gnm import (
-    fitting, 
     generative_rules, 
     evaluation, 
-    weight_criteria
 )
 
 # For the dynamicGNMGenerator
 # from ESNs.esn_evaluation_dynGNM import ESNEvaluator 
-
-@dataclass
-class GNMParameters: # TODO: Remove hardcoded stuff. 
-    """Parameters for GNM generation - matches GNM library structure."""
-    eta: Union[float, torch.Tensor] = -2.0                    # Distance parameter
-    gamma: Union[float, torch.Tensor] = 0.3                   # Homophily parameter
-    lambdah: Union[float, torch.Tensor] = 0.0                # Time-dependency parameter
-    generative_rule: Any = None                               # Will be set to actual rule object
-    distance_relationship_type: Union[str, List[str]] = "powerlaw"
-    preferential_relationship_type: Union[str, List[str]] = "powerlaw"
-    heterochronicity_relationship_type: Union[str, List[str]] = "powerlaw"
-    num_simulations: int = 100
-    device: str = "cpu"
-    random_seed: Optional[int] = None
+ 
+# @dataclass # I actually guess I do not need this??
+# class GNMParameters: # TODO: Remove hardcoded stuff. 
+#     """Parameters for GNM generation - matches GNM library structure."""
+#     eta: Union[float, torch.Tensor] = -2.0                    # Distance parameter
+#     gamma: Union[float, torch.Tensor] = 0.3                   # Homophily parameter
+#     lambdah: Union[float, torch.Tensor] = 0.0                # Time-dependency parameter
+#     generative_rule: Any = None                               # Will be set to actual rule object
+#     distance_relationship_type: Union[str, List[str]] = "powerlaw"
+#     preferential_relationship_type: Union[str, List[str]] = "powerlaw"
+#     heterochronicity_relationship_type: Union[str, List[str]] = "powerlaw"
+#     num_simulations: int = 100
+#     device: str = "cpu"
+#     random_seed: Optional[int] = None
 
 
 class GNMGenerator:
@@ -114,8 +109,8 @@ class GNMGenerator:
         Returns:
             Dictionary of metric values
         """
-        if metrics is None:
-            metrics = ["degree_ks", "clustering_ks", "edge_length_ks", "frobenius"]
+        # if metrics is None:
+        #     metrics = ["degree_ks", "clustering_ks", "edge_length_ks", "frobenius"]
         
         results = {}
         

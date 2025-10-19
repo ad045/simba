@@ -229,7 +229,7 @@ def main():
     ########### HARDCODED STUFF ##############################################
 
     dataset_name = "suarez_MaMI_dataset"
-    experiment_name = "60_generally_finer_search_animal_0"
+    experiment_name = "60_generally_finer_search_animal_1"
     
     path_config = PathConfig( 
         dataset_name=dataset_name,

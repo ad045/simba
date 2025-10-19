@@ -250,7 +250,7 @@ if __name__ == "__main__":
         "global_efficiency", 
         "modularity", 
         "avg_clustering", 
-        "avg_degree", 
+        # "avg_degree", 
         "transitivity", 
         "avg_edge_distance", 
         "char_path_length", 

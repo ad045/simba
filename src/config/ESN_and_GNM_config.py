@@ -107,9 +107,9 @@ class GNMConfig:
             eta=torch.linspace(self.eta_range[0], self.eta_range[1], self.n_eta),
             gamma=torch.linspace(self.gamma_range[0], self.gamma_range[1], self.n_gamma),
             lambdah=torch.linspace(self.lambda_range[0], self.lambda_range[1], self.n_lambda),
-            distance_relationship_type=["powerlaw"],
-            preferential_relationship_type=["powerlaw"],
-            heterochronicity_relationship_type=["powerlaw"],
+            distance_relationship_type="powerlaw", # TODO: change all these defaults!
+            preferential_relationship_type="powerlaw",
+            heterochronicity_relationship_type="powerlaw",
             generative_rule=rules,
             num_iterations=[num_iterations],
         )
@@ -174,25 +174,25 @@ class GNMConfig:
 @dataclass
 class DataConfig:
     """Data loading and preprocessing configuration."""
-    resolution: int = DEFAULT_RESOLUTION
-    densities: List[int] = field(default_factory=lambda: DEFAULT_DENSITIES.copy())
-    use_weighted: bool = True
-    use_gnm_defaults: bool = False  # Option to use GNM's default data
+    resolution: int # = DEFAULT_RESOLUTION
+    densities: List[int] # = field(default_factory=lambda: DEFAULT_DENSITIES.copy())
+    # use_weighted: bool # = True
+    # use_gnm_defaults: bool # = False  # Option to use GNM's default data
 
 
 @dataclass
 class ComputeConfig:
     """Computational settings."""
-    n_workers: Optional[int] = None  
-    timing_flag: bool = True
-    append_interval: int = DEFAULT_APPEND_INTERVAL
-    random_seed: int = DEFAULT_RANDOM_SEED
+    n_workers: int # = None  
+    timing_flag: bool #  = True
+    append_interval: int # = DEFAULT_APPEND_INTERVAL
+    random_seed: int  # = DEFAULT_RANDOM_SEED
 
 
 @dataclass
 class PathConfig:
     """Path configuration."""
-    root_dir: Path = field(default_factory=lambda: Path.cwd().resolve())
+    root_dir: Path = field(default_factory=lambda: Path.cwd().resolve()) # is a ok default, I think... but better would be to replace it! 
     
     def __post_init__(self):
         # Find project root by looking for markers
@@ -214,17 +214,47 @@ class ConfigManager: # Is it used? Unsure.
     """Optimized configuration manager using GNM structures."""
     
     def __init__(self, 
-                 esn_config: Optional[ESNConfig] = None,
-                 gnm_config: Optional[GNMConfig] = None,
-                 data_config: Optional[DataConfig] = None,
-                 compute_config: Optional[ComputeConfig] = None,
-                 path_config: Optional[PathConfig] = None):
+                #  esn_config: Optional[ESNConfig] = None,
+                #  gnm_config: Optional[GNMConfig] = None,
+                #  data_config: Optional[DataConfig] = None,
+                #  compute_config: Optional[ComputeConfig] = None,
+                #  path_config: Optional[PathConfig] = None
+                 ):
         
-        self.esn = esn_config or ESNConfig()
-        self.gnm = gnm_config or GNMConfig()
-        self.data = data_config or DataConfig()
-        self.compute = compute_config or ComputeConfig()
-        self.paths = path_config or PathConfig()
+        # self.esn = esn_config or ESNConfig()
+        # self.gnm = gnm_config or GNMConfig()
+        
+        self.esn = ESNConfig()
+        self.gnm = GNMConfig()
+        
+        
+        self.data = DataConfig(
+            resolution=self.data.resolution, 
+            densities=self.data.densities, 
+        )
+        
+    #     class DataConfig:
+    # """Data loading and preprocessing configuration."""
+    # resolution: int = DEFAULT_RESOLUTION
+    # densities: List[int] = field(default_factory=lambda: DEFAULT_DENSITIES.copy())
+    # use_weighted: bool = True
+    # use_gnm_defaults: bool = False  # Option to use GNM's default data
+
+        # self.compute = compute_config or ComputeConfig(
+        #                                     n_workers=self.compute.n_workers, 
+        #                                     timing_flag=self.compute.timing_flag, 
+        #                                     random_seed=self.compute.random_seed,
+        #                                 )
+        # self.paths = path_config or PathConfig()
+        
+        self.compute = ComputeConfig(n_workers=self.compute.n_workers, 
+                                     timing_flag=self.compute.timing_flag, 
+                                     random_seed=self.compute.random_seed,
+                                    )
+        self.paths = PathConfig(
+            # root_dir=self.data.
+        )
+    
     
     def get_gnm_evaluation_criteria(self, distance_matrix: torch.Tensor) -> Any:
         """Get evaluation criteria for GNM."""

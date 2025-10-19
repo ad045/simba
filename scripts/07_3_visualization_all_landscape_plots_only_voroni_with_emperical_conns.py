@@ -8,12 +8,9 @@ import os
 import traceback
 from pathlib import Path
 import pandas as pd
-from src.visualization.energy_and_mc_landscape import generate_entire_df, PipelineVisualizer
-
-# This will close all plots after saving, preventing them from displaying in a loop.
 import matplotlib
-import matplotlib.pyplot as plt
-# matplotlib.use('Agg')
+
+from src.visualization.energy_and_mc_landscape import generate_entire_df, PipelineVisualizer
 
 if __name__ == "__main__":
     
@@ -22,72 +19,10 @@ if __name__ == "__main__":
     animal_id = 0
     # List of CSV files containing the GNM sweep results.
     df_paths = [ 
-        # 12: Medium sweep (250) with matching index and communicability
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/12_average_connectome_matching_index_and_communicability/combined_results12_average_connectome_matching_index_and_communicability_summary.csv", 
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/53_suarez_MaMI_100_testing_with_100_sample_points_animal_19/all_metrics_for_53_suarez_MaMI_100_testing_with_100_sample_points_animal_19.csv"
         
-        # 14: Big sweep, density 10 
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/14_average_connectome_matching_index_and_communicability_density10/combined_results14_average_connectome_matching_index_and_communicability_density10_summary.csv", 
-
-        # 15 included evaluation of empirical connectomes 
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/15_individual_connectomes/15_individual_connectomes_20250924_142952/15_individual_connectomes_temp/15_individual_connectomes_results.csv", 
-        
-        # 16: With individual connectomes
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes_results.csv", 
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/16_big_sweep_with_individual_connectomes/16_big_sweep_with_individual_connectomes_results.csv", 
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/17_bigger_connectomes_no_individuals_density_10_8/summary_all_metrics_for_exp_17_bigger_connectomes_no_individuals_density_10_8.csv", 
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/18_sweep_with_individual_connectomes_larger_eta_span/summary_all_metrics_for_exp_18_sweep_with_individual_connectomes_larger_eta_span.csv", 
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2/summary_all_metrics_for_exp_20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2/summary_all_metrics_for_exp_20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/2423_combined/summary_all_metrics_for_exp_2423_combined.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/2423_24rough_combined/summary_all_metrics_for_exp_2423_24rough_combined.csv"
-        
-        # NEW CONSENSUS! 
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/26_testing_4_KS_folders_why_so_fast/summary_all_metrics_for_exp_26_testing_4_KS_folders_why_so_fast.csv"
-        
-        
-        # just testing out the new library. 
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/29_connectomes_of_size_50/summary_all_metrics_for_exp_29_connectomes_of_size_50.csv", 
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/30_shafiei_size_68/all_metrics_for_exp_30_shafiei_size_68.csv"
-        
-        # size 50 (MaMI)
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_copy/all_metrics_for_exp_30_shafiei_size_68.csv"
-        
-        # 220
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_220/all_metrics_for_exp_30_shafiei_size_68.csv"
-        
-        # 57
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_57_copy_2_now_run_with_evaluation/all_metrics_for_exp_30_shafiei_size_68.csv" 
-        # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/31_suarez_MaMI_size_100_wider_sweep_57/all_metrics_for_exp_30_shafiei_size_68.csv"
-        
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/33_suarez_MaMI_size_100_extensive_220_300_iter/all_metrics_for_exp_30_shafiei_size_68_interim_copy.csv"
-        
-        
-        # Testing
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/34_suarez_MaMI_100_testing_5_2/all_metrics_for_exp_30_shafiei_size_68.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/44_suarez_MaMI_100_big_sweep_over_night/all_metrics_for_exp_30_shafiei_size_68.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/45_suarez_MaMI_100_big_sweep_over_night/all_metrics_for_exp_30_shafiei_size_68.csv"
-        
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/45_shafiei_size_68_testing_4/all_metrics_for_exp_30_shafiei_size_68.csv"
-        
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/45_shafiei_size_68_testing_5/all_metrics_for_exp_30_shafiei_size_68.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/48_suarez_MaMI_100/all_metrics_for_48_suarez_MaMI_100.csv"
-        
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/49_suarez_MaMI_100/all_metrics_for_49_suarez_MaMI_100.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/46_shafiei/all_metrics_for_46_shafiei.csv"
-        
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/48_shafiei/all_metrics_for_48_shafiei.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/shafiei_human_consensus_dataset/49_shafiei/all_metrics_for_49_shafiei.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/49_suarez_MaMI_100_animal_3/all_metrics_for_49_suarez_MaMI_100_animal_3.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/49_suarez_MaMI_100_animal_4/all_metrics_for_49_suarez_MaMI_100_animal_4.csv"
-        
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/49_suarez_MaMI_100_animal_11/all_metrics_for_49_suarez_MaMI_100_animal_11.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/49_suarez_MaMI_100_animal_13/all_metrics_for_49_suarez_MaMI_100_animal_13.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/52_suarez_MaMI_100_animal_0/all_metrics_for_52_suarez_MaMI_100_animal_0.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/53_suarez_MaMI_100_testing_with_100_sample_points_animal_0/all_metrics_for_53_suarez_MaMI_100_testing_with_100_sample_points_animal_0.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/49_suarez_MaMI_100_animal_0/all_metrics_for_49_suarez_MaMI_100_animal_0.csv"
-        # f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/53_suarez_MaMI_100_testing_with_100_sample_points_animal_{animal_id}/all_metrics_for_53_suarez_MaMI_100_testing_with_100_sample_points_animal_{animal_id}.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_1/all_metrics_for_60_generally_finer_search_animal_1.csv"
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/53_suarez_MaMI_100_testing_with_100_sample_points_animal_19/all_metrics_for_53_suarez_MaMI_100_testing_with_100_sample_points_animal_19.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/62_testing_conciser_code_animal_0/all_metrics_for_62_testing_conciser_code_animal_0.csv"
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/63_fine_grid_animal_0/all_metrics_for_63_fine_grid_animal_0.csv"
     ]       
     plot_indiv_connectomes = False # True # False # True # False # True #  False # True # False
     
