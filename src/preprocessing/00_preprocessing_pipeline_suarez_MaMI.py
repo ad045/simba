@@ -56,7 +56,7 @@ from scipy.spatial.distance import cdist
 # Local imports from your codebase
 # from notebook_setup import setup
 from preprocessing.get_distance_matrix import get_distance_matrix_from_coords, get_distance_matrix_from_fiber_lengths
-from src.structural_analysis.graph_measures import analyze_connectomes
+from analysis.structural_measures import analyze_connectomes
 
 from src.preprocessing.preprocessing_setup import setup
 from preprocessing.threshold_to_density import threshold_to_density

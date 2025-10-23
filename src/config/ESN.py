@@ -12,13 +12,13 @@ from .constants import (
 @dataclass
 class ESNConfig:
     """ESN hyperparameter configuration."""
-    spectral_radius: float = DEFAULT_SPECTRAL_RADIUS
-    input_length: int = DEFAULT_INPUT_LENGTH
-    input_scaling: float = DEFAULT_INPUT_SCALING
-    regularization_method: str = DEFAULT_REGULARIZATION_METHOD
-    n_runs: int = DEFAULT_N_RUNS
-    n_lags: int = DEFAULT_N_LAGS
-    test_len: int = DEFAULT_TEST_LENGTH
-    n_transient: int = DEFAULT_N_TRANSIENT
-    leak_rate: float = DEFAULT_LEAK_RATE
-    bias: float = DEFAULT_BIAS
+    spectral_radius: float # = DEFAULT_SPECTRAL_RADIUS
+    input_length: int # = DEFAULT_INPUT_LENGTH
+    input_scaling: float # = DEFAULT_INPUT_SCALING
+    regularization_method: str # = DEFAULT_REGULARIZATION_METHOD
+    n_runs: int # = DEFAULT_N_RUNS
+    n_lags: int # = DEFAULT_N_LAGS
+    test_len: int # = DEFAULT_TEST_LENGTH
+    n_transient: int # = DEFAULT_N_TRANSIENT
+    leak_rate: float # = DEFAULT_LEAK_RATE
+    bias: float # = DEFAULT_BIAS

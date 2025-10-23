@@ -16,7 +16,7 @@ import pandas as pd
 
 import echoes
 from scipy.stats import pearsonr
-from config.manager import ConfigManager
+# from config.manager import ConfigManager
 from src.utils.data_loader import DataLoader
 
 from ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome # needs to be here (even if "unused") - why?? 
@@ -28,7 +28,9 @@ from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
 class ESNEvaluator:
     """Handles ESN evaluation across multiple subjects and hyperparameters."""
     
-    def __init__(self, config: ConfigManager, data_loader: DataLoader):
+    def __init__(self, 
+                 config: dict, # ConfigManager, 
+                 data_loader: DataLoader):
         self.config = config
         self.data_loader = data_loader
         self.timestamp = time_stamp_for_saving()
@@ -486,7 +488,7 @@ class ESNEvaluator:
 
 
 def create_esn_evaluator(config_path: Optional[Union[str, Path]] = None,
-                        config_manager: Optional[ConfigManager] = None,
+                        config_manager: Optional[dict] = None, # ConfigManager] = None,
                         data_loader: Optional[DataLoader] = None) -> ESNEvaluator:
     """
     Factory function to create an ESNEvaluator instance.
@@ -499,11 +501,11 @@ def create_esn_evaluator(config_path: Optional[Union[str, Path]] = None,
     Returns:
         ESNEvaluator instance
     """
-    if config_manager is None:
-        if config_path is not None:
-            config_manager = ConfigManager.load_config(Path(config_path))
-        else:
-            config_manager = ConfigManager()
+    # if config_manager is None:
+    #     if config_path is not None:
+    #         config_manager = config_manager, # ConfigManager.load_config(Path(config_path))
+    #     else:
+    #         config_manager = ConfigManager()
     
     if data_loader is None:
         from src.utils.data_loader import DataLoader

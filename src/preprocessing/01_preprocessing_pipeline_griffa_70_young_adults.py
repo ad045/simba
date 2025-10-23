@@ -15,7 +15,7 @@ from preprocessing.preprocessing_setup import setup
 from netneurotools.networks import struct_consensus
 # from preprocessing.threshold_to_density import threshold_to_density
 
-from src.structural_analysis.graph_measures import analyze_connectomes
+from analysis.structural_measures import analyze_connectomes
 
 from src.preprocessing.utils import setup_paths, save_dataframe
 

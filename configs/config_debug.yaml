@@ -1,7 +1,7 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 66_filling_in_the_upper_region # _grid_higher_eta # 4_fine_grid_upper_local_minima # 60_generally_finer_search
+  name: 65_debug # 60_generally_finer_search
   animal: 0
   compare_to_connectome_of_distance_matrix: true
   average_connectomes: true
@@ -9,7 +9,7 @@ experiment:
   compare_to_all_individual_empirical_connectomes: true
   search:
     method: grid # random
-    n_samples: 900 # 00
+    n_samples: 10000 # 00
   wandb:
     enabled: false
     project: GNM_project
@@ -84,20 +84,15 @@ data:
     animal_metadata: data/preprocessed/suarez_MaMI_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_100.csv
 gnm:
   eta_range:
-  # - -6
-  # - -5
-  - 2.5
-  - 3.5
+  - -6
+  - -5
   # - -2.0
   # - 1.0
   # - -7.5
   # - 2.5
   gamma_range:
-  # - 0.2
-  # - 1.0 
-  # - 0.0
-  - 0.3
-  - 1.0
+  - 0.2
+  - 1.0 
   # - -0.125
   # - 1.0
   # - 0.075
@@ -136,7 +131,7 @@ esn:
   random_state: 42
 compute:
   device: cpu
-  n_workers: -1
+  n_workers: 1
   timing_flag: true
   random_seed: 42
 output:

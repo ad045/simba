@@ -1,9 +1,18 @@
 import numpy as np
 import networkx as nx
 from networkx.algorithms import community as nx_comm
+
 from bct import density_und
 
-def _largest_component_char_path_length(G):
+from networkx.algorithms import smallworld
+
+import networkx as nx
+import numpy as np
+
+
+from netneurotools import modularity
+
+def largest_component_char_path_length(G):
     """
     Characteristic path length on the largest connected component (NaN if <2 nodes).
     """
@@ -18,6 +27,12 @@ def _largest_component_char_path_length(G):
     if H.number_of_nodes() < 2:
         return np.nan
     return nx.average_shortest_path_length(H)
+
+
+def count_components_nx(A):
+    G = nx.from_numpy_array(np.array(A))
+    return nx.number_connected_components(G)
+
 
 def _get_rich_nodes(G, rich_nodes=None, top_percent=0.20):
     """
@@ -114,6 +129,54 @@ def _communicability(A_bin, mode="estrada_scaled", beta=None, t=1.0):
         raise ValueError("mode must be 'estrada', 'estrada_scaled', or 'heat'.")
 
 
+def _omega(G, niter=5, nrand=10):
+    """
+    Compute small-world coefficient omega. Telesford et al. (2011) Brain Connectivity
+    """
+    return smallworld.omega(G, niter=niter, nrand=nrand)
+
+
+
+def _compute_structural_complexity(A):
+    """
+    STOLEN FROM KAYSON. 
+    Compute the structural complexity C for a given square matrix A using the
+    entropy of the singular values.
+
+    Parameters
+    ----------
+    A : numpy.ndarray
+        A square numpy array (n x n) representing the network's weight matrix.
+
+    Returns
+    -------
+    float
+        The complexity measure C in the range [0, 1].
+    """
+    # Ensure A is a numpy array
+    A = np.asarray(A)
+    n = A.shape[0]
+    
+    # Compute singular values of A
+    # We don't need U and V, only the singular values (sigma)
+    sigma = np.linalg.svd(A, compute_uv=False)
+    
+    # Compute normalized "probabilities" p_i = sigma_i^2 / sum of all sigma_j^2
+    sigma_squared = sigma**2
+    total = np.sum(sigma_squared)
+    p = sigma_squared / total
+    
+    # Compute Shannon entropy: H = -sum_i p_i * log(p_i)
+    # Use np.log for natural logarithm
+    # Filter out zero p_i to avoid log(0) issues
+    p_nonzero = p[p > 0]
+    H = -np.sum(p_nonzero * np.log(p_nonzero))
+    
+    # Normalize by log(n) to get C in [0, 1]
+    C = H / np.log(n)
+    
+    return C
+
 def analyze_connectomes(connectomes, 
                         distance_matrix,
                         comm_mode="estrada_scaled", 
@@ -165,10 +228,10 @@ def analyze_connectomes(connectomes,
 
         # Calculate metrics 
         # Communicability (chosen mode)
-        try: 
-            avg_comm = _communicability(A_bin, mode=comm_mode, beta=beta, t=t)
-        except: 
-            avg_comm = np.nan
+        # try: 
+        avg_comm = _communicability(A_bin, mode=comm_mode, beta=beta, t=t)
+        # except: 
+        #     avg_comm = np.nan
         
         # Global efficiency
         glob_eff = nx.global_efficiency(G)
@@ -193,7 +256,7 @@ def analyze_connectomes(connectomes,
         wiring_cost = float(np.sum(edge_d)) if edge_d else 0.0
         
         # Characteristic path length (largest CC)
-        cpl = _largest_component_char_path_length(G)
+        cpl = largest_component_char_path_length(G)
 
         # Rich-club measures
         rich_nodes = _get_rich_nodes(G, rich_nodes_global, top_percent=rich_top_percent)
@@ -201,6 +264,7 @@ def analyze_connectomes(connectomes,
         n_rich_edges = len(rich_edges)
         rc_lengths = [distance_matrix[u, v] for (u, v) in rich_edges]
         avg_rc_length = float(np.mean(rc_lengths)) if rc_lengths else np.nan
+
 
         # Append results for this network
         out.append({
@@ -218,5 +282,15 @@ def analyze_connectomes(connectomes,
             "richclub_n_edges": n_rich_edges,
             "richclub_avg_length": avg_rc_length,
         })
+        
+        # NEW THINGS!! 
+        
+        # consensus communities from netneurotools
+        # consensus_communities = modularity.consensus_modularity(A, n_iterations=100)
+
+        out.append({"small_world_omega": _omega(G)})
+
+        out.append({"structural_complexity": _compute_structural_complexity(A)})
+
 
     return out # pd.DataFrame(out)

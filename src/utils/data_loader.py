@@ -6,14 +6,14 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, Optional, Union
 import warnings
-from config.manager import ConfigManager
+# from config.manager import ConfigManager
 from src.config.constants import NUMERICAL_TOLERANCE
 
 
 class DataLoader:
     """Handles loading and preprocessing of connectome data."""
     
-    def __init__(self, config: ConfigManager):
+    def __init__(self, config): # : ConfigManager):
         self.config = config
         self.resolution = self.config['data']['connectome_resolution']
        
@@ -119,30 +119,7 @@ class DataLoader:
         else:
             raise ValueError(f"Connectome ({conn_type}) must be 2D or 3D, got {connectome.ndim}D")
     
-
-def create_data_loader(config_path: Optional[Union[str, Path]] = None, 
-                      config_manager: Optional[ConfigManager] = None) -> DataLoader:
-    """
-    Factory function to create a DataLoader instance.
     
-    Args:
-        config_path: Path to JSON configuration file
-        config_manager: Pre-configured ConfigManager instance
-        
-    Returns:
-        DataLoader instance
-    """
-    if config_manager is not None:
-        return DataLoader(config_manager)
-    elif config_path is not None:
-        config_manager = ConfigManager.load_config(Path(config_path))
-        return DataLoader(config_manager)
-    else:
-        # Use default configuration
-        config_manager = ConfigManager()
-        return DataLoader(config_manager)
-
-
 # Utility functions for common data operations
 def binarize_connectome(connectome: np.ndarray, threshold: float = 0.0) -> np.ndarray:
     """

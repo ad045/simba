@@ -54,11 +54,7 @@ from typing import Optional
 from src.config.yaml_loader import YAMLConfigLoader
 from src.pipeline.orchestrator import run_from_yaml
 
-
-from config.manager import PathConfig
-
-
-
+from config.path import PathConfig
 
 
 class ExperimentRunner:

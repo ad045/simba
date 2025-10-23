@@ -9,7 +9,10 @@ This bridges YAML files with the existing config.py structure.
 import yaml
 from pathlib import Path
 
-from config.manager import ConfigManager, PathConfig
+# from config.manager import PathConfig
+from config.path import PathConfig
+
+# from config.manager import ConfigManager, PathConfig
 
 class YAMLConfigLoader:
     """Load and merge YAML configurations with existing ConfigManager."""
@@ -42,7 +45,7 @@ class YAMLConfigLoader:
             raise ValueError(f"Invalid experiment type. Must be one of: {valid_types}")
     
     
-    def create_config_manager(self) -> ConfigManager:
+    def create_config_manager(self): #  -> ConfigManager:
         """Create a ConfigManager instance from YAML configuration."""
         
         config = self.config

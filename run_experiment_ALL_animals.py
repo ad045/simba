@@ -10,6 +10,7 @@ from pathlib import Path
 
 # Configuration
 BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
+# BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_debug.yaml"
 TEMP_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/temp_config_animal.yaml"
 ANIMAL_START = 0
 ANIMAL_END = 2 # 255

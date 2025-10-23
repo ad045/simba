@@ -10,7 +10,7 @@ from netneurotools.networks import struct_consensus, threshold_network
 from bct import density_und
 
 try:
-    from src.structural_analysis.graph_measures import analyze_connectomes
+    from analysis.structural_measures import analyze_connectomes
     from ESNs.esn_evaluation import evaluate_memory_capacity_from_connectome
 except ImportError as e:
     print(f"❌ Error importing project modules: {e}", file=sys.stderr)

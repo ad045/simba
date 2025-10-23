@@ -44,26 +44,33 @@ if __name__ == "__main__":
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
     metrics_to_plot = [
         
-        "MaxCriteria",
-        "avg_communicability", 
-        "global_efficiency", 
-        "modularity", 
-        "avg_clustering", 
-        "avg_degree", 
-        "transitivity", 
-        "avg_edge_distance", 
-        "char_path_length", 
-        "richclub_n_edges", 
-        "richclub_avg_length", 
-        "mc_mean", 
-        "mc_std", 
-        "wiring_cost", 
-        "mean_mc_divided_by_wiring_cost",
-        "mc_5_divided_by_wiring_cost", 
+        "mc_mean_divided_by_global_efficiency",
+        "normalized_mc_mean_times_global_efficiency",
+        
+        "normalized_mc_mean_times_communicability", 
+        "normalized_mc_mean_divided_by_communicability",
+        
+        # "mc_mean_divided_by_avg_communicability" # prop_efficiency"
+        # "MaxCriteria",
+        # "avg_communicability", 
+        # "global_efficiency", 
+        # "modularity", 
+        # "avg_clustering", 
+        # "avg_degree", 
+        # "transitivity", 
+        # "avg_edge_distance", 
+        # "char_path_length", 
+        # "richclub_n_edges", 
+        # "richclub_avg_length", 
+        # "mc_mean", 
+        # "mc_std", 
+        # "wiring_cost", 
+        # "mean_mc_divided_by_wiring_cost",
+        # "mc_5_divided_by_wiring_cost", 
         
         # "avg_clustering_glob_efficiency_minus_energy", 
         # "avg_clustering_divided_by_global_efficiency", 
-    ] + [f"mc_{lag}" for lag in lags_to_plot]
+    ] #+ [f"mc_{lag}" for lag in lags_to_plot]
     plot_combined_lag_plot = False # Plot this comparison plot with different MC lags 
     
     print(f"Starting Voronoi-only visualization process...")
@@ -103,11 +110,61 @@ if __name__ == "__main__":
             if metric == "mean_mc_divided_by_wiring_cost": 
                 df["mean_mc_divided_by_wiring_cost"] = pd.to_numeric(df["mc_mean"], errors='coerce') / pd.to_numeric(df["wiring_cost"], errors='coerce')
             
-                        
             if metric == "mc_5_divided_by_wiring_cost": 
                 df["mc_5_divided_by_wiring_cost"] = pd.to_numeric(df["mc_5"], errors='coerce') / pd.to_numeric(df["wiring_cost"], errors='coerce')
             
+            if metric == "mc_mean_divided_by_prop_efficiency": # prop_efficiency
+                df["mc_mean_divided_by_prop_efficiency"] = pd.to_numeric(df["mc_mean"], errors='coerce') / pd.to_numeric(df["avg_communicability"], errors='coerce')
             
+            if metric == "mc_mean_divided_by_global_efficiency": 
+                df["mc_mean_divided_by_global_efficiency"] = pd.to_numeric(df["mc_mean"], errors='coerce') / pd.to_numeric(df["global_efficiency"], errors='coerce')
+                
+                
+                
+            if metric == "normalized_mc_mean_times_global_efficiency": # prop_efficiency
+                normalized_mc_mean = pd.to_numeric(df["mc_mean"], errors='coerce')
+                normalized_mc_mean = (normalized_mc_mean - normalized_mc_mean.min()) / (normalized_mc_mean.max() - normalized_mc_mean.min())
+                
+                normalized_prop_efficiency = pd.to_numeric(df["avg_communicability"], errors='coerce')
+                normalized_prop_efficiency = (normalized_prop_efficiency - normalized_prop_efficiency.min()) / (normalized_prop_efficiency.max() - normalized_prop_efficiency.min())
+                df["normalized_mc_mean_times_global_efficiency"] = normalized_mc_mean * normalized_prop_efficiency
+
+            if metric == "normalized_mc_mean_divided_by_global_efficiency": 
+                normalized_mc_mean = pd.to_numeric(df["mc_mean"], errors='coerce')
+                normalized_mc_mean = (normalized_mc_mean - normalized_mc_mean.min()) / (normalized_mc_mean.max() - normalized_mc_mean.min())    
+                normalized_prop_efficiency = pd.to_numeric(df["global_efficiency"], errors='coerce')
+                small_number = 1e-10
+                normalized_prop_efficiency = (normalized_prop_efficiency - normalized_prop_efficiency.min()) / (normalized_prop_efficiency.max() - normalized_prop_efficiency.min()) + small_number
+                df["normalized_mc_mean_divided_by_global_efficiency"] = normalized_mc_mean / normalized_prop_efficiency
+                
+                
+                
+            if metric == "normalized_mc_mean_times_communicability": # prop_efficiency
+                normalized_mc_mean = pd.to_numeric(df["mc_mean"], errors='coerce')
+                normalized_mc_mean = (normalized_mc_mean - normalized_mc_mean.min()) / (normalized_mc_mean.max() - normalized_mc_mean.min())
+                normalized_prop_efficiency = pd.to_numeric(df["avg_communicability"], errors='coerce')
+                normalized_prop_efficiency = (normalized_prop_efficiency - normalized_prop_efficiency.min()) / (normalized_prop_efficiency.max() - normalized_prop_efficiency.min())
+                df["normalized_mc_mean_times_communicability"] = normalized_mc_mean * normalized_prop_efficiency
+
+            if metric == "normalized_mc_mean_divided_by_communicability": 
+                normalized_mc_mean = pd.to_numeric(df["mc_mean"], errors='coerce')
+                normalized_mc_mean = (normalized_mc_mean - normalized_mc_mean.min()) / (normalized_mc_mean.max() - normalized_mc_mean.min())    
+                normalized_prop_efficiency = pd.to_numeric(df["global_efficiency"], errors='coerce')
+                small_number = 1e-10
+                normalized_prop_efficiency = (normalized_prop_efficiency - normalized_prop_efficiency.min()) / (normalized_prop_efficiency.max() - normalized_prop_efficiency.min()) + small_number
+                df["normalized_mc_mean_divided_by_communicability"] = normalized_mc_mean / normalized_prop_efficiency
+
+
+
+
+            if metric == "mc_mean_times_by_prop_efficiency": # prop_efficiency
+                df["mc_mean_times_by_prop_efficiency"] = pd.to_numeric(df["mc_mean"], errors='coerce') * pd.to_numeric(df["avg_communicability"], errors='coerce')
+
+            if metric == "mc_mean_times_by_global_efficiency": 
+                df["mc_mean_times_by_global_efficiency"] = pd.to_numeric(df["mc_mean"], errors='coerce') * pd.to_numeric(df["global_efficiency"], errors='coerce')
+
+
+
             if metric == "avg_clustering_divided_by_global_efficiency": 
                 # df["avg_clustering_glob_efficiency"] = pd.to_numeric(df["avg_clustering"], errors='coerce') / pd.to_numeric(df["global_efficiency"], errors='coerce') * pd.to_numeric(df["modularity"], errors='coerce')
                 upper_factor = pd.to_numeric(df["avg_clustering"], errors='coerce')

@@ -17,14 +17,14 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 
 # Import our optimized modules
-from config.manager import ConfigManager, create_gnm_sweep_config
+from config.manager import create_gnm_sweep_config # ,  ConfigManager
 from src.GNMs.gnm_network_generator import GNMGenerator
 from src.utils.data_loader import DataLoader
 from src.utils.run_logger import get_logger
 
 from src.config.GNM import create_evaluation_criteria
 
-from src.structural_analysis.graph_measures import analyze_connectomes
+from analysis.structural_measures import analyze_connectomes
 from ESNs.esn_evaluation import evaluate_memory_capacity_from_connectome
 
 from src.utils.combine_csvs import merge_csv_files
@@ -205,7 +205,7 @@ def _run_and_save_single_simulation( # is USED1.
 class GNMandESNPipelineOrchestrator: # IS USED1 
     """Pipeline orchestrator with integrated logging."""
     
-    def __init__(self, config: ConfigManager):
+    def __init__(self, config): # : ConfigManager):
         self.config = config
         self.device = torch.device(config["compute"]["device"])
         self.data_loader = DataLoader(config) 
