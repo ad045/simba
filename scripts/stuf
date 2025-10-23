@@ -1,0 +1,62 @@
+
+Structural
+    [ ] avg clustering
+    [ ] Modularity (Consensus of N Louvain from netneurotools)
+    [x] Small-worldness (omega from mine)
+    [ ] avg wiring cost (Euclidean distance)
+    [ ] Hubness (Gini index, Chini 2023)
+    [ ] Rich club (with k, and looking for maximum → look for library)
+    [ ] Average length
+
+
+Number edges
+    [ ] Average degree
+    [ ] Transitivity
+    [ ] Degree assortativity
+    [ ] “Distance-dependent degree assortativity” (Betzel)
+    [ ] Entropy of matrix
+
+
+Dynamics
+    [ ] PID (priesemann papers)
+    [ ] Spectral radius
+    [ ] normalized Entropy of the eigenspectrum (I have code)
+    [ ] Spectral gap
+    [ ] Maximum metastability and the corresponding coupling
+    [ ] Propagation efficiency (avg communicability)
+    [ ] Global efficiency (avg shortest path length)
+    [ ] Diffusion efficiency (avg effective distance)
+    [ ] avg controllability
+
+
+Computation/Function
+    [ ] Memory capacity
+    [ ] Kernel Rank
+    [ ] Effective dimensionality
+    [ ] Multifunctionality
+
+
+Comparison to empirical connectomes: (or to default networks: random, etc?) 
+    [ ] Portraits
+    [ ] $Rˆ{2}$ (maybe not useful for MaMI, as we have no fixed connectome?)
+
+
+
+compute_omega, 
+
+omega = compute_omega(A, nrandomizations=100, nswap=None, max_tries=None)
+
+
+
+"diffusion distance",
+"shortest path distance",
+"propagation distance",
+"topological distance",
+"density",
+"wiring cost",
+"average clustering",
+"degree assortativity",
+"small-worldness",
+"endpoint similarity",
+"accuracy",
+"F1 score"

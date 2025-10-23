@@ -61,7 +61,8 @@ def load_and_merge_taxonomic_data(gnm_results_df, animal_metadata_path):
 
 def plot_voronoi_for_order(visualizer, df, metric_name, title, 
                            order_name, df_best_estimates,
-                           label_by, savepath, normalize_aspect=False):
+                           label_by, savepath, normalize_aspect=False, 
+                           zoom_in_limits_x=None, zoom_in_limits_y=None):
     """Create Voronoi plot for a specific order."""
     
     # Filter data for this order
@@ -99,11 +100,17 @@ def plot_voronoi_for_order(visualizer, df, metric_name, title,
         edgecolors="black", 
         linewidths=0.5,
         marker='o',
-        label=order_name,
+        label=order_name + f"n = {len(df_best_order)}",
         zorder=15,
         alpha=0.8
     )
     
+    # Apply zoom if specified
+    if zoom_in_limits_x:
+        ax.set_xlim(zoom_in_limits_x)
+    if zoom_in_limits_y:
+        ax.set_ylim(zoom_in_limits_y)
+        
     # Add labels with non-overlapping arrangement
     if label_by and label_by in df_best_order.columns:
         texts = []
@@ -156,7 +163,8 @@ if __name__ == "__main__":
     
     # --- 1. Input Paths ---
     df_paths = [
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0.csv"
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/all_metrics_for_70_mix_and_match_animal_0.csv"
     ]
     
     animal_metadata_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_50.csv"
@@ -232,6 +240,23 @@ if __name__ == "__main__":
             figure_save_name = f"maxcrit_voronoi_{order_name.replace(' ', '_').replace('/', '_')}.pdf"
             full_save_path = save_path / figure_save_name
 
+            # fig, ax = plot_voronoi_for_order(
+            #     visualizer=visualizer,
+            #     df=gnm_results_raw_df, 
+            #     metric_name=metric_col_name,
+            #     title=plot_title,
+            #     order_name=order_name,
+            #     df_best_estimates=df_best_estimates,
+            #     label_by=LABEL_BY,
+            #     savepath=full_save_path, 
+            #     normalize_aspect=True,
+            #     zoom_in_limits_x=None,
+            #     zoom_in_limits_y=None, 
+            # )
+            
+            figure_save_name = f"maxcrit_voronoi_{order_name.replace(' ', '_').replace('/', '_')}_zoom.pdf"
+            full_save_path = save_path / figure_save_name
+            #
             fig, ax = plot_voronoi_for_order(
                 visualizer=visualizer,
                 df=gnm_results_raw_df, 
@@ -242,6 +267,8 @@ if __name__ == "__main__":
                 label_by=LABEL_BY,
                 savepath=full_save_path, 
                 normalize_aspect=True,
+                zoom_in_limits_x=[-2,2],
+                zoom_in_limits_y=[0.05,0.3], 
             )
             
             if fig is not None:
