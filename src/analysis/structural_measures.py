@@ -12,9 +12,11 @@ import numpy as np
 
 from netneurotools import modularity
 
-def largest_component_char_path_length(G):
+
+def largest_component_char_path_length(G) -> float: # or np.nan
     """
     Characteristic path length on the largest connected component (NaN if <2 nodes).
+    Returns a float or np.nan. 
     """
     if G.number_of_nodes() == 0:
         return np.nan
@@ -29,7 +31,7 @@ def largest_component_char_path_length(G):
     return nx.average_shortest_path_length(H)
 
 
-def count_components_nx(A):
+def count_components_nx(A) -> int:
     G = nx.from_numpy_array(np.array(A))
     return nx.number_connected_components(G)
 
@@ -54,7 +56,7 @@ def _get_rich_nodes(G, rich_nodes=None, top_percent=0.20):
     return set(n for n, _ in sorted_nodes[:k])
 
 
-def _communicability(A_bin, mode="estrada_scaled", beta=None, t=1.0):
+def communicability(A_bin, mode="estrada_scaled", beta=None, t=1.0) -> float: # or np.nan
     """
     Compute average off-diagonal communicability in three modes:
       - estrada:        average of expm(A)
@@ -62,71 +64,77 @@ def _communicability(A_bin, mode="estrada_scaled", beta=None, t=1.0):
       - heat:           average of exp(-t * L_norm) (heat kernel)
     Uses eigen-decomposition for the ‘estrada*’ modes to avoid expm overflows.
     """
-    n = A_bin.shape[0]
     
-    # Helper to average off-diagonal entries
-    def avg_offdiag(M):
-        np.fill_diagonal(M, 0.0)
-        return M.sum() / (n*(n-1))
-
-    if mode in ("estrada", "estrada_scaled"):
-        # Compute symmetric A
-        A = (A_bin + A_bin.T) / 2.0
-        # Eigen-decompose once
-        eigvals, eigvecs = np.linalg.eigh(A)
+    try: 
+        n = A_bin.shape[0]
         
-        lam_max = eigvals[-1]   # get largest eigenvalue - works since eigh returns sorted eigenvalues
-        if lam_max <= 0:
-            # A has no positive spectrum ⇒ exp(bA) = I ⇒ no off-diag mass
-            return 0.0
+        # Helper to average off-diagonal entries
+        def avg_offdiag(M):
+            np.fill_diagonal(M, 0.0)
+            return M.sum() / (n*(n-1))
 
-        # Scaling factor for estrada_scaled
-        b = beta if (beta is not None) else 1.0/lam_max
+        if mode in ("estrada", "estrada_scaled"):
+            # Compute symmetric A
+            A = (A_bin + A_bin.T) / 2.0
+            # Eigen-decompose once
+            eigvals, eigvecs = np.linalg.eigh(A)
+            
+            lam_max = eigvals[-1]   # get largest eigenvalue - works since eigh returns sorted eigenvalues
+            if lam_max <= 0:
+                # A has no positive spectrum ⇒ exp(bA) = I ⇒ no off-diag mass
+                return 0.0
 
-        # Build the exponent safely
-        max_log = np.log(np.finfo(float).max)  # ≈ 709.78 for float64
-        with np.errstate(over='ignore', under='ignore', invalid='ignore'):
-            args = b * eigvals
-            args = np.clip(args, -max_log, +max_log)
-            exp_eigs = np.exp(args)
+            # Scaling factor for estrada_scaled
+            b = beta if (beta is not None) else 1.0/lam_max
 
-        # Ssanitize e^{-} spectrum
-        exp_eigs = np.nan_to_num(
-            exp_eigs,
-            posinf=np.finfo(float).max,
-            neginf=0.0,
-            nan=0.0
-        )
+            # Build the exponent safely
+            max_log = np.log(np.finfo(float).max)  # ≈ 709.78 for float64
+            with np.errstate(over='ignore', under='ignore', invalid='ignore'):
+                args = b * eigvals
+                args = np.clip(args, -max_log, +max_log)
+                exp_eigs = np.exp(args)
 
-        # Reconstruct *and* silence any matmul warnings
-        with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-            C = (eigvecs * exp_eigs) @ eigvecs.T
+            # Ssanitize e^{-} spectrum
+            exp_eigs = np.nan_to_num(
+                exp_eigs,
+                posinf=np.finfo(float).max,
+                neginf=0.0,
+                nan=0.0
+            )
 
-        # Final cleanup
-        C = np.nan_to_num(
-            C,
-            posinf=np.finfo(float).max,
-            neginf=0.0,
-            nan=0.0
-        )
+            # Reconstruct *and* silence any matmul warnings
+            with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
+                C = (eigvecs * exp_eigs) @ eigvecs.T
 
-        return avg_offdiag(C)
+            # Final cleanup
+            C = np.nan_to_num(
+                C,
+                posinf=np.finfo(float).max,
+                neginf=0.0,
+                nan=0.0
+            )
 
-    elif mode == "heat":
+            return avg_offdiag(C)
 
-        # Normalized Laplacian L = I - D^{-1/2} A D^{-1/2}
-        deg = A_bin.sum(axis=1)
-        inv_sqrt = 1.0 / np.sqrt(np.maximum(deg, 1e-12))
-        S = np.diag(inv_sqrt)
-        L = np.eye(n) - S @ A_bin @ S
+        elif mode == "heat":
 
-        # Hope: It's numerically stable to call expm here because L's spectrum lies in [0,2]
-        from scipy.linalg import expm
-        C = expm(-t * L)
-        return avg_offdiag(C)
+            # Normalized Laplacian L = I - D^{-1/2} A D^{-1/2}
+            deg = A_bin.sum(axis=1)
+            inv_sqrt = 1.0 / np.sqrt(np.maximum(deg, 1e-12))
+            S = np.diag(inv_sqrt)
+            L = np.eye(n) - S @ A_bin @ S
 
-    else:
-        raise ValueError("mode must be 'estrada', 'estrada_scaled', or 'heat'.")
+            # Hope: It's numerically stable to call expm here because L's spectrum lies in [0,2]
+            from scipy.linalg import expm
+            C = expm(-t * L)
+            return avg_offdiag(C)
+
+        else:
+            raise ValueError("mode must be 'estrada', 'estrada_scaled', or 'heat'.")
+    
+    except Exception as e:
+        print(f"Error computing communicability: {e}")
+        return np.nan
 
 
 def _omega(G, niter=5, nrand=10):
@@ -229,7 +237,7 @@ def analyze_connectomes(connectomes,
         # Calculate metrics 
         # Communicability (chosen mode)
         # try: 
-        avg_comm = _communicability(A_bin, mode=comm_mode, beta=beta, t=t)
+        avg_comm = communicability(A_bin, mode=comm_mode, beta=beta, t=t)
         # except: 
         #     avg_comm = np.nan
         

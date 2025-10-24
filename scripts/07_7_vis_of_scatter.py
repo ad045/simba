@@ -24,8 +24,9 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/62_testing_conciser_code_animal_0/all_metrics_for_62_testing_conciser_code_animal_0.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/63_fine_grid_animal_0/all_metrics_for_63_fine_grid_animal_0.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/65_grid_higher_eta_animal_1/all_metrics_for_65_grid_higher_eta_animal_1.csv"
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/all_metrics_for_70_mix_and_match_animal_0.csv"
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/64_fine_grid_upper_local_minima_animal_0/all_metrics_for_64_fine_grid_upper_local_minima_animal_0.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/all_metrics_for_70_mix_and_match_animal_0.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/64_fine_grid_upper_local_minima_animal_0/all_metrics_for_64_fine_grid_upper_local_minima_animal_0.csv"""
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/63_fine_grid_animal_0/all_metrics_for_63_fine_grid_more_metrics_wow.csv"
     ]       
     plot_indiv_connectomes = False # True # False # True # False # True #  False # True # False
     
@@ -36,15 +37,19 @@ if __name__ == "__main__":
     # The folder where the final figures will be saved.
     # A new subfolder is used to keep these plots separate.
     parent_folder = Path(df_paths[0]).parent
-    save_path = parent_folder / "figures_voronoi_only"
+    save_path = parent_folder / "scatter"
+    os.makedirs(save_path, exist_ok=True)
     
     
     # --- 2. Define Metrics to Plot ---
     
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
     metrics_to_plot = [
-        "scatter_mc_mean_and_communicability",
-        "scatter_mc_mean_and_glob_efficiency"]
+        # "scatter_mc_mean_and_communicability",
+        # "scatter_mc_mean_and_glob_efficiency"
+        "n_connected_components"
+    ]
+
     plot_combined_lag_plot = False # Plot this comparison plot with different MC lags 
     
     print(f"Starting Voronoi-only visualization process...")
@@ -83,13 +88,19 @@ if __name__ == "__main__":
                 s=5
             )
 
-            plt.xlabel("Avg Communicability")
-            plt.ylabel("MC Mean")
+        if metric == "n_connected_components": 
+            plt.hist(
+                pd.to_numeric(df["n_connected_components"], errors='coerce'), 
+                bins=60, 
+            )
+
+            plt.xlabel("N connected components")
+            # plt.ylabel("MC Mean")
             # plt.title("Scatter plot of Avg Communicability")
             plt.grid()
-            plt.savefig(save_path / f"scatter_mc_mean_and_communicability.pdf")
+            plt.savefig(save_path / f"scatter_n_connected_components.pdf")
             plt.close()
-            print(f"Path: {save_path / f"scatter_mc_mean_and_communicability.pdf"}")
+            print(f"Path: {save_path / f"scatter_n_connected_components.pdf"}")
 
         if metric == "scatter_mc_mean_and_glob_efficiency": # prop_efficiency
             plt.scatter(

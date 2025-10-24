@@ -211,7 +211,7 @@ __marimo__/
 
 data/
 # data_*
-X_*
+# X_*
 OLD_*
 
 *.npy

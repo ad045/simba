@@ -27,7 +27,31 @@ def parse_filename(filepath: str) -> Dict[str, float]:
     return params
 
 
+
 def find_network_files(base_dir: str, pattern: str = "*.npy") -> List[str]:
     """Recursively find all network files."""
     base_path = Path(base_dir)
     return sorted([str(f) for f in base_path.rglob(pattern)])
+
+
+
+def get_missing_metrics(df, requested_metrics):
+    """
+    Determine which metrics are missing for each row.
+    
+    Returns:
+        dict: {row_index: [list of missing metric names]}
+    """
+    missing_by_row = {}
+    
+    for idx, row in df.iterrows():
+        missing = []
+        for metric in requested_metrics:
+            if metric not in df.columns or pd.isna(row[metric]):
+                missing.append(metric)
+        
+        if missing:
+            missing_by_row[idx] = missing
+    
+    return missing_by_row
+
