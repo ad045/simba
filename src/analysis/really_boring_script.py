@@ -16,44 +16,220 @@ from src.analysis.metric_calculators import StaticMetricCalculator
 from src.analysis.utils import get_eta_and_gamma_from_filename, sorted_listing_by_creation_time
 
 
-# Worker function to process a single network file
-def process_network_file(file_info, distance_matrix_path, interesting_metrics):
+def merge_checkpoint_files(output_path, experiment_name):
+    """
+    Merge all checkpoint CSV files into the final output file and clean up.
+    
+    Args:
+        output_path: Path to the experiment output directory
+        experiment_name: Name of the experiment
+    """
+    # Define paths
+    temp_dir = output_path / "temp"
+    target_file = output_path / f'all_metrics_for_{experiment_name}_updated.csv'
+    
+    # Check if temp directory exists
+    if not temp_dir.exists():
+        print("No temp directory found - nothing to merge")
+        return
+    
+    # Collect all checkpoint CSV files
+    checkpoint_files = sorted(temp_dir.glob('result_*.csv'))
+    
+    if not checkpoint_files:
+        print("No checkpoint files found to merge")
+        return
+    
+    print(f"\nMerging {len(checkpoint_files)} checkpoint files...")
+    
+    # Read all checkpoint files
+    dfs = []
+    for file in checkpoint_files:
+        try:
+            df = pd.read_csv(file)
+            dfs.append(df)
+            print(f"  Loaded {file.name}: {len(df)} rows")
+        except Exception as e:
+            print(f"  Error reading {file.name}: {e}")
+    
+    if not dfs:
+        print("No valid checkpoint files to merge")
+        return
+    
+    # Concatenate all dataframes
+    merged_df = pd.concat(dfs, ignore_index=True)
+    print(f"\nCombined {len(dfs)} checkpoint files into {len(merged_df)} rows")
+    
+    # Remove duplicates - keep last occurrence (most recent calculation)
+    # Identify duplicates based on eta and gamma
+    initial_rows = len(merged_df)
+    merged_df = merged_df.drop_duplicates(subset=['eta', 'gamma'], keep='last')
+    duplicates_removed = initial_rows - len(merged_df)
+    
+    if duplicates_removed > 0:
+        print(f"Removed {duplicates_removed} duplicate rows")
+    
+    # Save final merged file
+    merged_df.to_csv(target_file, index=False)
+    print(f"✓ Saved final results to: {target_file}")
+    print(f"  Final dataframe: {len(merged_df)} rows, {len(merged_df.columns)} columns")
+    
+    # Delete checkpoint files
+    print("\nCleaning up checkpoint files...")
+    deleted_count = 0
+    for file in checkpoint_files:
+        try:
+            file.unlink()
+            deleted_count += 1
+        except Exception as e:
+            print(f"  Error deleting {file.name}: {e}")
+    
+    print(f"✓ Deleted {deleted_count} checkpoint files")
+    
+    # Delete temp directory if empty
+    try:
+        if not any(temp_dir.iterdir()):
+            temp_dir.rmdir()
+            print(f"✓ Deleted empty temp directory")
+        else:
+            remaining = list(temp_dir.iterdir())
+            print(f"⚠ Temp directory not empty, contains: {[f.name for f in remaining]}")
+    except Exception as e:
+        print(f"  Error deleting temp directory: {e}")
+    
+    print("\n✓ Merge and cleanup complete!")
+    return merged_df
+
+
+def get_missing_work(df_existing, network_files, interesting_metrics):
+    """
+    Determine which (network, metric) combinations need to be calculated.
+    
+    Returns:
+        dict: {network_index: [list of metrics to calculate]}
+    """
+    missing_work = {}
+    
+    # Check which metrics are completely missing (need to calculate for all)
+    metrics_to_calc_for_all = [m for m in interesting_metrics if m not in df_existing.columns]
+    
+    # For each network file, determine what needs calculating
+    for idx, name, full_path in network_files:
+        eta, gamma = get_eta_and_gamma_from_filename(name)
+        
+        # Find if this network exists in results
+        mask = (df_existing['eta'] == eta) & (df_existing['gamma'] == gamma)
+        
+        if not mask.any():
+            # Network not in results at all - calculate all metrics
+            missing_work[idx] = interesting_metrics.copy()
+        else:
+            # Network exists - check which metrics are missing or NaN
+            existing_row = df_existing[mask].iloc[0]
+            metrics_needed = metrics_to_calc_for_all.copy()
+            
+            for metric in interesting_metrics:
+                if metric in df_existing.columns:
+                    # Check if value is NaN or missing
+                    if pd.isna(existing_row[metric]):
+                        metrics_needed.append(metric)
+                # If not in columns, already in metrics_to_calc_for_all
+            
+            if metrics_needed:
+                missing_work[idx] = metrics_needed
+    
+    return missing_work
+
+# # Worker function to process a single network file
+# def process_network_file(file_info, distance_matrix_path, interesting_metrics):
+#     """
+#     Process a single network file and return a dictionary of results.
+    
+#     Args:
+#         file_info: tuple of (index, filename, full_path)
+#         distance_matrix_path: path to distance matrix (loaded per worker to save memory)
+#         interesting_metrics: list of metric names to calculate
+    
+#     Returns:
+#         dict with eta, gamma, and all calculated metrics
+#     """
+#     idx, name, full_path = file_info
+    
+#     try:
+#         # Load the network
+#         A = np.load(full_path)[0]  # Load the numpy array (mostly: 1, 100, 100)
+#         eta, gamma = get_eta_and_gamma_from_filename(name)
+        
+#         # Load distance matrix only if needed (currently not used by metrics)
+#         # distance_matrix = np.load(distance_matrix_path)
+        
+#         # Initialize calculator
+#         static_metric_calculator = StaticMetricCalculator(A=A, distance_matrix=None)
+        
+#         # Calculate all metrics
+#         results = {"eta": eta, "gamma": gamma}
+#         for metric in interesting_metrics:
+#             results[metric] = static_metric_calculator.calculate_metric(metric)
+        
+#         # Clean up
+#         del A
+#         del static_metric_calculator
+#         gc.collect()  # Force garbage collection
+        
+#         if (idx + 1) % 50 == 0:  # Print every 50 files
+#             print(f"Processed file {idx+1}: {name}")
+        
+#         return results
+    
+#     except Exception as e:
+#         print(f"Error processing {name}: {e}")
+#         return None
+
+
+
+def process_network_file(file_info, distance_matrix_path, interesting_metrics, metrics_to_calculate=None):
     """
     Process a single network file and return a dictionary of results.
     
     Args:
         file_info: tuple of (index, filename, full_path)
         distance_matrix_path: path to distance matrix (loaded per worker to save memory)
-        interesting_metrics: list of metric names to calculate
+        interesting_metrics: list of all possible metric names
+        metrics_to_calculate: list of metrics to actually calculate for this network (subset of interesting_metrics)
     
     Returns:
         dict with eta, gamma, and all calculated metrics
     """
     idx, name, full_path = file_info
     
+    # If no specific metrics specified, calculate all
+    if metrics_to_calculate is None:
+        metrics_to_calculate = interesting_metrics
+    
+    # Skip if no metrics needed for this network
+    if not metrics_to_calculate:
+        return None
+    
     try:
         # Load the network
         A = np.load(full_path)[0]  # Load the numpy array (mostly: 1, 100, 100)
         eta, gamma = get_eta_and_gamma_from_filename(name)
         
-        # Load distance matrix only if needed (currently not used by metrics)
-        # distance_matrix = np.load(distance_matrix_path)
-        
         # Initialize calculator
         static_metric_calculator = StaticMetricCalculator(A=A, distance_matrix=None)
         
-        # Calculate all metrics
+        # Calculate only the needed metrics
         results = {"eta": eta, "gamma": gamma}
-        for metric in interesting_metrics:
+        for metric in metrics_to_calculate:
             results[metric] = static_metric_calculator.calculate_metric(metric)
         
         # Clean up
         del A
         del static_metric_calculator
-        gc.collect()  # Force garbage collection
+        gc.collect()
         
-        if (idx + 1) % 50 == 0:  # Print every 50 files
-            print(f"Processed file {idx+1}: {name}")
+        if (idx + 1) % 50 == 0:
+            print(f"Processed file {idx+1}: {name} (calculated {len(metrics_to_calculate)} metrics)")
         
         return results
     
@@ -61,9 +237,26 @@ def process_network_file(file_info, distance_matrix_path, interesting_metrics):
         print(f"Error processing {name}: {e}")
         return None
 
+# def save_results_to_csv(results_list, df_original, df_path_out, interesting_metrics, checkpoint_num):
+#     """Save accumulated results to a checkpoint CSV. This one does not merge with original dataframe, but is hopefully faster..."""
+#     if not results_list:
+#         print("No results to save")
+#         return df_original
+    
+#     # Convert results to DataFrame
+#     results_df = pd.DataFrame(results_list)
+    
+#     # Save as checkpoint file
+#     checkpoint_path = df_path_out.parent / "temp" / f"result_{checkpoint_num:04d}.csv"
+#     os.makedirs(checkpoint_path.parent, exist_ok=True) # TODO: make this only once... 
+#     results_df.to_csv(checkpoint_path, index=False)
+#     print(f"Saved checkpoint to: {checkpoint_path}")
+    
+#     return df_original
 
-def save_results_to_csv(results_list, df_original, df_path_out, interesting_metrics):
-    """Save accumulated results to CSV"""
+
+def save_results_to_csv(results_list, df_original, df_path_out, interesting_metrics, checkpoint_num):
+    """Save accumulated results to a checkpoint CSV, merging with existing data."""
     if not results_list:
         print("No results to save")
         return df_original
@@ -71,155 +264,596 @@ def save_results_to_csv(results_list, df_original, df_path_out, interesting_metr
     # Convert results to DataFrame
     results_df = pd.DataFrame(results_list)
     
-    print(f"\nSaving {len(results_df)} processed networks...")
+    # Merge with existing data
+    df_updated = merge_results_with_existing(results_df, df_original, interesting_metrics)
     
-    # Create a copy of the original dataframe
-    df_updated = df_original.copy()
+    # Save as checkpoint file
+    checkpoint_path = df_path_out.parent / "temp" / f"result_{checkpoint_num:04d}.csv"
+    os.makedirs(checkpoint_path.parent, exist_ok=True)
+    df_updated.to_csv(checkpoint_path, index=False)
+    print(f"Saved checkpoint to: {checkpoint_path} (updated {len(results_df)} networks)")
     
-    # Ensure metric columns exist
+    return df_updated
+
+# This one merges the results into the original dataframe
+# def save_results_to_csv(results_list, df_original, df_path_out, interesting_metrics):
+#     """Save accumulated results to CSV"""
+#     if not results_list:
+#         print("No results to save")
+#         return df_original
+    
+#     # Convert results to DataFrame
+#     results_df = pd.DataFrame(results_list)
+    
+#     print(f"\nSaving {len(results_df)} processed networks...")
+    
+#     # Create a copy of the original dataframe
+#     df_updated = df_original.copy()
+    
+#     # Ensure metric columns exist
+#     for metric in interesting_metrics:
+#         if metric not in df_updated.columns:
+#             df_updated[metric] = np.nan
+    
+#     # Update rows that match eta and gamma
+#     for _, result_row in results_df.iterrows():
+#         eta = result_row['eta']
+#         gamma = result_row['gamma']
+        
+#         # Find matching rows in original dataframe
+#         mask = (df_updated['eta'] == eta) & (df_updated['gamma'] == gamma)
+        
+#         if mask.any():
+#             # Update existing row
+#             for metric in interesting_metrics:
+#                 if metric in result_row:
+#                     df_updated.loc[mask, metric] = result_row[metric]
+#         else:
+#             # Add new row if it doesn't exist
+#             new_row = {col: np.nan for col in df_updated.columns}
+#             new_row['eta'] = eta
+#             new_row['gamma'] = gamma
+#             for metric in interesting_metrics:
+#                 if metric in result_row:
+#                     new_row[metric] = result_row[metric]
+#             df_updated = pd.concat([df_updated, pd.DataFrame([new_row])], ignore_index=True)
+    
+#     # Save the updated dataframe
+#     df_updated.to_csv(df_path_out, index=False)
+#     print(f"Saved to: {df_path_out}")
+    
+#     return df_updated
+
+
+# def signal_handler(signum, frame, df_original, df_path_out, interesting_metrics):
+#     """Handle Ctrl+C gracefully"""
+#     print("\n\n⚠️  Interrupt received! Saving progress before exiting...")
+#     save_results_to_csv(accumulated_results, df_original, df_path_out, interesting_metrics)
+#     print("✓ Progress saved. Exiting.")
+#     sys.exit(0)
+
+def signal_handler(signum, frame, df_original, df_path_out, interesting_metrics, checkpoint_counter):
+    """Handle Ctrl+C gracefully"""
+    print("\n\n⚠️  Interrupt received! Saving progress before exiting...")
+    if accumulated_results:
+        save_results_to_csv(accumulated_results, df_original, df_path_out, interesting_metrics, checkpoint_counter)
+    print("✅ Progress saved. Exiting.")
+    # final garbage collection
+    gc.collect()
+    print("Final path: ", df_path_out)
+    sys.exit(0)
+    
+
+
+def merge_results_with_existing(results_df, df_existing, interesting_metrics):
+    """
+    Merge new results into existing dataframe, only updating missing values.
+    
+    Args:
+        results_df: DataFrame with new calculated results
+        df_existing: Existing results DataFrame
+        interesting_metrics: List of metric columns
+    
+    Returns:
+        Updated DataFrame
+    """
+    df_updated = df_existing.copy()
+    
+    # Ensure all metric columns exist
     for metric in interesting_metrics:
         if metric not in df_updated.columns:
             df_updated[metric] = np.nan
     
-    # Update rows that match eta and gamma
+    # Update each result
     for _, result_row in results_df.iterrows():
         eta = result_row['eta']
         gamma = result_row['gamma']
         
-        # Find matching rows in original dataframe
         mask = (df_updated['eta'] == eta) & (df_updated['gamma'] == gamma)
         
         if mask.any():
-            # Update existing row
+            # Update only the metrics that were calculated
             for metric in interesting_metrics:
-                if metric in result_row:
+                if metric in result_row and not pd.isna(result_row[metric]).all():
                     df_updated.loc[mask, metric] = result_row[metric]
         else:
-            # Add new row if it doesn't exist
+            # Add new row
             new_row = {col: np.nan for col in df_updated.columns}
             new_row['eta'] = eta
             new_row['gamma'] = gamma
-            for metric in interesting_metrics:
-                if metric in result_row:
+            for metric in result_row.index:
+                if metric in interesting_metrics:
                     new_row[metric] = result_row[metric]
             df_updated = pd.concat([df_updated, pd.DataFrame([new_row])], ignore_index=True)
-    
-    # Save the updated dataframe
-    df_updated.to_csv(df_path_out, index=False)
-    print(f"Saved to: {df_path_out}")
     
     return df_updated
 
 
-def signal_handler(signum, frame, df_original, df_path_out, interesting_metrics):
-    """Handle Ctrl+C gracefully"""
-    print("\n\n⚠️  Interrupt received! Saving progress before exiting...")
-    save_results_to_csv(accumulated_results, df_original, df_path_out, interesting_metrics)
-    print("✓ Progress saved. Exiting.")
-    sys.exit(0)
+# def multiprocess_networks(n_processes=None, 
+#                           experiment="", 
+#                           dataset="", 
+#                           base_path="", 
+#                           interesting_metrics=[], 
+#                           save_interval=50):
+#     """
+#     Main function to multiprocess network metric calculations.
+    
+#     Args:
+#         n_processes: Number of processes to use. If None, uses cpu_count() - 1
+#         save_interval: Save progress every N completed files
+#     """
+#     # Global list to accumulate results
+#     global accumulated_results
+#     accumulated_results = []
+#     checkpoint_counter = 0  # Add checkpoint counter
+    
+#     # Define paths and load data 
+#     output_path = base_path / "output" / "gnm" / dataset / experiment
+#     generated_networks_dir = output_path / "generated_networks"
+
+#     df_path = output_path / f"all_metrics_for_{experiment}.csv"
+#     df = pd.read_csv(df_path)
+
+#     df_path_out = output_path / f"all_metrics_for_{experiment}_updated.csv"
+
+#     distance_matrix_path = base_path / "data/preprocessed/suarez_MaMI_dataset/02_distance_matrices/distance_matrix_50.npy"
+#     distance_matrix = np.load(distance_matrix_path)
+
+#     # Get all network files in order
+#     all_files = sorted_listing_by_creation_time(generated_networks_dir)
+#     network_files = [(i, name, generated_networks_dir / name) 
+#                      for i, name in enumerate(all_files) 
+#                      if name.endswith(".npy")]
+    
+#     print(f"Found {len(network_files)} network files to process")
+    
+#     # Determine number of processes
+#     if n_processes is None:
+#         n_processes = max(1, cpu_count() - 1)
+#     print(f"Using {n_processes} processes")
+    
+#     # Load original dataframe
+#     df_original = pd.read_csv(df_path)
+    
+#     # Set up interrupt handler with partial function
+#     # handler = partial(signal_handler, 
+#     #                  df_original=df_original, 
+#     #                  df_path_out=df_path_out, 
+#     #                  interesting_metrics=interesting_metrics)
+#     # signal.signal(signal.SIGINT, handler)
+    
+#         # Set up interrupt handler with partial function
+#     handler = partial(signal_handler, 
+#                      df_original=df_original, 
+#                      df_path_out=df_path_out, 
+#                      interesting_metrics=interesting_metrics,
+#                      checkpoint_counter=checkpoint_counter)  # Add this
+#     signal.signal(signal.SIGINT, handler)
+    
+#     # Create partial function - pass PATH not the matrix itself to save memory
+#     worker_func = partial(process_network_file, 
+#                          distance_matrix_path=distance_matrix_path,
+#                          interesting_metrics=interesting_metrics)
+    
+#     # Process networks in parallel
+#     print("Starting multiprocessing... (Press Ctrl+C to stop and save progress)")
+#     print("-" * 60)
+    
+     
+#     try:
+#         with Pool(processes=n_processes) as pool:
+#             # Use imap to get results as they complete (preserves order)
+#             for i, result in enumerate(pool.imap(worker_func, network_files, chunksize=20)):
+#                 if result is not None:
+#                     accumulated_results.append(result)
+                
+#                 # Save periodically and clear memory
+#                 if (i + 1) % save_interval == 0:
+#                     save_results_to_csv(accumulated_results, df_original, 
+#                                        df_path_out, interesting_metrics, checkpoint_counter)
+#                     checkpoint_counter += 1
+#                     accumulated_results = []  # Clear the list after saving
+#                     print(f"Progress: {i+1}/{len(network_files)} files processed")
+#                     print(f"Memory checkpoint - forcing garbage collection\n")
+#                     gc.collect()  # Force garbage collection
+        
+#         # Final save of remaining results
+#         if accumulated_results:  # Only save if there are remaining results
+#             print("\n" + "=" * 60)
+#             print("Saving final results...")
+#             save_results_to_csv(accumulated_results, df_original, 
+#                                df_path_out, interesting_metrics, checkpoint_counter)
+#             gc.collect() 
+        
+#     except KeyboardInterrupt:
+#         # Save remaining results on interrupt
+#         if accumulated_results:
+#             print("\n\nInterrupted! Saving progress...")
+#             save_results_to_csv(accumulated_results, df_original, 
+#                                df_path_out, interesting_metrics, checkpoint_counter)
+#             gc.collect() 
+    
+#     finally:
+#         # Clean up
+#         gc.collect()
+    
+#     print(f"\nProcessing complete! Use merge_csv_files() to combine checkpoint files.")
+#     print(f"Checkpoint files saved to: {df_path_out.parent}")
+    
+#     return None  # Return None since we're not creating the final merged file here
 
 
-# %%
+    
+#     # try:
+#     #     with Pool(processes=n_processes) as pool:
+#     #         # Use imap to get results as they complete (preserves order)
+#     #         for i, result in enumerate(pool.imap(worker_func, network_files, chunksize=20)):
+#     #             if result is not None:
+#     #                 accumulated_results.append(result)
+                
+#     #             # Save periodically and clear memory
+#     #             if (i + 1) % save_interval == 0:
+#     #                 df_updated = save_results_to_csv(accumulated_results, df_original, 
+#     #                                                  df_path_out, interesting_metrics)
+#     #                 print(f"Progress: {i+1}/{len(network_files)} files processed")
+#     #                 print(f"Memory checkpoint - forcing garbage collection\n")
+#     #                 gc.collect()  # Force garbage collection
+        
+#     #     # Final save
+#     #     print("\n" + "=" * 60)
+#     #     print("All processing complete!")
+#     #     df_updated = save_results_to_csv(accumulated_results, df_original, 
+#     #                                     df_path_out, interesting_metrics)
+        
+#     # except KeyboardInterrupt:
+#     #     # This shouldn't normally trigger due to signal handler, but just in case
+#     #     print("\n\nInterrupted! Saving progress...")
+#     #     df_updated = save_results_to_csv(accumulated_results, df_original, 
+#     #                                     df_path_out, interesting_metrics)
+#     #     gc.collect() 
+    
+#     # finally:
+#     #     # Clean up
+#     #     gc.collect()
+    
+#     # print(f"\nFinal results: Processed {len(accumulated_results)} networks")
+#     # print(f"Output saved to: {df_path_out}")
+    
+#     # return df_updated
+
+def process_network_with_metrics(args):
+    """
+    Wrapper function for starmap that unpacks arguments.
+    This needs to be a module-level function (not lambda) to be picklable.
+    """
+    file_info, distance_matrix_path, interesting_metrics, metrics_to_calculate = args
+    return process_network_file(file_info, distance_matrix_path, interesting_metrics, metrics_to_calculate)
+
+
 def multiprocess_networks(n_processes=None, 
                           experiment="", 
                           dataset="", 
                           base_path="", 
                           interesting_metrics=[], 
-                          save_interval=50):
+                          save_interval=50,
+                          debug=False):
     """
     Main function to multiprocess network metric calculations.
-    
-    Args:
-        n_processes: Number of processes to use. If None, uses cpu_count() - 1
-        save_interval: Save progress every N completed files
+    Only calculates missing metrics for each network.
     """
-    # Global list to accumulate results
     global accumulated_results
     accumulated_results = []
+    checkpoint_counter = 0
     
     # Define paths and load data 
     output_path = base_path / "output" / "gnm" / dataset / experiment
     generated_networks_dir = output_path / "generated_networks"
 
     df_path = output_path / f"all_metrics_for_{experiment}.csv"
-    df = pd.read_csv(df_path)
-
     df_path_out = output_path / f"all_metrics_for_{experiment}_updated.csv"
 
     distance_matrix_path = base_path / "data/preprocessed/suarez_MaMI_dataset/02_distance_matrices/distance_matrix_50.npy"
-    distance_matrix = np.load(distance_matrix_path)
 
-    # Get all network files in order
+    # Get all network files
     all_files = sorted_listing_by_creation_time(generated_networks_dir)
     network_files = [(i, name, generated_networks_dir / name) 
                      for i, name in enumerate(all_files) 
                      if name.endswith(".npy")]
     
-    print(f"Found {len(network_files)} network files to process")
+    print(f"Found {len(network_files)} network files")
+    
+    # Load existing results
+    df_original = pd.read_csv(df_path)
+    print(f"Loaded existing results with {len(df_original)} rows")
+    if debug:
+        print("Debug mode: only use first 5000 networks.")
+        network_files = network_files[:5000]
+    
+    # Determine what work needs to be done
+    print("Analyzing which metrics need to be calculated...")
+    missing_work = get_missing_work(df_original, network_files, interesting_metrics)
+    
+    total_calculations = sum(len(metrics) for metrics in missing_work.values())
+    print(f"Found {len(missing_work)} networks with missing metrics")
+    print(f"Total metric calculations needed: {total_calculations}")
+    
+    if total_calculations == 0:
+        print("✓ All metrics already calculated!")
+        return df_original
+    
+    # Filter network files to only those needing work
+    network_files_filtered = [(idx, name, path) for idx, name, path in network_files 
+                              if idx in missing_work]
     
     # Determine number of processes
     if n_processes is None:
         n_processes = max(1, cpu_count() - 1)
     print(f"Using {n_processes} processes")
     
-    # Load original dataframe
-    df_original = pd.read_csv(df_path)
-    
-    # Set up interrupt handler with partial function
+    # Set up interrupt handler
     handler = partial(signal_handler, 
                      df_original=df_original, 
                      df_path_out=df_path_out, 
-                     interesting_metrics=interesting_metrics)
+                     interesting_metrics=interesting_metrics,
+                     checkpoint_counter=checkpoint_counter)
     signal.signal(signal.SIGINT, handler)
     
-    # Create partial function - pass PATH not the matrix itself to save memory
-    worker_func = partial(process_network_file, 
-                         distance_matrix_path=distance_matrix_path,
-                         interesting_metrics=interesting_metrics)
-    
-    # Process networks in parallel
     print("Starting multiprocessing... (Press Ctrl+C to stop and save progress)")
     print("-" * 60)
     
     try:
         with Pool(processes=n_processes) as pool:
-            # Use imap to get results as they complete (preserves order)
-            for i, result in enumerate(pool.imap(worker_func, network_files, chunksize=20)):
+            # Create tasks with all necessary arguments
+            tasks = []
+            for idx, name, path in network_files_filtered:
+                tasks.append((
+                    (idx, name, path),
+                    distance_matrix_path,
+                    interesting_metrics,
+                    missing_work[idx]
+                ))
+            
+            # Use map with the wrapper function
+            for i, result in enumerate(pool.imap(
+                process_network_with_metrics,
+                tasks,
+                chunksize=20
+            )):
                 if result is not None:
                     accumulated_results.append(result)
                 
-                # Save periodically and clear memory
                 if (i + 1) % save_interval == 0:
-                    df_updated = save_results_to_csv(accumulated_results, df_original, 
-                                                     df_path_out, interesting_metrics)
-                    print(f"Progress: {i+1}/{len(network_files)} files processed")
+                    df_original = save_results_to_csv(accumulated_results, df_original, 
+                                       df_path_out, interesting_metrics, checkpoint_counter)
+                    checkpoint_counter += 1
+                    accumulated_results = []
+                    print(f"Progress: {i+1}/{len(network_files_filtered)} files processed")
                     print(f"Memory checkpoint - forcing garbage collection\n")
-                    gc.collect()  # Force garbage collection
+                    gc.collect()
         
         # Final save
-        print("\n" + "=" * 60)
-        print("All processing complete!")
-        df_updated = save_results_to_csv(accumulated_results, df_original, 
-                                        df_path_out, interesting_metrics)
+        if accumulated_results:
+            print("\n" + "=" * 60)
+            print("Saving final results...")
+            df_original = save_results_to_csv(accumulated_results, df_original, 
+                               df_path_out, interesting_metrics, checkpoint_counter)
         
     except KeyboardInterrupt:
-        # This shouldn't normally trigger due to signal handler, but just in case
-        print("\n\nInterrupted! Saving progress...")
-        df_updated = save_results_to_csv(accumulated_results, df_original, 
-                                        df_path_out, interesting_metrics)
+        if accumulated_results:
+            print("\n\nInterrupted! Saving progress...")
+            save_results_to_csv(accumulated_results, df_original, 
+                               df_path_out, interesting_metrics, checkpoint_counter)
         gc.collect() 
     
     finally:
-        # Clean up
         gc.collect()
     
-    print(f"\nFinal results: Processed {len(accumulated_results)} networks")
-    print(f"Output saved to: {df_path_out}")
+    # Merge all checkpoint files into final output
+    print("\n" + "=" * 60)
+    print("MERGING CHECKPOINT FILES")
+    print("=" * 60)
     
-    return df_updated
+    final_df = merge_checkpoint_files(output_path, experiment)
+    
+    if final_df is not None:
+        print(f"\n✓ Processing complete!")
+        print(f"✓ Final results saved to: {df_path_out}")
+        print(f"✓ Total networks in final file: {len(final_df)}")
+    else:
+        print("\n⚠ No checkpoint files were created (all metrics may have been up to date)")
+    
+    return final_df
 
 
-# %%
+# def multiprocess_networks(n_processes=None, 
+#                           experiment="", 
+#                           dataset="", 
+#                           base_path="", 
+#                           interesting_metrics=[], 
+#                           save_interval=50,
+#                           debug=False):
+#     """
+#     Main function to multiprocess network metric calculations.
+#     Only calculates missing metrics for each network.
+#     """
+#     global accumulated_results
+#     accumulated_results = []
+#     checkpoint_counter = 0
+    
+#     # Define paths and load data 
+#     output_path = base_path / "output" / "gnm" / dataset / experiment
+#     generated_networks_dir = output_path / "generated_networks"
+
+#     df_path = output_path / f"all_metrics_for_{experiment}.csv"
+#     df_path_out = output_path / f"all_metrics_for_{experiment}_updated.csv"
+
+#     distance_matrix_path = base_path / "data/preprocessed/suarez_MaMI_dataset/02_distance_matrices/distance_matrix_50.npy"
+
+#     # Get all network files
+#     all_files = sorted_listing_by_creation_time(generated_networks_dir)
+#     network_files = [(i, name, generated_networks_dir / name) 
+#                      for i, name in enumerate(all_files) 
+#                      if name.endswith(".npy")]
+    
+#     print(f"Found {len(network_files)} network files")
+    
+#     # Load existing results
+#     df_original = pd.read_csv(df_path)
+#     print(f"Loaded existing results with {len(df_original)} rows")
+#     if debug:
+#         print("Debug mode: only use first 5000 networks.")
+#         network_files = network_files[:5000]
+    
+#     # Determine what work needs to be done
+#     print("Analyzing which metrics need to be calculated...")
+#     missing_work = get_missing_work(df_original, network_files, interesting_metrics)
+    
+#     total_calculations = sum(len(metrics) for metrics in missing_work.values())
+#     print(f"Found {len(missing_work)} networks with missing metrics")
+#     print(f"Total metric calculations needed: {total_calculations}")
+    
+#     if total_calculations == 0:
+#         print("✓ All metrics already calculated!")
+#         return df_original
+    
+#     # Filter network files to only those needing work
+#     network_files_filtered = [(idx, name, path) for idx, name, path in network_files 
+#                               if idx in missing_work]
+    
+#     # Determine number of processes
+#     if n_processes is None:
+#         n_processes = max(1, cpu_count() - 1)
+#     print(f"Using {n_processes} processes")
+    
+#     # Set up interrupt handler
+#     handler = partial(signal_handler, 
+#                      df_original=df_original, 
+#                      df_path_out=df_path_out, 
+#                      interesting_metrics=interesting_metrics,
+#                      checkpoint_counter=checkpoint_counter)
+#     signal.signal(signal.SIGINT, handler)
+    
+#     print("Starting multiprocessing... (Press Ctrl+C to stop and save progress)")
+#     print("-" * 60)
+    
+#     try:
+#         with Pool(processes=n_processes) as pool:
+#             # Create worker function with metrics_to_calculate info
+#             tasks = []
+#             for idx, name, path in network_files_filtered:
+#                 tasks.append(((idx, name, path), missing_work[idx]))
+            
+#             # Process with custom metrics per network
+#             for i, result in enumerate(pool.starmap(
+#                 lambda file_info, metrics: process_network_file(
+#                     file_info, distance_matrix_path, interesting_metrics, metrics
+#                 ), 
+#                 tasks, 
+#                 chunksize=20
+#             )):
+#                 if result is not None:
+#                     accumulated_results.append(result)
+                
+#                 if (i + 1) % save_interval == 0:
+#                     df_original = save_results_to_csv(accumulated_results, df_original, 
+#                                        df_path_out, interesting_metrics, checkpoint_counter)
+#                     checkpoint_counter += 1
+#                     accumulated_results = []
+#                     print(f"Progress: {i+1}/{len(network_files_filtered)} files processed")
+#                     print(f"Memory checkpoint - forcing garbage collection\n")
+#                     gc.collect()
+        
+#         # Final save
+#         if accumulated_results:
+#             print("\n" + "=" * 60)
+#             print("Saving final results...")
+#             df_original = save_results_to_csv(accumulated_results, df_original, 
+#                                df_path_out, interesting_metrics, checkpoint_counter)
+        
+#     except KeyboardInterrupt:
+#         if accumulated_results:
+#             print("\n\nInterrupted! Saving progress...")
+#             save_results_to_csv(accumulated_results, df_original, 
+#                                df_path_out, interesting_metrics, checkpoint_counter)
+#         gc.collect() 
+    
+#     finally:
+#         gc.collect()
+    
+
+#         # finally:
+#         # gc.collect()
+    
+#     # Merge all checkpoint files into final output
+#     print("\n" + "=" * 60)
+#     print("MERGING CHECKPOINT FILES")
+#     print("=" * 60)
+    
+#     final_df = merge_checkpoint_files(output_path, experiment)
+    
+#     if final_df is not None:
+#         print(f"\n✓ Processing complete!")
+#         print(f"✓ Final results saved to: {df_path_out}")
+#         print(f"✓ Total networks in final file: {len(final_df)}")
+#     else:
+#         print("\n⚠ No checkpoint files were created (all metrics may have been up to date)")
+    
+#     return final_df  # Return the final merged dataframe instead of None
+
+
+#     # print(f"\nProcessing complete!")
+#     # print(f"Final path: {df_path_out}")
+    
+#     # return None
+
+
+# if __name__ == "__main__":
+    
+#     EXPERIMENT = "60_generally_finer_search_animal_0"
+#     DATASET = "suarez_MaMI_dataset"
+#     base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
+
+#     # Define metrics to calculate
+#     interesting_metrics = [
+#                             # "density", 
+#                             # "compute_structural_complexity", 
+#                             # "n_connected_components", 
+#                             "propagation_distance", 
+#                            ]
+    
+#     # Run the multiprocessing
+#     df_updated = multiprocess_networks(n_processes=12, # None, 
+#                                        experiment = EXPERIMENT, 
+#                                        dataset = DATASET, 
+#                                        base_path=base_path,
+#                                        interesting_metrics=interesting_metrics,
+#                                        save_interval=50)
+#     print("\n✓ Processing complete!")
+#     print(f"Updated dataframe shape: {df_updated.shape}")
+    
+#     # Final cleanup
+#     gc.collect()
+
 if __name__ == "__main__":
     
     EXPERIMENT = "60_generally_finer_search_animal_0"
@@ -227,20 +861,27 @@ if __name__ == "__main__":
     base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
 
     # Define metrics to calculate
-    interesting_metrics = ["density", 
-                           "compute_structural_complexity", 
-                           "n_connected_components"
+    interesting_metrics = [
+                            # "density", 
+                            # "compute_structural_complexity", 
+                            # "n_connected_components", 
+                            "propagation_distance", 
                            ]
     
     # Run the multiprocessing
-    df_updated = multiprocess_networks(n_processes=12, # None, 
-                                       experiment = EXPERIMENT, 
-                                       dataset = DATASET, 
-                                       base_path=base_path,
-                                       interesting_metrics=interesting_metrics,
-                                       save_interval=50)
-    print("\n✓ Processing complete!")
-    print(f"Updated dataframe shape: {df_updated.shape}")
+    df_final = multiprocess_networks(n_processes=12,
+                                     experiment=EXPERIMENT, 
+                                     dataset=DATASET, 
+                                     base_path=base_path,
+                                     interesting_metrics=interesting_metrics,
+                                     save_interval=50, 
+                                     debug=True)
+    
+    if df_final is not None:
+        print("\n✓ All done!")
+        print(f"✓ Final dataframe shape: {df_final.shape}")
+    else:
+        print("\n✓ Processing complete (no new data to merge)")
     
     # Final cleanup
     gc.collect()
