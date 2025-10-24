@@ -24,8 +24,12 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/62_testing_conciser_code_animal_0/all_metrics_for_62_testing_conciser_code_animal_0.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/63_fine_grid_animal_0/all_metrics_for_63_fine_grid_animal_0.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/65_grid_higher_eta_animal_1/all_metrics_for_65_grid_higher_eta_animal_1.csv"
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/all_metrics_for_70_mix_and_match_animal_0.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/all_metrics_for_70_mix_and_match_animal_0.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/64_fine_grid_upper_local_minima_animal_0/all_metrics_for_64_fine_grid_upper_local_minima_animal_0.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/63_fine_grid_animal_0/all_metrics_for_63_fine_grid_more_metrics_wow.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/all_metrics_for_70_mix_and_match_animal_0_updated.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/63_fine_grid_animal_0/all_metrics_for_63_fine_grid_more_metrics_wow.csv"""
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0_hopefully_unnecessary.csv"
     ]       
     plot_indiv_connectomes = False # True # False # True # False # True #  False # True # False
     
@@ -44,26 +48,27 @@ if __name__ == "__main__":
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
     metrics_to_plot = [
         
-        "MaxCriteria",
-        "avg_communicability", 
-        "global_efficiency", 
-        "modularity", 
-        "avg_clustering", 
-        "avg_degree", 
-        "transitivity", 
-        "avg_edge_distance", 
-        "char_path_length", 
-        "richclub_n_edges", 
-        "richclub_avg_length", 
-        "mc_mean", 
-        "mc_std", 
-        "wiring_cost", 
-        "mean_mc_divided_by_wiring_cost",
-        "mc_5_divided_by_wiring_cost", 
-        
+        # "MaxCriteria",
+        # "avg_communicability", 
+        # "global_efficiency", 
+        # "modularity", 
+        # "avg_clustering", 
+        # "avg_degree", 
+        # "transitivity", 
+        # "avg_edge_distance", 
+        # "char_path_length", 
+        # "richclub_n_edges", 
+        # "richclub_avg_length", 
+        # "mc_mean", 
+        # "mc_std", 
+        # "wiring_cost", 
+        # "mean_mc_divided_by_wiring_cost",
+        # "mc_5_divided_by_wiring_cost", 
+        "n_connected_components",
+    ]
         # "avg_clustering_glob_efficiency_minus_energy", 
         # "avg_clustering_divided_by_global_efficiency", 
-    ] + [f"mc_{lag}" for lag in lags_to_plot]
+    # ] + [f"mc_{lag}" for lag in lags_to_plot]
     plot_combined_lag_plot = False # Plot this comparison plot with different MC lags 
     
     print(f"Starting Voronoi-only visualization process...")
@@ -171,15 +176,27 @@ if __name__ == "__main__":
             figure_save_name = f"voronoi_landscape_{metric}.pdf"
             full_save_path = save_dir / figure_save_name
 
+            # get eta min add max, turn them to spans + 10% margin
+            eta_min = df["eta"].min()
+            eta_max = df["eta"].max()
+            eta_span = (eta_max - eta_min) * 0.05
+            eta_span = (eta_min - eta_span, eta_max + eta_span)
+
+            gamma_min = df["gamma"].min()
+            gamma_max = df["gamma"].max()
+            gamma_span = (gamma_max - gamma_min) * 0.05
+            gamma_span = (gamma_min - gamma_span, gamma_max + gamma_span)
+            
+            print("Using e.g.:", df_paths[0])
             fig, ax = visualizer.plot_metric_landscape_voronoi(
                 df, 
                 title=plot_title,
                 metric_name=metric_col_name,
                 savepath=full_save_path,
                 dot_color="steelblue", 
-                eta_span=None, 
-                gamma_span=None,
-                show=False,
+                eta_span=eta_span, 
+                gamma_span=gamma_span,
+                show=True, # False 
                 show_dots=False,
                 annotate_extremes=True, 
                 estimated_indiv_connectomes=df_best_gamma_and_eta_estimates if plot_indiv_connectomes else None, 
@@ -189,12 +206,6 @@ if __name__ == "__main__":
             
             
             print(f"Successfully generated plot for {metric} at {full_save_path}\n")
-            
-            
-                # plt.show() 
-            
-            
-            # matplotlib.pyplot.close() # Close the plot after saving to free memory. 
             
             
         except Exception as e:
