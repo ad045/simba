@@ -67,9 +67,24 @@ if __name__ == "__main__":
         # "mean_mc_divided_by_wiring_cost",
         # "mc_5_divided_by_wiring_cost", 
 
-        "density",
+            # "density",
+        # "propagation_efficiency"
+        # "spectral_radius","degree_assortativity"
+
+        "spectral_radius",
+        "spectral_gap",
+        "global_efficiency",
+        # "diffusion_efficiency",
+        "propagation_distance",
+        "propagation_efficiency",
+        "average_controllability",
+
+        # "kernel_rank",
+        # "effective_dimensionality",
+        # "multifunctionality", # -> Implement how? 
+
     #     "n_connected_components",
-        "compute_structural_complexity"
+        # "structural_complexity"
     ]
         # "avg_clustering_glob_efficiency_minus_energy", 
         # "avg_clustering_divided_by_global_efficiency", 
@@ -183,16 +198,18 @@ if __name__ == "__main__":
             full_save_path = save_dir / figure_save_name
 
             # get eta min add max, turn them to spans + 10% margin
-            eta_min = df["eta"].min()
-            eta_max = df["eta"].max()
-            eta_span = (eta_max - eta_min) * 0.05
-            eta_span = (eta_min - eta_span, eta_max + eta_span)
+            # eta_min = df["eta"].min()
+            # eta_max = df["eta"].max()
+            # eta_span = (eta_max - eta_min) * 0.05
+            # eta_span = (eta_min - eta_span, eta_max + eta_span)
+            # eta_span = (eta_min, eta_max) 
 
-            gamma_min = df["gamma"].min()
-            gamma_max = df["gamma"].max()
-            gamma_span = (gamma_max - gamma_min) * 0.05
-            gamma_span = (gamma_min - gamma_span, gamma_max + gamma_span)
-            
+            # gamma_min = df["gamma"].min()
+            # gamma_max = df["gamma"].max()
+            # gamma_span = (gamma_max - gamma_min) * 0.05
+            # gamma_span = (gamma_min - gamma_span, gamma_max + gamma_span)
+            # gamma_span = (gamma_min, gamma_max)
+
             print("Using e.g.:", df_paths[0])
             fig, ax = visualizer.plot_metric_landscape_voronoi(
                 df, 
@@ -200,8 +217,8 @@ if __name__ == "__main__":
                 metric_name=metric_col_name,
                 savepath=full_save_path,
                 dot_color="steelblue", 
-                eta_span=eta_span, 
-                gamma_span=gamma_span,
+                # eta_span=eta_span, 
+                # gamma_span=gamma_span,
                 show=True, # False 
                 show_dots=False,
                 annotate_extremes=True, 

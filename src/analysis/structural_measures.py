@@ -9,8 +9,17 @@ from networkx.algorithms import smallworld
 import networkx as nx
 import numpy as np
 
+from networkx.algorithms.community import modularity, louvain_communities
+import networkx as nx
 
 from netneurotools import modularity
+
+# ["density", "wiring_cost", "shortest_path_distance", "compute_structural_complexity",
+#  "n_connected_components", "omega", "topological_distance", "resistance_distance", 
+#  "propagation_distance", "propagation_efficiency"
+# 
+# "modularity",  "avg_degree", "transitivity", "wiring_cost", "char_path_length", 
+# avg_clustering, degree_assortativity
 
 
 def largest_component_char_path_length(G) -> float: # or np.nan
@@ -56,7 +65,7 @@ def _get_rich_nodes(G, rich_nodes=None, top_percent=0.20):
     return set(n for n, _ in sorted_nodes[:k])
 
 
-def communicability(A_bin, mode="estrada_scaled", beta=None, t=1.0) -> float: # or np.nan
+def old_communicability(A_bin, mode="estrada_scaled", beta=None, t=1.0) -> float: # or np.nan
     """
     Compute average off-diagonal communicability in three modes:
       - estrada:        average of expm(A)
@@ -137,55 +146,88 @@ def communicability(A_bin, mode="estrada_scaled", beta=None, t=1.0) -> float: # 
         return np.nan
 
 
-def _omega(G, niter=5, nrand=10):
+
+
+def calculate_modularity(G) -> float: 
+    # comms = list(nx_comm.greedy_modularity_communities(G))
+    # return nx_comm.modularity(G, comms) if len(comms) > 1 else 0.0
+    louvain_comms = louvain_communities(G)
+    return modularity(G, louvain_comms) if len(louvain_comms) > 1 else 0.0
+
+
+def calculate_avg_degree(G) -> float:
+    return float(np.mean([d for _, d in G.degree()])) if G.number_of_nodes() > 0 else np.nan 
+
+def calculate_transitivity(G) -> float:
+    return nx.transitivity(G) if G.number_of_nodes() > 0 else np.nan # is if statment ok?
+
+
+def calculate_avg_clustering(G) -> float:
+    return nx.average_clustering(G) if G.number_of_nodes() > 0 else np.nan
+
+def calculate_degree_assortativity(G) -> float:
+    return nx.degree_assortativity_coefficient(G) if G.number_of_nodes() > 0 else np.nan
+
+
+# def calculate_avg_edge_distance(G, distance_matrix) -> float: # similar to wiring cost...
+#     edge_d = [distance_matrix[i, j] for i, j in G.edges()]
+#     avg_dist = float(np.mean(edge_d)) if edge_d else np.nan
+#     return avg_dist
+
+def calculate_wiring_cost(G, distance_matrix) -> float: # similar to avg_edge_distance... 
+    edge_d = [distance_matrix[i, j] for i, j in G.edges()]
+    wiring_cost = float(np.sum(edge_d)) if edge_d else 0.0
+    return wiring_cost
+
+
+def calculate_char_path_length(G) -> float: # or np.nan
     """
-    Compute small-world coefficient omega. Telesford et al. (2011) Brain Connectivity
+    Characteristic path length on the largest connected component (NaN if <2 nodes).
+    Returns a float or np.nan. 
     """
-    return smallworld.omega(G, niter=niter, nrand=nrand)
-
-
-
-def _compute_structural_complexity(A):
-    """
-    STOLEN FROM KAYSON. 
-    Compute the structural complexity C for a given square matrix A using the
-    entropy of the singular values.
-
-    Parameters
-    ----------
-    A : numpy.ndarray
-        A square numpy array (n x n) representing the network's weight matrix.
-
-    Returns
-    -------
-    float
-        The complexity measure C in the range [0, 1].
-    """
-    # Ensure A is a numpy array
-    A = np.asarray(A)
-    n = A.shape[0]
+    if G.number_of_nodes() == 0:
+        return np.nan
     
-    # Compute singular values of A
-    # We don't need U and V, only the singular values (sigma)
-    sigma = np.linalg.svd(A, compute_uv=False)
-    
-    # Compute normalized "probabilities" p_i = sigma_i^2 / sum of all sigma_j^2
-    sigma_squared = sigma**2
-    total = np.sum(sigma_squared)
-    p = sigma_squared / total
-    
-    # Compute Shannon entropy: H = -sum_i p_i * log(p_i)
-    # Use np.log for natural logarithm
-    # Filter out zero p_i to avoid log(0) issues
-    p_nonzero = p[p > 0]
-    H = -np.sum(p_nonzero * np.log(p_nonzero))
-    
-    # Normalize by log(n) to get C in [0, 1]
-    C = H / np.log(n)
-    
-    return C
+    # Pick largest connected component
+    components = list(nx.connected_components(G))
+    if not components:
+        return np.nan
+    H = G.subgraph(max(components, key=len)).copy()
+    if H.number_of_nodes() < 2:
+        return np.nan
+    return nx.average_shortest_path_length(H)
 
-def analyze_connectomes(connectomes, 
+
+# def _get_rich_nodes(G, rich_nodes=None, top_percent=0.20):
+#     """
+#     Return a set of 'rich' nodes.
+#         - If rich_nodes provided (iterable of node indices), use that.
+#         - Else pick top `top_percent` by degree (ties broken arbitrarily).
+#     """
+#     if rich_nodes is not None:
+#         return set(rich_nodes)
+    
+#     # default: top X% by degree
+#     deg = dict(G.degree())
+#     if len(deg) == 0:
+#         return set()
+#     k = max(1, int(np.ceil(top_percent * len(deg))))
+
+#     # sort nodes by degree descending and take top k
+#     sorted_nodes = sorted(deg.items(), key=lambda kv: kv[1], reverse=True)
+#     return set(n for n, _ in sorted_nodes[:k])
+
+# def calculate_richclub_n_edges(G, rich_nodes) -> int:
+#     rich_nodes = _get_rich_nodes(G, rich_nodes_global, top_percent=rich_top_percent)
+#     rich_edges = [(u, v) for (u, v) in G.edges() if u in rich_nodes and v in rich_nodes]
+#     n_rich_edges = len(rich_edges)
+
+# def calculate_richclub_avg_length(G, rich_neodes, distance_matrix) -> float:
+#     rc_lengths = [distance_matrix[u, v] for (u, v) in rich_edges]
+#     avg_rc_length = float(np.mean(rc_lengths)) if rc_lengths else np.nan
+
+
+def analyze_connectomes(connectomes,  
                         distance_matrix,
                         comm_mode="estrada_scaled", 
                         beta=None, t=1.0,
@@ -237,7 +279,7 @@ def analyze_connectomes(connectomes,
         # Calculate metrics 
         # Communicability (chosen mode)
         # try: 
-        avg_comm = communicability(A_bin, mode=comm_mode, beta=beta, t=t)
+        avg_comm = old_communicability(A_bin, mode=comm_mode, beta=beta, t=t)
         # except: 
         #     avg_comm = np.nan
         
@@ -296,9 +338,9 @@ def analyze_connectomes(connectomes,
         # consensus communities from netneurotools
         # consensus_communities = modularity.consensus_modularity(A, n_iterations=100)
 
-        out.append({"small_world_omega": _omega(G)})
+        # out.append({"small_world_omega": _omega(G)})
 
-        out.append({"structural_complexity": _compute_structural_complexity(A)})
+        # out.append({"structural_complexity": _compute_structural_complexity(A)})
 
 
     return out # pd.DataFrame(out)

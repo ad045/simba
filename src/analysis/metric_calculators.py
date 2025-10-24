@@ -23,10 +23,39 @@ from src.analysis.kayson_utils import (compute_structural_complexity,
                                         # evaluate_adjacency
                                        )     
 
+from src.analysis.structural_measures import (
+                                              calculate_modularity, 
+                                              calculate_avg_degree,
+                                              calculate_avg_clustering,
+                                              calculate_degree_assortativity,
+                                              calculate_transitivity,
+                                            #   calculate_wiring_cost,  -> I'm using Kaysons 
+                                              calculate_char_path_length
+                                             )
+
+              
+from src.analysis.dynamic_measures import (
+                                           spectral_radius, 
+                                           spectral_gap,
+                                           calculate_global_efficiency, 
+                                           calculate_diffusion_efficiency, 
+                                           average_controllability, 
+                                           )
+
+     
+from src.analysis.computational_measures import (
+                                                kernel_rank, 
+                                                effective_dimensionality, 
+                                                multifunctionality
+                                                )   
+
+
 class MetricCalculator(ABC):
     def __init__(self, A=None, distance_matrix=None):
         self.A = A
+        self.G = nx.from_numpy_array(A) # A should be binary! 
         self.distance_matrix = distance_matrix
+        self.implemented_metrics = set()  # To be defined in subclasses
     
     @abstractmethod
     def calculate_metric(self, metric_name):
@@ -40,12 +69,65 @@ class MetricCalculator(ABC):
 
 
 class StaticMetricCalculator(MetricCalculator):
+
+    def __init__(self, A=None, distance_matrix=None):
+        super().__init__(A=A, distance_matrix=distance_matrix)
+        self.implemented_metrics = {
+            "density",
+            "avg_clustering",
+            "avg_degree",
+            "degree_assortativity",
+            "modularity",
+            "average_degree",
+            "characteristic_path_length",
+            "transitivity",
+            "wiring_cost",
+            "shortest_path_distance",
+            "compute_structural_complexity",
+            "n_connected_components",
+            "omega",
+            "topological_distance",
+            "resistance_distance",
+
+        } # TODO: Check if the list is complete or if I already implemented more than that.  
+    # Kayson: 
+        # "density", "wiring_cost", "shortest_path_distance", "compute_structural_complexity",
+        #  "n_connected_components", "omega", "topological_distance", "resistance_distance", 
+        #  "propagation_distance", "propagation_efficiency"
+
+    # nx: 
+        # global_efficiency, modularity, transitivity, avg_clustering, degree_assortativity
+
+    # Adrian:  
+        # avg_degree (with nx) 
+        # char_path_length (with nx) (of biggest component -> is this sensible??) 
+
+
     def calculate_metric(self, metric_name):
-        if metric_name == "density": # Kayson
-            return nx.density(nx.from_numpy_array(self.A))
+        
+        # if metric_name == "density": # Kayson
+        #     return nx.density(nx.from_numpy_array(self.A))
         
         if metric_name == "density":  # Kayson
             return check_density(self.A)
+        
+        if metric_name == "avg_clustering":  # nx
+            return calculate_avg_clustering(self.G)
+        
+        if metric_name == "degree_assortativity":  # nx
+            return calculate_degree_assortativity(self.G)
+
+        if metric_name == "modularity":  
+            return calculate_modularity(self.G)
+
+        if metric_name == "average_degree":  
+            return calculate_avg_degree(self.G)
+        
+        if metric_name == "characteristic_path_length":
+            return calculate_char_path_length(self.G)
+        
+        if metric_name == "transitivity":
+            return calculate_transitivity(self.G)
         
         if metric_name == "wiring_cost":  # Kayson
             return calculate_wiring_cost(self.A, self.distance_matrix)
@@ -72,12 +154,6 @@ class StaticMetricCalculator(MetricCalculator):
         elif metric_name == "resistance_distance": # Kayson ## "diffusion_distance"
             return resistance_distance(self.A)
 
-        elif metric_name == "propagation_distance": # Kayson
-            return propagation_distance(self.A)
-        
-        elif metric_name == "propagation_efficiency": # based on Kayson
-            return 1/(propagation_distance(self.A).mean())
-
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
@@ -97,34 +173,88 @@ class StaticMetricCalculator(MetricCalculator):
 
 
 
-# # # class DynamicMetricCalculator(MetricCalculator):
-# # #     def calculate_metric(self, metric_name):
-# # #         # TODO 
-# # #         # Different implementation for dynamic networks
+class DynamicMetricCalculator(MetricCalculator):
+    
+    def __init__(self, A=None, distance_matrix=None):
+        super().__init__(A=A, distance_matrix=distance_matrix)
+        self.implemented_metrics = {
+            "spectral_radius",
+            "spectral_gap",
+            "global_efficiency",
+            "diffusion_efficiency",
+            "propagation_distance",
+            "propagation_efficiency",
+            "average_controllability",
+        }
+        
+    def calculate_metric(self, metric_name):
+        
+        if metric_name == "spectral_radius": 
+            return spectral_radius(self.A)
+        
+        elif metric_name == "spectral_gap":
+            return spectral_gap(self.A)
 
-# # #     #     [ ] PID (priesemann papers)
-# # #     # [ ] Spectral radius
-# # #     # [ ] normalized Entropy of the eigenspectrum (I have code)
-# # #     # [ ] Spectral gap
-# # #     # [ ] Maximum metastability and the corresponding coupling
-# # #     # [ ] Propagation efficiency (avg communicability)
-# # #     # [ ] Global efficiency (avg shortest path length)
-# # #     # [ ] Diffusion efficiency (avg effective distance)
-# # #     # [ ] avg controllability
-# # #         if metric_name == "density":
-# # #             return self._calculate_temporal_density()
+        elif metric_name == "global_efficiency":  
+            return calculate_global_efficiency(self.G)
+
+        elif metric_name == "diffusion_efficiency": 
+            return calculate_diffusion_efficiency(self.A)
+
+        elif metric_name == "propagation_distance": # Kayson
+            return propagation_distance(self.A)
+            
+        elif metric_name == "propagation_efficiency": # based on Kayson
+            return 1/(propagation_distance(self.A).mean())
+
+        elif metric_name == "average_controllability":
+            return average_controllability(self.A)
+        
+        else:
+            raise ValueError(f"Unknown metric: {metric_name}")
 
 
-# # # class ComputationMetricCalculator(MetricCalculator):
-# # #     def calculate_metric(self, metric_name):
-# # #         # TODO 
-# # #         # Different implementation for dynamic networks
-# # #     # [ ] Memory capacity
-# # #     # [ ] Kernel Rank
-# # #     # [ ] Effective dimensionality
-# # #     # [ ] Multifunctionality
-# # #         if metric_name == "density":
-# # #             return self._calculate_temporal_density()
+        # TODO 
+        # Different implementation for dynamic networks
+
+    #     [ ] PID (priesemann papers)
+    # [ ] Spectral radius
+    # [ ] normalized Entropy of the eigenspectrum (I have code)
+    # [ ] Spectral gap
+    # [ ] Maximum metastability and the corresponding coupling
+    # [ ] Propagation efficiency (avg communicability)
+    # [ ] Global efficiency (avg shortest path length)
+    # [ ] Diffusion efficiency (avg effective distance)
+    # [ ] avg controllability
+        # if metric_name == "density":
+        #     return self._calculate_temporal_density()
+
+
+class ComputationMetricCalculator(MetricCalculator):
+    
+    def __init__(self, A=None, distance_matrix=None):
+        super().__init__(A=A, distance_matrix=distance_matrix)
+        self.implemented_metrics = {
+            "kernel_rank",
+            "effective_dimensionality",
+            "multifunctionality",
+        }
+        
+        
+    def calculate_metric(self, metric_name):
+        # [ ] Memory capacity
+
+        if metric_name == "kernel_rank":
+            return kernel_rank(self.A)
+        
+        if metric_name == "effective_dimensionality":
+            return effective_dimensionality(self.A)
+        
+        if metric_name == "multifunctionality":
+            return multifunctionality(self.A)
+        
+        else:
+            raise ValueError(f"Unknown metric: {metric_name}")
 
 
 # # # class PortraitMetricCalculator(MetricCalculator):
