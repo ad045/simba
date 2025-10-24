@@ -74,6 +74,9 @@ class StaticMetricCalculator(MetricCalculator):
 
         elif metric_name == "propagation_distance": # Kayson
             return propagation_distance(self.A)
+        
+        elif metric_name == "propagation_efficiency": # based on Kayson
+            return 1/(propagation_distance(self.A).mean())
 
         else:
             raise ValueError(f"Unknown metric: {metric_name}")

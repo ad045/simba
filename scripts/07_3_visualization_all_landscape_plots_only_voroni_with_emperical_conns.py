@@ -30,6 +30,7 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/all_metrics_for_70_mix_and_match_animal_0_updated.csv"
         # # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/63_fine_grid_animal_0/all_metrics_for_63_fine_grid_more_metrics_wow.csv"""
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0_hopefully_unnecessary.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0_updated.csv"
         "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0_updated.csv"
     ]       
     plot_indiv_connectomes = False # True # False # True # False # True #  False # True # False
@@ -66,7 +67,8 @@ if __name__ == "__main__":
         # "mean_mc_divided_by_wiring_cost",
         # "mc_5_divided_by_wiring_cost", 
 
-        "n_connected_components",
+        "density",
+    #     "n_connected_components",
         "compute_structural_complexity"
     ]
         # "avg_clustering_glob_efficiency_minus_energy", 
