@@ -8,6 +8,13 @@
 
 > Kayson: I'll make some improvements, and generate some better results. You'll hopefully receive a more complete update report on Tuesday evening!
 
+---
+  
+### ⚠️ TODOs (not suuuper urgent, but would be good to do): 
+- [ ] rename the generated networks such that they do not have a "." in the floats for eta and gamma.... 
+- [ ] If there are multiple networks that are generated with the same parameter combination: Append them all in one generated network file...  
+
+
 ----
 
 ### **In more detail (all preliminary):**
@@ -87,3 +94,8 @@ scripts/run_gnm_automated_outp_path_creation_2_3_with_indiv_conns_copy.sh: line 
 [] Creating a nice tree: To create a nice tree, use the following command - it will create a tree only containing the directories, and excluding specific folders that contain many files: (ma_thesis) adrian@MagicBook 14_4D_lab_code % tree -d -I 'X_*|output_*|*__pycache__*' . 
 
 
+
+
+# Check for orphaned processes
+ps aux | grep python
+# Kill any lingering multiprocessing workers if needed

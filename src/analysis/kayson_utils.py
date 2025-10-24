@@ -214,7 +214,7 @@ def calculate_endpoint_similarity(synthetic_matrix, empirical_matrix):
     return similarities
 
 
-def evaluate_adjacency(empirical_adj, simulated_adj):
+def evaluate_adjacency(empirical_adj, simulated_adj): # Accuracy, F1, ...
     """
     Compute Accuracy and F1 score between two binary adjacency matrices.
     
