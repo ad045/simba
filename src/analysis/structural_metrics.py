@@ -9,11 +9,13 @@ from networkx.algorithms import smallworld
 import networkx as nx
 import numpy as np
 
-
 from netneurotools import modularity
 
 
 def count_components_nx(A) -> int:
+    """ 
+    Count the number of connected components in the graph represented by adjacency matrix A using NetworkX.
+    """
     G = nx.from_numpy_array(np.array(A))
     return nx.number_connected_components(G)
 
@@ -48,3 +50,7 @@ def compute_structural_metrics(A, metrics_to_analyze, distance_matrix=None):
 
 
     return results
+
+
+
+

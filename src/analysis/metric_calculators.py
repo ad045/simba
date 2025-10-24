@@ -19,8 +19,8 @@ from src.analysis.kayson_utils import (compute_structural_complexity,
                                         topological_distance,
                                         check_density,
                                         calculate_wiring_cost,
-                                        calculate_endpoint_similarity,
-                                        evaluate_adjacency
+                                        # calculate_endpoint_similarity,
+                                        # evaluate_adjacency
                                        )     
 
 class MetricCalculator(ABC):
@@ -41,54 +41,49 @@ class MetricCalculator(ABC):
 
 class StaticMetricCalculator(MetricCalculator):
     def calculate_metric(self, metric_name):
-        if metric_name == "density":
+        if metric_name == "density": # Kayson
             return nx.density(nx.from_numpy_array(self.A))
         
-        elif metric_name == "compute_structural_complexity":
+        if metric_name == "density":  # Kayson
+            return check_density(self.A)
+        
+        if metric_name == "wiring_cost":  # Kayson
+            return calculate_wiring_cost(self.A, self.distance_matrix)
+        
+        if metric_name == "shortest_path_distance": # Kayson
+            return shortest_path_distance(self.A)
+        
+        elif metric_name == "compute_structural_complexity": # Kayson
             return compute_structural_complexity(self.A)
         
-        elif metric_name == "n_connected_components": 
+        elif metric_name == "n_connected_components": # nx 
             G = nx.from_numpy_array(self.A)
             n_components = nx.number_connected_components(G)
             # Clean up graph object immediately
             del G
             return n_components
         
-        elif metric_name == "omega": 
+        elif metric_name == "omega": # Kayson, basically average clustering
             return compute_omega(self.A)
         
+        elif metric_name == "topological_distance": # Kayson
+            return topological_distance(self.A)
+        
+        elif metric_name == "resistance_distance": # Kayson ## "diffusion_distance"
+            return resistance_distance(self.A)
+
+        elif metric_name == "propagation_distance": # Kayson
+            return propagation_distance(self.A)
+
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
 
-
-
-# # # class StaticMetricCalculator(MetricCalculator):
-# # #     def calculate_metric(self, metric_name):
-# # #         if metric_name == "density":
-# # #             return nx.density(nx.from_numpy_array(self.A))
-        
-# # #         elif metric_name == "compute_structural_complexity":
-# # #             return compute_structural_complexity(self.A)
-        
-# # #         elif metric_name == "n_connected_components": 
-# # #             G = nx.from_numpy_array(self.A)
-# # #             return nx.number_connected_components(G)
-        
-# # #         elif metric_name == "omega": 
-# # #             return compute_omega(self.A)
-        
-# # #         # elif metric_name == "diffusion_distance": 
-# # #         #     return resistance_distance()
-
-# # # #             [ ] avg clustering
 # # # #     [ ] Modularity (Consensus of N Louvain from netneurotools)
-# # # #     [x] Small-worldness (omega from mine)
 # # # #     [ ] avg wiring cost (Euclidean distance)
 # # # #     [ ] Hubness (Gini index, Chini 2023)
 # # # #     [ ] Rich club (with k, and looking for maximum → look for library)
 # # # #     [ ] Average length
-
 
 # # # # Number edges
 # # # #     [ ] Average degree
@@ -97,10 +92,6 @@ class StaticMetricCalculator(MetricCalculator):
 # # # #     [ ] “Distance-dependent degree assortativity” (Betzel)
 # # # #     [ ] Entropy of matrix
 
-
-        
-# # #         else:
-# # #             raise ValueError(f"Unknown metric: {metric_name}")
 
 
 # # # class DynamicMetricCalculator(MetricCalculator):

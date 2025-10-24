@@ -206,7 +206,7 @@ def check_density(adj):
 def calculate_wiring_cost(adj, euclidean_distance):
     return np.mean(adj * euclidean_distance)
 
-def calculate_endpoint_similarity(synthetic_matrix, empirical_matrix):
+def calculate_endpoint_similarity(synthetic_matrix, empirical_matrix): # compares emp and sim connectomes 
     similarities = np.zeros(synthetic_matrix.shape[0])
     for i in range(synthetic_matrix.shape[0]):
         similarities[i] = cosine_similarity(synthetic_matrix[i].reshape(1, -1),
