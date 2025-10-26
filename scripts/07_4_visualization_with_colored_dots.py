@@ -219,7 +219,7 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/33_suarez_MaMI_size_100_extensive_220_300_iter/all_metrics_for_exp_30_shafiei_size_68_interim_copy.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/49_suarez_MaMI_100/all_metrics_for_49_suarez_MaMI_100.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0.csv"
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/all_metrics_for_70_mix_and_match_animal_0.csv"
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0_updated.csv"
     ]
     
     # Path to the enriched animal metadata
@@ -246,23 +246,25 @@ if __name__ == "__main__":
     
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
     metrics_to_plot = [
-        "MaxCriteria",
-        "avg_communicability", 
-        "global_efficiency", 
-        "modularity", 
-        "avg_clustering", 
-        # "avg_degree", 
-        "transitivity", 
-        "avg_edge_distance", 
-        "char_path_length", 
-        "richclub_n_edges", 
-        "richclub_avg_length", 
-        "mc_mean", 
-        "mc_std", 
-        "wiring_cost", 
-        "mean_mc_divided_by_wiring_cost",
-        "mc_5_divided_by_wiring_cost", 
-    ] + [f"mc_{lag}" for lag in lags_to_plot]
+    #     "MaxCriteria",
+    #     "avg_communicability", 
+    #     "global_efficiency", 
+    #     "modularity", 
+    #     "avg_clustering", 
+    #     # "avg_degree", 
+    #     "transitivity", 
+    #     "avg_edge_distance", 
+    #     "char_path_length", 
+    #     "richclub_n_edges", 
+    #     "richclub_avg_length", 
+    #     "mc_mean", 
+    #     "mc_std", 
+    #     "wiring_cost", 
+    #     "mean_mc_divided_by_wiring_cost",
+    #     "mc_5_divided_by_wiring_cost", 
+    # ] + [f"mc_{lag}" for lag in lags_to_plot]
+            "nct_control_avg","nct_control_std","nct_control_n_nodes_90_percent","nct_energies_energy_total","nct_energies_n_nodes_90_percent"
+    ]
     
     print(f"Starting Taxonomic Voronoi visualization process...")
     print(f"Coloring by: {COLOR_BY}")

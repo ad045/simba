@@ -71,13 +71,18 @@ if __name__ == "__main__":
         # "propagation_efficiency"
         # "spectral_radius","degree_assortativity"
 
-        "spectral_radius",
-        "spectral_gap",
-        "global_efficiency",
-        # "diffusion_efficiency",
-        "propagation_distance",
-        "propagation_efficiency",
-        "average_controllability",
+        # "spectral_radius",
+        # "spectral_gap",
+        # "global_efficiency",
+        # # "diffusion_efficiency",
+        # "propagation_distance",
+        # "propagation_efficiency",
+        # "average_controllability",
+
+        # "nct_control",
+        # "nct_energies",
+        "nct_control_avg","nct_control_std","nct_control_n_nodes_90_percent","nct_energies_energy_total","nct_energies_n_nodes_90_percent"
+
 
         # "kernel_rank",
         # "effective_dimensionality",

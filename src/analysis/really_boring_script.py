@@ -1,5 +1,4 @@
 import numpy as np 
-import networkx as nx
 import pandas as pd
 import os
 from pathlib import Path
@@ -9,96 +8,11 @@ import signal
 import sys
 import gc  # Garbage collector
 
-# from src.utils.combine_csvs import merge_csv_files 
-
 from src.analysis.metric_calculators import StaticMetricCalculator, DynamicMetricCalculator, ComputationMetricCalculator     
-    
 from src.analysis.utils import get_eta_and_gamma_from_filename, sorted_listing_by_creation_time
 
 
-# def merge_checkpoint_files(output_path, experiment_name):
-#     """
-#     Merge all checkpoint CSV files into the final output file and clean up.
-    
-#     Args:
-#         output_path: Path to the experiment output directory
-#         experiment_name: Name of the experiment
-#     """
-#     # Define paths
-#     temp_dir = output_path / "temp"
-#     target_file = output_path / f'all_metrics_for_{experiment_name}_updated.csv'
-    
-#     # Check if temp directory exists
-#     if not temp_dir.exists():
-#         print("No temp directory found - nothing to merge")
-#         return
-    
-#     # Collect all checkpoint CSV files
-#     checkpoint_files = sorted(temp_dir.glob('result_*.csv'))
-    
-#     if not checkpoint_files:
-#         print("No checkpoint files found to merge")
-#         return
-    
-#     print(f"\nMerging {len(checkpoint_files)} checkpoint files...")
-    
-#     # Read all checkpoint files
-#     dfs = []
-#     for file in checkpoint_files:
-#         try:
-#             df = pd.read_csv(file)
-#             dfs.append(df)
-#             print(f"  Loaded {file.name}: {len(df)} rows")
-#         except Exception as e:
-#             print(f"  Error reading {file.name}: {e}")
-    
-#     if not dfs:
-#         print("No valid checkpoint files to merge")
-#         return
-    
-#     # Concatenate all dataframes
-#     merged_df = pd.concat(dfs, ignore_index=True)
-#     print(f"\nCombined {len(dfs)} checkpoint files into {len(merged_df)} rows")
-    
-#     # Remove duplicates - keep last occurrence (most recent calculation)
-#     # Identify duplicates based on eta and gamma
-#     initial_rows = len(merged_df)
-#     merged_df = merged_df.drop_duplicates(subset=['eta', 'gamma'], keep='last')
-#     duplicates_removed = initial_rows - len(merged_df)
-    
-#     if duplicates_removed > 0:
-#         print(f"Removed {duplicates_removed} duplicate rows")
-    
-#     # Save final merged file
-#     merged_df.to_csv(target_file, index=False)
-#     print(f"✓ Saved final results to: {target_file}")
-#     print(f"  Final dataframe: {len(merged_df)} rows, {len(merged_df.columns)} columns")
-    
-#     # Delete checkpoint files
-#     print("\nCleaning up checkpoint files...")
-#     deleted_count = 0
-#     for file in checkpoint_files:
-#         try:
-#             file.unlink()
-#             deleted_count += 1
-#         except Exception as e:
-#             print(f"  Error deleting {file.name}: {e}")
-    
-#     print(f"✓ Deleted {deleted_count} checkpoint files")
-    
-#     # Delete temp directory if empty
-#     try:
-#         if not any(temp_dir.iterdir()):
-#             temp_dir.rmdir()
-#             print(f"✓ Deleted empty temp directory")
-#         else:
-#             remaining = list(temp_dir.iterdir())
-#             print(f"⚠ Temp directory not empty, contains: {[f.name for f in remaining]}")
-#     except Exception as e:
-#         print(f"  Error deleting temp directory: {e}")
-    
-#     print("\n✓ Merge and cleanup complete!")
-#     return merged_df
+
 def merge_checkpoint_files(output_path, experiment_name, df_original, interesting_metrics):
     """
     Merge all checkpoint CSV files with the original data and save to final output file.
@@ -158,8 +72,13 @@ def merge_checkpoint_files(output_path, experiment_name, df_original, interestin
     print(f"\nMerging checkpoint data with original data...")
     df_updated = df_original.copy()
     
+    # Metrics with results in checkpoint data
+    metrics_with_results = checkpoint_df.columns.tolist()
+    metrics_with_results.remove('eta')
+    metrics_with_results.remove('gamma')
+    
     # Ensure all metric columns exist in updated df
-    for metric in interesting_metrics:
+    for metric in metrics_with_results: # interesting_metrics:
         if metric not in df_updated.columns:
             df_updated[metric] = np.nan
     
@@ -175,7 +94,7 @@ def merge_checkpoint_files(output_path, experiment_name, df_original, interestin
         
         if mask.any():
             # Network exists - update only the calculated metrics
-            for metric in interesting_metrics:
+            for metric in metrics_with_results: # interesting_metrics: interesting_metrics:
                 if metric in result_row.index and not pd.isna(result_row[metric]):
                     df_updated.loc[mask, metric] = result_row[metric]
             updated_count += 1
@@ -185,7 +104,7 @@ def merge_checkpoint_files(output_path, experiment_name, df_original, interestin
             new_row['eta'] = eta
             new_row['gamma'] = gamma
             
-            for metric in interesting_metrics:
+            for metric in metrics_with_results: # interesting_metrics: interesting_metrics:
                 if metric in result_row.index and not pd.isna(result_row[metric]):
                     new_row[metric] = result_row[metric]
             
@@ -295,26 +214,37 @@ def process_network_file(file_info, distance_matrix_path, interesting_metrics, m
         eta, gamma = get_eta_and_gamma_from_filename(name)
         
         # Initialize calculator
-        static_metric_calculator = StaticMetricCalculator(A=A, distance_matrix=None)
+        static_metric_calculator = StaticMetricCalculator(A=A, distance_matrix=None) # TODO! distance_matrix_path)
         dynamic_metric_calculator = DynamicMetricCalculator(A=A)
         computation_metric_calculator = ComputationMetricCalculator(A=A)
         
-        # Calculate only the needed metrics
+        # Calculate only the needed metrics -> calculate_metric function can give back either a dict, float, or int, and all should work. 
         results = {"eta": eta, "gamma": gamma}
         for metric in metrics_to_calculate:
             if metric in static_metric_calculator.implemented_metrics: 
-                results[metric] = static_metric_calculator.calculate_metric(metric)
+                # results[metric] = static_metric_calculator.calculate_metric(metric)
+                result = static_metric_calculator.calculate_metric(metric)
                 
             elif metric in dynamic_metric_calculator.implemented_metrics:
-                results[metric] = dynamic_metric_calculator.calculate_metric(metric)
+                result = dynamic_metric_calculator.calculate_metric(metric)
 
             elif metric in computation_metric_calculator.implemented_metrics:
-                results[metric] = computation_metric_calculator.calculate_metric(metric)
+                result = computation_metric_calculator.calculate_metric(metric)
 
             else:
-                results[metric] = np.nan  # Metric not implemented
+                result = np.nan  # Metric not implemented
                 print("Metric not implemented:", metric)
-
+            
+            
+            # Store result. Either unpack dict or store scalar. 
+            if isinstance(result, dict):
+                    # Unpack dict entries into separate results
+                    for key, value in result.items():
+                        results[f"{metric}_{key}"] = value
+            else:
+                # Store scalar result directly
+                results[metric] = result
+        
         # Clean up
         del A
         del static_metric_calculator
@@ -325,6 +255,8 @@ def process_network_file(file_info, distance_matrix_path, interesting_metrics, m
         if (idx + 1) % 50 == 0:
             print(f"Processed file {idx+1}: {name} (calculated {len(metrics_to_calculate)} metrics)")
         
+        # flatten results, if they are nested dicts
+        # results = pd.json_normalize(results, sep='_')
         return results
     
     except Exception as e:
@@ -508,17 +440,17 @@ def multiprocess_networks(n_processes=None,
     print(f"Using {n_processes} processes")
     
     # Set up interrupt handler - CHANGED: removed df_original parameter
-    handler = partial(signal_handler, 
-                     df_path_out=df_path_out, 
-                     interesting_metrics=interesting_metrics,
-                     checkpoint_counter=checkpoint_counter)
-    signal.signal(signal.SIGINT, handler)
+    # handler = partial(signal_handler, 
+    #                  df_path_out=df_path_out, 
+    #                  interesting_metrics=interesting_metrics,
+    #                  checkpoint_counter=checkpoint_counter)
+    # signal.signal(signal.SIGINT, handler)
     
     print("Starting multiprocessing... (Press Ctrl+C to stop and save progress)")
     print("-" * 60)
     
     try:
-        with Pool(processes=n_processes) as pool:
+        with Pool(processes=n_processes, maxtasksperchild=50) as pool:
             # Create tasks with all necessary arguments
             tasks = []
             for idx, name, path in network_files_filtered:
@@ -608,19 +540,22 @@ if __name__ == "__main__":
                             # "spectral_gap",
                             # "spectral_radius",
                             
-                            "spectral_radius",
-                            "spectral_gap",
-                            "global_efficiency",
-                            # "diffusion_efficiency",
-                            "propagation_distance",
-                            "propagation_efficiency",
-                            "average_controllability",
+                            # "spectral_radius",
+                            # "spectral_gap",
+                            # "global_efficiency",
+                            # # "diffusion_efficiency",
+                            # "propagation_distance",
+                            # "propagation_efficiency",
+                            # "average_controllability", -> Did this actually work? 
+                            
+                            "nct_control",
+                            "nct_energies",
                             
                             # "diffusion_efficiency",  # -> does not work -> throws error.  
                            ]
     
     # Run the multiprocessing
-    df_final = multiprocess_networks(n_processes=12,
+    df_final = multiprocess_networks(n_processes=1, # 2,
                                      experiment=EXPERIMENT, 
                                      dataset=DATASET, 
                                      base_path=base_path,
@@ -636,3 +571,13 @@ if __name__ == "__main__":
     
     # Final cleanup
     gc.collect()
+
+
+
+    """
+
+    Fix this "name "y" is not defined error. 
+    Run the nct control and nct energies files. 
+
+    Implement 
+    """

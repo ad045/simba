@@ -35,11 +35,13 @@ from src.analysis.structural_measures import (
 
               
 from src.analysis.dynamic_measures import (
-                                           spectral_radius, 
-                                           spectral_gap,
-                                           calculate_global_efficiency, 
-                                           calculate_diffusion_efficiency, 
-                                           average_controllability, 
+                                            spectral_radius, 
+                                            spectral_gap,
+                                            calculate_global_efficiency, 
+                                            calculate_diffusion_efficiency, 
+                                        #    average_controllability, 
+                                            calculate_nct_control, 
+                                            calculate_nct_energies
                                            )
 
      
@@ -129,7 +131,7 @@ class StaticMetricCalculator(MetricCalculator):
         if metric_name == "transitivity":
             return calculate_transitivity(self.G)
         
-        if metric_name == "wiring_cost":  # Kayson
+        if metric_name == "wiring_cost":  # Kayson -> similar enough to avg_wiring_cost 
             return calculate_wiring_cost(self.A, self.distance_matrix)
         
         if metric_name == "shortest_path_distance": # Kayson
@@ -184,7 +186,9 @@ class DynamicMetricCalculator(MetricCalculator):
             "diffusion_efficiency",
             "propagation_distance",
             "propagation_efficiency",
-            "average_controllability",
+            "nct_control",
+            "nct_energies",
+            # "average_controllability",
         }
         
     def calculate_metric(self, metric_name):
@@ -204,15 +208,19 @@ class DynamicMetricCalculator(MetricCalculator):
         elif metric_name == "propagation_distance": # Kayson
             return propagation_distance(self.A)
             
-        elif metric_name == "propagation_efficiency": # based on Kayson
+        elif metric_name == "propagation_efficiency": # based on Kayson. but there could also be a netneurotools way?
             return 1/(propagation_distance(self.A).mean())
 
-        elif metric_name == "average_controllability":
-            return average_controllability(self.A)
+        # elif metric_name == "average_controllability":
+        #     return average_controllability(self.A)
+        elif metric_name == "nct_control":
+            return calculate_nct_control(self.A)
+
+        elif metric_name == "nct_energies":
+            return calculate_nct_energies(self.A)
         
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
-
 
         # TODO 
         # Different implementation for dynamic networks
