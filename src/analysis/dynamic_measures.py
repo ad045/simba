@@ -81,13 +81,15 @@ def calculate_nct_control(A,
 
     ac = ave_control(A_norm=A_norm, system=system)
     n_90 = np.sum(np.cumsum(np.sort(ac)[::-1]) <= 0.9 * sum(ac)) # + 1
-    print('number of nodes accounting for 90% of total control =', n_90)         
+    # print('number of nodes accounting for 90% of total control =', n_90)   
+    n_50 = np.sum(np.cumsum(np.sort(ac)[::-1]) <= 0.5 * sum(ac)) # + 1      
     
     return {"avg": np.mean(ac),
             "std": np.std(ac),
-            "n_nodes_90_percent": n_90}
-    
-    
+            "n_nodes_90_percent": n_90,
+            "n_nodes_50_percent": n_50}
+
+
 def calculate_nct_energies(A): 
     system = 'continuous'
     A_norm = matrix_normalization(A=A, c=1, system=system) # normalization is different than for discrete
@@ -110,10 +112,15 @@ def calculate_nct_energies(A):
     node_energy = integrate_u(u)
     # summarize nodal energy to get control energy
     energy = np.sum(node_energy)
+    std_node_energy = np.std(node_energy)
     
     # get the number of nodes whose sum of control energy accounts for 90% of the total energy
     n_90 = np.sum(np.cumsum(np.sort(node_energy)[::-1]) <= 0.9 * energy) # + 1
-    print('number of nodes accounting for 90% of total energy =', n_90)         
+    # print('number of nodes accounting for 90% of total energy =', n_90)
+    n_50 = np.sum(np.cumsum(np.sort(node_energy)[::-1]) <= 0.5 * energy) # + 1         
     
     return {"energy_total": energy,
-            "n_nodes_90_percent": n_90}
+            "std_node_energy": std_node_energy,
+            "n_nodes_90_percent": n_90,
+            "n_nodes_50_percent": n_50,
+            }

@@ -31,7 +31,9 @@ if __name__ == "__main__":
         # # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/63_fine_grid_animal_0/all_metrics_for_63_fine_grid_more_metrics_wow.csv"""
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0_hopefully_unnecessary.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0_updated.csv"
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0_updated.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0_updated.csv"
+        
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/71_testing_animal_0/all_metrics_for_71_testing_animal_0.csv"
     ]       
     plot_indiv_connectomes = False # True # False # True # False # True #  False # True # False
     
@@ -50,24 +52,24 @@ if __name__ == "__main__":
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
     metrics_to_plot = [
         
-        # "MaxCriteria",
-        # "avg_communicability", 
-        # "global_efficiency", 
-        # "modularity", 
-        # "avg_clustering", 
+        "MaxCriteria",
+        "avg_communicability", 
+        "global_efficiency", 
+        "modularity", 
+        "avg_clustering", 
         # "avg_degree", 
-        # "transitivity", 
-        # "avg_edge_distance", 
-        # "char_path_length", 
-        # "richclub_n_edges", 
-        # "richclub_avg_length", 
-        # "mc_mean", 
-        # "mc_std", 
-        # "wiring_cost", 
-        # "mean_mc_divided_by_wiring_cost",
-        # "mc_5_divided_by_wiring_cost", 
+        "transitivity", 
+        "avg_edge_distance", 
+        "char_path_length", 
+        "richclub_n_edges", 
+        "richclub_avg_length", 
+        "mc_mean", 
+        "mc_std", 
+        "wiring_cost", 
+        "mean_mc_divided_by_wiring_cost",
+        "mc_5_divided_by_wiring_cost", 
 
-            # "density",
+        # "density",
         # "propagation_efficiency"
         # "spectral_radius","degree_assortativity"
 
@@ -79,9 +81,11 @@ if __name__ == "__main__":
         # "propagation_efficiency",
         # "average_controllability",
 
-        # "nct_control",
-        # "nct_energies",
-        "nct_control_avg","nct_control_std","nct_control_n_nodes_90_percent","nct_energies_energy_total","nct_energies_n_nodes_90_percent"
+        # "nct_control_avg",
+        # "nct_control_std",
+        # "nct_control_n_nodes_90_percent",
+        # "nct_energies_energy_total",
+        # "nct_energies_n_nodes_90_percent"
 
 
         # "kernel_rank",
@@ -90,10 +94,11 @@ if __name__ == "__main__":
 
     #     "n_connected_components",
         # "structural_complexity"
-    ]
+    # ]
         # "avg_clustering_glob_efficiency_minus_energy", 
         # "avg_clustering_divided_by_global_efficiency", 
-    # ] + [f"mc_{lag}" for lag in lags_to_plot]
+    ] + [f"mc_{lag}" for lag in lags_to_plot]
+    
     plot_combined_lag_plot = False # Plot this comparison plot with different MC lags 
     
     print(f"Starting Voronoi-only visualization process...")

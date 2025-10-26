@@ -77,7 +77,7 @@ class StaticMetricCalculator(MetricCalculator):
         self.implemented_metrics = {
             "density",
             "avg_clustering",
-            "avg_degree",
+            "avg_degree", 
             "degree_assortativity",
             "modularity",
             "average_degree",
@@ -122,7 +122,7 @@ class StaticMetricCalculator(MetricCalculator):
         if metric_name == "modularity":  
             return calculate_modularity(self.G)
 
-        if metric_name == "average_degree":  
+        if metric_name == "avg_degree":  
             return calculate_avg_degree(self.G)
         
         if metric_name == "characteristic_path_length":

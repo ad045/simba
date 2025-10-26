@@ -152,6 +152,7 @@ def calculate_modularity(G) -> float:
     # comms = list(nx_comm.greedy_modularity_communities(G))
     # return nx_comm.modularity(G, comms) if len(comms) > 1 else 0.0
     louvain_comms = louvain_communities(G)
+    print("louvain_comms:", louvain_comms)
     return modularity(G, louvain_comms) if len(louvain_comms) > 1 else 0.0
 
 

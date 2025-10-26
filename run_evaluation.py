@@ -1,6 +1,7 @@
 """
 Compare generated and empirical networks with another and creates big csv file. 
 Optimized version with batching, efficient multiprocessing, and resumption capability.
+Now supports network IDs.
 """
 
 import numpy as np
@@ -19,22 +20,33 @@ from multiprocessing import Pool
 
 def extract_params_from_filename(filename: str) -> Dict[str, float]:
     """
-    Extract eta and gamma parameters from network filename.
-    Expected format: net_eta{value}_gamma{value}_rule{name}.npy
+    Extract eta, gamma, and id parameters from network filename.
+    Expected format: net_eta{value}_gamma{value}_rule{name}_id{value}.npy
+    Or without id: net_eta{value}_gamma{value}_rule{name}.npy (defaults to id=0)
     
     Args:
         filename: Network filename
         
     Returns:
-        Dictionary with eta and gamma values
+        Dictionary with eta, gamma, and id values
     """
-    match = re.search(r'eta([-\d.]+)_gamma([-\d.]+)', filename)
-    if match:
-        eta = float(match.group(1))
-        gamma = float(match.group(2))
-        return {'eta': eta, 'gamma': gamma}
-    else:
-        raise ValueError(f"Could not extract parameters from filename: {filename}")
+    # Extract eta
+    eta_match = re.search(r'eta([-+]?\d*\.?\d+)', filename)
+    if not eta_match:
+        raise ValueError(f"Could not extract eta from filename: {filename}")
+    eta = float(eta_match.group(1))
+    
+    # Extract gamma
+    gamma_match = re.search(r'gamma([-+]?\d*\.?\d+)', filename)
+    if not gamma_match:
+        raise ValueError(f"Could not extract gamma from filename: {filename}")
+    gamma = float(gamma_match.group(1))
+    
+    # Extract id (defaults to 0 if not present)
+    id_match = re.search(r'_id(\d+)', filename)
+    net_id = int(id_match.group(1)) if id_match else 0
+    
+    return {'eta': eta, 'gamma': gamma, 'id': net_id}
 
 
 def load_empirical_networks(empirical_path: Path) -> np.ndarray:
@@ -81,11 +93,15 @@ def load_existing_results(output_path: Path) -> Tuple[Optional[pd.DataFrame], se
         # Extract processed filenames
         if 'filename' in df.columns:
             processed = set(df['filename'].values)
-        elif 'eta' in df.columns and 'gamma' in df.columns:
-            # Reconstruct filenames from eta and gamma
+        elif 'eta' in df.columns and 'gamma' in df.columns and 'id' in df.columns:
+            # Reconstruct filenames from eta, gamma, and id
             processed = set()
             for _, row in df.iterrows():
-                filename = f"net_eta{row['eta']}_gamma{row['gamma']}_ruleMatchingIndex.npy"
+                net_id = row['id'] if not pd.isna(row['id']) else 0
+                if net_id == 0:
+                    filename = f"net_eta{row['eta']}_gamma{row['gamma']}_ruleMatchingIndex.npy"
+                else:
+                    filename = f"net_eta{row['eta']}_gamma{row['gamma']}_ruleMatchingIndex_id{int(net_id)}.npy"
                 processed.add(filename)
         else:
             return None, set()
@@ -229,12 +245,8 @@ def main():
     ########### HARDCODED STUFF ##############################################
 
     dataset_name = "suarez_MaMI_dataset"
-    experiment_name = "66_filling_in_the_upper_region_animal_0" # 60_generally_finer_search_animal_0" # 63_fine_grid_animal_0" # "65_grid_higher_eta_animal_0" 
-    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/65_grid_higher_eta_animal_0/all_metrics_for_65_grid_higher_eta_animal_0.csv
-    # Completed: 64_fine_grid_upper_local_minima_animal_0" 
-    # Q: 60_generally_finer_search_animal_1" -> Did this run sufficiently far already? 
-    # Run also the lower area: "63_fine_grid_animal_0" -> currently at it. 
-    # experiment_name = "63_fine_grid_animal_0"
+    experiment_name = "71_testing_animal_0" # 67_testing_animal_0" # 66_filling_in_the_upper_region_animal_0"
+    
     path_config = PathConfig( 
         dataset_name=dataset_name,
         experiment_name=experiment_name, 
@@ -253,7 +265,26 @@ def main():
     ##########################################################################
     
     generated_networks_dir = path_config.output_experiment_dir / "generated_networks"
-    reference_csv_path = path_config.output_experiment_dir / f"all_metrics_for_{experiment_name}.csv"
+    
+    # Choose which reference CSV to use based on what exists
+    static_csv = path_config.output_experiment_dir / f"all_static_metrics_for_{experiment_name}.csv"
+    dynamic_csv = path_config.output_experiment_dir / f"all_dynamic_metrics_for_{experiment_name}.csv"
+    computational_csv = path_config.output_experiment_dir / f"all_computational_metrics_for_{experiment_name}.csv"
+    legacy_csv = path_config.output_experiment_dir / f"all_metrics_for_{experiment_name}.csv"
+    
+    # Use the first CSV that exists for reference ordering
+    if static_csv.exists():
+        reference_csv_path = static_csv
+    elif dynamic_csv.exists():
+        reference_csv_path = dynamic_csv
+    elif computational_csv.exists():
+        reference_csv_path = computational_csv
+    elif legacy_csv.exists():
+        reference_csv_path = legacy_csv
+    else:
+        raise FileNotFoundError(f"No reference CSV found in {path_config.output_experiment_dir}")
+    
+    print(f"Using reference CSV: {reference_csv_path}")
 
     # Load a config for custom evaluation metrics
     config_dict = {
@@ -295,15 +326,31 @@ def main():
 
         # Load reference order from CSV
         df_reference_order = pd.read_csv(reference_csv_path)
-        list_eta_gamma_reference_order = list(zip(
-            df_reference_order["eta"], 
-            df_reference_order["gamma"]
-        ))
+        
+        # Build list of (eta, gamma, id) tuples from reference
+        if 'id' in df_reference_order.columns:
+            list_eta_gamma_id_reference = list(zip(
+                df_reference_order["eta"], 
+                df_reference_order["gamma"],
+                df_reference_order["id"]
+            ))
+        else:
+            # Legacy format without id column - assume all are id=0
+            list_eta_gamma_id_reference = [
+                (eta, gamma, 0) 
+                for eta, gamma in zip(df_reference_order["eta"], df_reference_order["gamma"])
+            ]
 
         # Build ordered list of files to process
         ordered_files_to_process = []
-        for eta, gamma in list_eta_gamma_reference_order:
-            filename = f"net_eta{eta}_gamma{gamma}_ruleMatchingIndex.npy"
+        for eta, gamma, net_id in list_eta_gamma_id_reference:
+            # Handle both cases: with and without id in filename
+            # if net_id == 0:
+            #     filename = f"net_eta{eta}_gamma{gamma}_ruleMatchingIndex.npy"
+            # else:
+            net_id_str = f"{net_id:03d}"
+            filename = f"net_eta{eta}_gamma{gamma}_ruleMatchingIndex_id{net_id_str}.npy"
+
             if filename in to_analyze_files:
                 filepath = networks_dir / filename
                 ordered_files_to_process.append(filepath)
@@ -424,6 +471,8 @@ def main():
             print(f"Parameter ranges:")
             print(f"  eta: [{results_df['eta'].min():.3f}, {results_df['eta'].max():.3f}]")
             print(f"  gamma: [{results_df['gamma'].min():.3f}, {results_df['gamma'].max():.3f}]")
+            if 'id' in results_df.columns:
+                print(f"  id range: [{results_df['id'].min():.0f}, {results_df['id'].max():.0f}]")
             print(f"\nFirst few rows of results:")
             print(results_df.head())
         else: 
