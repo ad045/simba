@@ -85,7 +85,7 @@ class StaticMetricCalculator(MetricCalculator):
             "transitivity",
             "wiring_cost",
             "shortest_path_distance",
-            "compute_structural_complexity",
+            "structural_complexity",
             "n_connected_components",
             "omega",
             "topological_distance",
@@ -135,9 +135,11 @@ class StaticMetricCalculator(MetricCalculator):
             return calculate_wiring_cost(self.A, self.distance_matrix)
         
         if metric_name == "shortest_path_distance": # Kayson
-            return shortest_path_distance(self.A)
+            shortest_path_distance_matrix = shortest_path_distance(self.A)
+            return {"mean": np.nanmean(shortest_path_distance_matrix),
+                    "std": np.nanstd(shortest_path_distance_matrix)}
         
-        elif metric_name == "compute_structural_complexity": # Kayson
+        elif metric_name == "structural_complexity": # Kayson
             return compute_structural_complexity(self.A)
         
         elif metric_name == "n_connected_components": # nx 
@@ -151,10 +153,14 @@ class StaticMetricCalculator(MetricCalculator):
             return compute_omega(self.A)
         
         elif metric_name == "topological_distance": # Kayson
-            return topological_distance(self.A)
-        
+            topological_distance_matrix = topological_distance(self.A)
+            return {"mean": np.nanmean(topological_distance_matrix),
+                    "std": np.nanstd(topological_distance_matrix)}
+
         elif metric_name == "resistance_distance": # Kayson ## "diffusion_distance"
-            return resistance_distance(self.A)
+            resistance_distance_matrix = resistance_distance(self.A)
+            return {"mean": np.nanmean(resistance_distance_matrix),
+                    "std": np.nanstd(resistance_distance_matrix)}
 
         else:
             raise ValueError(f"Unknown metric: {metric_name}")

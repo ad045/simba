@@ -12,7 +12,7 @@ import numpy as np
 from networkx.algorithms.community import modularity, louvain_communities
 import networkx as nx
 
-from netneurotools import modularity
+# from netneurotools import modularity # -> clashes with louvain (networkx) implementation
 
 # ["density", "wiring_cost", "shortest_path_distance", "compute_structural_complexity",
 #  "n_connected_components", "omega", "topological_distance", "resistance_distance", 
@@ -152,7 +152,7 @@ def calculate_modularity(G) -> float:
     # comms = list(nx_comm.greedy_modularity_communities(G))
     # return nx_comm.modularity(G, comms) if len(comms) > 1 else 0.0
     louvain_comms = louvain_communities(G)
-    print("louvain_comms:", louvain_comms)
+    # print("louvain_comms:", louvain_comms)
     return modularity(G, louvain_comms) if len(louvain_comms) > 1 else 0.0
 
 

@@ -54,40 +54,11 @@ def get_metric_category(metric_name, static_calc, dynamic_calc, computation_calc
         return None
 
 
-# def categorize_metrics(interesting_metrics):
-#     """
-#     Split metrics into static, dynamic, and computational categories.
-    
-#     Returns:
-#         dict: {'static': [...], 'dynamic': [...], 'computational': [...]}
-#     """
-#     # Create dummy calculators to check which metrics belong where
-#     dummy_A = np.zeros((2, 2))
-#     static_calc = StaticMetricCalculator(A=dummy_A)
-#     dynamic_calc = DynamicMetricCalculator(A=dummy_A)
-#     computation_calc = ComputationMetricCalculator(A=dummy_A)
-    
-#     categories = {
-#         'static': [],
-#         'dynamic': [],
-#         'computational': []
-    # }
-    
-    # for metric in interesting_metrics:
-    #     category = get_metric_category(metric, static_calc, dynamic_calc, computation_calc)
-    #     if category:
-    #         categories[category].append(metric)
-    #     else:
-    #         print(f"⚠ Warning: Metric '{metric}' not found in any calculator")
-    
-    # return categories
-
-
 def merge_checkpoint_files(output_path, experiment_name, df_original_dict, metric_categories):
     """
     Merge all checkpoint CSV files with the original data and save to final output files.
     Saves separate files for static, dynamic, and computational metrics.
-    Automatically detects metrics from checkpoint files instead of relying on metric_categories.
+    PRESERVES all existing metric values - only updates NaN or missing values.
     
     Args:
         output_path: Path to the experiment output directory
@@ -163,6 +134,7 @@ def merge_checkpoint_files(output_path, experiment_name, df_original_dict, metri
         # Update values from checkpoint data
         updated_count = 0
         added_count = 0
+        preserved_count = 0
         
         for _, result_row in checkpoint_df.iterrows():
             eta = result_row['eta']
@@ -173,10 +145,15 @@ def merge_checkpoint_files(output_path, experiment_name, df_original_dict, metri
             mask = (df_updated['eta'] == eta) & (df_updated['gamma'] == gamma) & (df_updated['id'] == net_id)
             
             if mask.any():
-                # Network exists - update only the calculated metrics
+                # Network exists - update ONLY missing/NaN metrics
                 for metric in metrics_with_results:
                     if metric in result_row.index and not pd.isna(result_row[metric]):
-                        df_updated.loc[mask, metric] = result_row[metric]
+                        # Check if existing value is NaN or missing
+                        existing_value = df_updated.loc[mask, metric].iloc[0]
+                        if pd.isna(existing_value):
+                            df_updated.loc[mask, metric] = result_row[metric]
+                        else:
+                            preserved_count += 1
                 updated_count += 1
             else:
                 # Network doesn't exist - add new row
@@ -197,6 +174,7 @@ def merge_checkpoint_files(output_path, experiment_name, df_original_dict, metri
         
         print(f"✓ Updated {updated_count} existing networks")
         print(f"✓ Added {added_count} new networks")
+        print(f"✓ Preserved {preserved_count} existing metric values")
         
         # Save final merged file
         target_file = output_path / f'all_{category}_metrics_for_{experiment_name}_updated.csv'
@@ -234,9 +212,62 @@ def merge_checkpoint_files(output_path, experiment_name, df_original_dict, metri
     return results
 
 
+def create_combined_csv(output_path, experiment_name, df_dict):
+    """
+    Create a combined CSV with all metrics from static, dynamic, and computational categories.
+    
+    Args:
+        output_path: Path to the experiment output directory
+        experiment_name: Name of the experiment
+        df_dict: Dict of DataFrames {'static': df, 'dynamic': df, 'computational': df}
+    """
+    print("\n" + "=" * 60)
+    print("CREATING COMBINED CSV FILE")
+    print("=" * 60)
+    
+    # Start with static metrics as base
+    df_combined = df_dict['static'].copy()
+    
+    # Merge dynamic metrics
+    if not df_dict['dynamic'].empty:
+        # Get all columns except eta, gamma, id
+        dynamic_cols = [col for col in df_dict['dynamic'].columns if col not in ['eta', 'gamma', 'id']]
+        
+        # Merge on eta, gamma, id
+        df_combined = df_combined.merge(
+            df_dict['dynamic'][['eta', 'gamma', 'id'] + dynamic_cols],
+            on=['eta', 'gamma', 'id'],
+            how='outer'
+        )
+        print(f"✓ Merged {len(dynamic_cols)} dynamic metrics")
+    
+    # Merge computational metrics
+    if not df_dict['computational'].empty:
+        # Get all columns except eta, gamma, id
+        computational_cols = [col for col in df_dict['computational'].columns if col not in ['eta', 'gamma', 'id']]
+        
+        # Merge on eta, gamma, id
+        df_combined = df_combined.merge(
+            df_dict['computational'][['eta', 'gamma', 'id'] + computational_cols],
+            on=['eta', 'gamma', 'id'],
+            how='outer'
+        )
+        print(f"✓ Merged {len(computational_cols)} computational metrics")
+    
+    # Save combined file
+    combined_file = output_path / f'all_metrics_for_{experiment_name}_updated.csv'
+    df_combined.to_csv(combined_file, index=False)
+    
+    print(f"✓ Saved combined CSV to: {combined_file}")
+    print(f"  Combined dataframe: {len(df_combined)} rows, {len(df_combined.columns)} columns")
+    
+    return df_combined
+
+
 def get_missing_work(df_dict, network_files, metric_categories):
     """
     Determine which (network, metric) combinations need to be calculated.
+    ONLY calculates metrics that are NaN or missing - preserves existing values.
     
     Returns:
         dict: {network_index: {'static': [...], 'dynamic': [...], 'computational': [...]}}
@@ -262,11 +293,21 @@ def get_missing_work(df_dict, network_files, metric_categories):
                 # Network not in results - calculate all metrics for this category
                 network_missing[category] = metric_categories[category].copy()
             else:
-                # Network exists - check which metrics are missing
+                # Network exists - check which metrics are missing or NaN
                 existing_row = df[mask].iloc[0]
                 
                 for metric in metric_categories[category]:
-                    if metric not in df.columns or pd.isna(existing_row[metric]):
+                    # Check if metric column exists
+                    if metric not in df.columns:
+                        network_missing[category].append(metric)
+                    # Check for metrics that return dicts - look for any column starting with metric name
+                    elif any(col.startswith(f"{metric}_") for col in df.columns):
+                        # This is a dict-returning metric - check if any of its values are NaN
+                        metric_cols = [col for col in df.columns if col.startswith(f"{metric}_")]
+                        if any(pd.isna(existing_row[col]) for col in metric_cols):
+                            network_missing[category].append(metric)
+                    # Regular scalar metric - check if NaN
+                    elif pd.isna(existing_row[metric]):
                         network_missing[category].append(metric)
         
         # Only add to missing_work if there's actually work to do
@@ -393,10 +434,15 @@ def multiprocess_networks(n_processes=None,
                           base_path="", 
                           interesting_metrics=None, 
                           save_interval=50,
-                          debug=False):
+                          debug=False,
+                          create_big_update_csv=False):
     """
     Main function to multiprocess network metric calculations.
     Saves results split by metric category (static, dynamic, computational).
+    PRESERVES existing metric values - only calculates missing ones.
+    
+    Args:
+        create_big_update_csv: If True, creates a combined CSV with all metrics
     """
     global accumulated_results
     accumulated_results = []
@@ -407,9 +453,8 @@ def multiprocess_networks(n_processes=None,
     generated_networks_dir = output_path / "generated_networks"
     distance_matrix_path = base_path / "data/preprocessed/suarez_MaMI_dataset/02_distance_matrices/distance_matrix_50.npy"
     
-    # Categorize metrics
-    print("Categorizing metrics...")
-    # metric_categories = categorize_metrics(interesting_metrics)
+    # Use metric categories directly
+    print("Using provided metric categories...")
     metric_categories = interesting_metrics
     print(f"Static metrics: {metric_categories['static']}")
     print(f"Dynamic metrics: {metric_categories['dynamic']}")
@@ -453,6 +498,11 @@ def multiprocess_networks(n_processes=None,
     
     if total_calculations == 0:
         print("✓ All metrics already calculated!")
+        
+        # Create combined CSV if requested
+        if create_big_update_csv:
+            create_combined_csv(output_path, experiment, df_dict)
+        
         return df_dict
     
     # Filter network files to only those needing work
@@ -529,6 +579,10 @@ def multiprocess_networks(n_processes=None,
         print(f"\n✓ Processing complete!")
         for category in ['static', 'dynamic', 'computational']:
             print(f"✓ {category.capitalize()} results: {len(final_dfs[category])} networks")
+        
+        # Create combined CSV if requested
+        if create_big_update_csv:
+            create_combined_csv(output_path, experiment, final_dfs)
     else:
         print("\n⚠ No checkpoint files were created")
     
@@ -537,49 +591,37 @@ def multiprocess_networks(n_processes=None,
 
 if __name__ == "__main__":
     
-    EXPERIMENT = "71_testing_animal_0" # 60_generally_finer_search_animal_0"
+    EXPERIMENT = "71_testing_animal_0"
     DATASET = "suarez_MaMI_dataset"
     base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
+    
+    CREATE_BIG_UPDATE_CSV = True  # Set to True to create combined CSV file
     
     # Define metrics to calculate
     interesting_metrics = {
         "static": [
-            # "density", # -> w
-            # "avg_clustering", # -> w
-            # "avg_degree",  # -> w
-            
-            "degree_assortativity",
-            "modularity",
-            # "characteristic_path_length",
-            # "transitivity",
-            # "wiring_cost",
-            # "shortest_path_distance",
-            # "compute_structural_complexity",
-            # "n_connected_components",
+            # "degree_assortativity", # works
+            # "modularity", # works
+            "density", 
+            "avg_clustering", 
+            "avg_degree",
+            "characteristic_path_length",
+            "transitivity", 
+            "wiring_cost",
+            "shortest_path_distance",
+            "structural_complexity",
+            "n_connected_components",
             # "omega",
-            # "topological_distance",
-            # "resistance_distance",
-
-
-            # "propagation_distance",
-            # "propagation_efficiency",
-            # "average_controllability",
+            "topological_distance",
+            "resistance_distance",
+            
         ], 
         "dynamic": [
-            # "spectral_radius",
-            # "spectral_gap",
-            # "global_efficiency",
-            # "diffusion_efficiency",
-            # "propagation_distance",
-            # "propagation_efficiency",
-            
-            # "nct_control", # -> w
-            # "nct_energies", # -> w
+            # "spectral_radius", # works
+            # "spectral_gap", # works
         ],
         "computational": [
-            # "kernel_rank",
-            # "effective_dimensionality",
-            # "multifunctionality", # not implemented correctly yet.... 
+            # "kernel_rank", # works
         ]
     }
 
@@ -590,7 +632,8 @@ if __name__ == "__main__":
                                      base_path=base_path,
                                      interesting_metrics=interesting_metrics,
                                      save_interval=50, 
-                                     debug=True)
+                                     debug=True,
+                                     create_big_update_csv=CREATE_BIG_UPDATE_CSV)
     
     if df_final is not None:
         print("\n✓ All done!")
