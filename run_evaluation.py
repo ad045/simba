@@ -238,14 +238,14 @@ def append_result_to_csv(result: Dict, output_path: Path, write_header: bool = F
         writer.writerow(result)
 
 
-def main():
+def main(experiment_name: str):
     """Main execution function."""
     
     ##########################################################################
     ########### HARDCODED STUFF ##############################################
 
     dataset_name = "suarez_MaMI_dataset"
-    experiment_name = "71_testing_animal_0" # 67_testing_animal_0" # 66_filling_in_the_upper_region_animal_0"
+    # experiment_name = "71_testing_animal_0" # 67_testing_animal_0" # 66_filling_in_the_upper_region_animal_0"
     
     path_config = PathConfig( 
         dataset_name=dataset_name,
@@ -489,4 +489,4 @@ def main():
 
 
 if __name__ == "__main__":
-    results = main()
+    results = main(experiment_name="72_clean_10_000") # 71_testing_animal_0")

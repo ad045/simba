@@ -490,7 +490,9 @@ def normalized_propagation_distance(adjacency_matrix, coordinates, alpha=0.1, ep
     return normalized_distance
 
 @jit_safe()
-def resistance_distance(adjacency: FloatArray, coordinates: FloatArray) -> FloatArray:
+def resistance_distance(adjacency: FloatArray, 
+                        distance_matrix: FloatArray,
+                        ) -> FloatArray:
     """
     Compute resistance distances between all pairs of nodes.
     
@@ -503,20 +505,24 @@ def resistance_distance(adjacency: FloatArray, coordinates: FloatArray) -> Float
         Matrix of resistance distances (n_nodes, n_nodes)
     """
     n_nodes = len(adjacency)
-    distances = np.zeros((n_nodes, n_nodes))
+    resistance_distances = np.zeros((n_nodes, n_nodes))
     
     # Compute weight matrix (1/euclidean_distance for connected nodes)
     for i in range(n_nodes):
         for j in range(i+1, n_nodes):
             if adjacency[i, j]:
-                dist = np.sqrt(np.sum((coordinates[i] - coordinates[j])**2))
+                dist = distance_matrix[i, j]  
                 weight = 1.0 / (dist + 1e-12)  # Avoid division by zero
-                distances[i, j] = weight
-                distances[j, i] = weight
+                resistance_distances[i, j] = float(weight)  # Ensure scalar
+                resistance_distances[j, i] = float(weight)
+                # dist = distance_matrix[j,i] # np.sqrt(np.sum((coordinates[i] - coordinates[j])**2))
+                # weight = 1.0 / (dist + 1e-12)  # Avoid division by zero
+                # resistance_distances[i, j] = weight
+                # resistance_distances[j, i] = weight
                 
     # Compute weighted Laplacian
-    diag = np.sum(distances, axis=1)
-    laplacian = np.diag(diag) - distances
+    diag = np.sum(resistance_distances, axis=1)
+    laplacian = np.diag(diag) - resistance_distances
     
     # Compute pseudoinverse using eigendecomposition
     eigvals, eigvecs = np.linalg.eigh(laplacian)
@@ -531,8 +537,10 @@ def resistance_distance(adjacency: FloatArray, coordinates: FloatArray) -> Float
     for i in range(n_nodes):
         for j in range(i+1, n_nodes):
             r = L_plus[i,i] + L_plus[j,j] - 2*L_plus[i,j]
-            resistance[i,j] = r
-            resistance[j,i] = r
+            # resistance[i,j] = r
+            # resistance[j,i] = r
+            resistance[i, j] = float(r)  # Ensure scalar
+            resistance[j, i] = float(r)
             
     return resistance
 

@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 
 from src.analysis.kayson_utils import (compute_structural_complexity, 
                                         compute_omega, 
-                                        resistance_distance,
+                                        resistance_distance, # from kayson, but changed to use distance matrix instead of coordinates. 
                                         shortest_path_distance,
                                         propagation_distance,
                                         topological_distance,
@@ -30,7 +30,8 @@ from src.analysis.structural_measures import (
                                               calculate_degree_assortativity,
                                               calculate_transitivity,
                                             #   calculate_wiring_cost,  -> I'm using Kaysons 
-                                              calculate_char_path_length
+                                              calculate_char_path_length, 
+                                              calculate_degree_gini
                                              )
 
               
@@ -40,15 +41,18 @@ from src.analysis.dynamic_measures import (
                                             calculate_global_efficiency, 
                                             calculate_diffusion_efficiency, 
                                         #    average_controllability, 
+                                            compute_spectral_gap_fatemeh, 
                                             calculate_nct_control, 
-                                            calculate_nct_energies
+                                            calculate_nct_energies, 
+                                            calculate_metastability
                                            )
 
      
 from src.analysis.computational_measures import (
                                                 kernel_rank, 
                                                 effective_dimensionality, 
-                                                multifunctionality
+                                                multifunctionality, 
+                                                compute_kernel_rank_fatemeh,
                                                 )   
 
 
@@ -90,6 +94,7 @@ class StaticMetricCalculator(MetricCalculator):
             "omega",
             "topological_distance",
             "resistance_distance",
+            "degree_gini",
 
         } # TODO: Check if the list is complete or if I already implemented more than that.  
     # Kayson: 
@@ -158,25 +163,21 @@ class StaticMetricCalculator(MetricCalculator):
                     "std": np.nanstd(topological_distance_matrix)}
 
         elif metric_name == "resistance_distance": # Kayson ## "diffusion_distance"
-            resistance_distance_matrix = resistance_distance(self.A)
+            resistance_distance_matrix = resistance_distance(self.A, self.distance_matrix)
             return {"mean": np.nanmean(resistance_distance_matrix),
                     "std": np.nanstd(resistance_distance_matrix)}
 
+        elif metric_name == "degree_gini": 
+            return calculate_degree_gini(self.A) 
+        
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
 
 # # # #     [ ] Modularity (Consensus of N Louvain from netneurotools)
 # # # #     [ ] avg wiring cost (Euclidean distance)
-# # # #     [ ] Hubness (Gini index, Chini 2023)
 # # # #     [ ] Rich club (with k, and looking for maximum → look for library)
 # # # #     [ ] Average length
-
-# # # # Number edges
-# # # #     [ ] Average degree
-# # # #     [ ] Transitivity
-# # # #     [ ] Degree assortativity
-# # # #     [ ] “Distance-dependent degree assortativity” (Betzel)
 # # # #     [ ] Entropy of matrix
 
 
@@ -192,8 +193,10 @@ class DynamicMetricCalculator(MetricCalculator):
             "diffusion_efficiency",
             "propagation_distance",
             "propagation_efficiency",
+            "spectral_gap_fatemeh", 
             "nct_control",
             "nct_energies",
+            "metastability", 
             # "average_controllability",
         }
         
@@ -204,6 +207,9 @@ class DynamicMetricCalculator(MetricCalculator):
         
         elif metric_name == "spectral_gap":
             return spectral_gap(self.A)
+        
+        elif metric_name == "spectral_gap_fatemeh":
+            return compute_spectral_gap_fatemeh(self.A)
 
         elif metric_name == "global_efficiency":  
             return calculate_global_efficiency(self.G)
@@ -224,6 +230,9 @@ class DynamicMetricCalculator(MetricCalculator):
 
         elif metric_name == "nct_energies":
             return calculate_nct_energies(self.A)
+
+        elif metric_name == "metastability": 
+            return calculate_metastability(self.A)
         
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
@@ -250,6 +259,7 @@ class ComputationMetricCalculator(MetricCalculator):
         super().__init__(A=A, distance_matrix=distance_matrix)
         self.implemented_metrics = {
             "kernel_rank",
+            "kernel_rank_fatemeh",
             "effective_dimensionality",
             "multifunctionality",
         }
@@ -266,6 +276,9 @@ class ComputationMetricCalculator(MetricCalculator):
         
         if metric_name == "multifunctionality":
             return multifunctionality(self.A)
+        
+        elif metric_name == "kernel_rank_fatemeh":
+            return compute_kernel_rank_fatemeh(self.A)
         
         else:
             raise ValueError(f"Unknown metric: {metric_name}")

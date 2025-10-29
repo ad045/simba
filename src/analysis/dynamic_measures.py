@@ -4,6 +4,15 @@ from scipy.linalg import solve_continuous_lyapunov
 
 import networkx as nx
 
+from src.analysis.from_fatemeh import compute_eigenvalue_gap as compute_spectral_gap_fatemeh # needed for next script
+
+import numpy as np
+import scipy.signal as sig
+import scipy
+from numba import njit
+
+
+
 def spectral_radius(A):
    eigenvalues, _ = np.linalg.eig(A)
    return np.max(np.abs(eigenvalues))
@@ -124,3 +133,22 @@ def calculate_nct_energies(A):
             "n_nodes_90_percent": n_90,
             "n_nodes_50_percent": n_50,
             }
+
+
+# from from_francisco import evaluate_network_2
+from src.analysis.from_francisco import evaluate_network_2
+
+def calculate_metastability(A): 
+
+    # data_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_50.npy"
+    # c = np.load(data_path)[0]
+
+    meta_global, meta_local, _ = evaluate_network_2(W=A)  # takes like 6.6 seconds... 
+    # print("META LOCAL: ", meta_local)
+    # print("META LOCAL MEAN: ", np.mean(meta_local))
+    return{
+        "global": meta_global, 
+        "local_mean": np.nanmean(meta_local), 
+        "local_std": np.nanstd(meta_local), 
+        "local_kurtosis": scipy.stats.kurtosis(meta_local, nan_policy='omit')
+    }

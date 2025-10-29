@@ -317,6 +317,25 @@ def get_missing_work(df_dict, network_files, metric_categories):
     return missing_work
 
 
+# Global variable to cache distance matrix per worker process
+_worker_distance_matrix = None
+_worker_distance_matrix_path = None
+
+def _load_distance_matrix_once(distance_matrix_path):
+    """
+    Load distance matrix once per worker process and cache it.
+    This avoids loading the same matrix for every network.
+    """
+    global _worker_distance_matrix, _worker_distance_matrix_path
+    
+    # Only load if not already loaded or if path changed
+    if _worker_distance_matrix is None or _worker_distance_matrix_path != distance_matrix_path:
+        _worker_distance_matrix = np.load(distance_matrix_path)
+        _worker_distance_matrix_path = distance_matrix_path
+    
+    return _worker_distance_matrix
+
+
 def process_network_file(file_info, distance_matrix_path, metric_categories, metrics_to_calculate=None):
     """
     Process a single network file and return dictionaries of results by category.
@@ -344,8 +363,11 @@ def process_network_file(file_info, distance_matrix_path, metric_categories, met
         A = np.load(full_path)[0]
         eta, gamma, net_id = get_eta_gamma_id_from_filename(name)
         
-        # Initialize calculators
-        static_calc = StaticMetricCalculator(A=A, distance_matrix=None)
+        # Load distance matrix once per worker (cached)
+        distance_matrix = _load_distance_matrix_once(distance_matrix_path)
+        
+        # Initialize calculators with distance matrix
+        static_calc = StaticMetricCalculator(A=A, distance_matrix=distance_matrix)
         dynamic_calc = DynamicMetricCalculator(A=A)
         computation_calc = ComputationMetricCalculator(A=A)
         
@@ -602,26 +624,35 @@ if __name__ == "__main__":
         "static": [
             # "degree_assortativity", # works
             # "modularity", # works
-            "density", 
-            "avg_clustering", 
-            "avg_degree",
-            "characteristic_path_length",
-            "transitivity", 
-            "wiring_cost",
-            "shortest_path_distance",
-            "structural_complexity",
-            "n_connected_components",
-            # "omega",
-            "topological_distance",
-            "resistance_distance",
+            # "density", 
+            # "avg_clustering", 
+            # "avg_degree",
+            # "characteristic_path_length",
+            # "transitivity", 
+            # "wiring_cost",
+            # "shortest_path_distance",
+            # "structural_complexity",
+            # "n_connected_components",
+            # "omega", # works (produces at least data for 71_testing) 
+            # "topological_distance",
+            # "resistance_distance", -> does not work yet! 
+            # "degree_gini", # works (produces at least data for 71_testing) 
             
         ], 
         "dynamic": [
             # "spectral_radius", # works
             # "spectral_gap", # works
+            
+            # "spectral_gap_fatemeh", 
+            # "metastability" # global works, and local, too! But it's currently not kayson's version... (metastability_global, metastability_local_mean, metastability_local_std, metastability_local_kurtosis)
+            
         ],
         "computational": [
-            # "kernel_rank", # works
+            # "kernel_rank", # works, but code needs to be checked
+             
+            # code of effective dimensionality needs to be checked, too. 
+            # multifunctionality needs to be checked as well. 
+            # "kernel_rank_fatemeh",
         ]
     }
 
@@ -632,7 +663,7 @@ if __name__ == "__main__":
                                      base_path=base_path,
                                      interesting_metrics=interesting_metrics,
                                      save_interval=50, 
-                                     debug=True,
+                                     debug=False, #### !!!! True,
                                      create_big_update_csv=CREATE_BIG_UPDATE_CSV)
     
     if df_final is not None:

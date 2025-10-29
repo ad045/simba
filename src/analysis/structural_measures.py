@@ -199,6 +199,15 @@ def calculate_char_path_length(G) -> float: # or np.nan
     return nx.average_shortest_path_length(H)
 
 
+def calculate_degree_gini(A):
+    degrees = np.sum(A, axis=1)
+    degrees = np.sort(degrees)
+    n = len(degrees)
+    index = np.arange(1, n + 1)
+    return (2 * np.sum(index * degrees)) / (n * np.sum(degrees)) - (n + 1) / n
+
+
+
 # def _get_rich_nodes(G, rich_nodes=None, top_percent=0.20):
 #     """
 #     Return a set of 'rich' nodes.
@@ -345,3 +354,5 @@ def analyze_connectomes(connectomes,
 
 
     return out # pd.DataFrame(out)
+
+

@@ -1,7 +1,7 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 71_testing # _grid_higher_eta # 4_fine_grid_upper_local_minima # 60_generally_finer_search
+  name: 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1 # 4_fine_grid_upper_local_minima # 60_generally_finer_search
   animal: 55 
   # 55,Lycaon3,Lycaon,Lycaon,Lycaon pictus,Lycaon,Caninae,Canidae,Caniformia,Carnivora,Laurasiatheria,Laurasiatheria
   compare_to_connectome_of_distance_matrix: true
@@ -10,7 +10,7 @@ experiment:
   compare_to_all_individual_empirical_connectomes: true
   search:
     method: grid # random
-    n_samples: 11 #  900 # 00
+    n_samples: 10000 # 10000 #  900 # 00
   wandb:
     enabled: false
     project: GNM_project
@@ -27,7 +27,7 @@ pipeline:
     num_runs: 300 # is ignored in the ALL_animals script, and only n_samples counts then, I guess... ??
   evaluation:
     reference_csv_name: null
-    checkpoint_interval: 3
+    checkpoint_interval: 1 # This determines if each (or only e.g. every 3rd) generated network gets saved.
   empirical_analysis:
     modes:
     - binarized
@@ -87,17 +87,19 @@ gnm:
   eta_range:
   # - -6
   # - -5
-  - 2.5
-  - 3.5
+  # - 2.5
+  # - 3.5
+  - -8.0
+  - 3.0
   # - -2.0
   # - 1.0
   # - -7.5
   # - 2.5
   gamma_range:
   # - 0.2
-  # - 1.0 
+  - -0.1
   # - 0.0
-  - 0.3
+  # - 0.3
   - 1.0
   # - -0.125
   # - 1.0

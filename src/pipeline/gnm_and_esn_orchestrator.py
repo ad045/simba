@@ -232,7 +232,8 @@ def _run_and_save_single_simulation(
             indiv_networks_record.update({
                 "eta": params.eta,
                 "gamma": params.gamma,
-                "id": net_id,
+                "id_of_generated_network": net_id,
+                # "id_of_animal": id_manager.get_animal_id()
             })
 
         if compare_to_connectome_of_distance_matrix: 
@@ -301,7 +302,7 @@ def _run_and_save_single_simulation(
         flat_record.update({
             "eta": eta_val,
             "gamma": gamma_val,
-            "id": net_id,
+            "id_of_generated_network": net_id,
             "error": str(e)
         })
 
@@ -454,4 +455,4 @@ class GNMandESNPipelineOrchestrator:
         except (KeyboardInterrupt, Exception) as e:
             print(f"\n--- Process interrupted or failed: {e} ---")
 
-        merge_csv_files(self.output_dir, self.config["experiment"]["name"])
+        merge_csv_files(self.output_dir, self.config["experiment"]["name"]) 

@@ -1,5 +1,6 @@
 import numpy as np
 
+from src.analysis.from_fatemeh import compute_KR as compute_kernel_rank_fatemeh # needed for next script 
 
 # Kernel Rank (check)
 def kernel_rank(A, threshold=0.01):

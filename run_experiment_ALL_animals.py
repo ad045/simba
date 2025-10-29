@@ -12,15 +12,15 @@ from pathlib import Path
 BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
 # BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_debug.yaml"
 TEMP_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/temp_config_animal.yaml"
-ANIMAL_START = 0
-ANIMAL_END = 0 # 2 # 255
+# ANIMAL_START = 55
+# ANIMAL_END = 5 # 2 # 255
 RUN_SCRIPT = "run_experiment.py"
 
-NUMBER_RUNS_PER_ANIMAL = 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied. 
+NUMBER_RUNS_PER_ANIMAL = 10 # 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied. 
 
 
 
-def modify_config_for_animal(base_config_path: str, temp_config_path: str, animal_id: int):
+def modify_config_for_animal(base_config_path: str, temp_config_path: str, animal_id: int): # , loop_number: int):
     """
     Load the base config, modify the animal number, and save to temp file.
     
@@ -38,7 +38,7 @@ def modify_config_for_animal(base_config_path: str, temp_config_path: str, anima
     # Optionally modify the experiment name to include animal ID
     original_name = config['experiment']['name']
     # config['experiment']['name'] = f"{original_name}/{original_name}_animal_{animal_id}"
-    config['experiment']['name'] = f"{original_name}_animal_{animal_id}"
+    config['experiment']['name'] = f"{original_name}_animal_{animal_id}" # _loop_{loop_number}"
     
     # Save modified config
     with open(temp_config_path, 'w') as f:
@@ -96,18 +96,27 @@ def cleanup_temp_config(temp_config_path: str):
 def main():
     """Main execution loop."""
     start_time = time.time()
-    total_animals = ANIMAL_END - ANIMAL_START + 1
+    animals_to_analyze = [0, 206, 188, 169, 103] # range(ANIMAL_START, ANIMAL_END + 1)
+    total_animals = len(animals_to_analyze)
     successful = 0
     failed = 0
     
     print(f"\n{'='*80}")
     print(f"🚀 Starting batch experiment run")
-    print(f"   Animals: {ANIMAL_START} to {ANIMAL_END} (total: {total_animals})")
+    # print(f"   Animals: {ANIMAL_START} to {ANIMAL_END} (total: {total_animals})")
     print(f"   Base config: {BASE_CONFIG_PATH}")
     print(f"{'='*80}\n")
     
     try:
-        for animal_id in range(ANIMAL_START, ANIMAL_END + 1):
+        
+        # 0,Rat4,
+        # 103,Orangutan2,
+        # 169,RedKangaroo3,
+        # 188,FruitBat5,
+        # 206,Chimpanzee,
+
+
+        for animal_id in animals_to_analyze:   #  range(ANIMAL_START, ANIMAL_END + 1):
             try:
                 # Create modified config
                 modify_config_for_animal(BASE_CONFIG_PATH, TEMP_CONFIG_PATH, animal_id)
