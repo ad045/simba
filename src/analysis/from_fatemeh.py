@@ -72,6 +72,7 @@ def generate_iid_signal(n, distribution='gaussian', **params):
     return signal
 
 def generate_esn_open(W, alpha=0.96):
+    W = W.astype(np.float32)
     ESN = ESNRegressor(
         n_reservoir=W.shape[0],
         spectral_radius =alpha, #0.08 * utils.find_spectral_radius(adj_mat)
@@ -84,7 +85,7 @@ def generate_esn_open(W, alpha=0.96):
         ridge_alpha=1e-10,
         random_state=283,
         fit_only_states=True,
-        W=W.astype(float),
+        W=W.astype(np.float32),
         store_states_train=True
         )
     return ESN
@@ -94,6 +95,7 @@ def generate_esn_open(W, alpha=0.96):
 #num_inputs equals number of nodes in the reservoir
 
 def compute_KR(network, num_inputs=150, threshold_method='relative', threshold_value=1e-2, alpha=0.96):
+    network = network.astype(np.float32)
     def signal_generator():
         return generate_iid_signal(150, 'gaussian', mu=0, sigma=1) # n is the length of the signal
 
@@ -105,6 +107,7 @@ def compute_KR(network, num_inputs=150, threshold_method='relative', threshold_v
     # Collect final reservoir states for each input stream
     final_states = []
     for signal in input_signals:
+        signal = signal.astype(np.float32)
         # Get reservoir states for this input
         reservoir_states = esn.fit(signal.reshape(-1,1), signal.reshape(-1,1)).states_train_
 

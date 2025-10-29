@@ -11,6 +11,7 @@ import scipy.signal as sig
 import scipy
 from numba import njit
 
+from scipy.sparse.csgraph import connected_components
 
 
 def spectral_radius(A):
@@ -28,6 +29,20 @@ def calculate_global_efficiency(G) -> float:
  
 
 def calculate_diffusion_efficiency(A): 
+    
+    # Check if network has disconnected components
+    # For directed networks, you need strong connectivity
+    n_components, labels = connected_components(A, directed=True, connection='strong')
+    
+    if n_components > 1:
+        print(f"Warning: Network has {n_components} strongly connected components")
+        # Return NaN for disconnected networks
+        return 0 #  np.nan
+        # Option 2: Only compute on largest component
+        # largest_component = np.argmax(np.bincount(labels))
+        # mask = labels == largest_component
+        # A = A[np.ix_(mask, mask)]
+        
     diff_efficiency_coeff, _ = diffusion_efficiency(A)
     return diff_efficiency_coeff
 

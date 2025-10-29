@@ -84,7 +84,6 @@ class StaticMetricCalculator(MetricCalculator):
             "avg_degree", 
             "degree_assortativity",
             "modularity",
-            "average_degree",
             "characteristic_path_length",
             "transitivity",
             "wiring_cost",
@@ -93,7 +92,7 @@ class StaticMetricCalculator(MetricCalculator):
             "n_connected_components",
             "omega",
             "topological_distance",
-            "resistance_distance",
+            "resistance_distance", 
             "degree_gini",
 
         } # TODO: Check if the list is complete or if I already implemented more than that.  
@@ -191,7 +190,7 @@ class DynamicMetricCalculator(MetricCalculator):
             "spectral_gap",
             "global_efficiency",
             "diffusion_efficiency",
-            "propagation_distance",
+            # "propagation_distance", # Does not make sense, maybe? 
             "propagation_efficiency",
             "spectral_gap_fatemeh", 
             "nct_control",
@@ -217,8 +216,8 @@ class DynamicMetricCalculator(MetricCalculator):
         elif metric_name == "diffusion_efficiency": 
             return calculate_diffusion_efficiency(self.A)
 
-        elif metric_name == "propagation_distance": # Kayson
-            return propagation_distance(self.A)
+        # elif metric_name == "propagation_distance": # Kayson
+        #     return propagation_distance(self.A)
             
         elif metric_name == "propagation_efficiency": # based on Kayson. but there could also be a netneurotools way?
             return 1/(propagation_distance(self.A).mean())
@@ -278,7 +277,7 @@ class ComputationMetricCalculator(MetricCalculator):
             return multifunctionality(self.A)
         
         elif metric_name == "kernel_rank_fatemeh":
-            return compute_kernel_rank_fatemeh(self.A)
+            return compute_kernel_rank_fatemeh(np.float64(self.A)) # , dtype=np.float32))
         
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
