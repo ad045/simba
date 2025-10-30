@@ -2,10 +2,14 @@ import numpy as np
 
 from src.analysis.from_fatemeh import compute_KR as compute_kernel_rank_fatemeh # needed for next script 
 
-# Kernel Rank (check)
+# Kernel Rank 
 def kernel_rank(A, threshold=0.01):
     eigs = np.linalg.eigvals(A)
-    return np.sum(np.abs(eigs) > threshold * np.abs(eigs).max())
+    return {
+        "thresholded_and_summed_0.01": np.sum(np.abs(eigs) > threshold * np.abs(eigs).max()), 
+        "max": np.abs(eigs).max(), 
+        "phase": np.angle(eigs)
+    }
 
 
 # Effective dimensionality (Participation Ratio) (check) 

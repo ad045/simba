@@ -104,12 +104,15 @@ def plot_voronoi_with_taxonomic_colors(visualizer, df, metric_name, title,
         metric_name=metric_name,
         savepath=None,  # Don't save yet
         dot_color="steelblue", 
+        eta_span=eta_span,
+        gamma_span=gamma_span,  
         show=False,
         show_dots=False,  # Don't show dots yet
         annotate_extremes=True, 
         estimated_indiv_connectomes=None,  # Add separately
         show_colorbar=True,
         normalize_aspect=normalize_aspect,
+        duplicate_handling=duplicate_handling, 
     )
     
     # Now add colored scatter points on top
@@ -219,10 +222,11 @@ if __name__ == "__main__":
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/33_suarez_MaMI_size_100_extensive_220_300_iter/all_metrics_for_exp_30_shafiei_size_68_interim_copy.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/49_suarez_MaMI_100/all_metrics_for_49_suarez_MaMI_100.csv"
         # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0.csv"
-        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0_updated.csv"
+        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/60_generally_finer_search_animal_0/all_metrics_for_60_generally_finer_search_animal_0_updated.csv"
+        "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206/all_metrics_for_75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206_updated copy.csv"
     ]
     
-    # Path to the enriched animal metadata
+    # Path to the enriched animal metadata # CHEAT!! TODO HACK 
     animal_metadata_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_50.csv" 
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_100.csv"
     
@@ -241,7 +245,13 @@ if __name__ == "__main__":
     
     # Whether to plot individual connectomes
     plot_indiv_connectomes = True
+    duplicate_handling = "mean" #"first" # mean, first, last. 
     
+    eta_span = [-8, 3]
+    gamma_span = [-0.1, 1]
+    
+    # Path to best gamma and eta estimations
+    path_to_best_gamma_and_eta_estimations = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/min_energy_results.csv" #  parent_folder / "min_energy_results.csv"
     # --- 3. Define Metrics to Plot ---
     
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
@@ -263,7 +273,37 @@ if __name__ == "__main__":
     #     "mean_mc_divided_by_wiring_cost",
     #     "mc_5_divided_by_wiring_cost", 
     # ] + [f"mc_{lag}" for lag in lags_to_plot]
-            "nct_control_avg","nct_control_std","nct_control_n_nodes_90_percent","nct_energies_energy_total","nct_energies_n_nodes_90_percent"
+            # "nct_control_avg","nct_control_std","nct_control_n_nodes_90_percent","nct_energies_energy_total","nct_energies_n_nodes_90_percent"
+        # "avg_clustering","avg_degree","degree_assortativity","modularity","characteristic_path_length","transitivity","wiring_cost","shortest_path_distance_mean","shortest_path_distance_std","structural_complexity","n_connected_components","topological_distance_mean","topological_distance_std","degree_gini","spectral_radius","spectral_gap","spectral_gap_fatemeh","global_efficiency","diffusion_efficiency","propagation_efficiency","nct_control_avg","nct_control_std","nct_control_n_nodes_90_percent","nct_control_n_nodes_50_percent","nct_energies_energy_total","nct_energies_std_node_energy","nct_energies_n_nodes_90_percent","nct_energies_n_nodes_50_percent","metastability_global","metastability_local_mean","metastability_local_std","metastability_local_kurtosis","kernel_rank","kernel_rank_fatemeh","effective_dimensionality","multifunctionality"
+        
+        
+        "density", "avg_clustering", "avg_degree", "degree_assortativity", "modularity", 
+        "characteristic_path_length", "transitivity", "wiring_cost", "shortest_path_distance", 
+        "structural_complexity", "n_connected_components", "omega",
+        "topological_distance", 
+            ## "resistance_distance", # DOES NOT WORK!! 
+        "degree_gini", 
+    
+        "spectral_radius", # works
+        "spectral_gap", # works
+        "spectral_gap_fatemeh", # works?
+        "global_efficiency", # works
+        "diffusion_efficiency", # -> Returns 0 if unconnected nodes exist: Error calculating diffusion_efficiency for net_eta3.5_gamma1.0_ruleMatchingIndex_id017.npy: Array must not contain infs or NaNs
+        "propagation_efficiency", # works
+        "nct_control",  # works
+        "nct_energies", # works
+        "metastability", # works
+        "synchronizability_eigenratio", # works 
+        "algebraic_connectivity_nx", # works
+        "kuramoto_synchronization", # works. But takes ages (maybe 3 hours for 11,000 networks?)
+        "community_synchronization_vulnerability", # works 
+    
+        
+        "kernel_rank", # works
+        "kernel_rank_fatemeh", # -> Lots of Runtime warnings in the echoes part of it (generate_esn_open) -> switch to pinv instad of ridge?: /opt/miniconda3/envs/ma_thesis/lib/python3.13/site-packages/sklearn/linear_model/_ridge.py:252: UserWarning: Singular matrix in solving dual problem. Using least-squares solution instead.
+        "effective_dimensionality", # works
+        "multifunctionality", # works?? - or does at least produce values??
+
     ]
     
     print(f"Starting Taxonomic Voronoi visualization process...")
@@ -298,7 +338,6 @@ if __name__ == "__main__":
             COLOR_BY = None
 
         # Load best estimates
-        path_to_best_gamma_and_eta_estimations = parent_folder / "min_energy_results.csv"
         df_best_gamma_and_eta_estimates = None
         if os.path.exists(path_to_best_gamma_and_eta_estimations):
             df_best_gamma_and_eta_estimates = pd.read_csv(path_to_best_gamma_and_eta_estimations)

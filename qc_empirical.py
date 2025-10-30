@@ -3,13 +3,30 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
-from scipy.spatial.distance import jensenshannon
 import networkx as nx
 from collections import defaultdict
 import warnings
 warnings.filterwarnings('ignore')
 
-# test 
+# Import from your existing modules
+from src.analysis.structural_measures import (
+    calculate_modularity,
+    calculate_avg_degree,
+    calculate_avg_clustering,
+    calculate_transitivity,
+    calculate_char_path_length,
+    calculate_degree_gini
+)
+
+from src.analysis.dynamic_measures import (
+    calculate_global_efficiency,
+)
+
+from src.analysis.kayson_utils import (
+    check_density,
+    compute_omega,
+)
+
 # Set plotting style
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
@@ -18,6 +35,7 @@ sns.set_palette("husl")
 class ConnectomeQualityChecker:
     """
     Comprehensive quality checker for empirical connectomes.
+    Uses existing metric functions from structural_measures, dynamic_measures, and kayson_utils.
     """
     
     def __init__(self, connectomes, threshold=None):
@@ -86,31 +104,44 @@ class ConnectomeQualityChecker:
         # ===== DEGREE DISTRIBUTION =====
         degrees_list = [d for n, d in G.degree()]
         self.metrics['degrees'].append(degrees_list)
-        self.metrics['mean_degree'].append(np.mean(degrees_list))
+        
+        # Use calculate_avg_degree from structural_measures
+        mean_degree = calculate_avg_degree(G)
+        self.metrics['mean_degree'].append(mean_degree)
         self.metrics['std_degree'].append(np.std(degrees_list))
         
         # Degree distribution shape (power law vs uniform)
         # Use coefficient of variation as simple metric
-        if np.mean(degrees_list) > 0:
-            cv_degree = np.std(degrees_list) / np.mean(degrees_list)
+        if mean_degree > 0:
+            cv_degree = np.std(degrees_list) / mean_degree
         else:
             cv_degree = 0
         self.metrics['cv_degree'].append(cv_degree)
         
+        # Degree Gini coefficient from structural_measures
+        gini = calculate_degree_gini(A_bin)
+        self.metrics['degree_gini'].append(gini)
+        
         # ===== SMALL-WORLD METRICS =====
         if nx.is_connected(G):
-            # Clustering coefficient
-            clustering = nx.average_clustering(G)
+            # Clustering coefficient - use calculate_avg_clustering
+            clustering = calculate_avg_clustering(G)
             self.metrics['clustering'].append(clustering)
             
-            # Characteristic path length
-            path_length = nx.average_shortest_path_length(G)
+            # Characteristic path length - use calculate_char_path_length
+            path_length = calculate_char_path_length(G)
             self.metrics['path_length'].append(path_length)
+            
+            # Global efficiency from dynamic_measures
+            global_eff = calculate_global_efficiency(G)
+            self.metrics['global_efficiency'].append(global_eff)
             
             # Small-world coefficient (sigma)
             # Compare to random graph
             try:
-                G_rand = nx.erdos_renyi_graph(self.n_nodes, nx.density(G))
+                # Use check_density from kayson_utils
+                density = check_density(A_bin)
+                G_rand = nx.erdos_renyi_graph(self.n_nodes, density)
                 C_rand = nx.average_clustering(G_rand)
                 L_rand = nx.average_shortest_path_length(G_rand)
                 
@@ -126,6 +157,7 @@ class ConnectomeQualityChecker:
             self.metrics['clustering'].append(np.nan)
             self.metrics['path_length'].append(np.nan)
             self.metrics['small_world_sigma'].append(np.nan)
+            self.metrics['global_efficiency'].append(np.nan)
         
         # ===== WEIGHT DISTRIBUTION =====
         weights = A[A > 0]  # Non-zero weights
@@ -148,11 +180,13 @@ class ConnectomeQualityChecker:
         # ===== MODULARITY =====
         if nx.is_connected(G) and G.number_of_edges() > 0:
             try:
-                communities = nx.community.greedy_modularity_communities(G)
-                modularity = nx.community.modularity(G, communities)
-                n_modules = len(communities)
-                
+                # Use calculate_modularity from structural_measures
+                modularity = calculate_modularity(G)
                 self.metrics['modularity'].append(modularity)
+                
+                # Get communities for module analysis
+                communities = nx.community.greedy_modularity_communities(G)
+                n_modules = len(communities)
                 self.metrics['n_modules'].append(n_modules)
                 
                 # Module size balance (should not be too skewed)
@@ -172,8 +206,19 @@ class ConnectomeQualityChecker:
             self.metrics['module_balance'].append(np.nan)
         
         # ===== DENSITY =====
-        density = nx.density(G)
+        # Use check_density from kayson_utils
+        density = check_density(A_bin)
         self.metrics['density'].append(density)
+        
+        # ===== TRANSITIVITY =====
+        # Use calculate_transitivity from structural_measures
+        transitivity = calculate_transitivity(G)
+        self.metrics['transitivity'].append(transitivity)
+        
+        # ===== OMEGA (Alternative clustering measure) =====
+        # Use compute_omega from kayson_utils
+        omega = compute_omega(A_bin)
+        self.metrics['omega'].append(omega)
         
     def _compute_quality_scores(self):
         """
@@ -205,7 +250,7 @@ class ConnectomeQualityChecker:
         scores += sigma_score * 15
         
         # 3. Degree distribution (20 points)
-        # Heavy-tailed is better (higher CV)
+        # Heavy-tailed is better (higher CV or Gini)
         cv_degree = np.array(self.metrics['cv_degree'])
         cv_score = np.clip(cv_degree / 1.0, 0, 1)
         scores += cv_score * 20
@@ -427,9 +472,13 @@ class ConnectomeQualityChecker:
             'density': self.metrics['density'],
             'mean_degree': self.metrics['mean_degree'],
             'cv_degree': self.metrics['cv_degree'],
+            'degree_gini': self.metrics['degree_gini'],
             'clustering': self.metrics['clustering'],
             'path_length': self.metrics['path_length'],
             'small_world_sigma': self.metrics['small_world_sigma'],
+            'global_efficiency': self.metrics['global_efficiency'],
+            'transitivity': self.metrics['transitivity'],
+            'omega': self.metrics['omega'],
             'weight_skew': self.metrics['weight_skew'],
             'modularity': self.metrics['modularity'],
             'n_modules': self.metrics['n_modules'],
@@ -459,7 +508,9 @@ class ConnectomeQualityChecker:
         
         print("\n📈 DEGREE DISTRIBUTION:")
         cv_mean = np.mean(self.metrics['cv_degree'])
+        gini_mean = np.nanmean(self.metrics['degree_gini'])
         print(f"  Mean CV of degree: {cv_mean:.2f}")
+        print(f"  Mean Gini coefficient: {gini_mean:.2f}")
         print(f"  {'✓ Heterogeneous (good)' if cv_mean > 0.5 else '⚠ Relatively uniform'}")
         
         print("\n⚖️ WEIGHT DISTRIBUTION:")

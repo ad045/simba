@@ -32,9 +32,9 @@ def analyze_empirical_connectomes(connectomes_path: str,
     """
     # 1. Load data from specified paths
     print(f"🧠 Loading connectomes from: {connectomes_path}")
-    connectomes = np.load(connectomes_path)
+    connectomes = np.load(connectomes_path).astype(float)
     print(f"📏 Loading distance matrix from: {distance_matrices_path}")
-    distance_matrices = np.load(distance_matrices_path)
+    distance_matrices = np.load(distance_matrices_path).astype(float)
     
     num_subjects, num_nodes, _ = connectomes.shape
     print(f"Found {num_subjects} connectomes with {num_nodes} nodes each.")
@@ -60,19 +60,19 @@ def analyze_empirical_connectomes(connectomes_path: str,
 
     # 3. Process each connectome individually
     for i in tqdm(range(num_subjects), desc="Analyzing individual connectomes"):
-        subject_connectome = connectomes[i, :, :]
-        distance_matrix = distance_matrices[i,:,:]
+        subject_connectome = connectomes[i, :, :].astype(float)
+        distance_matrix = distance_matrices[i,:,:].astype(float)
         
         if mode == "weighted_original_density": 
             pass 
         
         elif mode == "binarized": 
-            subject_connectome = threshold_network(subject_connectome, h_params["density"])
+            subject_connectome = threshold_network(subject_connectome.astype(float), h_params["density"])
             final_density = density_und(subject_connectome)
             print(f"Density of subject {i}: {final_density}.")
         
         elif mode == "binarized_but_with_orig_weights":  # not sure if this sensible... 
-            bin_connectome = threshold_network(subject_connectome, h_params["density"])
+            bin_connectome = threshold_network(subject_connectome.astype(float), h_params["density"])
             final_density = density_und(subject_connectome)
             subject_connectome = subject_connectome * bin_connectome
             print(f"Density of subject {i}: {final_density}. Shape is {subject_connectome.shape}.")

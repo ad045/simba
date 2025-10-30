@@ -489,4 +489,4 @@ def main(experiment_name: str):
 
 
 if __name__ == "__main__":
-    results = main(experiment_name="72_clean_10_000") # 71_testing_animal_0")
+    results = main(experiment_name="75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206") #63_fine_grid_animal_0") # 60_generally_finer_search_animal_0") # 72_clean_10_000") # 71_testing_animal_0")

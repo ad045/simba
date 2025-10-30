@@ -167,3 +167,124 @@ def calculate_metastability(A):
         "local_std": np.nanstd(meta_local), 
         "local_kurtosis": scipy.stats.kurtosis(meta_local, nan_policy='omit')
     }
+    
+    
+    
+    
+def compute_synchronizability_eigenratio(A): # Claude
+    """
+    Compute eigenratio R = λ_N / λ_2 of the graph Laplacian.
+    Lower R = easier to synchronize
+    """
+    G = nx.from_numpy_array(A)
+    
+    # Compute Laplacian eigenvalues
+    L = nx.laplacian_matrix(G).toarray()
+    eigenvalues = np.linalg.eigvalsh(L)
+    eigenvalues = np.sort(eigenvalues)
+    
+    # λ_2 is the algebraic connectivity (Fiedler value)
+    # λ_N is the largest eigenvalue
+    lambda_2 = eigenvalues[1]  # First non-zero
+    lambda_N = eigenvalues[-1]
+    
+    # Eigenratio
+    R = lambda_N / lambda_2 if lambda_2 > 1e-10 else np.inf
+    
+    return R, lambda_2, lambda_N
+
+
+def algebraic_connectivity_nx(adjacency_matrix): # Claude
+    G = nx.from_numpy_array(adjacency_matrix)
+    return nx.algebraic_connectivity(G)
+
+
+def kuramoto_synchronization(adjacency_matrix, n_steps=1000): # Claude
+    """
+    Simulate Kuramoto oscillators on the network
+    Returns: final order parameter (0=desynchronized, 1=synchronized)
+    """
+    n_nodes = adjacency_matrix.shape[0]
+    
+    # Initialize random phases
+    theta = np.random.uniform(0, 2*np.pi, n_nodes)
+    omega = np.random.normal(0, 0.1, n_nodes)  # Natural frequencies
+    
+    # Coupling strength
+    K = 1.0
+    dt = 0.01
+    
+    # Simulate
+    for _ in range(n_steps):
+        # Kuramoto equation
+        coupling = np.zeros(n_nodes)
+        for i in range(n_nodes):
+            for j in range(n_nodes):
+                coupling[i] += adjacency_matrix[i,j] * np.sin(theta[j] - theta[i])
+        
+        theta += dt * (omega + K * coupling / n_nodes)
+    
+    # Order parameter
+    r = np.abs(np.mean(np.exp(1j * theta)))
+    return r
+
+def community_synchronization_vulnerability(adjacency_matrix): # Claude
+    """
+    Measures how easily synchronization can spread between communities
+    High = cascades easily (epilepsy risk?)
+    
+    This function:
+    1. Detects communities using the Louvain algorithm
+    2. Calculates within-community and between-community coupling strengths
+    3. Returns vulnerability score (between/within ratio)
+    
+    Parameters:
+    -----------
+    adjacency_matrix : np.ndarray
+        Network adjacency matrix
+    
+    Returns:
+    --------
+    vulnerability : float
+        Ratio of between-community to within-community coupling
+    communities : list of lists
+        Detected communities (node indices)
+    """
+    import networkx as nx
+    # import nx.community as community_louvain
+    from networkx.algorithms.community.louvain import louvain_communities # louvain_partitions
+    
+    # Create graph from adjacency matrix
+    G = nx.from_numpy_array(adjacency_matrix)
+    
+    # Detect communities using Louvain algorithm
+    communities = louvain_communities(G) # louvain_partitions(G)
+    
+    # Convert partition dict to list of communities
+    # num_communities = max(partition.values()) + 1
+    # communities = [[] for _ in range(num_communities)]
+    # for node, comm_id in partition.items():
+    #     communities[comm_id].append(node)
+    
+    # Within-community coupling strength
+    within_strength = []
+    # Between-community coupling strength  
+    between_strength = []
+    
+    communities_as_lists = [list(c) for c in communities]
+    for c in communities_as_lists: 
+        for i, comm_i in enumerate(communities_as_lists):
+            for j, comm_j in enumerate(communities_as_lists):
+                # comm_i_2 = [c for c in comm_i]
+                # comm_j_2 = [c for c in comm_j]
+                coupling = adjacency_matrix[np.ix_(comm_i, comm_j)].sum()
+
+            if i == j:
+                within_strength.append(coupling)
+            else:
+                between_strength.append(coupling)
+    
+    # Vulnerability score
+    vulnerability = np.mean(between_strength) / np.mean(within_strength)
+    
+    return vulnerability, communities

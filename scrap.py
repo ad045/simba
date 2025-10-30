@@ -13,3 +13,4 @@ for animal_id in [206, 0, 188, 169, 103]:
     print(f"\n\n=== Running evaluation for animal ID: {animal_id} ===\n")
     run_eval(experiment_name=f"72_clean_10_000_animal_{animal_id}")
 
+w
