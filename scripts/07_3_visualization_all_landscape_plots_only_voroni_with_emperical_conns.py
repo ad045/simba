@@ -14,33 +14,38 @@ from src.visualization.energy_and_mc_landscape import generate_entire_df, Pipeli
 
 if __name__ == "__main__":
     
-    experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"
+    ##### CONFIG STUFF #######################
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/76_90000_samples_animal_206/all_metrics_for_76_90000_samples_animal_206.csv
+    experiment_name = "76_90000_samples_animal_206" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"
     base_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/{experiment_name}")
     save_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated_combined.csv"
-    df_static_path = base_path / f"all_static_metrics_for_{experiment_name}_updated.csv"
-    df_static = pd.read_csv(df_static_path)
-    df_dynamic_path = base_path / f"all_dynamic_metrics_for_{experiment_name}_updated.csv"
-    df_dynamic = pd.read_csv(df_dynamic_path)
-    df_computational_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated.csv"
-    df_computational = pd.read_csv(df_computational_path)
-    df_combined = pd.concat([df_static, df_dynamic, df_computational], axis=1)
+    all_metrics_file = True 
 
-    df_combined.to_csv(save_path)
+    ##########################################
+    if all_metrics_file: 
+        df_paths = [base_path / f"all_metrics_for_{experiment_name}.csv"]
+
+    else: 
+        df_static_path = base_path / f"all_static_metrics_for_{experiment_name}_updated.csv"
+        df_static = pd.read_csv(df_static_path)
+        df_dynamic_path = base_path / f"all_dynamic_metrics_for_{experiment_name}_updated.csv"
+        df_dynamic = pd.read_csv(df_dynamic_path)
+        df_computational_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated.csv"
+        df_computational = pd.read_csv(df_computational_path)
+        df_combined = pd.concat([df_static, df_dynamic, df_computational], axis=1)
+
+        df_combined.to_csv(save_path)
     # --- 1. Define Input and Output ---
     
-    animal_id = 0
-    # List of CSV files containing the GNM sweep results.
-    df_paths = [ 
-        # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206/all_dynamic_metrics_for_75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206_updated.csv"
-        save_path
-    ]      
+        # animal_id = 0
+        # List of CSV files containing the GNM sweep results.
+        df_paths = [save_path]      
 
     plot_indiv_connectomes = False # True # False # True # False # True #  False # True # False
     duplicate_handling = "mean" #"first" # mean, first, last. 
     show_number_samples = True #  False,
     eta_span = [-8, 3]
     gamma_span = [-0.1, 1]
-    ##############
     
     
     # The folder where the final figures will be saved.
@@ -59,54 +64,54 @@ if __name__ == "__main__":
     
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
     metrics_to_plot = [
-        # "omega"
-    # #     ############## ORIG ##################
-    #     "MaxCriteria",
-    #     "avg_communicability", 
-    #     "global_efficiency", 
-    #     "modularity", 
-    #     "avg_clustering", 
-    #     # "avg_degree", 
-    #     "transitivity", 
-    #     "avg_edge_distance", 
-    #     "char_path_length", 
-    #     "richclub_n_edges", 
-    #     "richclub_avg_length", 
-    #     "mc_mean", 
-    #     "mc_std", 
-    #     "wiring_cost", 
-    #     "mean_mc_divided_by_wiring_cost",
-    #     "mc_5_divided_by_wiring_cost", 
-    # ] + [f"mc_{lag}" for lag in lags_to_plot
+    ############### ORIG ####################################
+        "MaxCriteria",
+        "avg_communicability", 
+        "global_efficiency", 
+        "modularity", 
+        "avg_clustering", 
+        # "avg_degree", 
+        "transitivity", 
+        "avg_edge_distance", 
+        "char_path_length", 
+        "richclub_n_edges", 
+        "richclub_avg_length", 
+        "mc_mean", 
+        "mc_std", 
+        "wiring_cost", 
+        "mean_mc_divided_by_wiring_cost",
+        "mc_5_divided_by_wiring_cost", 
+    ] + [f"mc_{lag}" for lag in lags_to_plot
 
+    ############### NEW #####################################
     # "spectral_radius","spectral_gap","spectral_gap_fatemeh","global_efficiency","diffusion_efficiency","propagation_efficiency","nct_control_avg","nct_control_std","nct_control_n_nodes_90_percent","nct_control_n_nodes_50_percent","nct_energies_energy_total","nct_energies_std_node_energy","nct_energies_n_nodes_90_percent","nct_energies_n_nodes_50_percent","metastability_global","metastability_local_mean","metastability_local_std","metastability_local_kurtosis"
 
-        "density", "avg_clustering", "avg_degree", "degree_assortativity", "modularity", 
-        "characteristic_path_length", "transitivity", "wiring_cost", "shortest_path_distance", 
-        "structural_complexity", "n_connected_components", "omega",
-        "topological_distance", 
-            ## "resistance_distance", # DOES NOT WORK!! 
-        "degree_gini", 
+        # "density", "avg_clustering", "avg_degree", "degree_assortativity", "modularity", 
+        # "characteristic_path_length", "transitivity", "wiring_cost", "shortest_path_distance", 
+        # "structural_complexity", "n_connected_components", "omega",
+        # "topological_distance", 
+        #     ## "resistance_distance", # DOES NOT WORK!! 
+        # "degree_gini", 
     
-        "spectral_radius", # works
-        "spectral_gap", # works
-        "spectral_gap_fatemeh", # works?
-        "global_efficiency", # works
-        "diffusion_efficiency", # -> Returns 0 if unconnected nodes exist: Error calculating diffusion_efficiency for net_eta3.5_gamma1.0_ruleMatchingIndex_id017.npy: Array must not contain infs or NaNs
-        "propagation_efficiency", # works
-        "nct_control",  # works
-        "nct_energies", # works
-        "metastability", # works
-        "synchronizability_eigenratio", # works 
-        "algebraic_connectivity_nx", # works
-        "kuramoto_synchronization", # works. But takes ages (maybe 3 hours for 11,000 networks?)
-        "community_synchronization_vulnerability", # works 
+        # "spectral_radius", # works
+        # "spectral_gap", # works
+        # "spectral_gap_fatemeh", # works?
+        # "global_efficiency", # works
+        # "diffusion_efficiency", # -> Returns 0 if unconnected nodes exist: Error calculating diffusion_efficiency for net_eta3.5_gamma1.0_ruleMatchingIndex_id017.npy: Array must not contain infs or NaNs
+        # "propagation_efficiency", # works
+        # "nct_control",  # works
+        # "nct_energies", # works
+        # "metastability", # works
+        # "synchronizability_eigenratio", # works 
+        # "algebraic_connectivity_nx", # works
+        # "kuramoto_synchronization", # works. But takes ages (maybe 3 hours for 11,000 networks?)
+        # "community_synchronization_vulnerability", # works 
     
         
-        "kernel_rank", # works
-        "kernel_rank_fatemeh", # -> Lots of Runtime warnings in the echoes part of it (generate_esn_open) -> switch to pinv instad of ridge?: /opt/miniconda3/envs/ma_thesis/lib/python3.13/site-packages/sklearn/linear_model/_ridge.py:252: UserWarning: Singular matrix in solving dual problem. Using least-squares solution instead.
-        "effective_dimensionality", # works
-        "multifunctionality", # works?? - or does at least produce values??
+        # "kernel_rank", # works
+        # "kernel_rank_fatemeh", # -> Lots of Runtime warnings in the echoes part of it (generate_esn_open) -> switch to pinv instad of ridge?: /opt/miniconda3/envs/ma_thesis/lib/python3.13/site-packages/sklearn/linear_model/_ridge.py:252: UserWarning: Singular matrix in solving dual problem. Using least-squares solution instead.
+        # "effective_dimensionality", # works
+        # "multifunctionality", # works?? - or does at least produce values??
 
     ]
 
