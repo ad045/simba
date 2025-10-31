@@ -99,3 +99,10 @@ scripts/run_gnm_automated_outp_path_creation_2_3_with_indiv_conns_copy.sh: line 
 # Check for orphaned processes
 ps aux | grep python
 # Kill any lingering multiprocessing workers if needed
+
+
+
+
+# After installing a new font: 
+        import matplotlib.font_manager as fm
+        fm._load_fontmanager(try_read_cache=False)

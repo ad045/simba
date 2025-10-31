@@ -8,7 +8,8 @@ def kernel_rank(A, threshold=0.01):
     return {
         "thresholded_and_summed_0.01": np.sum(np.abs(eigs) > threshold * np.abs(eigs).max()), 
         "max": np.abs(eigs).max(), 
-        "phase": np.angle(eigs)
+        "phase_of_lambda_max": np.angle(eigs.max()), 
+        "phase_diff_of_lambda_max_and_2nd": np.angle(eigs[np.argsort(np.abs(eigs))[-2]]) - np.angle(eigs.max()), 
     }
 
 

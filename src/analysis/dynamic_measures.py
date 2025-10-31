@@ -106,12 +106,15 @@ def calculate_nct_control(A,
     ac = ave_control(A_norm=A_norm, system=system)
     n_90 = np.sum(np.cumsum(np.sort(ac)[::-1]) <= 0.9 * sum(ac)) # + 1
     # print('number of nodes accounting for 90% of total control =', n_90)   
-    n_50 = np.sum(np.cumsum(np.sort(ac)[::-1]) <= 0.5 * sum(ac)) # + 1      
-    
+    n_50 = np.sum(np.cumsum(np.sort(ac)[::-1]) <= 0.5 * sum(ac)) # + 1
+    n_10 = np.sum(np.cumsum(np.sort(ac)[::-1]) <= 0.1 * sum(ac)) # + 1
+
     return {"avg": np.mean(ac),
             "std": np.std(ac),
+            "max": np.max(ac),
             "n_nodes_90_percent": n_90,
-            "n_nodes_50_percent": n_50}
+            "n_nodes_50_percent": n_50,
+            "n_nodes_10_percent": n_10}
 
 
 def calculate_nct_energies(A): 
@@ -141,12 +144,15 @@ def calculate_nct_energies(A):
     # get the number of nodes whose sum of control energy accounts for 90% of the total energy
     n_90 = np.sum(np.cumsum(np.sort(node_energy)[::-1]) <= 0.9 * energy) # + 1
     # print('number of nodes accounting for 90% of total energy =', n_90)
-    n_50 = np.sum(np.cumsum(np.sort(node_energy)[::-1]) <= 0.5 * energy) # + 1         
-    
-    return {"energy_total": energy,
-            "std_node_energy": std_node_energy,
+    n_50 = np.sum(np.cumsum(np.sort(node_energy)[::-1]) <= 0.5 * energy) # + 1
+    n_10 = np.sum(np.cumsum(np.sort(node_energy)[::-1]) <= 0.1 * energy) # + 1
+
+    return {"total": energy,
+            "std": std_node_energy,
+            "max": np.max(node_energy),
             "n_nodes_90_percent": n_90,
             "n_nodes_50_percent": n_50,
+            "n_nodes_10_percent": n_10,
             }
 
 
@@ -165,6 +171,7 @@ def calculate_metastability(A):
         "global": meta_global, 
         "local_mean": np.nanmean(meta_local), 
         "local_std": np.nanstd(meta_local), 
+        "local_skewness": scipy.stats.skew(meta_local, nan_policy='omit'),
         "local_kurtosis": scipy.stats.kurtosis(meta_local, nan_policy='omit')
     }
     
@@ -191,7 +198,7 @@ def compute_synchronizability_eigenratio(A): # Claude
     # Eigenratio
     R = lambda_N / lambda_2 if lambda_2 > 1e-10 else np.inf
     
-    return R, lambda_2, lambda_N
+    return {"eigenratio": R, "lambda_2": lambda_2, "lambda_N": lambda_N}
 
 
 def algebraic_connectivity_nx(adjacency_matrix): # Claude
@@ -287,4 +294,5 @@ def community_synchronization_vulnerability(adjacency_matrix): # Claude
     # Vulnerability score
     vulnerability = np.mean(between_strength) / np.mean(within_strength)
     
-    return vulnerability, communities
+    # return # vulnerability, communities
+    return {"vulnerability": vulnerability, "n_communities": len(communities)}

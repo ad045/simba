@@ -338,6 +338,26 @@ def _load_distance_matrix_once(distance_matrix_path):
     
     return _worker_distance_matrix
 
+def convert_to_python_types(obj):
+    """
+    Recursively convert NumPy types to Python native types for pickling.
+    """
+    if isinstance(obj, dict):
+        return {k: convert_to_python_types(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return type(obj)(convert_to_python_types(item) for item in obj)
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        if obj.size == 1:
+            return convert_to_python_types(obj.item())
+        return obj.tolist()
+    elif isinstance(obj, (np.bool_, bool)):
+        return bool(obj)
+    else:
+        return obj
 
 def process_network_file(file_info, distance_matrix_path, metric_categories, metrics_to_calculate=None):
     """
@@ -390,13 +410,41 @@ def process_network_file(file_info, distance_matrix_path, metric_categories, met
                 try:
                     result = calculator.calculate_metric(metric)
                     
+                      
+                    # Convert to Python native types for pickling
+                    result = convert_to_python_types(result)
+                    
                     # Handle dict results by unpacking with prefix
                     if isinstance(result, dict):
                         for key, value in result.items():
                             results[category][f"{metric}_{key}"] = value
                     else:
-                        # Store scalar result directly
                         results[category][metric] = result
+                            
+                            
+                            
+                    # # Handle dict results by unpacking with prefix
+                    # if isinstance(result, dict):
+                    #     for key, value in result.items():
+                    #         # Validate that dict values are scalars
+                    #         if isinstance(value, (np.ndarray, list)):
+                    #             print(f"Warning: {metric}_{key} for {name} returned array/list, storing as NaN")
+                    #             results[category][f"{metric}_{key}"] = np.nan
+                    #         else:
+                    #             results[category][f"{metric}_{key}"] = value
+                    #         # results[category][f"{metric}_{key}"] = value
+                    # else:
+                    #     # Store scalar result directly
+                    #     # results[category][metric] = result
+                    #     # Validate that result is a scalar, not an array
+                    #     if isinstance(result, (np.ndarray, list)):
+                    #         print(f"Warning: {metric} for {name} returned array/list instead of scalar, storing as NaN")
+                    #         results[category][metric] = np.nan
+                    #     else:
+                    #         # Store scalar result directly
+                    #         results[category][metric] = result
+                            
+                    
                         
                 except Exception as e:
                     print(f"Error calculating {metric} for {name}: {e}")
@@ -626,7 +674,8 @@ def multiprocess_networks(n_processes=None,
 
 if __name__ == "__main__":
     
-    EXPERIMENT = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 71_testing_animal_0"
+    EXPERIMENT = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 71_testing_animal_0"
+
     DATASET = "suarez_MaMI_dataset"
     base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
     
@@ -635,21 +684,23 @@ if __name__ == "__main__":
     # Define metrics to calculate
     interesting_metrics = {
         "static": [
-            "density", # works
-            "avg_clustering", # works
-            "avg_degree", # works
-            "degree_assortativity", # works
-            "modularity", # works
-            "characteristic_path_length", # works
-            "transitivity", # works
+            # "density", # works # done
+            # "avg_clustering", # works # done
+            # "avg_degree", # works # done
+            # "degree_assortativity", # works # done
+            # "modularity", # works # done
+            # "characteristic_path_length", # works # done
+            # "transitivity", # works # done
+            
             "wiring_cost", # works
-            "shortest_path_distance", # works
-            "structural_complexity", # works
-            "n_connected_components", # works
-            "omega", # works
-            "topological_distance", # works
-            # "resistance_distance", # DOES NOT WORK!! 
-            "degree_gini", # works
+            # "shortest_path_distance", # works
+            # "structural_complexity", # works
+            # "n_connected_components", # works
+            
+            # "omega", # works
+            # "topological_distance", # works
+            # # "resistance_distance", # DOES NOT WORK!! 
+            # "degree_gini", # works
         ], 
         "dynamic": [
             # "spectral_radius", # works

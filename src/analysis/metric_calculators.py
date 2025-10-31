@@ -144,9 +144,10 @@ class StaticMetricCalculator(MetricCalculator):
             return calculate_wiring_cost(self.A, self.distance_matrix)
         
         if metric_name == "shortest_path_distance": # Kayson
-            shortest_path_distance_matrix = shortest_path_distance(self.A)
-            return {"mean": np.nanmean(shortest_path_distance_matrix),
-                    "std": np.nanstd(shortest_path_distance_matrix)}
+            # shortest_path_distance_matrix = shortest_path_distance(self.A)
+            # return {"mean": np.nanmean(shortest_path_distance_matrix),
+            #         "std": np.nanstd(shortest_path_distance_matrix)}
+            return shortest_path_distance(self.A)
         
         elif metric_name == "structural_complexity": # Kayson
             return compute_structural_complexity(self.A)
@@ -243,8 +244,9 @@ class DynamicMetricCalculator(MetricCalculator):
             return calculate_metastability(self.A)
  
         elif metric_name == "synchronizability_eigenratio":
-            R, lambda_2, lambda_N = compute_synchronizability_eigenratio(self.A)
-            return {"eigenratio": R, "lambda_2": lambda_2, "lambda_N": lambda_N}
+            return compute_synchronizability_eigenratio(self.A)
+            # R, lambda_2, lambda_N = compute_synchronizability_eigenratio(self.A)
+            # return {"eigenratio": R, "lambda_2": lambda_2, "lambda_N": lambda_N}
         
         elif metric_name == "algebraic_connectivity_nx":
             return algebraic_connectivity_nx(self.A)
@@ -253,8 +255,9 @@ class DynamicMetricCalculator(MetricCalculator):
             return kuramoto_synchronization(self.A, n_steps=1000)
         
         elif metric_name == "community_synchronization_vulnerability":
-            vulnerability, communities = community_synchronization_vulnerability(self.A)
-            return {"vulnerability": vulnerability, "n_communities": len(communities)}
+            return community_synchronization_vulnerability(self.A)
+            # vulnerability, communities = community_synchronization_vulnerability(self.A)
+            # return {"vulnerability": vulnerability, "n_communities": len(communities)}
 
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
