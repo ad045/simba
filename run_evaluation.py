@@ -245,7 +245,7 @@ def main(experiment_name: str):
     ########### HARDCODED STUFF ##############################################
 
     dataset_name = "suarez_MaMI_dataset"
-    # experiment_name = "71_testing_animal_0" # 67_testing_animal_0" # 66_filling_in_the_upper_region_animal_0"
+    # experiment_name = IS IN __MAIN__ # "71_testing_animal_0" # 67_testing_animal_0" # 66_filling_in_the_upper_region_animal_0"
     
     path_config = PathConfig( 
         dataset_name=dataset_name,
@@ -489,4 +489,4 @@ def main(experiment_name: str):
 
 
 if __name__ == "__main__":
-    results = main(experiment_name="75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206") #63_fine_grid_animal_0") # 60_generally_finer_search_animal_0") # 72_clean_10_000") # 71_testing_animal_0")
+    results = main(experiment_name="76_90000_samples_animal_206") # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206") #63_fine_grid_animal_0") # 60_generally_finer_search_animal_0") # 72_clean_10_000") # 71_testing_animal_0")

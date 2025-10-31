@@ -96,7 +96,7 @@ def cleanup_temp_config(temp_config_path: str):
 def main():
     """Main execution loop."""
     start_time = time.time()
-    animals_to_analyze = [0, 206, 188, 169, 103] # range(ANIMAL_START, ANIMAL_END + 1)
+    animals_to_analyze = [206, 0, 188, 169, 103] # range(ANIMAL_START, ANIMAL_END + 1)
     total_animals = len(animals_to_analyze)
     successful = 0
     failed = 0
