@@ -969,7 +969,8 @@ def shortest_path_distance(adjacency_matrix,coordinates = None):
                     dist_matrix[i, k] + dist_matrix[k, j]
                 )
 
-    return dist_matrix
+    return {"mean": np.nanmean(dist_matrix),
+            "std": np.nanstd(dist_matrix)}
 
 @jit_safe()
 def weighted_shortest_path_distance(adjacency_matrix, coordinates):
