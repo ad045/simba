@@ -674,7 +674,8 @@ def multiprocess_networks(n_processes=None,
 
 if __name__ == "__main__":
     
-    EXPERIMENT = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 71_testing_animal_0"
+    EXPERIMENT = "76_90000_samples_animal_206"
+    # "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 71_testing_animal_0"
 
     DATASET = "suarez_MaMI_dataset"
     base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
@@ -709,8 +710,8 @@ if __name__ == "__main__":
             # "global_efficiency", # works
             # "diffusion_efficiency", # -> Returns 0 if unconnected nodes exist: Error calculating diffusion_efficiency for net_eta3.5_gamma1.0_ruleMatchingIndex_id017.npy: Array must not contain infs or NaNs
             # "propagation_efficiency", # works
-            # "nct_control",  # works
-            # "nct_energies", # works
+            "nct_control",  # works
+            "nct_energies", # works
             # "metastability", # works
             # "synchronizability_eigenratio", # works 
             # "algebraic_connectivity_nx", # works

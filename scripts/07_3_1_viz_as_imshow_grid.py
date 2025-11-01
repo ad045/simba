@@ -15,9 +15,57 @@ from matplotlib import cm
 
 from src.visualization.energy_and_mc_landscape import generate_entire_df, PipelineVisualizer
 
+
 class GridVisualizer(PipelineVisualizer):
     """Extension of PipelineVisualizer for gridded data visualization using imshow."""
     
+    def __init__(self, 
+                 mode: str="draft", # "presentation"
+                 **kwargs):
+        """Initialize GridVisualizer with optional mode.
+        Args:
+            mode: If "draft", use parent's colorbar formatting. In "presentation" mode, use aesthetic formating. 
+        """
+        super().__init__(**kwargs)
+        self.mode = mode 
+        
+        
+    def _format_colorbar(self, metric_name: str, cbar) -> None:
+        """Format colorbar with appropriate label."""
+        
+        # In draft mode, use parent's formatting
+        if self.mode == "draft":
+            super()._format_colorbar(metric_name, cbar)
+
+        elif self.mode == "presentation":
+            # Aesthetic formatting ("presentation" mode)
+            from matplotlib.ticker import ScalarFormatter
+            formatter = ScalarFormatter(useMathText=True)
+            formatter.set_scientific(True)
+            formatter.set_powerlimits((-2, 3))  # Use scientific notation outside this range
+            cbar.ax.yaxis.set_major_formatter(formatter)
+            
+            # print(cbar.ax.yaxis)
+            # # Get the highest and lowest selected ticks
+            # ticks = cbar.ax.get_yticks()
+            # vmin = ticks[0]
+            # vmax = ticks[-1]
+            
+            ticks = cbar.ax.get_yticks()
+            vmin, vmax = cbar.ax.get_ylim()
+            visible_ticks = ticks[(ticks >= vmin) & (ticks <= vmax)]
+            lowest_tick = visible_ticks[0]
+            highest_tick = visible_ticks[-1]
+            
+            # Show only min and max ticks
+            # vmin, vmax = cbar.mappable.get_clim() # cbar.get_clim()
+            cbar.set_ticks([lowest_tick, highest_tick]) # [vmin, vmax])
+
+        else: 
+            raise ValueError(f"Unknown mode (see colorbar code): {self.mode}")
+        
+        
+
     def plot_metric_landscape_grid(self, df: pd.DataFrame,
                                    dot_color: str = "steelblue",
                                    title: str = "",
@@ -64,8 +112,10 @@ class GridVisualizer(PipelineVisualizer):
         )
         
         # Create or use provided axis
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(6.2, 5.2))
+        if ax is None and self.mode == "presentation":
+            fig, ax = plt.subplots(figsize=(viz.cm_to_inch((18, 18*0.52/0.62))), dpi=150) # (6.2, 5.2))
+        elif ax is None and self.mode == "draft":
+            fig, ax = plt.subplots(figsize=(6.2, 5.2), dpi=100) # (6.2, 5.2))
         else:
             fig = ax.get_figure()
         
@@ -75,7 +125,7 @@ class GridVisualizer(PipelineVisualizer):
         # Plot using imshow
         extent = [eta_edges[0], eta_edges[-1], gamma_edges[0], gamma_edges[-1]]
         im = ax.imshow(grid_data, origin='lower', extent=extent,
-                      aspect='auto', cmap=colormap, vmin=vmin, vmax=vmax,
+                      aspect='equal', cmap=colormap, vmin=vmin, vmax=vmax,
                       interpolation=interpolation)
         
         # Add colorbar
@@ -155,7 +205,7 @@ if __name__ == "__main__":
     base_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/{experiment_name}")
     save_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated_combined.csv"
     all_metrics_file = True 
-
+    mode = "draft" # presentation"  # "draft" or "presentation"
     ##########################################
     if all_metrics_file: 
         df_paths = [base_path / f"all_metrics_for_{experiment_name}{appendix}.csv"]
@@ -179,9 +229,9 @@ if __name__ == "__main__":
     # Output directory
     parent_folder = Path(df_paths[0]).parent
     if duplicate_handling == "first" or duplicate_handling == "last": 
-        save_path = parent_folder / f"figures_grid_only_{duplicate_handling}"
+        save_path = parent_folder / f"figures_grid_only_{mode}_{duplicate_handling}"
     elif duplicate_handling == "mean": 
-        save_path = parent_folder / f"figures_grid_only_mean"
+        save_path = parent_folder / f"figures_grid_only_{mode}_mean"
     else: 
         print("Attention: Duplicate handling is not really set.")
         exit()
@@ -277,7 +327,7 @@ if __name__ == "__main__":
         print(f"ERROR: Failed to load data. {e}")
         exit()
 
-    visualizer = GridVisualizer()
+    visualizer = GridVisualizer(mode=mode)
     
     # --- 4. Generate Individual Plots in a Loop ---
     for metric in metrics_to_plot:
@@ -329,18 +379,35 @@ if __name__ == "__main__":
             figure_save_name = f"grid_landscape_{metric}.pdf"
             full_save_path = save_dir / figure_save_name
 
+            # Get good cmap 
+            # from pypalettes import load_cmap
+            # cmap = load_cmap("Antique")
+            if mode == "presentation":
+                from vizman import viz
+                viz.set_visual_style()
+                default_cmaps = viz.give_colormaps()
+                cmap = default_cmaps["hb_bw"] # topological_map"] # hb_bw"] 
+            elif mode == "draft":
+                cmap = "hot"
+                
+            if mode == "draft": 
+                annotate_extremes = True
+            elif mode == "presentation":
+                annotate_extremes = False
+                
             print("Using e.g.:", df_paths[0])
             fig, ax = visualizer.plot_metric_landscape_grid(
                 df, 
                 title=plot_title,
                 metric_name=metric_col_name,
                 savepath=full_save_path,
+                cmap=cmap, 
                 dot_color="steelblue", 
                 eta_span=eta_span,
                 gamma_span=gamma_span,
                 show=False,
                 show_dots=False,
-                annotate_extremes=True, 
+                annotate_extremes=annotate_extremes, 
                 estimated_indiv_connectomes=df_best_gamma_and_eta_estimates if plot_indiv_connectomes else None, 
                 duplicate_handling=duplicate_handling, 
                 show_number_samples=show_number_samples,

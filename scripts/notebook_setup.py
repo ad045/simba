@@ -3,6 +3,10 @@ import sys
 import os 
 from IPython import get_ipython
 
+from pathlib import Path 
+import matplotlib.pyplot as plt
+from pathlib import Path
+import numpy as np
 
 # Define paths here 
 DATA_PATH = Path("/Users/adrian/Documents/01_projects/14_4D_lab/data")
@@ -72,3 +76,56 @@ OUTPUT_PATH = env["OUTPUT_PATH"] / "05_plotting_energy_grids"
 PREPROCESSED_PATH = env["PREPROCESSED_PATH"] / "01_first_analysises"
 
 """
+
+
+# def setup_kaysons_design(): 
+        
+#     from vizman import viz
+#     # import numpy as np
+#     # import matplotlib.pyplot as plt
+#     # import seaborn as sns
+    
+#     # import warnings
+#     # import scipy
+#     # import networkx as nx
+#     # import seaborn as sns
+#     # import utils as ut
+#     # import pandas as pd
+#     # import numpy as np
+
+#     # import matplotlib.pyplot as plt
+#     # import matplotlib.animation as animation
+#     # import matplotlib.colors as mcolors
+#     # import matplotlib.ticker as ticker
+
+#     # from tqdm import tqdm
+#     # from msapy import msa
+
+#     # from IPython.display import HTML
+
+#     # from scipy.stats import pearsonr, spearmanr
+#     # from scipy.spatial.distance import pdist, squareform, cosine
+#     # from scipy.special import factorial
+
+#     # from sklearn.preprocessing import StandardScaler
+#     # from sklearn.model_selection import train_test_split, ParameterGrid
+#     # from sklearn.linear_model import LinearRegression, LassoCV
+
+#     # from netneurotools.metrics import (
+#     #     communicability_wei,
+#     #     communicability_bin,
+#     #     distance_wei_floyd,
+#     # )
+    
+#     # from matplotlib import font_manager
+
+
+#     for font in font_manager.findSystemFonts("figures/Atkinson_Typeface/"):
+#         font_manager.fontManager.addfont(font)
+
+#     viz.set_visual_style()
+#     default_sizes = viz.load_data_from_json("sizes.json")
+#     default_colors = viz.load_data_from_json("colors.json")
+#     default_cmaps = viz.give_colormaps()
+    
+#     return default_sizes, default_colors, default_cmaps
