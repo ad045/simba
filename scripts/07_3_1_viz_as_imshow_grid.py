@@ -148,14 +148,17 @@ class GridVisualizer(PipelineVisualizer):
 if __name__ == "__main__":
     
     ##### CONFIG STUFF #######################
-    experiment_name = "76_90000_samples_animal_206"
+    experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
+        # all metrics: "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" (with appendix ==  "_updated")
+        # high resolution: 76_90000_samples_animal_206"
+    appendix = "_updated" # or ""^
     base_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/{experiment_name}")
     save_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated_combined.csv"
     all_metrics_file = True 
 
     ##########################################
     if all_metrics_file: 
-        df_paths = [base_path / f"all_metrics_for_{experiment_name}.csv"]
+        df_paths = [base_path / f"all_metrics_for_{experiment_name}{appendix}.csv"]
     else: 
         df_static_path = base_path / f"all_static_metrics_for_{experiment_name}.csv"
         df_static = pd.read_csv(df_static_path)
@@ -187,48 +190,62 @@ if __name__ == "__main__":
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 12, 15, 18, 20, 49]
     metrics_to_plot = [
         ############### ORIG ####################################
-        "MaxCriteria",
-        "avg_communicability", 
-        "global_efficiency", 
-        "modularity", 
-        "avg_clustering", 
-        # "avg_degree", 
-        "transitivity", 
-        "avg_edge_distance", 
-        "char_path_length", 
-        "richclub_n_edges", 
-        "richclub_avg_length", 
-        "mc_mean", 
-        "mc_std", 
-        "wiring_cost", 
-        "mean_mc_divided_by_wiring_cost",
-        "mc_5_divided_by_wiring_cost", 
-    ] + [f"mc_{lag}" for lag in lags_to_plot
-
+    #     "MaxCriteria",
+    #     "avg_communicability", 
+    #     "global_efficiency", 
+    #     "modularity", 
+    #     "avg_clustering", 
+    #     # "avg_degree", 
+    #     "transitivity", 
+    #     "avg_edge_distance", 
+    #     "char_path_length", 
+    #     "richclub_n_edges", 
+    #     "richclub_avg_length", 
+    #     "mc_mean", 
+    #     "mc_std", 
+    #     "wiring_cost", 
+    #     "mean_mc_divided_by_wiring_cost",
+    #     "mc_5_divided_by_wiring_cost", 
+    # ] + [f"mc_{lag}" for lag in lags_to_plot
     ############### NEW #####################################
-    
-        # "density", "avg_clustering", "avg_degree", "degree_assortativity", "modularity", 
-        # "characteristic_path_length", "transitivity", "wiring_cost", "shortest_path_distance", 
-        # "structural_complexity", "n_connected_components", "omega",
-        # "topological_distance", 
-        # "degree_gini", 
+        "density","avg_clustering","avg_degree","degree_assortativity","modularity","transitivity","topological_distance_mean","topological_distance_std",
+        "degree_gini","wiring_cost","structural_complexity","n_connected_components","omega","spectral_radius","spectral_gap","spectral_gap_fatemeh","global_efficiency","diffusion_efficiency","propagation_efficiency","nct_control_avg","nct_control_std","nct_control_max","nct_control_n_nodes_90_percent","nct_control_n_nodes_50_percent","nct_control_n_nodes_10_percent","nct_energies_total","nct_energies_std","nct_energies_max","nct_energies_n_nodes_90_percent","nct_energies_n_nodes_50_percent","nct_energies_n_nodes_10_percent","metastability_global","metastability_local_mean","metastability_local_std","metastability_local_skewness","metastability_local_kurtosis","synchronizability_eigenratio_eigenratio","synchronizability_eigenratio_lambda_2","synchronizability_eigenratio_lambda_N","algebraic_connectivity_nx","kuramoto_synchronization","community_synchronization_vulnerability_vulnerability","community_synchronization_vulnerability_n_communities","kernel_rank_thresholded_and_summed_0.01","kernel_rank_max","kernel_rank_phase_of_lambda_max","kernel_rank_phase_diff_of_lambda_max_and_2nd","kernel_rank_fatemeh","effective_dimensionality","multifunctionality"
+        # "density", # works # done
+        # "avg_clustering", # workxs # done
+        # "avg_degree", # works # done
+        # "degree_assortativity", # works # done
+        # "modularity", # works # done
+        # "transitivity", # works # done
+        
+        # "topological_distance",
+        # "degree_gini",
+        # "wiring_cost", # no shortest_path_distance - this does not work. 
+        # "structural_complexity",
+        # "n_connected_components",
+        
+        # "omega",
+
         # "spectral_radius",
         # "spectral_gap",
         # "spectral_gap_fatemeh",
+        
         # "global_efficiency",
         # "diffusion_efficiency",
         # "propagation_efficiency",
         # "nct_control",
         # "nct_energies",
+        
         # "metastability",
         # "synchronizability_eigenratio",
         # "algebraic_connectivity_nx",
         # "kuramoto_synchronization",
         # "community_synchronization_vulnerability",
+
         # "kernel_rank",
         # "kernel_rank_fatemeh",
         # "effective_dimensionality",
         # "multifunctionality",
+
     ]
     
     plot_combined_lag_plot = False
