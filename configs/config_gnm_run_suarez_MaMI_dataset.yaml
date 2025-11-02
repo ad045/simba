@@ -1,7 +1,7 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 76_90000_samples # 4_fine_grid_upper_local_minima # 60_generally_finer_search
+  name: 77_higher_res_100 # 4_fine_grid_upper_local_minima # 60_generally_finer_search
   animal: 55 
   # 55,Lycaon3,Lycaon,Lycaon,Lycaon pictus,Lycaon,Caninae,Canidae,Caniformia,Carnivora,Laurasiatheria,Laurasiatheria
   compare_to_connectome_of_distance_matrix: true
@@ -10,7 +10,7 @@ experiment:
   compare_to_all_individual_empirical_connectomes: true
   search:
     method: grid # random
-    n_samples: 90000 # 10000 #  900 # 00
+    n_samples: 10000 # 10000 #  900 # 00
   wandb:
     enabled: false
     project: GNM_project
@@ -67,7 +67,7 @@ pipeline:
     - avg_clustering
     - avg_degree
     - transitivity
-    - avg_edge_distance
+    - avg_edge_distance^
     - char_path_length
     - richclub_n_edges
     - richclub_avg_length
@@ -78,7 +78,7 @@ pipeline:
     - mc_5_divided_by_wiring_cost
 data:
   dataset_name: suarez_MaMI_dataset
-  connectome_resolution: 50 # PER BRAIN HALF!!! 
+  connectome_resolution: 100 #  50 # PER BRAIN HALF!!! 
   density: 10
   paths:
     project_root: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code

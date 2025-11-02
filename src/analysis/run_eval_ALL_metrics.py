@@ -12,7 +12,7 @@ from datetime import datetime
 import traceback
 
 # Import your original multiprocessing function
-from src.analysis.evaluate_ALL_metrics import multiprocess_networks
+from analysis.evaluate_further_metrics_utils import multiprocess_networks
 
 # Configuration
 EXPERIMENT = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" # "73_testing_animal_0"
@@ -25,43 +25,43 @@ CREATE_BIG_CSV = True
 # Define all metrics organized by category
 ALL_METRICS = {
     "static": [
-        "density", # works # done
-        "avg_clustering", # works # done
-        "avg_degree", # works # done
-        "degree_assortativity", # works # done
-        "modularity", # works # done
-        "transitivity", # works # done
+        # "density", # works # done
+        # "avg_clustering", # works # done
+        # "avg_degree", # works # done
+        # "degree_assortativity", # works # done
+        # "modularity", # works # done
+        # "transitivity", # works # done
         
-        "topological_distance",
-        "degree_gini",
-        "wiring_cost", # no shortest_path_distance - this does not work. 
-        "structural_complexity",
-        "n_connected_components",
+        # "topological_distance",
+        # "degree_gini",
+        # "wiring_cost", # no shortest_path_distance - this does not work. 
+        # "structural_complexity",
+        # "n_connected_components",
         
-        "omega",
+        # "omega",
     ],
     "dynamic": [
-        "spectral_radius",
-        "spectral_gap",
-        "spectral_gap_fatemeh",
+        # "spectral_radius",
+        # "spectral_gap",
+        # "spectral_gap_fatemeh",
         
-        "global_efficiency",
-        "diffusion_efficiency",
-        "propagation_efficiency",
-        "nct_control",
-        "nct_energies",
+        # "global_efficiency",
+        # "diffusion_efficiency",
+        # "propagation_efficiency",
+        # "nct_control",
+        # "nct_energies",
         
-        "metastability",
-        "synchronizability_eigenratio",
-        "algebraic_connectivity_nx",
-        "kuramoto_synchronization",
-        "community_synchronization_vulnerability",
+        # "metastability",
+        # "synchronizability_eigenratio",
+        # "algebraic_connectivity_nx",
+        # "kuramoto_synchronization",
+        # "community_synchronization_vulnerability",
     ],
     "computational": [
-        "kernel_rank",
-        "kernel_rank_fatemeh",
-        "effective_dimensionality",
-        "multifunctionality",
+        # "kernel_rank",
+        # "kernel_rank_fatemeh",
+        # "effective_dimensionality",
+        # "multifunctionality",
     ]
 }
 
@@ -251,7 +251,7 @@ class RobustMetricRunner:
         """Create the final combined CSV file."""
         self.log("Creating final combined CSV file...")
         try:
-            from src.analysis.evaluate_ALL_metrics import create_combined_csv
+            from analysis.evaluate_further_metrics_utils import create_combined_csv
             import pandas as pd
             
             output_path = self.base_path / "output" / "gnm" / self.dataset / self.experiment
