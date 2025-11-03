@@ -60,6 +60,8 @@ from src.analysis.computational_measures import (
                                                 compute_kernel_rank_fatemeh,
                                                 )   
 
+from src.analysis.my_attempt_at_metastability import calculate_metastability as calculate_metastability_2
+
 
 class MetricCalculator(ABC):
     def __init__(self, A=None, distance_matrix=None):
@@ -201,7 +203,7 @@ class DynamicMetricCalculator(MetricCalculator):
             "spectral_gap_fatemeh", 
             "nct_control",
             "nct_energies",
-            "metastability", 
+            "novel_metastability", # previously: metastability... but this is for testing now 
             # "average_controllability",
             "synchronizability_eigenratio",
             "algebraic_connectivity_nx",
@@ -240,8 +242,8 @@ class DynamicMetricCalculator(MetricCalculator):
         elif metric_name == "nct_energies":
             return calculate_nct_energies(self.A)
 
-        elif metric_name == "metastability": 
-            return calculate_metastability(self.A)
+        elif metric_name == "novel_metastability": # metastability_2": 
+            return calculate_metastability_2(self.A, distance_matrix=self.distance_matrix, save_debug_path="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/metastability_debug") # calculate_metastability(self.A)
  
         elif metric_name == "synchronizability_eigenratio":
             return compute_synchronizability_eigenratio(self.A)
@@ -317,4 +319,6 @@ class ComputationMetricCalculator(MetricCalculator):
 # # #         # [ ] $Rˆ{2}$ (maybe not useful for MaMI, as we have no fixed connectome?)
 # # #         if metric_name == "density":
 # # #             return self._calculate_temporal_density()
+
+
 

@@ -15,10 +15,14 @@ import traceback
 from analysis.evaluate_further_metrics_utils import multiprocess_networks
 
 # Configuration
-EXPERIMENT = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" # "73_testing_animal_0"
+EXPERIMENT = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"  # 
+# For testing: "73_testing_animal_206"
+# Typical: 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
+# # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" 
+# # "73_testing_animal_0"
 DATASET = "suarez_MaMI_dataset"
 BASE_PATH = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
-N_PROCESSES = 12
+N_PROCESSES = 12 # 2
 DEBUG = False
 CREATE_BIG_CSV = True
 
@@ -51,7 +55,8 @@ ALL_METRICS = {
         # "nct_control",
         # "nct_energies",
         
-        # "metastability",
+        # "metastability", # this is now replaced... (soon)
+        "novel_metastability",
         # "synchronizability_eigenratio",
         # "algebraic_connectivity_nx",
         # "kuramoto_synchronization",
@@ -157,7 +162,7 @@ class RobustMetricRunner:
                 dataset=self.dataset,
                 base_path=self.base_path,
                 interesting_metrics=interesting_metrics,
-                save_interval=50,
+                save_interval=2, # 50,
                 debug=DEBUG,
                 create_big_update_csv=False  # Only create at the end
             )
