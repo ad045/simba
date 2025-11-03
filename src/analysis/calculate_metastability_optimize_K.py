@@ -315,83 +315,258 @@ def plot_arr_K_optimization(
             
             
 
+# def plot_arr_K_optimization(
+#     # results: List[Dict],
+#     # K_range, 
+#     # optimal_K_arr,
+#     results_arr,
+#     start_idx_arr,
+#     optimal_metric, 
+#     save_path: Optional[str] = None,
+#     figsize: Tuple[int, int] = (14, 8)
+# ):
+#     """
+#     Plot the results of K optimization showing all metrics.
+    
+#     Parameters
+#     ----------
+#     results : dict
+#         Dictionary returned by find_optimal_K
+#     save_path : str, optional
+#         Path to save figure. If None, displays instead
+#     figsize : tuple
+#         Figure size (width, height)
+#     """
+#     fig, axes = plt.subplots(2, 2, figsize=figsize)
+#     fig.suptitle('Coupling Strength (K) Optimization', fontsize=16, fontweight='bold')
+    
+#     for i, subject_id in enumerate(start_idx_arr):
+#         # make this nicer: subject_id in results_arr, ... 
+#         # K_values = optimal_K_arr[i]
+#         results_dict = results_arr[i]
+#         optimal_K = results_dict["optimal_K"] # optimal_K_arr[i]
+#         results = results_dict["results"] # results_arr[i]
+#         K_values = results["K_values"]
+#         values = results[optimal_metric]
+
+#         # Plot each metric
+#         metrics = [
+#             ('global', 'Global Metastability', axes[0, 0]),
+#             ('local_mean', 'Mean Local Metastability', axes[0, 1]),
+#             ('local_std', 'Std Local Metastability', axes[1, 0]),
+#             ('local_kurtosis', 'Local Metastability Kurtosis', axes[1, 1])
+#         ]
+        
+#         for metric_key, title, ax in metrics:
+            
+#             # Plot curve
+#             ax.plot(K_values, values, 'o-', linewidth=2, markersize=6, 
+#                     color='steelblue', label=title)
+            
+#             # Highlight optimal point if this is the optimized metric
+#             if metric_key == optimal_metric:
+#                 ax.axvline(optimal_K, color='red', linestyle='--', linewidth=2, 
+#                         label=f'Optimal K = {optimal_K:.4f}')
+#                 ax.plot(optimal_K, max(values), 'r*', 
+#                     markersize=20, label=f'Max = {max(values):.4f}')
+#                 ax.set_title(f'{title} (OPTIMIZED)', fontweight='bold', color='red')
+#             else:
+#                 # Still show where optimal K falls on other metrics
+#                 optimal_idx = np.argmin(np.abs(K_values - optimal_K))
+#                 ax.axvline(optimal_K, color='red', linestyle='--', linewidth=1, alpha=0.5)
+#                 ax.plot(optimal_K, values[optimal_idx], 'r*', markersize=15, alpha=0.5)
+#                 ax.set_title(title)
+            
+#             ax.set_xlabel('Coupling Strength (K)', fontsize=11)
+#             ax.set_ylabel(title, fontsize=11)
+#             ax.grid(True, alpha=0.3)
+            
+#             if i == 0: 
+#                 ax.legend(loc='best')
+        
+#     plt.tight_layout()
+    
+#     if save_path:
+#         plt.savefig(save_path, dpi=300, bbox_inches='tight')
+#         print(f"Figure saved to: {save_path}")
+#     else:
+#         plt.show()
+        
+
+import matplotlib.pyplot as plt
+import numpy as np
+from typing import List, Dict, Tuple, Optional
+import matplotlib.cm as cm
+
+from vizman import viz
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from pathlib import Path
+import pandas as pd
+
+from matplotlib import font_manager
+for font in font_manager.findSystemFonts("figures/Atkinson_Typeface/"):
+    font_manager.fontManager.addfont(font)
+
+viz.set_visual_style()
+default_sizes = viz.load_data_from_json("sizes.json")
+default_colors = viz.load_data_from_json("colors.json")
+default_cmaps = viz.give_colormaps()
+
+viz.set_visual_style()
+default_sizes = viz.load_data_from_json("sizes.json")
+default_colors = viz.load_data_from_json("colors.json")
+default_cmaps = viz.give_colormaps()
+
+
 def plot_arr_K_optimization(
-    # results: List[Dict],
-    # K_range, 
-    # optimal_K_arr,
     results_arr,
     start_idx_arr,
     optimal_metric, 
+    title: Optional[str] = None, 
     save_path: Optional[str] = None,
-    figsize: Tuple[int, int] = (14, 8)
-):
+    figsize: Tuple[int, int] = viz.cm_to_inch((18*3,5*3)) # , 12)
+): 
     """
-    Plot the results of K optimization showing all metrics.
+    Plot the results of K optimization with improved layout and readability.
+    
+    Layout: 3 rows × 4 columns
+    - Columns 1-3: Main optimized metric plot (spans 3 columns)
+    - Column 4: Other three metrics stacked vertically
     
     Parameters
     ----------
-    results : dict
-        Dictionary returned by find_optimal_K
+    results_arr : list
+        List of result dictionaries for each subject
+    start_idx_arr : list
+        List of subject identifiers
+    optimal_metric : str
+        The metric being optimized ('global', 'local_mean', 'local_std', 'local_kurtosis')
     save_path : str, optional
         Path to save figure. If None, displays instead
     figsize : tuple
         Figure size (width, height)
     """
-    fig, axes = plt.subplots(2, 2, figsize=figsize)
-    fig.suptitle('Coupling Strength (K) Optimization', fontsize=16, fontweight='bold')
+    # Create figure with custom grid layout
+    fig = plt.figure(figsize=figsize)
+    gs = fig.add_gridspec(3, 4) # , hspace=0.3, wspace=0.3)
     
+    # Main plot spans first 3 columns, all 3 rows
+    ax_main = fig.add_subplot(gs[:, :3])
+    
+    # Three smaller plots in the last column
+    ax_top = fig.add_subplot(gs[0, 3])
+    ax_mid = fig.add_subplot(gs[1, 3])
+    ax_bot = fig.add_subplot(gs[2, 3])
+    
+    # Color palette for different subjects
+    n_subjects = len(start_idx_arr)
+    colors = cm.get_cmap('tab10')(np.linspace(0, 1, n_subjects))
+    line_styles = ['-', '--', '-.', ':']
+    
+    # Metric configuration
+    metric_config = {
+        'global': 'Global Metastability',
+        'local_mean': 'Mean Local Metastability',
+        'local_std': 'Std Local Metastability',
+        'local_kurtosis': 'Local Metastability Kurtosis'
+    }
+    
+    # Determine which axes to use for non-optimized metrics
+    other_metrics = [m for m in ['global', 'local_mean', 'local_std', 'local_kurtosis'] 
+                     if m != optimal_metric]
+    other_axes = [ax_top, ax_mid, ax_bot]
+    
+    # Plot data for each subject
     for i, subject_id in enumerate(start_idx_arr):
-        # make this nicer: subject_id in results_arr, ... 
-        # K_values = optimal_K_arr[i]
         results_dict = results_arr[i]
-        optimal_K = results_dict["optimal_K"] # optimal_K_arr[i]
-        results = results_dict["results"] # results_arr[i]
+        optimal_K = results_dict["optimal_K"]
+        results = results_dict["results"]
         K_values = results["K_values"]
-        values = results[optimal_metric]
-
-        # Plot each metric
-        metrics = [
-            ('global', 'Global Metastability', axes[0, 0]),
-            ('local_mean', 'Mean Local Metastability', axes[0, 1]),
-            ('local_std', 'Std Local Metastability', axes[1, 0]),
-            ('local_kurtosis', 'Local Metastability Kurtosis', axes[1, 1])
-        ]
         
-        for metric_key, title, ax in metrics:
-            
-            # Plot curve
-            ax.plot(K_values, values, 'o-', linewidth=2, markersize=6, 
-                    color='steelblue', label=title)
-            
-            # Highlight optimal point if this is the optimized metric
-            if metric_key == optimal_metric:
-                ax.axvline(optimal_K, color='red', linestyle='--', linewidth=2, 
-                        label=f'Optimal K = {optimal_K:.4f}')
-                ax.plot(optimal_K, max(values), 'r*', 
-                    markersize=20, label=f'Max = {max(values):.4f}')
-                ax.set_title(f'{title} (OPTIMIZED)', fontweight='bold', color='red')
-            else:
-                # Still show where optimal K falls on other metrics
-                optimal_idx = np.argmin(np.abs(K_values - optimal_K))
-                ax.axvline(optimal_K, color='red', linestyle='--', linewidth=1, alpha=0.5)
-                ax.plot(optimal_K, values[optimal_idx], 'r*', markersize=15, alpha=0.5)
-                ax.set_title(title)
-            
-            ax.set_xlabel('Coupling Strength (K)', fontsize=11)
-            ax.set_ylabel(title, fontsize=11)
-            ax.grid(True, alpha=0.3)
-            
-            if i == 0: 
-                ax.legend(loc='best')
+        # Select color and line style
+        color = colors[i]
+        line_style = line_styles[i % len(line_styles)]
         
-    plt.tight_layout()
+        # Plot main optimized metric
+        main_values = results[optimal_metric]
+        ax_main.plot(K_values, main_values, 
+                    linestyle=line_style, 
+                    # linewidth=2.5, 
+                    # marker='o',
+                    # markersize=4,
+                    color=color,
+                    alpha=0.8,
+                    label=f'Subject {subject_id}')
+        
+        # Mark optimal point
+        max_idx = np.argmax(main_values)
+        ax_main.plot(optimal_K, main_values[max_idx], 
+                     '*', 
+                    # markersize=20, 
+                    color=color,
+                    markeredgecolor='darkred',
+                    # markeredgewidth=1.5,
+                    zorder=5)
+        
+        # Add vertical line for optimal K (only for first subject to avoid clutter)
+        if i == 0:
+            ax_main.axvline(optimal_K, color='red', linestyle='--', 
+                        #   linewidth=1.5, 
+                          alpha=0.6, label='Optimal K')
+        
+        # Plot other metrics on smaller axes
+        for metric_key, ax in zip(other_metrics, other_axes):
+            values = results[metric_key]
+            ax.plot(K_values, values,
+                   linestyle=line_style,
+                #    linewidth=2,
+                #    marker='o',
+                #    markersize=3,
+                #    color=color,
+                   alpha=0.7)
+            
+            # Mark where optimal K falls on this metric
+            optimal_idx = np.argmin(np.abs(K_values - optimal_K))
+            ax.plot(optimal_K, values[optimal_idx], # '*',
+                #    markersize=12,
+                #    color=color,
+                #    markeredgecolor='darkred',
+                #    markeredgewidth=1,
+                   zorder=5)
     
+    # Configure main plot
+    ax_main.set_xlabel('Coupling Strength (K)') # , fontsize=14, fontweight='bold')
+    ax_main.set_ylabel(metric_config[optimal_metric]) # , fontsize=14, fontweight='bold')
+    ax_main.set_title(f'{metric_config[optimal_metric]} (OPTIMIZED)') # , 
+                    # fontsize=16, fontweight='bold', color='darkred', pad=20)
+    ax_main.grid(True, alpha=0.3, linestyle='--')
+    # ax_main.legend(False) # loc='upper right') # , fontsize=11, framealpha=0.9)
+    ax_main.tick_params() # labelsize=11)
+    
+    # Configure other metric plots
+    for metric_key, ax in zip(other_metrics, other_axes):
+        ax.set_xlabel('K') # , fontsize=10)
+        ax.set_ylabel(metric_config[metric_key])  # , fontsize=9)
+        ax.set_title(metric_config[metric_key]) # , fontsize=11, fontweight='bold')
+        # ax.grid(True, alpha=0.3, linestyle='--')
+        ax.tick_params() # labelsize=9)
+    
+    # Overall title
+    if title is not None:
+        fig.suptitle(title)
+                # fontsize=18, fontweight='bold', y=0.995)
+    else:
+        fig.suptitle('Coupling Strength (K) Optimization Analysis')
+                # fontsize=18, fontweight='bold', y=0.995)
+    
+    plt.tight_layout()
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Figure saved to: {save_path}")
     else:
         plt.show()
-        
         
         
 def calculate_metastability_at_K(A: np.ndarray, K: float = None, **kwargs):
