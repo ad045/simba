@@ -534,10 +534,11 @@ def save_checkpoint(results_list, output_path, checkpoint_num):
             continue
         
         results_df = pd.DataFrame(results_by_category[category])
-        checkpoint_path = temp_dir / f"result_{category}_{checkpoint_num:04d}.csv"
+        # get current time
+        current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        checkpoint_path = temp_dir / f"result_{category}_{checkpoint_num:04d}_{current_time}.csv"
         results_df.to_csv(checkpoint_path, index=False)
         print(f"Saved {category} checkpoint: {len(results_df)} connectomes")
-
 
 def merge_checkpoints(output_path, experiment_name):
     """Merge all checkpoint files into final CSV files."""
@@ -553,7 +554,9 @@ def merge_checkpoints(output_path, experiment_name):
         checkpoint_files = sorted(temp_dir.glob(f'result_{category}_*.csv'))
         
         if not checkpoint_files:
-            print(f"No {category} checkpoints found")
+            print(f"No {category} checkpoints found - creating empty DataFrame")
+            # CREATE EMPTY DATAFRAME INSTEAD OF SKIPPING
+            final_dfs[category] = pd.DataFrame(columns=['id'])
             continue
         
         print(f"\nMerging {len(checkpoint_files)} {category} checkpoints...")
@@ -567,6 +570,8 @@ def merge_checkpoints(output_path, experiment_name):
                 print(f"Error reading {file.name}: {e}")
         
         if not dfs:
+            # CREATE EMPTY DATAFRAME IF ALL FILES FAILED TO LOAD
+            final_dfs[category] = pd.DataFrame(columns=['id'])
             continue
         
         # Concatenate and remove duplicates
@@ -593,6 +598,62 @@ def merge_checkpoints(output_path, experiment_name):
         pass
     
     return final_dfs
+
+
+# def merge_checkpoints(output_path, experiment_name):
+#     """Merge all checkpoint files into final CSV files."""
+#     temp_dir = output_path / "temp"
+    
+#     if not temp_dir.exists():
+#         print("No checkpoints to merge")
+#         return {}
+    
+#     final_dfs = {}
+    
+#     for category in ['static', 'dynamic', 'computational']:
+#         checkpoint_files = sorted(temp_dir.glob(f'result_{category}_*.csv'))
+        
+#         if not checkpoint_files:
+#             print(f"No {category} checkpoints found")
+#             continue
+        
+#         print(f"\nMerging {len(checkpoint_files)} {category} checkpoints...")
+        
+#         dfs = []
+#         for file in checkpoint_files:
+#             try:
+#                 df = pd.read_csv(file)
+#                 dfs.append(df)
+#             except Exception as e:
+#                 print(f"Error reading {file.name}: {e}")
+        
+#         if not dfs:
+#             continue
+        
+#         # Concatenate and remove duplicates
+#         merged_df = pd.concat(dfs, ignore_index=True)
+#         merged_df = merged_df.drop_duplicates(subset=['id'], keep='last')
+        
+#         # Save final file
+#         output_file = output_path / f'all_{category}_metrics_{experiment_name}.csv'
+#         merged_df.to_csv(output_file, index=False)
+#         print(f"✓ Saved {category} results: {len(merged_df)} connectomes")
+        
+#         final_dfs[category] = merged_df
+        
+#         # Clean up checkpoint files
+#         for file in checkpoint_files:
+#             file.unlink()
+    
+#     # Remove temp directory if empty
+#     try:
+#         if not any(temp_dir.iterdir()):
+#             temp_dir.rmdir()
+#             print("✓ Cleaned up temp directory")
+#     except:
+#         pass
+    
+#     return final_dfs
 
 
 def create_combined_csv(output_path, experiment_name, df_dict):
