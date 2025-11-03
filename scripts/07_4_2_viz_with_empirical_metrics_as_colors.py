@@ -295,8 +295,9 @@ def main(LABEL_BY="name"):
     
     # --- 1. Define Input and Output ---
     ####################################################################
-    # Path to empirical metrics
-    empirical_metrics_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/empirical_all_metrics_analysis/all_metrics_empirical_all_metrics_analysis.csv" 
+    # Path to empirical metrics. THIS TIME THE ORIIGNAL MATRIX!
+    empirical_metrics_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/emprirical_analysis/empirical_analysis_binarized.csv"
+    # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/empirical_all_metrics_analysis/all_metrics_empirical_all_metrics_analysis.csv" 
     # Path to best gamma and eta estimations
     path_to_best_gamma_and_eta_estimations = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/min_energy_results.csv"
     
