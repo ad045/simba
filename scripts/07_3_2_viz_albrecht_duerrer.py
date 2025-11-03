@@ -341,7 +341,7 @@ if __name__ == "__main__":
             metric_name=main_metric,
             additional_metrics=additional_metrics,
             title=plot_title,
-            cmap=default_cmaps["hot"],
+            cmap="cubehelix", # default_cmaps["hot"],
             savepath=full_save_path,
             show=False,
             eta_span=eta_span,
