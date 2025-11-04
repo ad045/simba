@@ -3,7 +3,10 @@ from netneurotools.networks import threshold_network
 from bct import density_und
 
 
-def threshold_to_density(conn_wei, density, output_folder, conn_type="consensus"): 
+def threshold_to_density(conn_wei,
+                         density, 
+                         output_folder=None, 
+                         conn_type="consensus"): 
     # Threshold at multiple densities
     print("\nThresholding at multiple densities:")
     # for density in densities:
@@ -38,10 +41,11 @@ def threshold_to_density(conn_wei, density, output_folder, conn_type="consensus"
     
     n_nodes = conn_wei.shape[-1]
     # Save thresholded network
-    np.save(
-        output_folder / f"01_{conn_type}_bin_density_{density}_percent_{n_nodes}.npy",
-        thres_conn
-    )
+    if output_folder is not None:
+        np.save(
+            output_folder / f"01_{conn_type}_bin_density_{density}_percent_{n_nodes}.npy",
+            thres_conn
+        )
     
     return thres_conn, final_density
         
