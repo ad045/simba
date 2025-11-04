@@ -144,7 +144,7 @@ class GridVisualizer(PipelineVisualizer):
         
         # Format plot
         if show_number_samples:
-            title = f"{title} ({len(df)} samples)"
+            title = f"{title} ({len(points)} shown connectomes)"
         
         xlim = [eta_edges[0], eta_edges[-1]]
         ylim = [gamma_edges[0], gamma_edges[-1]]
@@ -198,16 +198,21 @@ class GridVisualizer(PipelineVisualizer):
 if __name__ == "__main__":
     
     ##### CONFIG STUFF #######################
-    experiment_name =  "76_90000_samples_animal_206" # "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" 
+    # experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" # 0" 
+    experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 0" 
+    #  "76_90000_samples_animal_206" 
+        # "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" 
         # File i am typically doing everything with, but it has this line?: 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
         # all metrics: "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" (with appendix ==  "_updated")
         # high resolution: 76_90000_samples_animal_206"
-    appendix = "_updated" # or ""^
+    appendix = "" # _updated" # or ""^
     base_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/{experiment_name}")
-    save_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated_combined.csv"
+    # save_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated_combined.csv"
+    save_path = base_path / f"all_metrics_for_{experiment_name}.csv"
     all_metrics_file = True 
     bin_to_100 = True # False # TODO: DOES NOT WORK YET. 
     mode = "draft" # presentation" # draft" # presentation"  # "draft" or "presentation"
+    # "terrain" # cubehelix" 
     ##########################################
     if all_metrics_file: 
         df_paths = [base_path / f"all_metrics_for_{experiment_name}{appendix}.csv"]
@@ -223,7 +228,7 @@ if __name__ == "__main__":
         df_paths = [save_path]
 
     plot_indiv_connectomes = False
-    duplicate_handling = "mean"
+    duplicate_handling = "first" # "mean"
     show_number_samples = True
     eta_span = [-8, 3]
     gamma_span = [-0.1, 1]
@@ -318,7 +323,7 @@ if __name__ == "__main__":
             gnm_results_df = pd.read_csv(df_paths[0], index_col=False)
             if metrics_to_plot == "all": 
                 metrics_to_plot = list(set(gnm_results_df.columns.tolist()) - set(['eta', 'gamma', 'animal_id'])) # TODO: exclude here anything else that is not a metric.
-
+            
         if gnm_results_df.empty:
             raise ValueError("Dataframe is empty after loading.")
 
@@ -393,7 +398,7 @@ if __name__ == "__main__":
                 default_cmaps = viz.give_colormaps()
                 cmap = default_cmaps["hb_bw"] # topological_map"] # hb_bw"] 
             elif mode == "draft":
-                cmap = "terrain" # cubehelix" # hot"
+                cmap = "hot" # "terrain" # cubehelix" # hot"
                 
             if mode == "draft": 
                 annotate_extremes = True

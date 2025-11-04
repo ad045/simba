@@ -234,9 +234,11 @@ def plot_grid_with_metric_colored_points(visualizer, df_landscape, metric_name,
     )
     
     # Get the colormap and normalization from the landscape
-    if metric_name in df_points.columns:
+    if metric_name in df_points.columns: #  or metric_name == "energy": 
         metric_values = df_points[metric_name].values
-        
+        if metric_name == "energy" or 'MaxCriteria(DegreeKS, ClusteringKS, EdgeLengthKS, BetweennessKS)': 
+            metric_values = df_points["energy"].values
+            
         # Use the same vmin/vmax as the landscape for consistency
         vmin = df_landscape[metric_name].min()
         vmax = df_landscape[metric_name].max()
@@ -295,25 +297,33 @@ def main(LABEL_BY="name"):
     
     # --- 1. Define Input and Output ---
     ####################################################################
-    # Path to empirical metrics. THIS TIME THE ORIIGNAL MATRIX!
-    empirical_metrics_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/emprirical_analysis/empirical_analysis_binarized.csv"
-    # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/empirical_all_metrics_analysis/all_metrics_empirical_all_metrics_analysis.csv" 
+    # Path to empirical metrics. 
+    # Original 
+    # empirical_metrics_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/emprirical_analysis/empirical_analysis_binarized.csv"
+    # Theoretically all metrics 
+    empirical_metrics_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/empirical_all_metrics_analysis/all_metrics_empirical_all_metrics_analysis.csv" 
+    
     # Path to best gamma and eta estimations
     path_to_best_gamma_and_eta_estimations = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/min_energy_results.csv"
     
     ##### CONFIG STUFF #######################
-    experiment_name = "76_90000_samples_animal_206"
+    experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
+    # The legendary big dataset (but only with original eval?): "76_90000_samples_animal_206"
     base_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/{experiment_name}")
     save_path_df = base_path / f"all_computational_metrics_for_{experiment_name}_updated_combined.csv"
     save_path_plots = base_path / "figures_grid_metric_colored"
     save_path_plots.mkdir(parents=True, exist_ok=True)
-    all_metrics_file = True 
+    all_metrics_file = True  # Choice between loading single big file or combining smaller ones (static, dynamic, computational)
+    plot_also_energy_metric_as_colors = True
 
     ##########################################
     if all_metrics_file: 
-        df_paths = [base_path / f"all_metrics_for_{experiment_name}.csv"]
+        # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0/all_metrics_for_75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0_updated.csv
+        df_paths = [base_path / f"all_metrics_for_{experiment_name}_updated.csv", 
+                    base_path / f"all_metrics_for_{experiment_name}.csv"]
+        
     else: 
-        df_static_path = base_path / f"all_static_metrics_for_{experiment_name}.csv"
+        df_static_path = base_path / f"all_static_metrics_for_{experiment_name}_updated.csv"
         df_static = pd.read_csv(df_static_path)
         df_dynamic_path = base_path / f"all_dynamic_metrics_for_{experiment_name}_updated.csv"
         df_dynamic = pd.read_csv(df_dynamic_path)
@@ -344,23 +354,23 @@ def main(LABEL_BY="name"):
     # --- 3. Define Metrics to Plot ---
     
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 20, 49]
-    metrics_to_plot = [
-        "MaxCriteria",
-        "avg_communicability", 
-        "global_efficiency", 
-        "modularity", 
-        "avg_clustering", 
-        "transitivity", 
-        "avg_edge_distance", 
-        "char_path_length", 
-        "richclub_n_edges", 
-        "richclub_avg_length", 
-        "mc_mean", 
-        "mc_std", 
-        "wiring_cost", 
-        "mean_mc_divided_by_wiring_cost",
-        "mc_5_divided_by_wiring_cost", 
-    ] + [f"mc_{lag}" for lag in lags_to_plot]
+    metrics_to_plot = "all" # [
+    #     "MaxCriteria",
+    #     "avg_communicability", 
+    #     "global_efficiency", 
+    #     "modularity", 
+    #     "avg_clustering", 
+    #     "transitivity", 
+    #     "avg_edge_distance", 
+    #     "char_path_length", 
+    #     "richclub_n_edges", 
+    #     "richclub_avg_length", 
+    #     "mc_mean", 
+    #     "mc_std", 
+    #     "wiring_cost", 
+    #     "mean_mc_divided_by_wiring_cost",
+    #     "mc_5_divided_by_wiring_cost", 
+    # ] + [f"mc_{lag}" for lag in lags_to_plot]
     
     print(f"Starting Metric-Colored Grid visualization process...")
     print(f"Labeling by: {LABEL_BY}")
@@ -381,6 +391,18 @@ def main(LABEL_BY="name"):
         if gnm_results_df.empty:
             raise ValueError("Dataframe is empty after loading.")
 
+        # TODO: Copy this to all other plotting functions
+        if metrics_to_plot == "all":
+            # Exclude non-metric columns
+            non_metric_cols = {'eta', 'gamma', 'animal', 'id'}
+            metrics_to_plot = [col for col in gnm_results_df.columns if col not in non_metric_cols]
+               
+            print(metrics_to_plot)
+            print(f"Auto-detected {len(metrics_to_plot)} metrics to plot.")
+          
+        if plot_also_energy_metric_as_colors: 
+                metrics_to_plot.append("energy")
+                  
         print(f"Loaded GNM results shape: {gnm_results_df.shape}")
         
         # Load empirical metrics
@@ -430,7 +452,10 @@ def main(LABEL_BY="name"):
                         pd.to_numeric(df_points["mc_5"], errors='coerce') / 
                         pd.to_numeric(df_points["wiring_cost"], errors='coerce')
                     )
-            
+                    
+            if metric == "energy":
+                metric_col_name = "MaxCriteria(DegreeKS, ClusteringKS, EdgeLengthKS, BetweennessKS)"
+                df_points[metric_col_name] = df_best_estimates["energy"]
             df["eta"] = pd.to_numeric(df["eta"], errors='coerce')
             df["gamma"] = pd.to_numeric(df["gamma"], errors='coerce')
             
@@ -440,20 +465,27 @@ def main(LABEL_BY="name"):
                     metric_col_name = metric
                     if metric not in df.columns:
                         raise StopIteration
+                elif metric == "energy":
+                    metric_col_name = "MaxCriteria(DegreeKS, ClusteringKS, EdgeLengthKS, BetweennessKS)"
                 else:
                     metric_col_name = next(col for col in df.columns if metric in col)
+            
             except StopIteration:
                 print(f"SKIPPING: Metric '{metric}' not found in landscape DataFrame columns.")
                 continue
 
+            
+
+            # if metric != "energy": 
+            
             # Check if metric exists in points data
             if metric_col_name not in df_points.columns:
                 print(f"SKIPPING: Metric '{metric_col_name}' not found in empirical data.")
                 continue
-
+            
             df[metric_col_name] = pd.to_numeric(df[metric_col_name], errors='coerce')
             df = df.dropna(subset=['eta', 'gamma', metric_col_name])
-            
+                
             if df.empty:
                 print(f"SKIPPING: No valid landscape data for '{metric}' after cleaning.")
                 continue
@@ -462,9 +494,13 @@ def main(LABEL_BY="name"):
             df_points_clean = df_points.copy()
             df_points_clean["eta"] = pd.to_numeric(df_points_clean["eta"], errors='coerce')
             df_points_clean["gamma"] = pd.to_numeric(df_points_clean["gamma"], errors='coerce')
+            # if metric != "energy": 
             df_points_clean[metric_col_name] = pd.to_numeric(df_points_clean[metric_col_name], errors='coerce')
             df_points_clean = df_points_clean.dropna(subset=['eta', 'gamma', metric_col_name])
-            
+            # else: 
+            df_points_clean["energy"] = pd.to_numeric(df_points_clean["energy"], errors='coerce')
+            df_points_clean = df_points_clean.dropna(subset=['eta', 'gamma', "energy"])
+
             if df_points_clean.empty:
                 print(f"SKIPPING: No valid point data for '{metric}' after cleaning.")
                 continue
