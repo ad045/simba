@@ -1,5 +1,5 @@
 from run_experiment_ALL_animals import main as run_exp
-from run_evaluation import main as run_eval
+from run_evaluation_with_all_empirical_networks import main as run_eval
 
 run_exp()
 
