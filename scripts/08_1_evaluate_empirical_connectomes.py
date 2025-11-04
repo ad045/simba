@@ -207,7 +207,7 @@ if __name__ == "__main__":
     # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/02_distance_matrices/distance_matrix_100.npy"
     # "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/01_first_analysises/distance_matrix_68x68.npy"
     
-    output_base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/emprirical_analysis")
+    output_base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/emprirical_analysis_nov")
     output_base_path.mkdir(parents=True, exist_ok=True)
     
     

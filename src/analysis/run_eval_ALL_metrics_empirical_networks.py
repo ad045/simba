@@ -379,28 +379,28 @@ ALL_METRICS = {
         "omega",
     ],
     "dynamic": [
-        "spectral_radius",
-        "spectral_gap",
-        "spectral_gap_fatemeh",
+        # "spectral_radius",
+        # "spectral_gap",
+        # "spectral_gap_fatemeh",
         
-        "global_efficiency",
-        "diffusion_efficiency",
-        "propagation_efficiency",
-        "nct_control",
-        "nct_energies",
+        # "global_efficiency",
+        # "diffusion_efficiency",
+        # "propagation_efficiency",
+        # "nct_control",
+        # "nct_energies",
         
-        # "metastability", # this is now replaced... (soon)
-        ###"novel_metastability", -> not working properly yet
-        "synchronizability_eigenratio",
-        "algebraic_connectivity_nx",
-        "kuramoto_synchronization",
-        "community_synchronization_vulnerability",
+        # # "metastability", # this is now replaced... (soon)
+        # ###"novel_metastability", -> not working properly yet
+        # "synchronizability_eigenratio",
+        # "algebraic_connectivity_nx",
+        # "kuramoto_synchronization",
+        # "community_synchronization_vulnerability",
     ],
     "computational": [
-        "kernel_rank",
-        "kernel_rank_fatemeh",
-        "effective_dimensionality",
-        "multifunctionality",
+        # "kernel_rank",
+        # "kernel_rank_fatemeh",
+        # "effective_dimensionality",
+        # "multifunctionality",
     ]
 }
 
@@ -590,12 +590,13 @@ def merge_checkpoints(output_path, experiment_name):
             file.unlink()
     
     # Remove temp directory if empty
-    try:
-        if not any(temp_dir.iterdir()):
-            temp_dir.rmdir()
-            print("✓ Cleaned up temp directory")
-    except:
-        pass
+    # try:
+    #     if not any(temp_dir.iterdir()):
+    #         temp_dir.rmdir()
+    #         print("✓ Cleaned up temp directory")
+    # except:
+    #     pass
+    print(output_file)
     
     return final_dfs
 
@@ -708,6 +709,8 @@ class RobustMetricRunner:
         
         self.status_file = self.log_dir / "metric_processing_status.json"
         self.log_file = self.log_dir / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+        print("Status file: ")
+        print(self.status_file)
         
         self.status = self._load_status()
         self.connectomes = None
