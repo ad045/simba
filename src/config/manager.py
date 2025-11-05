@@ -12,7 +12,8 @@ from gnm import fitting, generative_rules
 
 def create_gnm_sweep_config(config,
                             distance_matrix: torch.Tensor,
-                            num_iterations: int,
+                            # num_iterations: int,
+                            n_edges: int,
                             mode: str,
                             num_simulations: int,
                             ) -> fitting.SweepConfig:
@@ -65,7 +66,7 @@ def create_gnm_sweep_config(config,
         preferential_relationship_type=config["gnm"]["preferential_relationship_type"],
         heterochronicity_relationship_type=config["gnm"]["heterochronicity_relationship_type"],
         generative_rule=rules,
-        num_iterations=[int(density * n * n)]
+        num_iterations=[n_edges], # int(density * n * n)]
     )
     
     return fitting.SweepConfig(
@@ -73,7 +74,7 @@ def create_gnm_sweep_config(config,
         num_simulations=num_simulations,
         distance_matrix=[distance_matrix],
         method=mode,
-        num_random_samples=n_samples,
+        num_random_samples=n_samples, # number samples for random mode (ignored for grid, defined by GNM library)
     )
 
 

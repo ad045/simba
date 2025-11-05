@@ -140,10 +140,14 @@ def _run_and_save_single_simulation(
     task_data: dict, 
     evaluation_criteria, 
     target_network,
-    individual_networks,
-    compare_to_connectome_of_distance_matrix: bool, 
+    
+    n_edges,
+    calculate_energy: bool, 
+    
     elaborate_analysis: bool, 
-    compare_to_all_individual_empirical_connectomes: bool, 
+    # calculate_energies_of_all_individual_connectomes: bool, 
+    # individual_networks: Optional[np.ndarray], # only needs to be set if compare_to_all_individual_empirical_connectomes is True
+    
     device_str: str, 
     output_dir: Path, 
     temp_dir: str, 
@@ -164,7 +168,7 @@ def _run_and_save_single_simulation(
     # Get the rule class from the gnm library using its name
     RuleClass = getattr(generative_rules, bp_data['generative_rule_name'])
     
-    n_edges = int(target_network.sum().item() // 2)
+    # n_edges = int(target_network.sum().item() // 2)
     binary_params = BinaryGenerativeParameters(
         eta=bp_data['eta'],
         gamma=bp_data['gamma'],
@@ -192,7 +196,7 @@ def _run_and_save_single_simulation(
     
     # Perform a run
     try:
-        if compare_to_connectome_of_distance_matrix: 
+        if calculate_energy: 
             target_network = torch.tensor(
                 target_network,
                 dtype=torch.float32,
@@ -228,26 +232,26 @@ def _run_and_save_single_simulation(
             "num_iterations": int(params.num_iterations),
         })
 
-        if compare_to_all_individual_empirical_connectomes: 
-            indiv_networks_record.update({
-                "eta": params.eta,
-                "gamma": params.gamma,
-                "id_of_generated_network": net_id,
-                # "id_of_animal": id_manager.get_animal_id()
-            })
+        # if calculate_energies_of_all_individual_connectomes: 
+        #     indiv_networks_record.update({
+        #         "eta": params.eta,
+        #         "gamma": params.gamma,
+        #         "id_of_generated_network": net_id,
+        #         # "id_of_animal": id_manager.get_animal_id()
+        #     })
 
-        if compare_to_connectome_of_distance_matrix: 
+        if calculate_energy: 
             for energy_metric_name in list(experiment.evaluation_results.binary_evaluations.keys()):
                  
                 energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()
                 flat_record.update({energy_metric_name: energy_value_mean})
 
-                if compare_to_all_individual_empirical_connectomes:
-                    indiv_energy_values = experiment.evaluation_results.binary_evaluations[energy_metric_name].numpy().flatten()
-                    for i in range(individual_networks.shape[0]):
-                        indiv_networks_record.update(
-                            {energy_metric_name + "_indiv_" + str(i): indiv_energy_values[i]}
-                        )
+                # if calculate_energies_of_all_individual_connectomes:
+                #     indiv_energy_values = experiment.evaluation_results.binary_evaluations[energy_metric_name].numpy().flatten()
+                #     for i in range(individual_networks.shape[0]):
+                #         indiv_networks_record.update(
+                #             {energy_metric_name + "_indiv_" + str(i): indiv_energy_values[i]}
+                #         )
             
 
         # 3. If elaborate_analysis is true, run detailed analysis and save network
@@ -346,7 +350,7 @@ class GNMandESNPipelineOrchestrator:
         
         animal_id = self.config['experiment']['animal'] 
         
-        average_connectomes = self.config['experiment']['average_connectomes']
+        average_connectomes = self.config['experiment']['average_connectomes'] # could also be called: Use connectome as it is 
 
         binary_connectomes = self.data_loader.load_binary_connectomes(connectome_id=animal_id)
         
@@ -358,14 +362,14 @@ class GNMandESNPipelineOrchestrator:
         
         first_density = sorted(binary_connectomes.keys())[0]
 
-        compare_to_connectome_of_distance_matrix = self.config['experiment']['compare_to_connectome_of_distance_matrix']
-        if compare_to_connectome_of_distance_matrix: 
+        calculate_energy = self.config['experiment']['calculate_energy']
+        if calculate_energy: 
             if average_connectomes:
                 consensus_network = binary_connectomes[first_density]
-                target_network = consensus_network
+                target_network = consensus_network # HPC is here, gets 990 connections
             else:
-                print("Using the first connectome as the target network.")
-                target_network = torch.tensor(
+                print("Using the first connectome as the target network.") # TODO: Not sure if this works... 
+                target_network = torch.tensor( # for HPC, this should not be chosen (and it is not) 
                     binary_connectomes[first_density][animal_id, :, :], 
                     dtype=torch.float32,
                     device=self.device
@@ -376,14 +380,17 @@ class GNMandESNPipelineOrchestrator:
         resolution = self.config['data']['connectome_resolution']
         
         # Get number iterations
-        if target_network is not None: 
-            num_iterations = int(target_network[first_density].sum().item() // 2)
+        if target_network is not None and calculate_energy: 
+            # num_iterations = int(target_network[first_density].sum().item() // 2) # no density needed, as this is already part of the target network?? (at least for HPC)) 
+            # TODO: Check how it is for the other datasets.
+            n_edges = int(target_network.sum().item() // 2) # divided by 2 because undirected -> should be 495 approximately for 100*100 and 10 percent
         else: 
-            num_iterations = resolution**2 * (first_density/100)
+            # num_iterations = (distance_matrix.shape[0]*(distance_matrix.shape[0]-1))*(first_density/100)
+            n_edges = int((distance_matrix.shape[0]*(distance_matrix.shape[0]-1))*(first_density/100) // 2)
             target_network = np.zeros(shape=(resolution, resolution))
             
-        # Load the empirical networks
-        empirical_binary_connectomes = np.zeros(shape=(1, resolution, resolution))
+        # Load the empirical networks TODO: What was this doing??
+        # empirical_binary_connectomes = np.zeros(shape=(1, resolution, resolution))
         
         # Get number of simulations
         num_simulations = self.config['gnm']['num_simulations']
@@ -394,7 +401,8 @@ class GNMandESNPipelineOrchestrator:
             config=self.config, # CHECK HERE!! is it already rounded? Does it contain eta and gamma? 
             distance_matrix=torch.Tensor(distance_matrix),
             mode=self.config['experiment']['search']['method'],
-            num_iterations=num_iterations,
+            # num_iterations=num_iterations,
+            n_edges=n_edges,
             num_simulations=num_simulations,
         )
         evaluation_criteria = create_evaluation_criteria(
@@ -439,10 +447,13 @@ class GNMandESNPipelineOrchestrator:
                     task_data=task_data,
                     evaluation_criteria=evaluation_criteria,
                     target_network=target_network,
-                    compare_to_connectome_of_distance_matrix=self.config['experiment']['compare_to_connectome_of_distance_matrix'],
-                    individual_networks=empirical_binary_connectomes, 
+                    calculate_energy=self.config['experiment']['calculate_energy'],
+                    n_edges=n_edges,
                     elaborate_analysis=self.config['experiment']['elaborate_analysis'],
-                    compare_to_all_individual_empirical_connectomes=self.config['experiment']['compare_to_all_individual_empirical_connectomes'], 
+                    # TODO: MAKE SURE THE TWO LINES BELOW WOULD WORK, in case the first line is set to true. 
+                    # calculate_energies_of_all_individual_connectomes=self.config['experiment']['calculate_energies_of_all_individual_connectomes'], # self.config['experiment']['calculate_energies_of_all_individual_connectomes'], 
+                    # individual_networks=None, # does not need to be set - does only need to be set if calculate_energies_of_all_individual_connectomes is true.  
+            
                     device_str=self.config['compute']['device'],
                     output_dir=self.output_dir, 
                     temp_dir=temp_results_dir,
