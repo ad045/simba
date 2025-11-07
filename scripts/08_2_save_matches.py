@@ -45,9 +45,9 @@ def find_and_save_matches(mode, # "empirical_conns" or "select_generated_conns"
 if __name__ == "__main__":
     # Define the file names
     from pathlib import Path
-    
-    DATASET_NAME = "suarez_MaMI_dataset"
-    PROJECT_NAME ="60_generally_finer_search_animal_0" # 26_testing_4_KS_folders_why_so_fast" # #  "2423_24rough_combined" # 24_testing_4_KS_folders_rougher_grid" # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2"
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/76_90000_samples_animal_206/summary_indiv_energies_for_exp_76_90000_samples_animal_206.csv
+    DATASET_NAME = "hcp_schaefer_100_dataset" # suarez_MaMI_dataset"
+    PROJECT_NAME ="76_90000_samples_animal_206" # 60_generally_finer_search_animal_0" # 26_testing_4_KS_folders_why_so_fast" # #  "2423_24rough_combined" # 24_testing_4_KS_folders_rougher_grid" # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2"
     base_output_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output")
     project_path = base_output_path / "gnm" / DATASET_NAME / PROJECT_NAME
     

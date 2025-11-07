@@ -1,7 +1,7 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 01_first_bigger_run # 4_fine_grid_upper_local_minima # 60_generally_finer_search
+  name: 05_second_big_overnight_run_10201 # 4_big_overnight_run_added_stuff # _big_overnight_run # 1_first_bigger_run # 4_fine_grid_upper_local_minima # 60_generally_finer_search
   animal: 0 # there is only one distance matrix (if this is necessary at all) 
   # 55,Lycaon3,Lycaon,Lycaon,Lycaon pictus,Lycaon,Caninae,Canidae,Caniformia,Carnivora,Laurasiatheria,Laurasiatheria
   # compare_to_connectome_of_distance_matrix: true # false does not work -> target network is initialized with 0 and that destroys everything?? false # true
@@ -11,7 +11,7 @@ experiment:
   calculate_energies_of_all_individual_connectomes: false # REMOVED THIS!  false # true # TODO: REPLACE THAT TO ALL OTHER CONFIG FILES!!! unsure if this works... 
   search:
     method: grid # random
-    n_samples: 10000 # 00 # 10000 #  900 # 00
+    n_samples: 10_201 # 000 # 0000 #  000 # 00 # 10000 #  900 # 00
   wandb:
     enabled: false
     project: GNM_project
@@ -86,26 +86,17 @@ data:
     animal_metadata: data/preprocessed/hcp_schaefer_100_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_100.csv
 gnm:
   eta_range:
-  # - -6
-  # - -5
-  # - 2.5
-  # - 3.5
+  # - -1.0
+  # - 1.0
+  # - 0.0
+  # - 0.0 
   - -8.0
   - 3.0
-  # - -2.0
-  # - 1.0
-  # - -7.5
-  # - 2.5
   gamma_range:
-  # - 0.2
-  - -0.1
-  # - 0.0
-  # - 0.3
-  - 1.0
-  # - -0.125
+  # - -1.0
   # - 1.0
-  # - 0.075
-  # - 0.275
+  - -0.1
+  - 1.0
   lambda:
   - 0.0
   generative_rules_to_test:
