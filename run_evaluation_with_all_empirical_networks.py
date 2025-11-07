@@ -238,29 +238,35 @@ def append_result_to_csv(result: Dict, output_path: Path, write_header: bool = F
         writer.writerow(result)
 
 
-def main(experiment_name: str):
+def main(dataset_name: str, 
+         experiment_name: str, 
+         number_multiprocessing_processes: int, 
+         ):
     """Main execution function."""
     
     ##########################################################################
-    ########### HARDCODED STUFF ##############################################
+    ########### HARDCODED PAATHS ##############################################
 
-    dataset_name = "suarez_MaMI_dataset"
-    # experiment_name = IS IN __MAIN__ # "71_testing_animal_0" # 67_testing_animal_0" # 66_filling_in_the_upper_region_animal_0"
-    
     path_config = PathConfig( 
         dataset_name=dataset_name,
         experiment_name=experiment_name, 
     )
     
+    path_01_connectomes = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/{dataset_name}/01_connectomes") 
+    
     if dataset_name == "suarez_MaMI_dataset": 
-        empirical_networks_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/01_consensus_bin_density_10_percent_50.npy")
+        empirical_networks_path = path_01_connectomes / "01_consensus_bin_density_10_percent_50.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_50.npy"
     
     if dataset_name == "shafiei_human_consensus_dataset": 
-        empirical_networks_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/griffa_70_human_connectomes_dataset/01_connectomes/01_indiv_connectomes_bin_density_10_percent_68.npy")
+        empirical_networks_path = path_01_connectomes / "01_indiv_connectomes_bin_density_10_percent_68.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_68.npy"
     
-    number_multiprocessing_processes = 8
+    if dataset_name == "hcp_schaefer_100_dataset": 
+        empirical_networks_path = path_01_connectomes / "00_connectomes_density10.npy"
+        distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
+    
+    
     
     ##########################################################################
     
@@ -397,9 +403,9 @@ def main(experiment_name: str):
         print("Loading distance matrices...")
         distance_matrices = np.load(distance_matrices_path)
         distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
-        if dataset_name == "shafiei_human_consensus_dataset": 
+        if dataset_name == "shafiei_human_consensus_dataset" or dataset_name == "hcp_schaefer_100_dataset": 
             distance_matrices = distance_matrices.unsqueeze(0)
-            print("Note: Distance matrix unsqueezed for Shafiei dataset")
+            print("Note: Distance matrix unsqueezed for Shafiei and HCP datasets")
         print(f"Loaded distance matrix with shape: {distance_matrices.shape}")
         
         # Pre-create evaluation criteria
@@ -489,4 +495,8 @@ def main(experiment_name: str):
 
 
 if __name__ == "__main__":
-    results = main(experiment_name="76_90000_samples_animal_206") # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206") #63_fine_grid_animal_0") # 60_generally_finer_search_animal_0") # 72_clean_10_000") # 71_testing_animal_0")
+    results = main(
+        dataset_name="hcp_schaefer_100_dataset",
+        experiment_name="05_testing", # 4_big_overnight_run", # 01_first_bigger_run_animal_0", 
+        number_multiprocessing_processes=12, 
+    ) # 76_90000_samples_animal_206") # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206") #63_fine_grid_animal_0") # 60_generally_finer_search_animal_0") # 72_clean_10_000") # 71_testing_animal_0")
