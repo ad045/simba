@@ -728,7 +728,7 @@ if __name__ == "__main__":
     }
 
     # Run the multiprocessing
-    df_final = multiprocess_networks(n_processes=12,
+    df_final = multiprocess_networks(n_processes=12, 
                                      experiment=EXPERIMENT, 
                                      dataset=DATASET, 
                                      base_path=base_path,
