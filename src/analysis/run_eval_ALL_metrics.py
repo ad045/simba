@@ -15,70 +15,67 @@ import traceback
 from analysis.evaluate_further_metrics_utils import multiprocess_networks
 
 # Configuration
-EXPERIMENT = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"  # 
-# For testing: "73_testing_animal_206"
-# Typical: 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
-# # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" 
-# # "73_testing_animal_0"
-DATASET = "suarez_MaMI_dataset"
-BASE_PATH = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
-N_PROCESSES = 12 # 2
+
 DEBUG = False
 CREATE_BIG_CSV = True
 
 # Define all metrics organized by category
 ALL_METRICS = {
     "static": [
-        # "density", # works # done
-        # "avg_clustering", # works # done
-        # "avg_degree", # works # done
-        # "degree_assortativity", # works # done
-        # "modularity", # works # done
-        # "transitivity", # works # done
+        "density", # works # done
+        "avg_clustering", # works # done
+        "avg_degree", # works # done
+        "degree_assortativity", # works # done
         
-        # "topological_distance",
-        # "degree_gini",
-        # "wiring_cost", # no shortest_path_distance - this does not work. 
-        # "structural_complexity",
-        # "n_connected_components",
+        "modularity", # works # done
+        "transitivity", # works # done
         
-        # "omega",
+        "topological_distance",
+        "degree_gini",
+        
+        "wiring_cost", # no shortest_path_distance - this does not work. 
+        "structural_complexity",
+        "n_connected_components",
+        
+        "omega",
     ],
     "dynamic": [
-        # "spectral_radius",
-        # "spectral_gap",
+        "spectral_radius",
+        "spectral_gap",
         # "spectral_gap_fatemeh",
         
-        # "global_efficiency",
-        # "diffusion_efficiency",
-        # "propagation_efficiency",
-        # "nct_control",
-        # "nct_energies",
+        "global_efficiency",
+        "diffusion_efficiency",
         
-        # "metastability", # this is now replaced... (soon)
-        "novel_metastability",
-        # "synchronizability_eigenratio",
-        # "algebraic_connectivity_nx",
-        # "kuramoto_synchronization",
-        # "community_synchronization_vulnerability",
+        "propagation_efficiency",
+        "nct_control",
+        "nct_energies",
+        
+        # "metastability", # this is now replaced... (soon - see line below)
+        # "novel_metastability", # THIS COULD WORK, BUT I DID NOT CHECK IT YET... 
+        
+        "synchronizability_eigenratio",
+        "algebraic_connectivity_nx",
+        "kuramoto_synchronization",
+        "community_synchronization_vulnerability",
     ],
     "computational": [
-        # "kernel_rank",
-        # "kernel_rank_fatemeh",
-        # "effective_dimensionality",
-        # "multifunctionality",
+        "kernel_rank",
+        "kernel_rank_fatemeh",
+        "effective_dimensionality",
+        "multifunctionality",
     ]
 }
 
-# Batch size - how many metrics to process together
-# Smaller = more robust but slower, Larger = faster but one failure affects more
-BATCH_SIZE = 2  # Process 2 metrics at a time
+
 
 
 class RobustMetricRunner:
     """Manages robust metric calculation with logging and error recovery."""
     
-    def __init__(self, experiment, dataset, base_path):
+    def __init__(self, experiment, dataset, base_path, n_processes, number_parallel_metrics):
+        self.n_processes = n_processes
+        self.number_parallel_metrics = number_parallel_metrics
         self.experiment = experiment
         self.dataset = dataset
         self.base_path = base_path
@@ -127,8 +124,8 @@ class RobustMetricRunner:
             ]
             
             # Create batches
-            for i in range(0, len(remaining_metrics), BATCH_SIZE):
-                batch = remaining_metrics[i:i + BATCH_SIZE]
+            for i in range(0, len(remaining_metrics), self.number_parallel_metrics):
+                batch = remaining_metrics[i:i + self.number_parallel_metrics]
                 batches.append({
                     category: batch
                 })
@@ -157,12 +154,12 @@ class RobustMetricRunner:
             # Run the multiprocessing
             start_time = time.time()
             result = multiprocess_networks(
-                n_processes=N_PROCESSES,
+                n_processes=self.n_processes, 
                 experiment=self.experiment,
                 dataset=self.dataset,
                 base_path=self.base_path,
                 interesting_metrics=interesting_metrics,
-                save_interval=2, # 50,
+                save_interval=100, 
                 debug=DEBUG,
                 create_big_update_csv=False  # Only create at the end
             )
@@ -197,11 +194,12 @@ class RobustMetricRunner:
             self._save_status()
             return False
     
+    
     def run(self):
         """Main run loop."""
         self.log("=" * 80)
         self.log(f"Starting robust metric processing for {self.experiment}")
-        self.log(f"Batch size: {BATCH_SIZE} metrics per batch")
+        self.log(f"Batch size: {self.number_parallel_metrics} metrics per batch")
         self.log("=" * 80)
         
         # Create batches
@@ -278,10 +276,16 @@ class RobustMetricRunner:
             self.log(f"Failed to create combined CSV: {e}", "ERROR")
 
 
-def main():
+def main(experiment_name: str, 
+         dataset_name: str, 
+         base_path: Path | str, 
+         n_processes: int, 
+         number_parallel_metrics: int):
     """Main entry point."""
-    runner = RobustMetricRunner(EXPERIMENT, DATASET, BASE_PATH)
-    
+    runner = RobustMetricRunner(experiment_name, dataset_name, base_path,
+                                 n_processes=n_processes,
+                                 number_parallel_metrics=number_parallel_metrics)
+
     try:
         runner.run()
     except KeyboardInterrupt:
@@ -295,4 +299,25 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    
+        
+    experiment_name = "01_first_bigger_run_animal_0" # 00_default_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"  # 
+    # For testing: "73_testing_animal_206"
+    # Typical: 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
+    # # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" 
+    # # "73_testing_animal_0"
+    dataset_name = "hcp_schaefer_100_dataset"  # suarez_MaMI_dataset"
+    base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
+    n_processes = 8 # 12 -> not sure if this really makes things faster? # 2 # Or None, for (maximum-1) available. 
+
+    # Batch size - how many metrics to process together
+    # Smaller = more robust but slower, Larger = faster but one failure affects more
+    number_parallel_metrics = 4  # Process 4 metrics at a time
+
+
+    main(experiment_name=experiment_name, 
+         dataset_name=dataset_name, 
+         base_path=base_path,
+         n_processes=n_processes,
+         number_parallel_metrics=number_parallel_metrics
+         )
