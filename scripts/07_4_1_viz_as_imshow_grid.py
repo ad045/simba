@@ -129,7 +129,7 @@ class GridVisualizer(PipelineVisualizer):
             self._format_colorbar(metric_name, cbar)
         
         # Add sample points and annotations
-        self._add_sample_points(ax, df, points, metric_name, show_dots, dot_color, point_size)
+        self._add_sample_points(ax, df, points, metric_name, show_dots, dot_color, point_size, label=True)
         self._add_estimated_connectomes(ax, estimated_indiv_connectomes, dot_color)
         
         if annotate_extremes:

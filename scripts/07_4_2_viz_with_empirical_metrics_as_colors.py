@@ -299,15 +299,14 @@ def main(LABEL_BY="name"):
     ####################################################################
     # Path to empirical metrics. 
     # Original 
-    # empirical_metrics_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/emprirical_analysis/empirical_analysis_binarized.csv"
+    empirical_metrics_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/emprirical_analysis/empirical_analysis_binarized.csv"
     # Theoretically all metrics 
-    empirical_metrics_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/empirical_all_metrics_analysis/all_metrics_empirical_all_metrics_analysis.csv" 
-    
-    # Path to best gamma and eta estimations
-    path_to_best_gamma_and_eta_estimations = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/70_mix_and_match_animal_0/min_energy_results.csv"
+    # empirical_metrics_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/04_big_overnight_run/all_metrics_for_04_big_overnight_run.csv") # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/empirical_all_metrics_analysis/all_metrics_empirical_all_metrics_analysis.csv" 
+    # Path to best gamma and eta estimations # ATTENTION!!! CHOSE MAYBE OTHER EMPIRICAL METRICS PATH
+    # path_to_best_gamma_and_eta_estimations = empirical_metrics_path.parent / "min_energy_results.csv"
     
     ##### CONFIG STUFF #######################
-    experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
+    experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"  # 04_big_overnight_run" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
     # The legendary big dataset (but only with original eval?): "76_90000_samples_animal_206"
     base_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/{experiment_name}")
     save_path_df = base_path / f"all_computational_metrics_for_{experiment_name}_updated_combined.csv"
@@ -333,6 +332,8 @@ def main(LABEL_BY="name"):
         df_combined.to_csv(save_path_df)
         df_paths = [save_path_df]
 
+
+    path_to_best_gamma_and_eta_estimations = base_path / "min_portrait_results.csv" # TODO!!! THINK THIS THROUGH!!
     # --- 2. Visualization Settings ---
     
     duplicate_handling = "mean"

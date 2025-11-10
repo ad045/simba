@@ -75,17 +75,20 @@ def find_min_energy(input_csv_path: str, output_csv_path: str, metric_type: str 
 
 if __name__ == '__main__':
     # dataset_name = "shafiei_human_consensus_dataset" # 
-    # dataset_name = "suarez_MaMI_dataset"
-    dataset_name = "hcp_schaefer_100_dataset"
+    dataset_name = "suarez_MaMI_dataset"
+    # dataset_name = "hcp_schaefer_100_dataset"
         # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/76_90000_samples_animal_206/summary_indiv_energies_for_exp_76_90000_samples_animal_206.csv
     # dataset_name = "hcp_schaefer_100_dataset"
 # PROJECT_NAME="76_90000_samples_animal_206" "suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # suarez_MaMI_dataset"
-    experiment_name ="05_second_big_overnight_run_10201" # 76_90000_samples_animal_206" # 04_big_overnight_run" # 1_first_bigger_run_animal_0" # 76_90000_samples_animal_206" # 60_generally_finer_search_animal_0" # 26_testing_4_KS_folders_why_so_fast" # #  "2423_24rough_combined" # 24_testing_4_KS_folders_rougher_grid" # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2"
+    
+    # experiment_name ="05_second_big_overnight_run_10201" # 76_90000_samples_animal_206" # 04_big_overnight_run" # 1_first_bigger_run_animal_0" # 76_90000_samples_animal_206" # 60_generally_finer_search_animal_0" # 26_testing_4_KS_folders_why_so_fast" # #  "2423_24rough_combined" # 24_testing_4_KS_folders_rougher_grid" # 20_sweep_with_individual_connectomes_eta_-7_and_gamma_-0.2"
     # experiment_name = "76_90000_samples_animal_206" # 75_10000_samples_hopefully_no_lost_entries_gamma_minus0p1_to_1_animal_206_identical_version_just_without_minus_etc" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"
-    # metric_type ="energy" # "portraits"   #  "energy" # "portraits"  # "energy"  #
+    # experiment_name = "06_with_seeds"
+    experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"
+    metric_type ="energy" # "portraits"   #  "energy" # "portraits"  # "energy"  #
     # metric_type ="portraits"   #  "energy" # "portraits"  # "energy"  #
     # metric_type = "f1"
-    metric_type = "communicability"
+    # metric_type = "portraits" # communicability"
     # base_output_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output")
     # project_path = base_output_path / "gnm" / DATASET_NAME / PROJECT_NAME
     

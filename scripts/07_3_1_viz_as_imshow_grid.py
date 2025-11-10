@@ -198,15 +198,17 @@ class GridVisualizer(PipelineVisualizer):
 if __name__ == "__main__":
     
     ##### CONFIG STUFF #######################
-    # experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" # 0" 
-    experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 0" 
+# /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/04_big_overnight_run/summary_indiv_portrait_for_exp_04_big_overnight_run_2.csv
+# /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/76_90000_samples_animal_206/summary_indiv_portrait_for_exp_76_90000_samples_animal_206.csv
+    dataset_name = "hcp_schaefer_100_dataset" # suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # "suarez_MaMI_dataset"
+    experiment_name = "10_serious_sweep_copy_idx_96" # 09_finally_working_idx_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 76_90000_samples_animal_206" # 04_big_overnight_run" # 01_first_bigger_run_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 0" 
     #  "76_90000_samples_animal_206" 
         # "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" 
         # File i am typically doing everything with, but it has this line?: 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
         # all metrics: "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" (with appendix ==  "_updated")
         # high resolution: 76_90000_samples_animal_206"
     appendix = "" # _updated" # or ""^
-    base_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/{experiment_name}")
+    base_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/{dataset_name}/{experiment_name}")
     # save_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated_combined.csv"
     save_path = base_path / f"all_metrics_for_{experiment_name}.csv"
     all_metrics_file = True 
@@ -227,8 +229,8 @@ if __name__ == "__main__":
         df_combined.to_csv(save_path)
         df_paths = [save_path]
 
-    plot_indiv_connectomes = False
-    duplicate_handling = "first" # "mean"
+    plot_indiv_connectomes = True # False
+    duplicate_handling = "mean" # first" # "mean"
     show_number_samples = True
     eta_span = [-8, 3]
     gamma_span = [-0.1, 1]
