@@ -1,9 +1,10 @@
 from pathlib import Path
 
 from run_experiment_hcp import main as run_experiment_main
-from run_evaluation_with_all_empirical_networks import main as run_evaluation_indiv_conns_main
+from X_run_evaluation_with_all_empirical_networks import main as run_evaluation_indiv_conns_main
 from src.analysis.run_eval_ALL_metrics import main as run_evaluation_all_metrics_main
 
+from run_experiment_ALL_animals import main as run_experiment_ALL_animals_main
 
 
 def run_pipeline():

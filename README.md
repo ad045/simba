@@ -89,7 +89,7 @@ scripts/run_gnm_automated_outp_path_creation_2_3_with_indiv_conns_copy.sh: line 
 
 
 
-# Tools: 
+# Tools:
 
 [] Creating a nice tree: To create a nice tree, use the following command - it will create a tree only containing the directories, and excluding specific folders that contain many files: (ma_thesis) adrian@MagicBook 14_4D_lab_code % tree -d -I 'X_*|output_*|*__pycache__*' . 
 

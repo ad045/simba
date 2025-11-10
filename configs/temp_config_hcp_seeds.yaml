@@ -1,16 +1,15 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 80_more_animals # 4_fine_grid_upper_local_minima # 60_generally_finer_search
-  animal: 55 
-  # 55,Lycaon3,Lycaon,Lycaon,Lycaon pictus,Lycaon,Caninae,Canidae,Caniformia,Carnivora,Laurasiatheria,Laurasiatheria
+  name: 10_serious_sweep_copy_idx_0
+  animal: 0
   calculate_energy: true
   average_connectomes: true
   elaborate_analysis: true
-  calculate_energies_of_all_individual_connectomes: true
+  calculate_energies_of_all_individual_connectomes: false
   search:
-    method: grid # random
-    n_samples: 10000 # 10000 #  900 # 00
+    method: grid
+    n_samples: 1600
   wandb:
     enabled: false
     project: GNM_project
@@ -24,10 +23,10 @@ pipeline:
   save_matches: true
   create_visualizations: true
   experiment:
-    num_runs: 300 # is ignored in the ALL_animals script, and only n_samples counts then, I guess... ??
+    num_runs: 300
   evaluation:
     reference_csv_name: null
-    checkpoint_interval: 1 # This determines if each (or only e.g. every 3rd) generated network gets saved.
+    checkpoint_interval: 1
   empirical_analysis:
     modes:
     - binarized
@@ -77,34 +76,19 @@ pipeline:
     - mean_mc_divided_by_wiring_cost
     - mc_5_divided_by_wiring_cost
 data:
-  dataset_name: suarez_MaMI_dataset
-  connectome_resolution: 50 # 100 #  50 # PER BRAIN HALF!!! 
+  dataset_name: hcp_schaefer_100_dataset
+  connectome_resolution: 50
   density: 10
   paths:
     project_root: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code
-    animal_metadata: data/preprocessed/suarez_MaMI_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_100.csv
+    animal_metadata: data/preprocessed/hcp_schaefer_100_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_100.csv
 gnm:
   eta_range:
-  # - -6
-  # - -5
-  # - 2.5
-  # - 3.5
   - -8.0
   - 3.0
-  # - -2.0
-  # - 1.0
-  # - -7.5
-  # - 2.5
   gamma_range:
-  # - 0.2
   - -0.1
-  # - 0.0
-  # - 0.3
   - 1.0
-  # - -0.125
-  # - 1.0
-  # - 0.075
-  # - 0.275
   lambda:
   - 0.0
   generative_rules_to_test:
@@ -123,6 +107,9 @@ gnm:
   - powerlaw
   heterochronicity_relationship_type:
   - powerlaw
+  seed_params:
+    seed_adjacency_matrices: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/hcp_schaefer_100_dataset/05_seeds_of_humans/seeds_density2_16_regions_conns.npy
+    seed_id: 0
 dyn_gnm:
   dynamic_fitness_metric: mc_mean
 esn:

@@ -22,9 +22,11 @@ class DataLoader:
                              connectome_id) -> np.ndarray:
         """Load the distance matrix."""
         try:
-            dist_matrix = np.load(self.config["paths"]['02_distance_matrices'] / f"distance_matrix_{self.resolution*2}.npy")
             if self.config["data"]["dataset_name"] == "suarez_MaMI_dataset": 
+                dist_matrix = np.load(self.config["paths"]['02_distance_matrices'] / f"distance_matrix_{self.resolution}.npy")
                 dist_matrix = dist_matrix[connectome_id,:,:] 
+            if self.config["data"]["dataset_name"] == "hcp_schaefer_100_dataset": 
+                dist_matrix = np.load(self.config["paths"]['02_distance_matrices'] / f"distance_matrix_{self.resolution*2}.npy") # TODO: remove the *2 again... 
             self._validate_distance_matrix(dist_matrix)
             return dist_matrix
         except Exception as e:
@@ -58,7 +60,7 @@ class DataLoader:
         
             elif self.config["data"]["dataset_name"] == "suarez_MaMI_dataset": 
                 # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_bin_density_10_percent_100.npy
-                binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/01_consensus_bin_density_{density}_percent_{resolution}.npy" # 00_connectomes_bin_density_{density}_percent_{resolution}.npy" # 01_consensus_bin_density_{density}_percent_{resolution}.npy"
+                binary_conn_path = self.config['paths']['connectome_dir'] / f"01_connectomes/01_consensus_bin_density_{density}_percent_{int(resolution)}.npy" # 00_connectomes_bin_density_{density}_percent_{resolution}.npy" # 01_consensus_bin_density_{density}_percent_{resolution}.npy"
                 print(binary_conn_path)
                 binary_conn = np.load(binary_conn_path)[connectome_id,:,:] 
                 

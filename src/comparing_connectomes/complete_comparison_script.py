@@ -243,6 +243,7 @@ def main(dataset_name: str,
          experiment_name: str,
          evaluation_mode: str = "energy",  # "energy" or "portrait"
          debug_subject_ids: List[int] | None = None, 
+         number_multiprocessing_processes: int = 8
          ):
     """Main execution function."""
     
@@ -269,7 +270,6 @@ def main(dataset_name: str,
         empirical_networks_path = path_01_connectomes / "00_connectomes_density10.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
     
-    number_multiprocessing_processes = 8
     
     ##########################################################################
     
@@ -518,8 +518,11 @@ def main(dataset_name: str,
 
 if __name__ == "__main__":
     results = main(
-        dataset_name="hcp_schaefer_100_dataset",
-        experiment_name="05_second_big_overnight_run_10201", 
-        evaluation_mode="communicability", # f1", # portrait",  # or "energy"
-        debug_subject_ids=[0,1,2,3,4,5,6,7,8,9] #None,  # turn this to "None" if not in debug mode. Or array [1,2,]
+        dataset_name="suarez_MaMI_dataset", # hcp_schaefer_100_dataset",
+        experiment_name="80_more_animals_animal_169", # 103", # 06_with_seeds", # 05_second_big_overnight_run_10201", 
+        evaluation_mode="portrait", # communicability", # f1", # portrait",  # or "energy"
+        debug_subject_ids=None, # [0,1,2,3,4,5,6,7,8,9] #None,  # turn this to "None" if not in debug mode. Or array [1,2,]
+        number_multiprocessing_processes=8, 
     )
+    
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/80_more_animals_animal_103/all_metrics_for_80_more_animals_animal_103.csv

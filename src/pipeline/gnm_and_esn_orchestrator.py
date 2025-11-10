@@ -140,6 +140,7 @@ def _run_and_save_single_simulation(
     task_data: dict, 
     evaluation_criteria, 
     target_network,
+    seed_adjacency_matrix, 
     
     n_edges,
     calculate_energy: bool, 
@@ -180,10 +181,25 @@ def _run_and_save_single_simulation(
         preferential_relationship_type=bp_data['preferential_relationship_type']
     )
     
+    # seed_adjacency_matrix = None
+    # if 'seed' in bp_data and bp_data['seed'] is not False: 
+    #     seed_path = Path(bp_data['seed'])
+    #     if seed_path.exists():
+    #         seed_adjacency_matrix = np.load(seed_path)
+    #         seed_adjacency_matrix = torch.tensor(
+    #             seed_adjacency_matrix,
+    #             dtype=torch.float32,
+    #             device=device_str
+    #         )
+    #         binary_params.seed_adjacency_matrix = seed_adjacency_matrix
+    #     else:
+    #         print(f"Warning: Seed file {seed_path} not found. Proceeding without seed.")
+            
     run_config = RunConfig(
         num_simulations=None,
         binary_parameters=binary_params,
-        distance_matrix=task_data['distance_matrix']
+        distance_matrix=task_data['distance_matrix'], 
+        seed_adjacency_matrix=seed_adjacency_matrix # seed_adjacency_matrix
     )
 
     flat_record = {}
@@ -379,6 +395,31 @@ class GNMandESNPipelineOrchestrator:
             
         resolution = self.config['data']['connectome_resolution']
         
+        # Get seed adjacency matrix if specified
+        seed_adjacency_matrix = None
+        if 'seed_params' in self.config['gnm'] and self.config['gnm']['seed_params'] is not False: 
+        
+            seed_params = self.config['gnm']['seed_params']
+            seed_adjacency_matrices_path = Path(seed_params['seed_adjacency_matrices'])
+            if seed_adjacency_matrices_path.exists():
+                all_seed_adjacency_matrices = np.load(seed_adjacency_matrices_path)
+                seed_id = seed_params["seed_id"] 
+                
+                if seed_id < all_seed_adjacency_matrices.shape[0]:
+                    seed_adjacency_matrix = torch.tensor(
+                        [all_seed_adjacency_matrices[seed_id]], 
+                        dtype=torch.float32,
+                        device=self.device
+                    )
+                    print(f"Using seed adjacency matrix ID {seed_id} from {seed_adjacency_matrices_path}.")
+                else:
+                    print(f"Warning: Seed ID {seed_id} out of bounds. Proceeding without seed.")
+                    seed_adjacency_matrix = None
+            else:
+                print(f"Warning: Seed file {seed_adjacency_matrices_path} not found. Proceeding without seed.")
+                seed_adjacency_matrix = None
+                
+                
         # Get number iterations
         if target_network is not None and calculate_energy: 
             # num_iterations = int(target_network[first_density].sum().item() // 2) # no density needed, as this is already part of the target network?? (at least for HPC)) 
@@ -447,6 +488,7 @@ class GNMandESNPipelineOrchestrator:
                     task_data=task_data,
                     evaluation_criteria=evaluation_criteria,
                     target_network=target_network,
+                    seed_adjacency_matrix=seed_adjacency_matrix, 
                     calculate_energy=self.config['experiment']['calculate_energy'],
                     n_edges=n_edges,
                     elaborate_analysis=self.config['experiment']['elaborate_analysis'],
