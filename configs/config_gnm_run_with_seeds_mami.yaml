@@ -1,15 +1,15 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 10_serious_sweep_copy_idx_98
-  animal: 0
+  name: 13_seeds_of_all_animals_density1
+  animal: 444 # placeholder
   calculate_energy: true
   average_connectomes: true
   elaborate_analysis: true
   calculate_energies_of_all_individual_connectomes: false
   search:
     method: grid
-    n_samples: 1600
+    n_samples: 2500
   wandb:
     enabled: false
     project: GNM_project
@@ -76,12 +76,12 @@ pipeline:
     - mean_mc_divided_by_wiring_cost
     - mc_5_divided_by_wiring_cost
 data:
-  dataset_name: hcp_schaefer_100_dataset
+  dataset_name: suarez_MaMI_dataset # hcp_schaefer_100_dataset
   connectome_resolution: 50
   density: 10
   paths:
     project_root: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code
-    animal_metadata: data/preprocessed/hcp_schaefer_100_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_100.csv
+    animal_metadata: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_50_processed.csv
 gnm:
   eta_range:
   - -8.0
@@ -108,8 +108,8 @@ gnm:
   heterochronicity_relationship_type:
   - powerlaw
   seed_params:
-    seed_adjacency_matrices: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/hcp_schaefer_100_dataset/05_seeds_of_humans/seeds_density2_16_regions_conns.npy
-    seed_id: 98
+    seed_adjacency_matrices: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/05_seeds/all_animal_seeds_density1.npy
+    seed_id: 444 # placeholder
 dyn_gnm:
   dynamic_fitness_metric: mc_mean
 esn:

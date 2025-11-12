@@ -115,46 +115,29 @@ def main(
     #     31, 47, 63, 79, 95, 111, 127, 143, 159
     # ]
     
-    seed_ids_to_analyze = [
-        151, 152, 153, 154, 
-        22, 23, 24, 25, 26, 
-        32, 33, 
-        45, 46, 47, 
-        57, 
-        77, 74, 72, 71, 
-        103, 105, 106, 107, 
-        121, 126, 123, 
-        1, 17, 33, 49, 65, 81, 97, 113, 129, 145, 2, 18, 34, 50, 66, 82, 98, 114, 130, 146,
-        3, 19, 35, 51, 67, 83, 99, 115, 131, 147, 4, 20, 36, 52, 68, 84, 100, 116, 132, 148,
-        5, 21, 37, 53, 69, 85, 101, 117, 133, 149, 6, 22, 38, 54, 70, 86, 102, 118, 134, 150,
-        7, 23, 39, 55, 71, 87, 103, 119, 135, 151, 8, 40, 56, 88, 120, 136, 152, 9, 25, 41,
-        57, 73, 89, 105, 121, 137, 153, 10, 26, 42, 58, 74, 90, 106, 122, 138, 154, 11, 27,
-        43, 59, 75, 91, 107, 123, 139, 155, 12, 28, 44, 60, 76, 92, 108, 124, 140, 13, 29,
-        45, 61, 77, 93, 109, 125, 141, 157, 14, 30, 46, 62, 78, 94, 110, 126, 142, 158, 15,
-        31, 47, 63, 79, 95, 111, 127, 143, 159
-    ]
+    seed_ids_to_analyze = [0]
 
-    # Detect finished seeds
-    all_csvs = glob.glob(str(OUTPUT_BASE_DIR / "**/all_metrics_for_*_idx_*.csv"), recursive=True)
-    finished_ids = []
-    for csv_path in all_csvs:
-        name = Path(csv_path).stem  # e.g. "all_metrics_for_10_serious_sweep_copy_idx_80"
-        if "_idx_" in name:
-            try:
-                finished_ids.append(int(name.split("_idx_")[-1]))
-            except ValueError:
-                continue
+    # # Detect finished seeds
+    # all_csvs = glob.glob(str(OUTPUT_BASE_DIR / "**/all_metrics_for_*_idx_*.csv"), recursive=True)
+    # finished_ids = []
+    # for csv_path in all_csvs:
+    #     name = Path(csv_path).stem  # e.g. "all_metrics_for_10_serious_sweep_copy_idx_80"
+    #     if "_idx_" in name:
+    #         try:
+    #             finished_ids.append(int(name.split("_idx_")[-1]))
+    #         except ValueError:
+    #             continue
 
-    # Remove finished ones from the list
-    before_count = len(seed_ids_to_analyze)
-    seed_ids_to_analyze = [sid for sid in seed_ids_to_analyze if sid not in finished_ids]
-    after_count = len(seed_ids_to_analyze)
+    # # Remove finished ones from the list
+    # before_count = len(seed_ids_to_analyze)
+    # seed_ids_to_analyze = [sid for sid in seed_ids_to_analyze if sid not in finished_ids]
+    # after_count = len(seed_ids_to_analyze)
 
-    print(f"\n🧩 Found {len(finished_ids)} already finished seed(s).")
-    print(f"💨 Skipping {before_count - after_count} seeds. Remaining: {after_count}")
-    print(f"⏩ Seeds to analyze next: {seed_ids_to_analyze}\n")
+    # print(f"\n🧩 Found {len(finished_ids)} already finished seed(s).")
+    # print(f"💨 Skipping {before_count - after_count} seeds. Remaining: {after_count}")
+    # print(f"⏩ Seeds to analyze next: {seed_ids_to_analyze}\n")
 
-    # Continue with original logic
+    # # Continue with original logic
     total_animals = len(seed_ids_to_analyze)
     successful = 0
     failed = 0
@@ -175,12 +158,12 @@ def main(
     # cols = 16
     # arr = np.arange(rows * cols).reshape(rows, cols)
     # seed_ids_to_analyze = arr.T.flatten()
-    seed_ids_to_analyze = [1, 17, 33, 49, 65, 81, 97, 113, 129, 145, 2, 18, 34, 50, 66, 82, 98, 114, 130, 146, 3, 19, 35, 51, 67, 83, 99, 
-                           115, 131, 147, 4, 20, 36, 52, 68, 84, 100, 116, 132, 148, 5, 21, 37, 53, 69, 85, 101, 117, 133, 149, 6, 22, 38, 
-                           54, 70, 86, 102, 118, 134, 150, 7, 23, 39, 55, 71, 87, 103, 119, 135, 151, 8, 40, 56, 88, 120, 136, 152, 9, 25, 
-                           41, 57, 73, 89, 105, 121, 137, 153, 10, 26, 42, 58, 74, 90, 106, 122, 138, 154, 11, 27, 43, 59, 75, 91, 107, 
-                           123, 139, 155, 12, 28, 44, 60, 76, 92, 108, 124, 140, 13, 29, 45, 61, 77, 93, 109, 125, 141, 157, 14, 30, 46, 
-                           62, 78, 94, 110, 126, 142, 158, 15, 31, 47, 63, 79, 95, 111, 127, 143, 159]
+    # seed_ids_to_analyze = [1, 17, 33, 49, 65, 81, 97, 113, 129, 145, 2, 18, 34, 50, 66, 82, 98, 114, 130, 146, 3, 19, 35, 51, 67, 83, 99, 
+    #                        115, 131, 147, 4, 20, 36, 52, 68, 84, 100, 116, 132, 148, 5, 21, 37, 53, 69, 85, 101, 117, 133, 149, 6, 22, 38, 
+    #                        54, 70, 86, 102, 118, 134, 150, 7, 23, 39, 55, 71, 87, 103, 119, 135, 151, 8, 40, 56, 88, 120, 136, 152, 9, 25, 
+    #                        41, 57, 73, 89, 105, 121, 137, 153, 10, 26, 42, 58, 74, 90, 106, 122, 138, 154, 11, 27, 43, 59, 75, 91, 107, 
+    #                        123, 139, 155, 12, 28, 44, 60, 76, 92, 108, 124, 140, 13, 29, 45, 61, 77, 93, 109, 125, 141, 157, 14, 30, 46, 
+    #                        62, 78, 94, 110, 126, 142, 158, 15, 31, 47, 63, 79, 95, 111, 127, 143, 159]
     
     # seed_ids_to_analyze = [  0  16  32  48  64  80  96 112 128 144   1  17  33  49  65  81  97 113
     #     129 145   2  18  34  50  66  82  98 114 130 146   3  19  35  51  67  83
@@ -307,7 +290,7 @@ def main(
 if __name__ == "__main__":
 
     path_to_config_file = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_hcp_with_seeds.yaml")  # BASE_CONFIG_PATH
-    number_of_runs_per_animal = 1 # 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied.
+    number_of_runs_per_animal = 5 # 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied.
     
     # Define where your experiment outputs live
     OUTPUT_BASE_DIR = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset")

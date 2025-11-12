@@ -407,10 +407,10 @@ class GNMandESNPipelineOrchestrator:
                 
                 if seed_id < all_seed_adjacency_matrices.shape[0]:
                     seed_adjacency_matrix = torch.tensor(
-                        [all_seed_adjacency_matrices[seed_id]], 
+                        all_seed_adjacency_matrices[seed_id], 
                         dtype=torch.float32,
                         device=self.device
-                    )
+                    ).unsqueeze(0)
                     print(f"Using seed adjacency matrix ID {seed_id} from {seed_adjacency_matrices_path}.")
                 else:
                     print(f"Warning: Seed ID {seed_id} out of bounds. Proceeding without seed.")

@@ -1,7 +1,7 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 10_serious_sweep_copy
+  name: 11_consensus_seed
   animal: 0
   calculate_energy: true
   average_connectomes: true
@@ -9,7 +9,7 @@ experiment:
   calculate_energies_of_all_individual_connectomes: false
   search:
     method: grid
-    n_samples: 1600
+    n_samples: 2500
   wandb:
     enabled: false
     project: GNM_project
@@ -108,7 +108,7 @@ gnm:
   heterochronicity_relationship_type:
   - powerlaw
   seed_params:
-    seed_adjacency_matrices: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/hcp_schaefer_100_dataset/05_seeds_of_humans/seeds_density2_16_regions_conns.npy # seeds_density2_16_regions_params.npy
+    seed_adjacency_matrices: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/hcp_schaefer_100_dataset/05_seeds_of_humans_consensus/consensus_seed_density2.npy # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/hcp_schaefer_100_dataset/05_seeds_of_humans/seeds_density2_16_regions_conns.npy # seeds_density2_16_regions_params.npy
     seed_id: 0
 dyn_gnm:
   dynamic_fitness_metric: mc_mean
