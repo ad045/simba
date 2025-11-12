@@ -97,7 +97,7 @@ def cleanup_temp_config(temp_config_path: str):
 
 
 def main(
-        animals_to_analyze = [169, 103, 188] # , 188] # range(ANIMAL_START, ANIMAL_END + 1) 206, 0, 188,
+        animals_to_analyze # CHANGE THIS IN __main__! = [0, 206] # 169, 103, 188] # , 188] # range(ANIMAL_START, ANIMAL_END + 1) 206, 0, 188,
         ):
     """Main execution loop."""
     
@@ -219,4 +219,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main(animals_to_analyze=[169, 103])
+    main(animals_to_analyze=[22, 124]) # 206
