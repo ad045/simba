@@ -202,37 +202,47 @@ if __name__ == "__main__":
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/80_more_animals_animal_169/all_metrics_for_80_more_animals_animal_169.csv
 # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/04_big_overnight_run/summary_indiv_portrait_for_exp_04_big_overnight_run_2.csv
 # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/76_90000_samples_animal_206/summary_indiv_portrait_for_exp_76_90000_samples_animal_206.csv
-    # dataset_name = "hcp_schaefer_100_dataset" #
-    dataset_name = "suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # "suarez_MaMI_dataset"
-    experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_minus0p1_to_1_animal_206_identical_version_just_without_minus_etc" # 80_more_animals_animal_103" # 10_serious_sweep_copy_idx_96" # 09_finally_working_idx_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 76_90000_samples_animal_206" # 04_big_overnight_run" # 01_first_bigger_run_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 0" 
+    # dataset_name = "kaysons_generated_networks_propagation" # diffusion" # 
+    dataset_name = "hcp_schaefer_100_dataset" 
+    experiment_name = "07_high_res_90_000_plot" # 05_second_big_overnight_run_10201" # 07_high_res_90_000_plot" # "05_second_big_overnight_run_10201"
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/80_more_animals_animal_0/all_metrics_for_80_more_animals_animal_0.csv
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/12_seed_chimp_206_idx_0/all_metrics_for_12_seed_chimp_206_idx_0.csv
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/11_consensus_seed_idx_0/all_metrics_for_11_consensus_seed_idx_0.csv
+    # dataset_name = "suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # "suarez_MaMI_dataset"
+    # experiment_name = "80_more_animals_animal_124" # 80_more_animals_animal_22" # 13_seeds_of_all_animals_density1_animal_0" # 13_seeds_of_all_animals_density1_animal_103" # 12_seed_chimp_206_idx_0" # 11_consensus_seed_idx_0" # 80_more_animals_animal_0" # 12_seed_chimp_206_idx_0" # 11_consensus_seed_idx_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_minus0p1_to_1_animal_206_identical_version_just_without_minus_etc" # 80_more_animals_animal_103" # 10_serious_sweep_copy_idx_96" # 09_finally_working_idx_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 76_90000_samples_animal_206" # 04_big_overnight_run" # 01_first_bigger_run_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 0" 
     #  "76_90000_samples_animal_206" 
         # "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" 
         # File i am typically doing everything with, but it has this line?: 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
         # all metrics: "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" (with appendix ==  "_updated")
         # high resolution: 76_90000_samples_animal_206"
     appendix = "" # _updated" # or ""^
+    # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/13_seeds_of_all_animals_density1_animal_169/all_metrics_for_13_seeds_of_all_animals_density1_animal_169.csv
     base_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/{dataset_name}/{experiment_name}")
     # save_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated_combined.csv"
     save_path = base_path / f"all_metrics_for_{experiment_name}.csv"
-    all_metrics_file = True 
+    
+    # Turn on/off regarding if one wants to use the original or the new metrics 
+    # ORIGINAL METRICS OR NEW ONES
+    only_all_metrics_file = False # True  # True #  False #  True # False # True 
     bin_to_100 = True # False # TODO: DOES NOT WORK YET. 
     mode = "draft" # presentation" # draft" # presentation"  # "draft" or "presentation"
     # "terrain" # cubehelix" 
     ##########################################
-    if all_metrics_file: 
+    if only_all_metrics_file: 
         df_paths = [base_path / f"all_metrics_for_{experiment_name}{appendix}.csv"]
     else: 
-        df_static_path = base_path / f"all_static_metrics_for_{experiment_name}.csv"
-        df_static = pd.read_csv(df_static_path)
+        df_static_path = base_path / f"all_static_metrics_for_{experiment_name}_updated.csv"
+        df_static = pd.read_csv(df_static_path) if df_static_path.exists() else pd.DataFrame()
         df_dynamic_path = base_path / f"all_dynamic_metrics_for_{experiment_name}_updated.csv"
-        df_dynamic = pd.read_csv(df_dynamic_path)
+        df_dynamic = pd.read_csv(df_dynamic_path) if df_dynamic_path.exists() else pd.DataFrame()
         df_computational_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated.csv"
-        df_computational = pd.read_csv(df_computational_path)
+        df_computational = pd.read_csv(df_computational_path) if df_computational_path.exists() else pd.DataFrame()
         df_combined = pd.concat([df_static, df_dynamic, df_computational], axis=1)
         df_combined.to_csv(save_path)
         df_paths = [save_path]
 
-    plot_indiv_connectomes = True # False
+    # Change this here if individual points (minimum estimates, best fits) should be shown 
+    plot_indiv_connectomes = "portrait" #  None # "portrait" # or "energy" or None
     duplicate_handling = "mean" # first" # "mean"
     show_number_samples = True
     eta_span = [-8, 3]
@@ -271,43 +281,60 @@ if __name__ == "__main__":
         "mc_5_divided_by_wiring_cost", 
     ] + [f"mc_{lag}" for lag in lags_to_plot] + [
     ############### NEW #####################################
-        "density","avg_clustering","avg_degree","degree_assortativity","modularity","transitivity","topological_distance_mean","topological_distance_std",
-        "degree_gini","wiring_cost","structural_complexity","n_connected_components","omega","spectral_radius","spectral_gap","spectral_gap_fatemeh","global_efficiency","diffusion_efficiency","propagation_efficiency","nct_control_avg","nct_control_std","nct_control_max","nct_control_n_nodes_90_percent","nct_control_n_nodes_50_percent","nct_control_n_nodes_10_percent","nct_energies_total","nct_energies_std","nct_energies_max","nct_energies_n_nodes_90_percent","nct_energies_n_nodes_50_percent","nct_energies_n_nodes_10_percent","metastability_global","metastability_local_mean","metastability_local_std","metastability_local_skewness","metastability_local_kurtosis","synchronizability_eigenratio_eigenratio","synchronizability_eigenratio_lambda_2","synchronizability_eigenratio_lambda_N","algebraic_connectivity_nx","kuramoto_synchronization","community_synchronization_vulnerability_vulnerability","community_synchronization_vulnerability_n_communities","kernel_rank_thresholded_and_summed_0.01","kernel_rank_max","kernel_rank_phase_of_lambda_max","kernel_rank_phase_diff_of_lambda_max_and_2nd","kernel_rank_fatemeh","effective_dimensionality","multifunctionality"
-        # "density", # works # done
-        # "avg_clustering", # workxs # done
-        # "avg_degree", # works # done
-        # "degree_assortativity", # works # done
-        # "modularity", # works # done
-        # "transitivity", # works # done
+        # "density",
+        "avg_clustering",
+        # "avg_degree",
         
-        # "topological_distance",
-        # "degree_gini",
-        # "wiring_cost", # no shortest_path_distance - this does not work. 
-        # "structural_complexity",
-        # "n_connected_components",
+        "directed_simplices_count",
+        "directed_simplices_max_size",
+        # ---
+        "directed_simplices_combined_with_n_components",
         
-        # "omega",
-
-        # "spectral_radius",
-        # "spectral_gap",
-        # "spectral_gap_fatemeh",
+        "degree_assortativity",
+        "modularity",
+        "transitivity",
+        "topological_distance_mean",
+        "topological_distance_std",
+        "degree_gini",
+        "wiring_cost",
+        "structural_complexity",
+        "n_connected_components",
+        "omega","spectral_radius",
+        "spectral_gap","spectral_gap_fatemeh",
+        "global_efficiency",
+        "diffusion_efficiency",
+        "propagation_efficiency",
+        "nct_control_avg","nct_control_std",
+        "nct_control_max","nct_control_n_nodes_90_percent",
+        "nct_control_n_nodes_50_percent",
+        "nct_control_n_nodes_10_percent",
+        "nct_energies_total","nct_energies_std",
+        "nct_energies_max","nct_energies_n_nodes_90_percent",
+        "nct_energies_n_nodes_50_percent",
+        "nct_energies_n_nodes_10_percent",
         
-        # "global_efficiency",
-        # "diffusion_efficiency",
-        # "propagation_efficiency",
-        # "nct_control",
-        # "nct_energies",
+        "metastability_global",
+        "metastability_local_mean",
+        "metastability_local_std",
+        "metastability_local_skewness",
+        "metastability_local_kurtosis",
         
-        # "metastability",
-        # "synchronizability_eigenratio",
-        # "algebraic_connectivity_nx",
-        # "kuramoto_synchronization",
-        # "community_synchronization_vulnerability",
-
-        # "kernel_rank",
-        # "kernel_rank_fatemeh",
-        # "effective_dimensionality",
-        # "multifunctionality",
+        "synchronizability_eigenratio_eigenratio",
+        "synchronizability_eigenratio_lambda_2",
+        "synchronizability_eigenratio_lambda_N",
+        "algebraic_connectivity_nx",
+        "kuramoto_synchronization",
+        "community_synchronization_vulnerability_vulnerability",
+        "community_synchronization_vulnerability_n_communities",
+        
+        "kernel_rank_thresholded_and_summed_0.01",
+        "kernel_rank_max",
+        "kernel_rank_phase_of_lambda_max",
+        "kernel_rank_phase_diff_of_lambda_max_and_2nd",
+        "kernel_rank_fatemeh",
+        
+        "effective_dimensionality",
+        "multifunctionality"
 
     ] 
     
@@ -331,9 +358,9 @@ if __name__ == "__main__":
             
         if gnm_results_df.empty:
             raise ValueError("Dataframe is empty after loading.")
-
-        path_to_best_gamma_and_eta_estimations = parent_folder / "min_energy_results.csv"
-        if os.path.exists(path_to_best_gamma_and_eta_estimations) and plot_indiv_connectomes:
+        # if os.path.exists(path_to_best_gamma_and_eta_estimations) and plot_indiv_connectomes is not None:
+        if plot_indiv_connectomes is not None:
+            path_to_best_gamma_and_eta_estimations = parent_folder / f"min_{plot_indiv_connectomes}_results.csv"
             df_best_gamma_and_eta_estimates = pd.read_csv(path_to_best_gamma_and_eta_estimations)
         else:
             df_best_gamma_and_eta_estimates = None
@@ -364,6 +391,15 @@ if __name__ == "__main__":
                     pd.to_numeric(df["wiring_cost"], errors='coerce')
                 )
             
+            if metric == "directed_simplices_combined_with_n_components": 
+                # Take directed_simplices_count, if n_components is == 1. Otherwise, set it to -1. 
+                df["directed_simplices_combined_with_n_components"] = np.where(
+                    pd.to_numeric(df["n_connected_components"], errors='coerce') == 1,
+                    pd.to_numeric(df["directed_simplices_count"], errors='coerce'),
+                    np.nan
+                )
+                df["directed_simplices_combined_with_n_components"] = np.log(df["directed_simplices_combined_with_n_components"])
+                
             df["eta"] = pd.to_numeric(df["eta"], errors='coerce')
             df["gamma"] = pd.to_numeric(df["gamma"], errors='coerce')
             

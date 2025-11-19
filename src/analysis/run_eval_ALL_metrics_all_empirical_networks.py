@@ -22,50 +22,48 @@ CREATE_BIG_CSV = True
 # Define all metrics organized by category
 ALL_METRICS = {
     "static": [
-        # "density", # works # done
-        # "avg_clustering", # works # done
-        # "avg_degree", # works # done
-        # "degree_assortativity", # works # done
+        "density", # works # done
+        "avg_clustering", # works # done
+        "avg_degree", # works # done
+        "degree_assortativity", # works # done
         
-        # "modularity", # works # done
-        # "transitivity", # works # done
+        "modularity", # works # done
+        "transitivity", # works # done
         
-        # "topological_distance",
-        # "degree_gini",
+        "topological_distance",
+        "degree_gini",
         
-        # "wiring_cost", # no shortest_path_distance - this does not work. 
-        # "structural_complexity",
+        "wiring_cost", # no shortest_path_distance - this does not work. 
+        "structural_complexity",
         "n_connected_components",
         
-        # # "omega",
-        
-        "directed_simplices"
+        "omega",
     ],
     "dynamic": [
-        # "spectral_radius",
-        # "spectral_gap",
-        # # "spectral_gap_fatemeh",
+        "spectral_radius",
+        "spectral_gap",
+        # "spectral_gap_fatemeh",
         
-        # "global_efficiency",
-        # "diffusion_efficiency",
+        "global_efficiency",
+        "diffusion_efficiency",
         
-        # "propagation_efficiency",
-        # "nct_control",
-        # "nct_energies",
+        "propagation_efficiency",
+        "nct_control",
+        "nct_energies",
         
-        # # "metastability", # this is now replaced... (soon - see line below)
-        # # "novel_metastability", # THIS COULD WORK, BUT I DID NOT CHECK IT YET... 
+        # "metastability", # this is now replaced... (soon - see line below)
+        # "novel_metastability", # THIS COULD WORK, BUT I DID NOT CHECK IT YET... 
         
-        # "synchronizability_eigenratio",
-        # "algebraic_connectivity_nx",
-        # "kuramoto_synchronization",
-        # "community_synchronization_vulnerability",
+        "synchronizability_eigenratio",
+        "algebraic_connectivity_nx",
+        "kuramoto_synchronization",
+        "community_synchronization_vulnerability",
     ],
     "computational": [
-        # "kernel_rank",
-        # # "kernel_rank_fatemeh",
-        # "effective_dimensionality",
-        # # "multifunctionality",
+        "kernel_rank",
+        "kernel_rank_fatemeh",
+        "effective_dimensionality",
+        "multifunctionality",
     ]
 }
 
@@ -81,7 +79,7 @@ class RobustMetricRunner:
         self.experiment = experiment
         self.dataset = dataset
         self.base_path = base_path
-        self.log_dir = base_path / "output" / "gnm" / dataset / experiment / "processing_logs"
+        self.log_dir = base_path / "output" / "analysis_empirical_connectomes" / dataset / experiment / "processing_logs"
         self.log_dir.mkdir(parents=True, exist_ok=True)
         
         self.status_file = self.log_dir / "metric_processing_status.json"
@@ -302,20 +300,19 @@ def main(experiment_name: str,
 
 if __name__ == "__main__":
         
-    experiment_name = "07_high_res_90_000_plot" 
-    # 05_second_big_overnight_run_10201" # 02_test" # 07_high_res_90_000_plot" # 
     # experiment_name = "02_test" # 01_first_bigger_run_animal_0" # 00_default_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"  # 
-    # For testing: "73_testing_animal_206"
-    # Typical: 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
-    # # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" 
-    # # "73_testing_animal_0"
-    dataset_name = "hcp_schaefer_100_dataset"  # suarez_MaMI_dataset"
+    # # For testing: "73_testing_animal_206"
+    # # Typical: 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
+    # # # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" 
+    # # # "73_testing_animal_0"
+    # dataset_name = "hcp_schaefer_100_dataset"  # suarez_MaMI_dataset"
+    connectome_numpy_array_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_50.npy"  # "connectome_suarez_MaMI.npy"
     base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
-    n_processes = 12  # 12 -> not sure if this really makes things faster? # 2 # Or None, for (maximum-1) available.
+    n_processes = 8 # 12 -> not sure if this really makes things faster? # 2 # Or None, for (maximum-1) available. 
 
     # Batch size - how many metrics to process together
     # Smaller = more robust but slower, Larger = faster but one failure affects more
-    number_parallel_metrics = 2  # Process 4 metrics at a time
+    number_parallel_metrics = 4  # Process 4 metrics at a time
 
 
     main(experiment_name=experiment_name, 

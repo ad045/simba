@@ -16,9 +16,12 @@ from src.analysis.calculate_metastability_optimize_K import (find_optimal_K,
 
 def calculate_metastability(A, distance_matrix=None, save_debug_path=None): 
     
-    K_range = np.linspace(0, 1000, 21) # np.logspace(-4, 3, 41)
+    K_range = np.logspace(-4, 0, 101) # np.linspace(0, 1000, 21) # np.logspace(-4, 3, 41)
     optimal_metric = 'global'
 
+    A = A.astype(float)
+    A/=np.nanmean(A)
+    
     # Find optimal K
     optimal_K, results = find_optimal_K(
         A, 

@@ -35,11 +35,9 @@ ALL_METRICS = {
         
         # "wiring_cost", # no shortest_path_distance - this does not work. 
         # "structural_complexity",
-        "n_connected_components",
+        # "n_connected_components",
         
-        # # "omega",
-        
-        "directed_simplices"
+        # "omega",
     ],
     "dynamic": [
         # "spectral_radius",
@@ -54,7 +52,7 @@ ALL_METRICS = {
         # "nct_energies",
         
         # # "metastability", # this is now replaced... (soon - see line below)
-        # # "novel_metastability", # THIS COULD WORK, BUT I DID NOT CHECK IT YET... 
+        "novel_metastability", # THIS COULD WORK, BUT I DID NOT CHECK IT YET... 
         
         # "synchronizability_eigenratio",
         # "algebraic_connectivity_nx",
@@ -65,7 +63,7 @@ ALL_METRICS = {
         # "kernel_rank",
         # # "kernel_rank_fatemeh",
         # "effective_dimensionality",
-        # # "multifunctionality",
+        # "multifunctionality",
     ]
 }
 
@@ -161,7 +159,7 @@ class RobustMetricRunner:
                 dataset=self.dataset,
                 base_path=self.base_path,
                 interesting_metrics=interesting_metrics,
-                save_interval=100, 
+                save_interval=10, 
                 debug=DEBUG,
                 create_big_update_csv=False  # Only create at the end
             )
@@ -302,8 +300,7 @@ def main(experiment_name: str,
 
 if __name__ == "__main__":
         
-    experiment_name = "07_high_res_90_000_plot" 
-    # 05_second_big_overnight_run_10201" # 02_test" # 07_high_res_90_000_plot" # 
+    experiment_name = "05_second_big_overnight_run_10201" # 07_high_res_90_000_plot" # 
     # experiment_name = "02_test" # 01_first_bigger_run_animal_0" # 00_default_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"  # 
     # For testing: "73_testing_animal_206"
     # Typical: 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" 
@@ -315,7 +312,7 @@ if __name__ == "__main__":
 
     # Batch size - how many metrics to process together
     # Smaller = more robust but slower, Larger = faster but one failure affects more
-    number_parallel_metrics = 2  # Process 4 metrics at a time
+    number_parallel_metrics = 1  # Process 4 metrics at a time
 
 
     main(experiment_name=experiment_name, 

@@ -515,7 +515,10 @@ def main(COLOR_BY="order", LABEL_BY="name"):
             # --- Create and save the plot ---
             plot_title = visualizer._format_plot_title(metric_col_name)
             
-            figure_save_name = f"grid_landscape_{metric}_by_{COLOR_BY}.pdf"
+            if LABEL_BY != "name": 
+                figure_save_name = f"grid_landscape_{metric}_by_{COLOR_BY}_named_{LABEL_BY}.pdf"
+            else: 
+                figure_save_name = f"grid_landscape_{metric}_by_{COLOR_BY}.pdf"
             full_save_path = save_path_plots / figure_save_name
 
             fig, ax = plot_grid_with_taxonomic_colors(
@@ -553,5 +556,6 @@ if __name__ == "__main__":
     main(COLOR_BY="order", LABEL_BY="name")
     main(COLOR_BY="sub_order", LABEL_BY="name")
     main(COLOR_BY="family", LABEL_BY="name")
+    main(COLOR_BY="order", LABEL_BY="animal")
     
     

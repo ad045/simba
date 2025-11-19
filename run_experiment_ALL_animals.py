@@ -8,19 +8,13 @@ import sys
 import time
 from pathlib import Path
 
-# from src.comparing_connectomes.complete_comparison_script import main as complete_comparison_main
-    
-    
+
 # Configuration
 BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
-# BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_debug.yaml"
 TEMP_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/temp_config_animal.yaml"
-# ANIMAL_START = 55
-# ANIMAL_END = 5 # 2 # 255
 RUN_SCRIPT = "run_experiment.py"
 
-NUMBER_RUNS_PER_ANIMAL = 10 # 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied. 
-
+NUMBER_RUNS_PER_ANIMAL = 10 
 
 
 def modify_config_for_animal(base_config_path: str, temp_config_path: str, animal_id: int): # , loop_number: int):
@@ -40,7 +34,6 @@ def modify_config_for_animal(base_config_path: str, temp_config_path: str, anima
     
     # Optionally modify the experiment name to include animal ID
     original_name = config['experiment']['name']
-    # config['experiment']['name'] = f"{original_name}/{original_name}_animal_{animal_id}"
     config['experiment']['name'] = f"{original_name}_animal_{animal_id}" # _loop_{loop_number}"
     
     # Save modified config
@@ -219,4 +212,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main(animals_to_analyze=[22, 124]) # 206
+    main(animals_to_analyze=[206]) # 124]) # 206

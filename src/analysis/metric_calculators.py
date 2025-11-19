@@ -31,7 +31,9 @@ from src.analysis.structural_measures import (
                                               calculate_transitivity,
                                             #   calculate_wiring_cost,  -> I'm using Kaysons 
                                               calculate_char_path_length, 
-                                              calculate_degree_gini
+                                              calculate_degree_gini, 
+                                              
+                                              calculate_directed_simplices
                                              )
 
               
@@ -101,6 +103,8 @@ class StaticMetricCalculator(MetricCalculator):
             "topological_distance",
             "resistance_distance", 
             "degree_gini",
+            
+            "directed_simplices"
 
         } # TODO: Check if the list is complete or if I already implemented more than that.  
     # Kayson: 
@@ -114,8 +118,7 @@ class StaticMetricCalculator(MetricCalculator):
     # Adrian:  
         # avg_degree (with nx) 
         # char_path_length (with nx) (of biggest component -> is this sensible??) 
-
-
+        
     def calculate_metric(self, metric_name):
         
         # if metric_name == "density": # Kayson
@@ -153,12 +156,9 @@ class StaticMetricCalculator(MetricCalculator):
         
         elif metric_name == "structural_complexity": # Kayson
             return compute_structural_complexity(self.A)
-        
-        elif metric_name == "n_connected_components": # nx 
-            G = nx.from_numpy_array(self.A)
-            n_components = nx.number_connected_components(G)
-            # Clean up graph object immediately
-            del G
+
+        elif metric_name == "n_connected_components": # nx
+            n_components = nx.number_connected_components(self.G)
             return n_components
         
         elif metric_name == "omega": # Kayson, basically average clustering
@@ -177,6 +177,9 @@ class StaticMetricCalculator(MetricCalculator):
         elif metric_name == "degree_gini": 
             return calculate_degree_gini(self.A) 
         
+        elif metric_name == "directed_simplices":
+            return calculate_directed_simplices(self.A)
+
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
@@ -243,7 +246,7 @@ class DynamicMetricCalculator(MetricCalculator):
             return calculate_nct_energies(self.A)
 
         elif metric_name == "novel_metastability": # metastability_2": 
-            return calculate_metastability_2(self.A, distance_matrix=self.distance_matrix, save_debug_path="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/metastability_debug") # calculate_metastability(self.A)
+            return calculate_metastability_2(self.A, distance_matrix=self.distance_matrix, save_debug_path="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/metastability_debug_nov_19") # calculate_metastability(self.A)
  
         elif metric_name == "synchronizability_eigenratio":
             return compute_synchronizability_eigenratio(self.A)

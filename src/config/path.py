@@ -54,10 +54,10 @@ class PathConfig:
                             'output_dir': self.output_dir,
                             'output_specific_dataset_dir': self.output_specific_dataset_dir,
                             'output_gnm_dir': self.output_gnm_dir,
+                            
                             'output_experiment_dir': self.output_experiment_dir,
                             'dynamic_gnm_output_dir': self.dynamic_gnm_output_dir,
                             
-                            'output_experiment_dir': self.output_experiment_dir,
                              
                             '01_connectomes': self.dir_01_connectomes,
                             '02_distance_matrices': self.dir_02_distance_matrices,

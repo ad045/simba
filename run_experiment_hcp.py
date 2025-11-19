@@ -209,7 +209,7 @@ def main(
 if __name__ == "__main__":
     
     path_to_config_file = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_hcp.yaml")  # BASE_CONFIG_PATH
-    number_of_runs_per_animal = 1 # 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied. 
+    number_of_runs_per_animal = 10 # 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied. 
     
     experiment_name = main(
         path_to_config_file=path_to_config_file,

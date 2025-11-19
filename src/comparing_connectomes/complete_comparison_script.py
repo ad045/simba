@@ -270,7 +270,14 @@ def main(dataset_name: str,
         empirical_networks_path = path_01_connectomes / "00_connectomes_density10.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
     
-    
+    if dataset_name == "kaysons_generated_networks_diffusion": 
+        empirical_networks_path = path_01_connectomes / "diffusion_20_percent.npy"
+        distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
+
+    if dataset_name == "kaysons_generated_networks_propagation": 
+        empirical_networks_path = path_01_connectomes / "propagation_20_percent.npy"
+        distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
+
     ##########################################################################
     
     generated_networks_dir = path_config.output_experiment_dir / "generated_networks"
@@ -370,7 +377,8 @@ def main(dataset_name: str,
 
         ordered_files_to_process = []
         for eta, gamma, net_id in list_eta_gamma_id_reference:
-            net_id_str = f"{net_id:03d}"
+            # net_id_str = f"{net_id:03d}"
+            net_id_str = f"{int(net_id):03d}"
             filename = f"net_eta{eta}_gamma{gamma}_ruleMatchingIndex_id{net_id_str}.npy"
             filepath = networks_dir / filename
             
@@ -518,10 +526,13 @@ def main(dataset_name: str,
 
 if __name__ == "__main__":
     results = main(
-        dataset_name="suarez_MaMI_dataset", # hcp_schaefer_100_dataset",
-        experiment_name="80_more_animals_animal_169", # 103", # 06_with_seeds", # 05_second_big_overnight_run_10201", 
+        # dataset_name="kaysons_generated_networks_diffusion", # propagation", # kaysons_generated_networks_diffusion", # suarez_MaMI_dataset", # hcp_schaefer_100_dataset",
+        dataset_name="hcp_schaefer_100_dataset",
+        experiment_name="07_high_res_90_000_plot", # 05_second_big_overnight_run_10201", # 80_more_animals_animal_169", # 103", # 06_with_seeds", # 05_second_big_overnight_run_10201", 
+        # dataset_name="suarez_MaMI_dataset", # hcp_schaefer_100_dataset",
+        # experiment_name="80_more_animals_animal_103", # 103", # 06_with_seeds", # 05_second_big_overnight_run_10201", 
         evaluation_mode="portrait", # communicability", # f1", # portrait",  # or "energy"
-        debug_subject_ids=None, # [0,1,2,3,4,5,6,7,8,9] #None,  # turn this to "None" if not in debug mode. Or array [1,2,]
+        debug_subject_ids=[0,1,2,3,4,5], # None, # [0,1,2,3], # None, # [0,1,2,3,4,5,6,7,8,9,] #None,  # turn this to "None" if not in debug mode. Or array [1,2,]
         number_multiprocessing_processes=8, 
     )
     

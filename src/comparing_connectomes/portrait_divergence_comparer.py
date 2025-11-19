@@ -39,7 +39,7 @@ class PortraitDivergence(NetworkEvaluator):
     
     def _compute_portrait(self, adj_matrix: np.ndarray) -> np.ndarray:
         n = len(adj_matrix)
-        B = np.zeros((self.max_diameter + 1, n))
+        B = np.zeros((self.max_diameter + 1, n+1))
         
         # Build adjacency list with explicit int conversion
         adj_list = {}

@@ -1,17 +1,15 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 06_with_seeds # 5_second_big_overnight_run_10201 # 4_big_overnight_run_added_stuff # _big_overnight_run # 1_first_bigger_run # 4_fine_grid_upper_local_minima # 60_generally_finer_search
+  name: 12_high_res_zoom_to_valley # 5_second_big_overnight_run_10201 # 4_big_overnight_run_added_stuff # _big_overnight_run # 1_first_bigger_run # 4_fine_grid_upper_local_minima # 60_generally_finer_search
   animal: 0 # there is only one distance matrix (if this is necessary at all) 
-  # 55,Lycaon3,Lycaon,Lycaon,Lycaon pictus,Lycaon,Caninae,Canidae,Caniformia,Carnivora,Laurasiatheria,Laurasiatheria
-  # compare_to_connectome_of_distance_matrix: true # false does not work -> target network is initialized with 0 and that destroys everything?? false # true
   calculate_energy: true  # TODO: REPLACE THAT TO ALL OTHER CONFIG FILES!!!
   average_connectomes: true
   elaborate_analysis: true
   calculate_energies_of_all_individual_connectomes: false # REMOVED THIS!  false # true # TODO: REPLACE THAT TO ALL OTHER CONFIG FILES!!! unsure if this works... 
   search:
     method: grid # random
-    n_samples: 121 # 10_201 # 000 # 0000 #  000 # 00 # 10000 #  900 # 00
+    n_samples: 10_001 # 000 # 10_201 # 000 # 0000 #  000 # 00 # 10000 #  900 # 00
   wandb:
     enabled: false
     project: GNM_project
@@ -86,17 +84,15 @@ data:
     animal_metadata: data/preprocessed/hcp_schaefer_100_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_100.csv
 gnm:
   eta_range:
-  # - -1.0
-  # - 1.0
-  # - 0.0
-  # - 0.0 
-  - -8.0
-  - 3.0
+  # - -8.0
+  # - 3.0
+  - -4.0
+  - 2.0
   gamma_range:
-  # - -1.0
+  # - -0.1
   # - 1.0
-  - -0.1
-  - 1.0
+  - -0.5 
+  - 0.2
   lambda:
   - 0.0
   generative_rules_to_test:
@@ -117,7 +113,7 @@ gnm:
   - powerlaw
   # seed: seeds_density2_16_regions_conns # can also be false 
   seed_params: 
-    seed_adjacency_matrices: seeds_density2_16_regions_params.npy
+    seed_adjacency_matrices: false # seeds_density2_16_regions_params.npy
     seed_id: 0 # which seed to use from the seed adjacency matrices
 dyn_gnm:
   dynamic_fitness_metric: mc_mean

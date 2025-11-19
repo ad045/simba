@@ -356,3 +356,66 @@ def analyze_connectomes(connectomes,
     return out # pd.DataFrame(out)
 
 
+
+def calculate_directed_simplices(A) -> int:
+    """
+    Count the number of directed n-simplices in the graph.
+    A directed n-simplex is a motif on n+1 neurons which are all-to-all
+    connected in feedforward fashion (i.e., there exists an ordering of nodes
+    0,1,...,n such that there is an edge (i,j) whenever i < j).
+    
+    Returns the count of maximal directed simplices.
+    """
+    try:
+        n = A.shape[0]
+
+        # Find all cliques in the undirected version
+        UG = nx.from_numpy_array(np.maximum(A, A.T))
+        cliques = list(nx.find_cliques(UG))
+
+        
+        simplex_count = 0
+        maximum_simplex_size = 0
+        
+        
+        # Check each clique to see if it can form a directed simplex
+        for clique in cliques:
+            if len(clique) < 2:
+                continue
+            
+            clique_list = list(clique)
+            
+            # Try all possible orderings of the clique nodes
+            # Check if any ordering satisfies the directed simplex property
+            from itertools import permutations
+            
+            is_simplex = False
+            for ordering in permutations(clique_list):
+                # Check if this ordering gives a directed simplex
+                # i.e., edge exists from ordering[i] to ordering[j] for all i < j
+                valid_ordering = True
+                for i in range(len(ordering)):
+                    for j in range(i + 1, len(ordering)):
+                        u, v = ordering[i], ordering[j]
+                        # Must have edge from u to v (in this ordering)
+                        if A[u, v] == 0:
+                            valid_ordering = False
+                            break
+                    if not valid_ordering:
+                        break
+                
+                if valid_ordering:
+                    is_simplex = True
+                    break
+            
+            if is_simplex:
+                simplex_count += 1
+                maximum_simplex_size = max(maximum_simplex_size, len(clique))
+
+        return {"count": simplex_count, 
+                "max_size": maximum_simplex_size}
+
+    except Exception as e:
+        print(f"Error computing directed simplices: {e}")
+        return {"count": 0, 
+                "max_size": 0}
