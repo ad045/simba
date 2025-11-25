@@ -141,7 +141,11 @@ class GridVisualizer(PipelineVisualizer):
         
         if annotate_extremes:
             self._annotate_extreme_points(ax, df, metric_name)
-        
+
+        # Add contours
+        if metric == "omega_with_contours" or metric == "n_connected_components":
+            self._create_contours(df, ax, metric)
+            
         # Format plot
         if show_number_samples:
             title = f"{title} ({len(points)} shown connectomes)"
@@ -155,6 +159,55 @@ class GridVisualizer(PipelineVisualizer):
         
         return fig, ax
     
+    
+    def _create_contours(self, df, ax, metric): 
+        from scipy.ndimage import gaussian_filter
+        # Prepare component count data
+        df_components = df.copy()
+        df_components["n_connected_components"] = pd.to_numeric(
+            df_components["n_connected_components"], errors='coerce'
+        )
+        df_components = df_components.dropna(subset=['eta', 'gamma', 'n_connected_components'])
+        
+        # Create grid for components
+        points_comp = df_components[['eta', 'gamma']].values
+        values_comp = df_components['n_connected_components'].values
+        print(np.max(values_comp), np.min(values_comp))
+        
+        grid_comp, eta_edges_comp, gamma_edges_comp = visualizer._create_grid_from_points(
+            points_comp, values_comp
+        )
+        
+        # Cap values at cutoff_value+ for display
+        cutoff_value = 100
+        grid_comp_capped = np.where(grid_comp > cutoff_value, cutoff_value, grid_comp)
+        
+        # === ADD SMOOTHING HERE ===
+        # Apply Gaussian smoothing to the grid
+        # sigma controls smoothness: higher = smoother (try 1.0 to 3.0)
+        sigma = 1.75 # .0
+        grid_comp_smoothed = gaussian_filter(grid_comp_capped, sigma=sigma)
+        # ==========================
+        
+        # Create contour levels
+        levels = np.arange(0.5, 80.5, 10)
+        print(levels)
+        
+        # Add contour lines using smoothed grid
+        contours = ax.contour(
+            eta_edges_comp, gamma_edges_comp, grid_comp_smoothed,  # Use smoothed grid
+            levels=levels,
+            colors='black',
+            linewidths=0.5 if mode == "presentation" else 1.0,
+            alpha=0.6 if mode == "presentation" else 0.8
+        )
+        
+        # Optionally add labels
+        if mode == "draft":
+            ax.clabel(contours, inline=True, fontsize=8, fmt='%1.0f')
+            
+                
+                
     def _create_grid_from_points(self, points: np.ndarray, values: np.ndarray,
                                  grid_resolution: int = None) -> tuple:
         """
@@ -242,7 +295,7 @@ if __name__ == "__main__":
         df_paths = [save_path]
 
     # Change this here if individual points (minimum estimates, best fits) should be shown 
-    plot_indiv_connectomes = "portrait" #  None # "portrait" # or "energy" or None
+    plot_indiv_connectomes = "portrait" #  None # "portrait" #  None # "portrait" # or "energy" or None
     duplicate_handling = "mean" # first" # "mean"
     show_number_samples = True
     eta_span = [-8, 3]
@@ -262,8 +315,10 @@ if __name__ == "__main__":
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 12, 15, 18, 20, 49]
     # metrics_to_plot = "all" 
     metrics_to_plot = [  # or "all" to display all of the metrics in the csv
-        ############### ORIG ####################################
+    #     ############### ORIG ####################################
         "MaxCriteria",
+        "portrait", 
+        
         "avg_communicability", 
         "global_efficiency", 
         "modularity", 
@@ -280,7 +335,7 @@ if __name__ == "__main__":
         "mean_mc_divided_by_wiring_cost",
         "mc_5_divided_by_wiring_cost", 
     ] + [f"mc_{lag}" for lag in lags_to_plot] + [
-    ############### NEW #####################################
+    # ############### NEW #####################################
         # "density",
         "avg_clustering",
         # "avg_degree",
@@ -288,7 +343,8 @@ if __name__ == "__main__":
         "directed_simplices_count",
         "directed_simplices_max_size",
         # ---
-        "directed_simplices_combined_with_n_components",
+        "directed_simplices_with_only_1_component", 
+        "log_directed_simplices_with_only_1_component", 
         
         "degree_assortativity",
         "modularity",
@@ -299,10 +355,16 @@ if __name__ == "__main__":
         "wiring_cost",
         "structural_complexity",
         "n_connected_components",
-        "omega","spectral_radius",
+        "omega", 
+        "omega_with_contours", 
+        
+        "spectral_radius",
         "spectral_gap","spectral_gap_fatemeh",
         "global_efficiency",
         "diffusion_efficiency",
+        "log_diffusion_efficiency", 
+        "diffusion_efficiency_with_only_1_component", 
+
         "propagation_efficiency",
         "nct_control_avg","nct_control_std",
         "nct_control_max","nct_control_n_nodes_90_percent",
@@ -332,7 +394,9 @@ if __name__ == "__main__":
         "kernel_rank_phase_of_lambda_max",
         "kernel_rank_phase_diff_of_lambda_max_and_2nd",
         "kernel_rank_fatemeh",
-        
+        "kernel_rank_phase_diff_of_lambda_max_and_2nd_only_1_component",
+
+    
         "effective_dimensionality",
         "multifunctionality"
 
@@ -391,15 +455,39 @@ if __name__ == "__main__":
                     pd.to_numeric(df["wiring_cost"], errors='coerce')
                 )
             
-            if metric == "directed_simplices_combined_with_n_components": 
+            if metric == "directed_simplices_with_only_1_component" or metric == "log_directed_simplices_with_only_1_component": 
                 # Take directed_simplices_count, if n_components is == 1. Otherwise, set it to -1. 
-                df["directed_simplices_combined_with_n_components"] = np.where(
+                df["directed_simplices_with_only_1_component"] = np.where(
                     pd.to_numeric(df["n_connected_components"], errors='coerce') == 1,
                     pd.to_numeric(df["directed_simplices_count"], errors='coerce'),
                     np.nan
                 )
-                df["directed_simplices_combined_with_n_components"] = np.log(df["directed_simplices_combined_with_n_components"])
+                df["log_directed_simplices_with_only_1_component"] = np.log(df["directed_simplices_with_only_1_component"])
                 
+            if metric == "log_diffusion_efficiency": 
+                df["log_diffusion_efficiency"] = np.exp(df["diffusion_efficiency"])
+            
+            if metric == "diffusion_efficiency_with_only_1_component": 
+                df["diffusion_efficiency_with_only_1_component"] = np.where(
+                    pd.to_numeric(df["n_connected_components"], errors='coerce') == 1,
+                    pd.to_numeric(df["diffusion_efficiency"], errors='coerce'),
+                    np.nan
+                )
+
+            if metric == "kernel_rank_phase_diff_of_lambda_max_and_2nd_only_1_component": 
+                df["kernel_rank_phase_diff_of_lambda_max_and_2nd_only_1_component"] = np.where(
+                    pd.to_numeric(df["n_connected_components"], errors='coerce') == 1,
+                    pd.to_numeric(df["kernel_rank_phase_diff_of_lambda_max_and_2nd"], errors='coerce'),
+                    np.nan
+                )
+
+            if metric == "omega_with_contours": 
+                df["omega_with_contours"] = pd.to_numeric(df["omega"], errors='coerce') # np.where(
+                #     pd.to_numeric(df["n_connected_components"], errors='coerce') < 4,
+                #     pd.to_numeric(df["omega"], errors='coerce'),
+                #     np.nan
+                # )
+
             df["eta"] = pd.to_numeric(df["eta"], errors='coerce')
             df["gamma"] = pd.to_numeric(df["gamma"], errors='coerce')
             

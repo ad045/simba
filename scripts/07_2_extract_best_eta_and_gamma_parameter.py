@@ -87,7 +87,7 @@ if __name__ == '__main__':
     # experiment_name = "06_with_seeds"
     # experiment_name = "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"
     # metric_type ="energy" # "portraits"   #  "energy" # "portraits"  # "energy"  #
-    metric_type ="portraits"   #  "energy" # "portraits"  # "energy"  #
+    # metric_type ="portraits"   #  "energy" # "portraits"  # "energy"  #
     # metric_type = "f1"
     # metric_type = "portraits" # communicability"
     # base_output_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output")

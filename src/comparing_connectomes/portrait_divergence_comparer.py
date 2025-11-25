@@ -28,6 +28,7 @@ class PortraitDivergence(NetworkEvaluator):
             portrait_tgt = self._compute_portrait(tgt_np)
             divergence = self._compute_divergence(portrait_gen, portrait_tgt)
             results[target_idx] = divergence
+            print(f"Portrait divergence for target {target_idx}: {divergence}")
         
         return results
     
