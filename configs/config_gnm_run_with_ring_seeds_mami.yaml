@@ -1,0 +1,134 @@
+experiment:
+  experiment_type: gnm_sweep
+  type: gnm_sweep
+  name: 90_ring_seed
+  animal: 444 # placeholder
+  calculate_energy: true
+  average_connectomes: true
+  elaborate_analysis: true
+  calculate_energies_of_all_individual_connectomes: false
+  search:
+    method: grid
+    n_samples: 2500
+  wandb:
+    enabled: false
+    project: GNM_project
+  compare_rules: true
+  fit_weights: true
+pipeline:
+  run_experiment: true
+  run_evaluation: true
+  evaluate_empirical_connectomes: true
+  extract_best_parameters: true
+  save_matches: true
+  create_visualizations: true
+  experiment:
+    num_runs: 300
+  evaluation:
+    reference_csv_name: null
+    checkpoint_interval: 1
+  empirical_analysis:
+    modes:
+    - binarized
+    - weighted_original_density
+    esn_params:
+      spectral_radius: 0.9
+      n_lags: 50
+      train_len: 5000
+      test_len: 1000
+      n_runs: 50
+      input_scaling: 1.0
+      regression_method: pinv
+      n_transient: 100
+      leak_rate: 1.0
+      bias: 0.0
+      random_state: 42
+  visualization:
+    color_by: order
+    label_by: name
+    plot_individual_connectomes: true
+    normalize_aspect: true
+    lags_to_plot:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 10
+    - 20
+    - 49
+    metrics_to_plot:
+    - MaxCriteria
+    - avg_communicability
+    - global_efficiency
+    - modularity
+    - avg_clustering
+    - avg_degree
+    - transitivity
+    - avg_edge_distance^
+    - char_path_length
+    - richclub_n_edges
+    - richclub_avg_length
+    - mc_mean
+    - mc_std
+    - wiring_cost
+    - mean_mc_divided_by_wiring_cost
+    - mc_5_divided_by_wiring_cost
+data:
+  dataset_name: suarez_MaMI_dataset # hcp_schaefer_100_dataset
+  connectome_resolution: 50
+  density: 10
+  paths:
+    project_root: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code
+    animal_metadata: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_50_processed.csv
+gnm:
+  eta_range:
+  - -8.0
+  - 3.0
+  gamma_range:
+  - -0.1
+  - 1.0
+  lambda:
+  - 0.0
+  generative_rules_to_test:
+  - matching_index
+  num_simulations: 10
+  evaluation_metrics:
+  - degree_ks
+  - clustering_ks
+  - edge_length_ks
+  - betweenness_ks
+  weight_criterion: distance_weighted_communicability
+  alpha: 0.01
+  distance_relationship_type:
+  - powerlaw
+  preferential_relationship_type:
+  - powerlaw
+  heterochronicity_relationship_type:
+  - powerlaw
+  seed_params:
+    seed_adjacency_matrices: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/seeds/circulant_graph_seed_100.npy
+    seed_id: 444 # placeholder
+dyn_gnm:
+  dynamic_fitness_metric: mc_mean
+esn:
+  spectral_radius: 0.9
+  input_scaling: 1.0
+  train_len: 5000
+  regression_method: pinv
+  n_runs: 50
+  n_lags: 50
+  test_len: 1000
+  leak_rate: 1.0
+  bias: 0.0
+  n_transient: 0
+  random_state: 42
+compute:
+  device: cpu
+  n_workers: -1
+  timing_flag: true
+  random_seed: 42
+output:
+  figure_format: pdf
+  verbosity: INFO

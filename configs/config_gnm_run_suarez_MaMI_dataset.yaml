@@ -1,7 +1,7 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 80_more_animals # 4_fine_grid_upper_local_minima # 60_generally_finer_search
+  name: 81_all_animals_10_000 # 4_fine_grid_upper_local_minima # 60_generally_finer_search
   animal: 55 
   # 55,Lycaon3,Lycaon,Lycaon,Lycaon pictus,Lycaon,Caninae,Canidae,Caniformia,Carnivora,Laurasiatheria,Laurasiatheria
   calculate_energy: true
@@ -139,7 +139,7 @@ esn:
   random_state: 42
 compute:
   device: cpu
-  n_workers: -1
+  n_workers: -1 
   timing_flag: true
   random_seed: 42
 output:

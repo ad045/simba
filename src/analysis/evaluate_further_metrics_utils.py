@@ -504,6 +504,7 @@ def process_network_with_metrics(args):
 def multiprocess_networks(n_processes=None, 
                           experiment="", 
                           dataset="", 
+                          distance_matrix_filename="distance_matrix_50.npy", # this is for MaMI, though... 
                           base_path="", 
                           interesting_metrics=None, 
                           save_interval=50,
@@ -525,8 +526,11 @@ def multiprocess_networks(n_processes=None,
     # # Define paths
     output_path = base_path / "output" / "gnm" / dataset / experiment
     generated_networks_dir = output_path / "generated_networks"
-    distance_matrix_path = base_path / "data/preprocessed/suarez_MaMI_dataset/02_distance_matrices/distance_matrix_50.npy"
     
+    if dataset == "hcp_schaefer_100_dataset":
+        print("WARNING: POTENTIALLY WRONG DISTANCE MATRIX FOR THIS DATASET!")
+    distance_matrix_path = base_path / "data/preprocessed" / dataset / "02_distance_matrices" / distance_matrix_filename
+
     # # Use metric categories directly
     print("Using provided metric categories...")
     metric_categories = interesting_metrics

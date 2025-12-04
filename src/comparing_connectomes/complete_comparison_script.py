@@ -776,7 +776,7 @@ def process_network_for_subjects(args: Tuple) -> Tuple[Dict, Dict]:
     network_idx, network, generated_parameters, filename, \
         empirical_networks_tensor, evaluator, subject_ids_to_process = args
     
-    gen_network_tensor = torch.tensor(network, dtype=torch.float32).unsqueeze(0)
+    gen_network_tensor = torch.tensor(network, dtype=torch.float32) # IMPORTANT: THIS WAS PERVIOUSLY A BUG FOR ENERGY (does it impact portrait, too?).unsqueeze(0)
     
     results = {
         'network_index': network_idx,
@@ -1177,10 +1177,23 @@ if __name__ == "__main__":
     #     number_multiprocessing_processes=12, 
     # )
 
-    results = main(
-        dataset_name="hcp_schaefer_100_dataset",
-        experiment_name="07_high_res_90_000_plot",
-        evaluation_mode="portrait", # "energy", # portrait",  # or "energy", "f1", "communicability"
-        debug_subject_ids=[0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
-        number_multiprocessing_processes=1, # 2, 
-    )
+    # results = main(
+    #     dataset_name="hcp_schaefer_100_dataset",
+    #     experiment_name="02_test", # 07_high_res_90_000_plot",
+    #     evaluation_mode="portrait", # "energy", # portrait",  # or "energy", "f1", "communicability"
+    #     debug_subject_ids=[1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
+    #     number_multiprocessing_processes=1, # 2, 
+    # )
+    
+    for i in range(1, 21): 
+        # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/81_all_animals_10_000_animal_20
+        print(f"Subject {i}")
+        results = main(
+            dataset_name="suarez_MaMI_dataset",
+            experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
+            evaluation_mode="energy", # portrait",  # or "energy", "f1", "communicability"
+            debug_subject_ids=[i], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
+            number_multiprocessing_processes=10, # 2, 
+        )
+        
+        

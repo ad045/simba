@@ -85,6 +85,7 @@ def find_optimal_K(
     """
     # Set default K range if not provided
     if K_range is None:
+        print("Default K_range used: np.linspace(0.01, 0.15, 30)")
         K_range = np.linspace(0.01, 0.15, 30)
     
     # Initialize storage

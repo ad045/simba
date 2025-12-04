@@ -14,7 +14,7 @@ BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code
 TEMP_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/temp_config_animal.yaml"
 RUN_SCRIPT = "run_experiment.py"
 
-NUMBER_RUNS_PER_ANIMAL = 10 
+NUMBER_RUNS_PER_ANIMAL = 1
 
 
 def modify_config_for_animal(base_config_path: str, temp_config_path: str, animal_id: int): # , loop_number: int):
@@ -212,4 +212,5 @@ def main(
 
 
 if __name__ == "__main__":
-    main(animals_to_analyze=[206]) # 124]) # 206
+    # main(animals_to_analyze=[int(i) for i in range(1,225)]) # 124]) # 206
+    main(animals_to_analyze=set([int(i) for i in range(9, 225)]) - set([0, 22, 103, 124, 169]))

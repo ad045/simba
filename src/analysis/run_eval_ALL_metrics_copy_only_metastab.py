@@ -308,7 +308,7 @@ if __name__ == "__main__":
     # # "73_testing_animal_0"
     dataset_name = "hcp_schaefer_100_dataset"  # suarez_MaMI_dataset"
     base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
-    n_processes = 12  # 12 -> not sure if this really makes things faster? # 2 # Or None, for (maximum-1) available.
+    n_processes = 1 # 2  # 12 -> not sure if this really makes things faster? # 2 # Or None, for (maximum-1) available.
 
     # Batch size - how many metrics to process together
     # Smaller = more robust but slower, Larger = faster but one failure affects more

@@ -13,7 +13,7 @@ from pathlib import Path
     
     
 # Configuration
-BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_with_seeds_mami.yaml"
+BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_with_ring_seeds_mami.yaml"
 # BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_debug.yaml"
 TEMP_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/temp_config_animal.yaml"
 RUN_SCRIPT = "run_experiment.py"
@@ -218,4 +218,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main(animals_to_analyze=[169, 103, 0]) # 206
+    main(animals_to_analyze=[206]) # 206
