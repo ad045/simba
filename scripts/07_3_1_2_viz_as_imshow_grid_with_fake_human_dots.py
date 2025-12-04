@@ -271,8 +271,10 @@ if __name__ == "__main__":
     # dataset_name = "hcp_schaefer_100_dataset" 
     # experiment_name = "07_high_res_90_000_plot" # 
     dataset_name = "suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # "suarez_MaMI_dataset"
-    experiment_name = "81_all_animals_all" # 81_all_animals_10_000_animal_15" # 76_90000_samples_animal_206" # 81_all_animals_10_000_animal_20" 
-    experiment_name = "81_all_animals_10_000_animal_15" # experiment_name = "05_second_big_overnight_run_10201" # 07_high_res_90_000_plot" # "05_second_big_overnight_run_10201"
+    experiment_name = "81_all_animals_all" # 
+    experiment_name = "81_all_animals_10_000_animal_15" # 76_90000_samples_animal_206" # 81_all_animals_10_000_animal_20" 
+    # experiment_name = "76_90000_samples_animal_206" # 
+    experiment_name = "81_all_animals_10_000_animal_15_before_all_metrics" # 81_all_animals_10_000_animal_15_before_all_metrics" # TURN ALL METRIC OFF"! # 81_all_animals_10_000_animal_15" # experiment_name = "05_second_big_overnight_run_10201" # 07_high_res_90_000_plot" # "05_second_big_overnight_run_10201"
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/80_more_animals_animal_0/all_metrics_for_80_more_animals_animal_0.csv
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/12_seed_chimp_206_idx_0/all_metrics_for_12_seed_chimp_206_idx_0.csv
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/11_consensus_seed_idx_0/all_metrics_for_11_consensus_seed_idx_0.csv
@@ -288,18 +290,28 @@ if __name__ == "__main__":
     # save_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated_combined.csv"
     save_path = base_path / f"all_metrics_for_{experiment_name}.csv"
     
-    show_humans_as_well = True
+    # Show individual best estimates on top of the landscape (best estimates selected from THAT landscape) 
+    show_portrait_respectively_energy_minimums = True
+    
+    show_humans_as_well = True # Adds human dots, even though they come from a different experiment
     if show_humans_as_well: 
         # individual_human_best_locations = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/05_second_big_overnight_run_10201/summary_indiv_energies_for_exp_05_second_big_overnight_run_10201.csv"
-        individual_human_best_locations = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/05_second_big_overnight_run_10201/min_energy_results.csv""
+        individual_human_best_locations = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/05_second_big_overnight_run_10201/min_energy_results.csv"
+        show_portrait_respectively_energy_minimums = False 
+        
+    show_faked_animals_as_well = True # Adds animal dots, even though they come from a different experiment
+    if show_faked_animals_as_well: 
+        individual_faked_animal_best_locations = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/76_90000_samples_animal_206/min_energy_results.csv"
+        show_portrait_respectively_energy_minimums = False
+
     # Turn on/off regarding if one wants to use the original or the new metrics 
     # ORIGINAL METRICS OR NEW ONES
-    only_all_metrics_file = False # True # False # True  # True #  False #  True # False # True 
+    only_all_metrics_file = True # False # True # FALSE CURRENTLY DOES NOT WORK IF THERE IS ONLY THE ORIG CSV FILE! False # True # False # True  # True #  False #  True # False # True 
     bin_to_100 = True # False # TODO: DOES NOT WORK YET. 
     mode = "presentation" # "draft" # presentation" # draft" # presentation"  # "draft" or "presentation"
     # "terrain" # cubehelix" 
 
-    show_portrait_respectively_energy_minimums = True
+    
 
     ##########################################
     if only_all_metrics_file: 
@@ -322,7 +334,7 @@ if __name__ == "__main__":
         df_paths = [combined_save_path]
 
     # Change this here if individual points (minimum estimates, best fits) should be shown 
-    plot_indiv_connectomes = "energy" # None # "portrait" # energies" # portrait" # None # "energy" # portrait" #  None # "portrait" #  None # "portrait" # or "energy" or None
+    plot_indiv_connectomes = None # "energy" # None # "portrait" # energies" # portrait" # None # "energy" # portrait" #  None # "portrait" #  None # "portrait" # or "energy" or None
     duplicate_handling = "mean" # first" # "mean"
     
     show_number_of_samples = False # True # changes the title (and adding the number of samples to it)
@@ -339,12 +351,17 @@ if __name__ == "__main__":
     elif duplicate_handling == "mean": 
         save_path = parent_folder / f"figures_grid_only_{mode}_mean"
         if individual_human_best_locations is not None: 
-            save_path = parent_folder / f"figures_grid_with_humans_{mode}_mean"
+            if show_faked_animals_as_well is not None: 
+                save_path = parent_folder / f"figures_grid_with_faked_animals_{mode}_mean"
+                plot_indiv_connectomes = None
+            else: 
+                save_path = parent_folder / f"figures_grid_with_humans_{mode}_mean"
     else: 
         print("Attention: Duplicate handling is not really set.")
         exit()
     
     # --- 2. Define Metrics to Plot ---x
+    # lags_to_plot = range(51) 
     lags_to_plot = [1, 2, 3, 4, 5, 6, 10, 12, 15, 18, 20, 49]
     # metrics_to_plot = "all" 
     metrics_to_plot = [  # or "all" to display all of the metrics in the csv
@@ -565,7 +582,7 @@ if __name__ == "__main__":
                 # cmap = default_cmaps["hb_bw"]
                 cmap = default_cmaps["metric_purple_beige"]
                 if dataset_name == "hcp_schaefer_100_dataset": 
-                    dot_color = "black"
+                    dot_color = "#44cfcf" # "black"
                 elif dataset_name == "suarez_MaMI_dataset": 
                     dot_color = default_colors["warms"]["LECKER_RED"]
 
@@ -599,9 +616,15 @@ if __name__ == "__main__":
             # Add human dots - even though they are a different dataset, just to see where they are located. 
             if show_humans_as_well: 
                 df_humans = pd.read_csv(individual_human_best_locations)
-                ax.scatter(df_humans["eta"], df_humans["gamma"], c="black", s=dot_size_animals_or_humans)
+                ax.scatter(df_humans["eta"], df_humans["gamma"], c="#44cfcf", # "black", 
+                           s=dot_size_animals_or_humans)
                 # len(set(df_humans["gamma"])) == 9...
-
+            
+            # Add faked (aka other) animal dots - even though they are a different dataset, just to see where they are located.
+            if show_faked_animals_as_well: 
+                df_faked_animals = pd.read_csv(individual_faked_animal_best_locations)
+                ax.scatter(df_faked_animals["eta"], df_faked_animals["gamma"], c=default_colors["warms"]["LECKER_RED"], s=dot_size_animals_or_humans)
+            
             plt.savefig(full_save_path_human_dots, bbox_inches='tight')
             print("Successfully saved figure with human dots at:", full_save_path_human_dots)
             matplotlib.pyplot.close()

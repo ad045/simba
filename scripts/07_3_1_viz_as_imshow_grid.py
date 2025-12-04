@@ -15,6 +15,14 @@ from matplotlib import cm
 
 from src.visualization.energy_and_mc_landscape import generate_entire_df, PipelineVisualizer
 
+from vizman import viz
+viz.set_visual_style()
+default_sizes = viz.load_data_from_json("sizes.json")
+default_colors = viz.load_data_from_json("colors.json")
+default_cmaps = viz.give_colormaps()
+
+
+
 
 class GridVisualizer(PipelineVisualizer):
     """Extension of PipelineVisualizer for gridded data visualization using imshow."""
@@ -44,12 +52,6 @@ class GridVisualizer(PipelineVisualizer):
             formatter.set_scientific(True)
             formatter.set_powerlimits((-2, 3))  # Use scientific notation outside this range
             cbar.ax.yaxis.set_major_formatter(formatter)
-            
-            # print(cbar.ax.yaxis)
-            # # Get the highest and lowest selected ticks
-            # ticks = cbar.ax.get_yticks()
-            # vmin = ticks[0]
-            # vmax = ticks[-1]
             
             ticks = cbar.ax.get_yticks()
             vmin, vmax = cbar.ax.get_ylim()
@@ -84,7 +86,7 @@ class GridVisualizer(PipelineVisualizer):
                                    show_colorbar: bool = True,
                                    estimated_indiv_connectomes: pd.DataFrame = None,
                                    duplicate_handling: str = "mean",
-                                   show_number_samples: bool = False,
+                                   show_number_of_samples: bool = False,
                                    interpolation: str = 'nearest') -> tuple:
         """
         Plot a metric landscape using imshow for gridded data.
@@ -113,7 +115,8 @@ class GridVisualizer(PipelineVisualizer):
         
         # Create or use provided axis
         if ax is None and self.mode == "presentation":
-            fig, ax = plt.subplots(figsize=(viz.cm_to_inch((18, 18*0.52/0.62))), dpi=150) # (6.2, 5.2))
+            size = 9
+            fig, ax = plt.subplots(figsize=(viz.cm_to_inch((size, size*0.52/0.62))), dpi=150) # (6.2, 5.2))
         elif ax is None and self.mode == "draft":
             fig, ax = plt.subplots(figsize=(6.2, 5.2), dpi=100) # (6.2, 5.2))
         else:
@@ -134,9 +137,10 @@ class GridVisualizer(PipelineVisualizer):
             sm.set_array([])
             cbar = plt.colorbar(sm, ax=ax)
             self._format_colorbar(metric_name, cbar)
+                
         
-        # Add sample points and annotations
-        self._add_sample_points(ax, df, points, metric_name, show_dots, dot_color, point_size)
+        # Add sample points (only do this in voroni! Those were the middle points...) and annotations
+        # self._add_sample_points(ax, df, points, metric_name, show_dots, "white", point_size)
         self._add_estimated_connectomes(ax, estimated_indiv_connectomes, dot_color)
         
         if annotate_extremes:
@@ -147,12 +151,16 @@ class GridVisualizer(PipelineVisualizer):
             self._create_contours(df, ax, metric)
             
         # Format plot
-        if show_number_samples:
+        if show_number_of_samples and mode == "draft":
             title = f"{title} ({len(points)} shown connectomes)"
         
         xlim = [eta_edges[0], eta_edges[-1]]
         ylim = [gamma_edges[0], gamma_edges[-1]]
         self._format_landscape_plot(ax, xlim, ylim, title)
+
+        if mode == "presentation": 
+            ax.set_yticks([np.ceil(df['gamma'].min()*10)/10, np.floor(df['gamma'].max()*10)/10])
+            ax.set_xticks([np.ceil(df['eta'].min()*10)/10, np.floor(df['eta'].max()*10)/10])
         
         # Save/show
         self._handle_plot_output(fig, ax, savepath, show)
@@ -256,12 +264,14 @@ if __name__ == "__main__":
 # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/04_big_overnight_run/summary_indiv_portrait_for_exp_04_big_overnight_run_2.csv
 # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/76_90000_samples_animal_206/summary_indiv_portrait_for_exp_76_90000_samples_animal_206.csv
     # dataset_name = "kaysons_generated_networks_propagation" # diffusion" # 
-    dataset_name = "hcp_schaefer_100_dataset" 
-    experiment_name = "07_high_res_90_000_plot" # 05_second_big_overnight_run_10201" # 07_high_res_90_000_plot" # "05_second_big_overnight_run_10201"
+    # dataset_name = "hcp_schaefer_100_dataset" 
+    # experiment_name = "07_high_res_90_000_plot" # 
+    dataset_name = "suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # "suarez_MaMI_dataset"
+    experiment_name = "81_all_animals_10_000_animal_15" # 76_90000_samples_animal_206" # 81_all_animals_10_000_animal_20" 
+    # experiment_name = "05_second_big_overnight_run_10201" # 07_high_res_90_000_plot" # "05_second_big_overnight_run_10201"
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/80_more_animals_animal_0/all_metrics_for_80_more_animals_animal_0.csv
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/12_seed_chimp_206_idx_0/all_metrics_for_12_seed_chimp_206_idx_0.csv
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/11_consensus_seed_idx_0/all_metrics_for_11_consensus_seed_idx_0.csv
-    # dataset_name = "suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # "suarez_MaMI_dataset"
     # experiment_name = "80_more_animals_animal_124" # 80_more_animals_animal_22" # 13_seeds_of_all_animals_density1_animal_0" # 13_seeds_of_all_animals_density1_animal_103" # 12_seed_chimp_206_idx_0" # 11_consensus_seed_idx_0" # 80_more_animals_animal_0" # 12_seed_chimp_206_idx_0" # 11_consensus_seed_idx_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_minus0p1_to_1_animal_206_identical_version_just_without_minus_etc" # 80_more_animals_animal_103" # 10_serious_sweep_copy_idx_96" # 09_finally_working_idx_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 76_90000_samples_animal_206" # 04_big_overnight_run" # 01_first_bigger_run_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 0" 
     #  "76_90000_samples_animal_206" 
         # "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" 
@@ -276,30 +286,43 @@ if __name__ == "__main__":
     
     # Turn on/off regarding if one wants to use the original or the new metrics 
     # ORIGINAL METRICS OR NEW ONES
-    only_all_metrics_file = False # True  # True #  False #  True # False # True 
+    only_all_metrics_file = True # False # True  # True #  False #  True # False # True 
     bin_to_100 = True # False # TODO: DOES NOT WORK YET. 
-    mode = "draft" # presentation" # draft" # presentation"  # "draft" or "presentation"
+    mode = "presentation" # "draft" # presentation" # draft" # presentation"  # "draft" or "presentation"
     # "terrain" # cubehelix" 
+
+    show_portrait_respectively_energy_minimums = True
+
     ##########################################
     if only_all_metrics_file: 
         df_paths = [base_path / f"all_metrics_for_{experiment_name}{appendix}.csv"]
     else: 
+        # THIS DOES NOT WORK: IS THE CONCATENATION WRONG? 
         df_static_path = base_path / f"all_static_metrics_for_{experiment_name}_updated.csv"
         df_static = pd.read_csv(df_static_path) if df_static_path.exists() else pd.DataFrame()
         df_dynamic_path = base_path / f"all_dynamic_metrics_for_{experiment_name}_updated.csv"
         df_dynamic = pd.read_csv(df_dynamic_path) if df_dynamic_path.exists() else pd.DataFrame()
         df_computational_path = base_path / f"all_computational_metrics_for_{experiment_name}_updated.csv"
         df_computational = pd.read_csv(df_computational_path) if df_computational_path.exists() else pd.DataFrame()
-        df_combined = pd.concat([df_static, df_dynamic, df_computational], axis=1)
-        df_combined.to_csv(save_path)
-        df_paths = [save_path]
+
+        df_original_path = base_path / f"all_metrics_for_{experiment_name}{appendix}.csv"
+        df_original = pd.read_csv(df_original_path) if df_computational_path.exists() else pd.DataFrame()
+
+        df_combined = pd.concat([df_static, df_dynamic, df_computational, df_original], axis=1)
+        combined_save_path = base_path / f"all_metrics_for_{experiment_name}_combined_in_07_3_1.csv"
+        df_combined.to_csv(combined_save_path)
+        df_paths = [combined_save_path]
 
     # Change this here if individual points (minimum estimates, best fits) should be shown 
-    plot_indiv_connectomes = "portrait" #  None # "portrait" #  None # "portrait" # or "energy" or None
+    plot_indiv_connectomes = "energy" # None # "portrait" # energies" # portrait" # None # "energy" # portrait" #  None # "portrait" #  None # "portrait" # or "energy" or None
     duplicate_handling = "mean" # first" # "mean"
-    show_number_samples = True
+    
+    show_number_of_samples = False # True # changes the title (and adding the number of samples to it)
+    if mode == "presentation": 
+        show_number_of_samples = False # changes the title
+
     eta_span = [-8, 3]
-    gamma_span = [-0.1, 1]
+    gamma_span = [-0.1, 1] 
     
     # Output directory
     parent_folder = Path(df_paths[0]).parent
@@ -418,7 +441,7 @@ if __name__ == "__main__":
         else:
             gnm_results_df = pd.read_csv(df_paths[0], index_col=False)
             if metrics_to_plot == "all": 
-                metrics_to_plot = list(set(gnm_results_df.columns.tolist()) - set(['eta', 'gamma', 'animal_id'])) # TODO: exclude here anything else that is not a metric.
+                metrics_to_plot = list(set(gnm_results_df.columns.tolist()) - set(['eta', 'gamma', 'animal_id'])) # TODO: exclude here anything else that is not a metric (that starts e.g. with "hparam_")
             
         if gnm_results_df.empty:
             raise ValueError("Dataframe is empty after loading.")
@@ -426,6 +449,7 @@ if __name__ == "__main__":
         if plot_indiv_connectomes is not None:
             path_to_best_gamma_and_eta_estimations = parent_folder / f"min_{plot_indiv_connectomes}_results.csv"
             df_best_gamma_and_eta_estimates = pd.read_csv(path_to_best_gamma_and_eta_estimations)
+            print(df_best_gamma_and_eta_estimates)
         else:
             df_best_gamma_and_eta_estimates = None
                 
@@ -518,21 +542,21 @@ if __name__ == "__main__":
             figure_save_name = f"grid_landscape_{metric}.pdf"
             full_save_path = save_dir / figure_save_name
 
-            # Get good cmap 
-            # from pypalettes import load_cmap
-            # cmap = load_cmap("Antique")
-            if mode == "presentation":
-                from vizman import viz
-                viz.set_visual_style()
-                default_cmaps = viz.give_colormaps()
-                cmap = default_cmaps["hb_bw"] # topological_map"] # hb_bw"] 
-            elif mode == "draft":
-                cmap = "hot" # "terrain" # cubehelix" # hot"
-                
+            # Styles based on mode
             if mode == "draft": 
                 annotate_extremes = True
+                cmap = "hot"
+                dot_color = "cyan" 
             elif mode == "presentation":
                 annotate_extremes = False
+                # cmap = default_cmaps["hb_bw"]
+                cmap = default_cmaps["metric_purple_beige"]
+                if dataset_name == "hcp_schaefer_100_dataset": 
+                    dot_color = "#44cfcf" # black" default_colors["colds"]["TEAL"] (or so)
+                elif dataset_name == "suarez_MaMI_dataset": 
+                    dot_color = default_colors["warms"]["LECKER_RED"]
+
+                
                 
             print("Using e.g.:", df_paths[0])
             fig, ax = visualizer.plot_metric_landscape_grid(
@@ -541,15 +565,15 @@ if __name__ == "__main__":
                 metric_name=metric_col_name,
                 savepath=full_save_path,
                 cmap=cmap, 
-                dot_color="steelblue", 
+                dot_color=dot_color, 
                 eta_span=eta_span,
                 gamma_span=gamma_span,
                 show=False,
-                show_dots=False,
+                show_dots=show_portrait_respectively_energy_minimums,
                 annotate_extremes=annotate_extremes, 
                 estimated_indiv_connectomes=df_best_gamma_and_eta_estimates if plot_indiv_connectomes else None, 
                 duplicate_handling=duplicate_handling, 
-                show_number_samples=show_number_samples,
+                show_number_of_samples=False, # show_number_of_samples,
                 interpolation='nearest',  # Can be 'nearest', 'bilinear', 'bicubic'
             )
             
