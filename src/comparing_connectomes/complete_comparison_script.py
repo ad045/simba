@@ -565,23 +565,7 @@ from src.comparing_connectomes.portrait_divergence_comparer import PortraitDiver
 from src.comparing_connectomes.f1_comparer import F1Evaluator
 from src.comparing_connectomes.communicability_comparer import CommunicabilityEvaluator
 
-
-def extract_params_from_filename(filename: str) -> Dict[str, float]:
-    """Extract eta, gamma, and id from filename."""
-    eta_match = re.search(r'eta([-+]?\d*\.?\d+)', filename)
-    if not eta_match:
-        raise ValueError(f"Could not extract eta from filename: {filename}")
-    eta = float(eta_match.group(1))
-    
-    gamma_match = re.search(r'gamma([-+]?\d*\.?\d+)', filename)
-    if not gamma_match:
-        raise ValueError(f"Could not extract gamma from filename: {filename}")
-    gamma = float(gamma_match.group(1))
-    
-    id_match = re.search(r'_id(\d+)', filename)
-    net_id = int(id_match.group(1)) if id_match else 0
-    
-    return {'eta': eta, 'gamma': gamma, 'id': net_id}
+from src.utils.extract_params_from_filenames import get_eta_gamma_id_from_filename
 
 
 def load_empirical_networks(empirical_path: Path) -> np.ndarray:
@@ -1005,7 +989,11 @@ def main(dataset_name: str,
         for filepath in ordered_files_to_process:
             try:
                 network = np.load(filepath)
-                params = extract_params_from_filename(filepath.name)
+                
+                eta, gamma, net_id = get_eta_gamma_id_from_filename(filepath.name)
+                if eta is None or gamma is None:
+                    raise ValueError(f"Could not extract parameters from filename: {filepath.name}")
+                params = {'eta': eta, 'gamma': gamma, 'id': net_id}
                 
                 generated_networks.append(network)
                 generated_network_parameters.append(params)
@@ -1185,15 +1173,24 @@ if __name__ == "__main__":
     #     number_multiprocessing_processes=1, # 2, 
     # )
     
-    for i in range(1, 21): 
-        # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/81_all_animals_10_000_animal_20
-        print(f"Subject {i}")
-        results = main(
-            dataset_name="suarez_MaMI_dataset",
-            experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
-            evaluation_mode="energy", # portrait",  # or "energy", "f1", "communicability"
-            debug_subject_ids=[i], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
-            number_multiprocessing_processes=10, # 2, 
-        )
+    # for i in range(1, 21): 
+    #     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/81_all_animals_10_000_animal_20
+    #     print(f"Subject {i}")
+    #     results = main(
+    #         dataset_name="suarez_MaMI_dataset",
+    #         experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
+    #         evaluation_mode="energy", # portrait",  # or "energy", "f1", "communicability"
+    #         debug_subject_ids=[i], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
+    #         number_multiprocessing_processes=10, # 2, 
+    #     )
         
         
+    results = main(
+        dataset_name="suarez_MaMI_dataset",
+        # experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
+        experiment_name="95_ring_seed_100_sweep_animal_206", 
+        evaluation_mode="energy", # portrait", #energy", # portrait",  # or "energy", "f1", "communicability"
+        debug_subject_ids=[206], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
+        number_multiprocessing_processes=10, # 2, 
+    )
+    
