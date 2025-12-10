@@ -181,25 +181,19 @@ def _run_and_save_single_simulation(
         preferential_relationship_type=bp_data['preferential_relationship_type']
     )
     
-    # seed_adjacency_matrix = None
-    # if 'seed' in bp_data and bp_data['seed'] is not False: 
-    #     seed_path = Path(bp_data['seed'])
-    #     if seed_path.exists():
-    #         seed_adjacency_matrix = np.load(seed_path)
-    #         seed_adjacency_matrix = torch.tensor(
-    #             seed_adjacency_matrix,
-    #             dtype=torch.float32,
-    #             device=device_str
-    #         )
-    #         binary_params.seed_adjacency_matrix = seed_adjacency_matrix
-    #     else:
-    #         print(f"Warning: Seed file {seed_path} not found. Proceeding without seed.")
+    # # if seed_adjacency_matrix is not None:
+    # #     binary_params.seed_adjacency_matrix = seed_adjacency_matrix
+    # if bp_data['seed_matrix'] is not None:
+    #     seed_adjacency_matrix = bp_data['seed_matrix']
+    # else:
+    #     seed_adjacency_matrix = None
             
     run_config = RunConfig(
         num_simulations=None,
         binary_parameters=binary_params,
         distance_matrix=task_data['distance_matrix'], 
-        seed_adjacency_matrix=seed_adjacency_matrix # seed_adjacency_matrix
+        # seed_adjacency_matrix=bp_data['seed_matrix'] if bp_data['seed_matrix'] is not None else None
+        seed_adjacency_matrix=seed_adjacency_matrix # bp_data['seed_matrix'] if bp_data['seed_matrix'] is not None else None
     )
 
     flat_record = {}
@@ -396,7 +390,6 @@ class GNMandESNPipelineOrchestrator:
         resolution = self.config['data']['connectome_resolution']
         
         # Get seed adjacency matrix if specified
-        seed_adjacency_matrix = None
         if 'seed_params' in self.config['gnm'] and self.config['gnm']['seed_params'] is not False: 
         
             seed_params = self.config['gnm']['seed_params']
@@ -405,20 +398,29 @@ class GNMandESNPipelineOrchestrator:
                 all_seed_adjacency_matrices = np.load(seed_adjacency_matrices_path)
                 seed_id = seed_params["seed_id"] 
                 
-                if seed_id < all_seed_adjacency_matrices.shape[0]:
-                    seed_adjacency_matrix = torch.tensor(
-                        all_seed_adjacency_matrices[seed_id], 
-                        dtype=torch.float32,
-                        device=self.device
-                    ).unsqueeze(0)
-                    print(f"Using seed adjacency matrix ID {seed_id} from {seed_adjacency_matrices_path}.")
-                else:
-                    print(f"Warning: Seed ID {seed_id} out of bounds. Proceeding without seed.")
-                    seed_adjacency_matrix = None
+                # If there are multiple seed matrices, select the specified one
+                if len(all_seed_adjacency_matrices.shape) == 3: 
+                    if seed_id < all_seed_adjacency_matrices.shape[0]:
+                        print(f"Using seed adjacency matrix ID {seed_id} from {seed_adjacency_matrices_path}.")
+                        all_seed_adjacency_matrices = all_seed_adjacency_matrices[seed_id,:,:] # TODO: Make nicer. 
+
+                    # else:
+                    #     print(f"Warning: Seed ID {seed_id} out of bounds. Proceeding without seed.")
+                    #     seed_adjacency_matrix = None
+                        
+                # Load the specified seed adjacency matrix
+                seed_adjacency_matrix = torch.tensor(
+                    all_seed_adjacency_matrices, 
+                    dtype=torch.float32,
+                    device=self.device
+                ).unsqueeze(0)
+                    
             else:
                 print(f"Warning: Seed file {seed_adjacency_matrices_path} not found. Proceeding without seed.")
                 seed_adjacency_matrix = None
-                
+        else: 
+            print("No seed adjacency matrix specified. Proceeding without seed.")
+            seed_adjacency_matrix = None
                 
         # Get number iterations
         if target_network is not None and calculate_energy: 
@@ -477,7 +479,8 @@ class GNMandESNPipelineOrchestrator:
                     "distance_relationship_type": str(run_config.binary_parameters.distance_relationship_type),
                     "preferential_relationship_type": str(run_config.binary_parameters.preferential_relationship_type),
                 },
-                "distance_matrix": run_config.distance_matrix
+                "distance_matrix": run_config.distance_matrix, 
+                # "seed_matrix": run_config.seed_adjacency_matrix if run_config.seed_adjacency_matrix is not None else None,
             }
             deconstructed_tasks.append(task)
 

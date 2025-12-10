@@ -188,35 +188,37 @@ class ExperimentRunner:
             self.save_timing_info(duration)
 
 
-def parse_arguments() -> argparse.Namespace:
+def parse_arguments(entry_points_hardcoded_path=None, entry_points_hardcoded_runs=None) -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Run an experiment series from a YAML configuration file."
     )
     
-    # HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_shafiei_human_consensus_dataset.yaml" 
-    HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
-    HARDCODED_NUM_RUNS = 2
-    
-    parser.add_argument(
-        "config",
-        type=str,
-        nargs='?',
-        default=HARDCODED_CONFIG_PATH, # None,
-        help="Path to the YAML configuration file (overridden by HARDCODED_CONFIG_PATH if set)."
-    )
-    parser.add_argument(
-        "-n", "--num_runs",
-        type=int,
-        default=HARDCODED_NUM_RUNS, # 1,
-        help="Number of times to run the experiment (overridden by HARDCODED_NUM_RUNS if set)."
-    )
+    if entry_points_hardcoded_path:
+        parser.add_argument(
+            "config",
+            type=str,
+            nargs='?',
+            default=entry_points_hardcoded_path, # None,
+            help="Path to the YAML configuration file (overridden by HARDCODED_CONFIG_PATH if set)."
+        )
+        
+    if entry_points_hardcoded_runs:
+        parser.add_argument(
+            "-n", "--num_runs",
+            type=int,
+            default=entry_points_hardcoded_runs, # 1,
+            help="Number of times to run the experiment (overridden by HARDCODED_NUM_RUNS if set)."
+        )
+        
     return parser.parse_args()
 
 
-def main():
-    """Main entry point for the experiment runner."""
-    args = parse_arguments()
+def main(entry_points_hardcoded_path=None, 
+         entry_points_hardcoded_runs=None): 
+    """Main entry point for the experiment runner. Has the option to override things, useful for __main__."""
+
+    args = parse_arguments(entry_points_hardcoded_path, entry_points_hardcoded_runs)
     
     # Use hardcoded values if set, otherwise fall back to command-line arguments
     config_path = args.config
@@ -234,4 +236,7 @@ def main():
 
 
 if __name__ == "__main__": 
-    main()
+    entry_points_hardcoded_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
+    entry_points_hardcoded_runs = 2
+    main(entry_points_hardcoded_path=entry_points_hardcoded_path, 
+         entry_points_hardcoded_runs=entry_points_hardcoded_runs)

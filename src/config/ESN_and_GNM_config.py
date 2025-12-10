@@ -11,16 +11,16 @@ import torch
 # Import GNM configuration structures
 from gnm import fitting, generative_rules, evaluation, weight_criteria
 
-# Import project constants
-from .constants import (
-    DEFAULT_RESOLUTION, DEFAULT_RANDOM_SEED, DEFAULT_N_ETA, DEFAULT_N_GAMMA, DEFAULT_N_LAMBDA,
-    DEFAULT_SPECTRAL_RADIUS, DEFAULT_INPUT_LENGTH, DEFAULT_INPUT_SCALING, DEFAULT_N_RUNS,
-    DEFAULT_N_LAGS, DEFAULT_TEST_LENGTH, DEFAULT_N_TRANSIENT, DEFAULT_LEAK_RATE, DEFAULT_BIAS,
-    DEFAULT_DENSITIES, DEFAULT_REGULARIZATION_METHOD, DEFAULT_GENERATIVE_RULES,
-    DEFAULT_EVALUATION_METRICS, DEFAULT_WEIGHT_CRITERION, DEFAULT_ETA_RANGE, DEFAULT_GAMMA_RANGE,
-    DEFAULT_LAMBDA_RANGE, DEFAULT_ALPHA, DEFAULT_NUM_SIMULATIONS, DEFAULT_APPEND_INTERVAL,
-    CONNECTOMES_WEIGHTED_PATTERN, CONNECTOMES_BINARY_PATTERN, DISTANCE_MATRIX_PATTERN
-)
+# # Import project constants
+# from .constants import (
+#     DEFAULT_RESOLUTION, DEFAULT_RANDOM_SEED, DEFAULT_N_ETA, DEFAULT_N_GAMMA, DEFAULT_N_LAMBDA,
+#     DEFAULT_SPECTRAL_RADIUS, DEFAULT_INPUT_LENGTH, DEFAULT_INPUT_SCALING, DEFAULT_N_RUNS,
+#     DEFAULT_N_LAGS, DEFAULT_TEST_LENGTH, DEFAULT_N_TRANSIENT, DEFAULT_LEAK_RATE, DEFAULT_BIAS,
+#     DEFAULT_DENSITIES, DEFAULT_REGULARIZATION_METHOD, DEFAULT_GENERATIVE_RULES,
+#     DEFAULT_EVALUATION_METRICS, DEFAULT_WEIGHT_CRITERION, DEFAULT_ETA_RANGE, DEFAULT_GAMMA_RANGE,
+#     DEFAULT_LAMBDA_RANGE, DEFAULT_ALPHA, DEFAULT_NUM_SIMULATIONS, DEFAULT_APPEND_INTERVAL,
+#     CONNECTOMES_WEIGHTED_PATTERN, CONNECTOMES_BINARY_PATTERN, DISTANCE_MATRIX_PATTERN
+# )
 
 
 @dataclass
@@ -45,13 +45,13 @@ class GNMConfig:
     binary_sweep_params: Optional[fitting.BinarySweepParameters] = None
     weighted_sweep_params: Optional[fitting.WeightedSweepParameters] = None
     
-    # Default parameter ranges
-    eta_range: tuple = DEFAULT_ETA_RANGE
-    gamma_range: tuple = DEFAULT_GAMMA_RANGE
-    lambda_range: tuple = DEFAULT_LAMBDA_RANGE
-    n_eta: int = DEFAULT_N_ETA    
-    n_gamma: int = DEFAULT_N_GAMMA
-    n_lambda: int = DEFAULT_N_LAMBDA
+    # # Default parameter ranges
+    # eta_range: tuple = DEFAULT_ETA_RANGE
+    # gamma_range: tuple = DEFAULT_GAMMA_RANGE
+    # lambda_range: tuple = DEFAULT_LAMBDA_RANGE
+    # n_eta: int = DEFAULT_N_ETA    
+    # n_gamma: int = DEFAULT_N_GAMMA
+    # n_lambda: int = DEFAULT_N_LAMBDA
     
     # Generative rules to test
     generative_rules_to_test: List[str] = field(default_factory=lambda: DEFAULT_GENERATIVE_RULES.copy())
@@ -107,7 +107,7 @@ class GNMConfig:
             eta=torch.linspace(self.eta_range[0], self.eta_range[1], self.n_eta),
             gamma=torch.linspace(self.gamma_range[0], self.gamma_range[1], self.n_gamma),
             lambdah=torch.linspace(self.lambda_range[0], self.lambda_range[1], self.n_lambda),
-            distance_relationship_type="powerlaw", # TODO: change all these defaults!
+            distance_relationship_type="tbc", # "powerlaw", # TODO: change all these defaults!
             preferential_relationship_type="powerlaw",
             heterochronicity_relationship_type="powerlaw",
             generative_rule=rules,
