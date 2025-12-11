@@ -1,0 +1,66 @@
+experiment:
+  experiment_type: gnm_sweep
+  type: gnm_sweep
+  name: 01_ring_sweep_animal_0
+  animal: 0
+  calculate_energy: false
+  average_connectomes: true
+  elaborate_analysis: true
+  calculate_energies_of_all_individual_connectomes: false
+  search:
+    method: grid
+    n_samples: 2500
+data:
+  dataset_name: lexis_data
+  connectome_resolution: 50
+  density: 10
+  paths:
+    project_root: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code
+gnm:
+  eta_range:
+  - -8.0
+  - 3.0
+  gamma_range:
+  - -0.1
+  - 1.0
+  lambda:
+  - 0.0
+  generative_rules_to_test:
+  - matching_index
+  num_simulations: 10
+  evaluation_metrics:
+  - degree_ks
+  - clustering_ks
+  - edge_length_ks
+  - betweenness_ks
+  weight_criterion: distance_weighted_communicability
+  alpha: 0.01
+  distance_relationship_type:
+  - powerlaw
+  preferential_relationship_type:
+  - powerlaw
+  heterochronicity_relationship_type:
+  - powerlaw
+  seed_params:
+    seed_adjacency_matrices: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/seeds/circulant_graph_seed_100.npy
+    seed_id: 0
+esn:
+  spectral_radius: 0.9
+  input_scaling: 1.0
+  train_len: 5000
+  regression_method: pinv
+  n_runs: 50
+  n_lags: 50
+  test_len: 1000
+  leak_rate: 1.0
+  bias: 0.0
+  n_transient: 0
+  random_state: 42
+compute:
+  device: cpu
+  n_workers: -1
+  timing_flag: true
+  random_seed: 42
+output:
+  figure_format: pdf
+  verbosity: INFO

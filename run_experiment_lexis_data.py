@@ -9,17 +9,15 @@ import time
 from pathlib import Path    
     
 # Configuration
-BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_with_ring_seeds_mami.yaml"
-TEMP_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/temp_config_animal.yaml"
+BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_with_ring_seeds_lexis_dataset.yaml"
+TEMP_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/temp_config.yaml"
 RUN_SCRIPT = "run_experiment.py"
 
-NUMBER_RUNS_PER_ANIMAL = 1 # 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied. 
+NUMBER_RUNS_PER_ID = 1 # 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied. 
 
-
-
-def modify_config_for_animal(base_config_path: str, temp_config_path: str, animal_id: int): # , loop_number: int):
+def modify_config_for_id(base_config_path: str, temp_config_path: str, animal_id: int): # , loop_number: int):
     """
-    Load the base config, modify the animal number, and save to temp file.
+    Load the base config, modify the (animal number // id), and save to temp file.
     
     Args:
         base_config_path: Path to the original config file
@@ -54,13 +52,13 @@ def run_experiment_for_animal(animal_id: int, temp_config_path: str, run_script:
         run_script: Path to the run_experiment.py script
     """
     print(f"\n{'='*80}")
-    print(f"🐾 Starting experiment for Animal {animal_id}")
+    print(f"Starting experiment for Animal {animal_id}")
     print(f"{'='*80}\n")
     
     try:
         # Run the experiment script
         result = subprocess.run(
-            [sys.executable, run_script, temp_config_path, "--num_runs", str(NUMBER_RUNS_PER_ANIMAL)],
+            [sys.executable, run_script, temp_config_path, "--num_runs", str(NUMBER_RUNS_PER_ID)],
             check=True,
             capture_output=False,  # Show output in real-time
             text=True
@@ -80,7 +78,7 @@ def cleanup_temp_config(temp_config_path: str):
     """Remove the temporary config file."""
     try:
         Path(temp_config_path).unlink(missing_ok=True)
-        print(f"🧹 Cleaned up temporary config file")
+        print(f"✅ Cleaned up temporary config file")
     except Exception as e:
         print(f"⚠️ Could not remove temp config: {e}")
 
@@ -111,7 +109,7 @@ def main(animals_to_analyze):
         for animal_id in animals_to_analyze:   #  range(ANIMAL_START, ANIMAL_END + 1):
             try:
                 # Create modified config
-                modify_config_for_animal(BASE_CONFIG_PATH, TEMP_CONFIG_PATH, animal_id)
+                modify_config_for_id(BASE_CONFIG_PATH, TEMP_CONFIG_PATH, animal_id)
                 
                 # Run experiment
                 success = run_experiment_for_animal(animal_id, TEMP_CONFIG_PATH, RUN_SCRIPT)
@@ -137,14 +135,14 @@ def main(animals_to_analyze):
     finally:
         duration = time.time() - start_time
         print(f"\n{'='*80}")
-        print(f"📊 Batch Run Summary")
+        print(f"Batch Run Summary")
         print(f"{'='*80}")
         print(f"   Total animals processed: {successful + failed}/{total_animals}")
         print(f"   ✅ Successful: {successful}")
         print(f"   ❌ Failed: {failed}")
-        print(f"   ⏱️ Total time: {duration:.2f}s ({duration/60:.2f} min)")
+        print(f"      Total time: {duration:.2f}s ({duration/60:.2f} min)")
         print(f"{'='*80}\n")
 
 
 if __name__ == "__main__":
-    main(animals_to_analyze=[206]) # 206
+    main(animals_to_analyze=[0]) # 0, as consensus network. 
