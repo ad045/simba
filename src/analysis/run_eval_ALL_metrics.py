@@ -22,22 +22,25 @@ CREATE_BIG_CSV = True
 # Define all metrics organized by category
 ALL_METRICS = {
     "static": [
-        # "density", # works # done
-        # "avg_clustering", # works # done
-        # "avg_degree", # works # done
-        # "degree_assortativity", # works # done
         
-        # "modularity", # works # done
-        # "transitivity", # works # done
+        "n_connected_components",
+
+        "density", # works # done
+        "avg_clustering", # works # done
+        "avg_degree", # works # done
+        "degree_assortativity", # works # done
         
-        # "topological_distance",
-        # "degree_gini",
+        "modularity", # works # done
+        "transitivity", # works # done
+        
+        "topological_distance",
+        "degree_gini",
         
         # "wiring_cost", # no shortest_path_distance - this does not work. 
-        # "structural_complexity",
+        "structural_complexity",
         # "n_connected_components",
         
-        "omega",
+        # "omega",
         
         # "directed_simplices"
     ],
@@ -302,7 +305,7 @@ def main(experiment_name: str,
 
 if __name__ == "__main__":
         
-    experiment_name = "81_all_animals_10_000_animal_15" # 07_high_res_90_000_plot" 
+    experiment_name = "95_ring_seed_100_sweep_animal_206" # 94_ring_seed_testing_animal_206" # 90_ring_seed_animal_206" # 81_all_animals_10_000_animal_15" # 07_high_res_90_000_plot" 
     # 05_second_big_overnight_run_10201" # 02_test" # 07_high_res_90_000_plot" # 
     # experiment_name = "02_test" # 01_first_bigger_run_animal_0" # 00_default_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206"  # 
     # For testing: "73_testing_animal_206"

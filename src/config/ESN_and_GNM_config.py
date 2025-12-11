@@ -107,9 +107,9 @@ class GNMConfig:
             eta=torch.linspace(self.eta_range[0], self.eta_range[1], self.n_eta),
             gamma=torch.linspace(self.gamma_range[0], self.gamma_range[1], self.n_gamma),
             lambdah=torch.linspace(self.lambda_range[0], self.lambda_range[1], self.n_lambda),
-            distance_relationship_type="tbc", # "powerlaw", # TODO: change all these defaults!
-            preferential_relationship_type="powerlaw",
-            heterochronicity_relationship_type="powerlaw",
+            distance_relationship_type="tbc", # "powerlaw", # TODO: change all these defaults! I hope I am not using them??
+            preferential_relationship_type="tbc", # powerlaw",
+            heterochronicity_relationship_type="tbc", # powerlaw",
             generative_rule=rules,
             num_iterations=[num_iterations],
         )

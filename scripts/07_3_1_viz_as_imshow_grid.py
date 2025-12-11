@@ -141,8 +141,8 @@ class GridVisualizer(PipelineVisualizer):
         
         # Add sample points (only do this in voroni! Those were the middle points...) and annotations
         # self._add_sample_points(ax, df, points, metric_name, show_dots, "white", point_size)
-        self._add_estimated_connectomes(ax, estimated_indiv_connectomes, dot_color)
-        
+        self._add_estimated_connectomes(ax, estimated_indiv_connectomes, dot_color, dot_size_animals_or_humans=point_size)
+
         if annotate_extremes:
             self._annotate_extreme_points(ax, df, metric_name)
 
@@ -267,7 +267,8 @@ if __name__ == "__main__":
     # dataset_name = "hcp_schaefer_100_dataset" 
     # experiment_name = "07_high_res_90_000_plot" # 
     dataset_name = "suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # "suarez_MaMI_dataset"
-    experiment_name = "81_all_animals_10_000_animal_15" # 76_90000_samples_animal_206" # 81_all_animals_10_000_animal_20" 
+    experiment_name = "95_ring_seed_100_sweep_animal_206" # 94_ring_seed_testing_animal_206" # 90_ring_seed_animal_206" 
+    # experiment_name = "81_all_animals_10_000_animal_15" # 76_90000_samples_animal_206" # 81_all_animals_10_000_animal_20" 
     # experiment_name = "05_second_big_overnight_run_10201" # 07_high_res_90_000_plot" # "05_second_big_overnight_run_10201"
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/80_more_animals_animal_0/all_metrics_for_80_more_animals_animal_0.csv
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/12_seed_chimp_206_idx_0/all_metrics_for_12_seed_chimp_206_idx_0.csv
@@ -286,7 +287,7 @@ if __name__ == "__main__":
     
     # Turn on/off regarding if one wants to use the original or the new metrics 
     # ORIGINAL METRICS OR NEW ONES
-    only_all_metrics_file = True # False # True  # True #  False #  True # False # True 
+    only_all_metrics_file = False # True # False # True  # True #  False #  True # False # True 
     bin_to_100 = True # False # TODO: DOES NOT WORK YET. 
     mode = "presentation" # "draft" # presentation" # draft" # presentation"  # "draft" or "presentation"
     # "terrain" # cubehelix" 
@@ -297,7 +298,6 @@ if __name__ == "__main__":
     if only_all_metrics_file: 
         df_paths = [base_path / f"all_metrics_for_{experiment_name}{appendix}.csv"]
     else: 
-        # THIS DOES NOT WORK: IS THE CONCATENATION WRONG? 
         df_static_path = base_path / f"all_static_metrics_for_{experiment_name}_updated.csv"
         df_static = pd.read_csv(df_static_path) if df_static_path.exists() else pd.DataFrame()
         df_dynamic_path = base_path / f"all_dynamic_metrics_for_{experiment_name}_updated.csv"
@@ -306,15 +306,42 @@ if __name__ == "__main__":
         df_computational = pd.read_csv(df_computational_path) if df_computational_path.exists() else pd.DataFrame()
 
         df_original_path = base_path / f"all_metrics_for_{experiment_name}{appendix}.csv"
-        df_original = pd.read_csv(df_original_path) if df_computational_path.exists() else pd.DataFrame()
+        print(df_original_path)
+        df_original = pd.read_csv(df_original_path) if df_original_path.exists() else pd.DataFrame()
 
-        df_combined = pd.concat([df_static, df_dynamic, df_computational, df_original], axis=1)
-        combined_save_path = base_path / f"all_metrics_for_{experiment_name}_combined_in_07_3_1.csv"
-        df_combined.to_csv(combined_save_path)
-        df_paths = [combined_save_path]
+        # Print lengths to test if everything works 
+        print("Len static:", len(df_static))
+        print("Len dyn:", len(df_dynamic))
+        print("Len comp:", len(df_computational))
+        print("Len orig:", len(df_original))
+
+        # Merge dataframes on 'eta' and 'gamma' columns
+        # Start with the first non-empty dataframe
+        dfs_to_merge = [df for df in [df_static, df_dynamic, df_computational, df_original] if not df.empty]
+
+        if dfs_to_merge:
+            df_combined = dfs_to_merge[0]
+            
+            # Merge the rest
+            for df in dfs_to_merge[1:]:
+                # Use outer merge to keep all rows from both dataframes
+                df_combined = df_combined.merge(df, on=['eta', 'gamma'], how='outer', suffixes=('', '_dup'))
+                
+                # Remove duplicate columns that end with '_dup'
+                dup_cols = [col for col in df_combined.columns if col.endswith('_dup')]
+                if dup_cols:
+                    df_combined = df_combined.drop(columns=dup_cols)
+            
+            combined_save_path = base_path / f"all_metrics_for_{experiment_name}_combined_in_07_3_1.csv"
+            df_combined.to_csv(combined_save_path, index=False)
+            print(f"Combined dataframe saved with {len(df_combined)} rows and {len(df_combined.columns)} columns")
+            df_paths = [combined_save_path]
+        else:
+            print("No dataframes to combine!")
+            df_paths = []
 
     # Change this here if individual points (minimum estimates, best fits) should be shown 
-    plot_indiv_connectomes = "energy" # None # "portrait" # energies" # portrait" # None # "energy" # portrait" #  None # "portrait" #  None # "portrait" # or "energy" or None
+    plot_indiv_connectomes = None # "energy" # None # "portrait" # energies" # portrait" # None # "energy" # portrait" #  None # "portrait" #  None # "portrait" # or "energy" or None
     duplicate_handling = "mean" # first" # "mean"
     
     show_number_of_samples = False # True # changes the title (and adding the number of samples to it)

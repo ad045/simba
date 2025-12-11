@@ -1,7 +1,7 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 90_ring_seed
+  name: 95_ring_seed_100_sweep
   animal: 444 # placeholder
   calculate_energy: true
   average_connectomes: true
@@ -9,7 +9,7 @@ experiment:
   calculate_energies_of_all_individual_connectomes: false
   search:
     method: grid
-    n_samples: 2500
+    n_samples: 10000
   wandb:
     enabled: false
     project: GNM_project
@@ -66,7 +66,7 @@ pipeline:
     - avg_clustering
     - avg_degree
     - transitivity
-    - avg_edge_distance^
+    - avg_edge_distance
     - char_path_length
     - richclub_n_edges
     - richclub_avg_length
@@ -126,7 +126,7 @@ esn:
   random_state: 42
 compute:
   device: cpu
-  n_workers: -1
+  n_workers: -1 # -1
   timing_flag: true
   random_seed: 42
 output:

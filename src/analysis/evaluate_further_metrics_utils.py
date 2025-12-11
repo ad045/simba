@@ -14,33 +14,41 @@ from src.analysis.utils import sorted_listing_by_creation_time
 
 ONLY_SUMMARIZE = False
 
-def get_eta_gamma_id_from_filename(filename):
-    """
-    Extract eta, gamma, and id from filename.
-    Handles formats like:
-    - net_eta-6.748_gamma0.819_ruleMatchingIndex_id130.npy
-    - net_eta-6.748_gamma0.819_ruleMatchingIndex.npy (no id -> defaults to 0)
+from src.utils.extract_params_from_filenames import get_eta_gamma_id_from_filename
+
+# def get_eta_gamma_id_from_filename(filename):
+#     """
+#     Extract eta and gamma values from the network filename.
     
-    Returns:
-        tuple: (eta, gamma, id) where id is 0 if not present
-    """
-    # Extract eta
-    eta_match = re.search(r'eta([-+]?\d*\.?\d+)', filename)
-    if not eta_match:
-        raise ValueError(f"Could not extract eta from filename: {filename}")
-    eta = float(eta_match.group(1))
+#     Expected filename format:
+#     net_eta-{eta}_gamma{gamma}_rule{generative_rule}.npy
     
-    # Extract gamma
-    gamma_match = re.search(r'gamma([-+]?\d*\.?\d+)', filename)
-    if not gamma_match:
-        raise ValueError(f"Could not extract gamma from filename: {filename}")
-    gamma = float(gamma_match.group(1))
-    
-    # Try to extract id (defaults to 0 if not present)
-    id_match = re.search(r'_id(\d+)', filename)
-    net_id = int(id_match.group(1)) if id_match else 0
-    
-    return eta, gamma, net_id
+#     Examples:
+#     - net_eta-6.748_gamma0.819_ruleMatchingIndex_id130.npy
+#     - net_eta3.5_gamma1.0_ruleMatchingIndex_id017.npy
+#     """
+#     try:
+#         # Split by 'eta' and take everything after it
+#         eta_part = filename.split('eta')[1]
+#         # Split by '_' to get just the eta value
+#         eta_str = eta_part.split('_')[0]
+#         eta = float(eta_str)
+        
+#         # Split by 'gamma' and take everything after it
+#         gamma_part = filename.split('gamma')[1]
+#         # Split by '_' to get just the gamma value
+#         gamma_str = gamma_part.split('_')[0]
+#         gamma = float(gamma_str)
+        
+#         # Try to extract id (defaults to 0 if not present)
+#         id_match = filename.split('_id')[1].split('.npy')[0]
+#         net_id = int(id_match) # id_match.group(1)) if id_match else 0
+        
+#         return eta, gamma, net_id
+
+#     except (IndexError, ValueError) as e:
+#         print(f"Warning: Could not parse filename '{filename}': {e}")
+#         return None, None, None
 
 
 def get_metric_category(metric_name, static_calc, dynamic_calc, computation_calc):

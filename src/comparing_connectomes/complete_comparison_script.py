@@ -29,7 +29,7 @@ from src.comparing_connectomes.wasserstein_gromov_comparer import GromovWasserst
 from src.comparing_connectomes.multiplex_layer_similarity_comparer import MultiplexLayerSimilarityEvaluator
 from src.comparing_connectomes.edit_distance_comparer import EditDistanceEvaluator
 from src.comparing_connectomes.cosine_embedding_comparer import CosineEmbeddingEvaluator
-from src.comparing_connectomes.resistance_distance import ResistanceDistanceEvaluator
+from comparing_connectomes.resistance_distance_comparer import ResistanceDistanceEvaluator
 from src.comparing_connectomes.delta_con_evaluator import DeltaConEvaluator
 from src.comparing_connectomes.graph_edit_distance_comparer import GraphEditDistanceEvaluator
 from src.comparing_connectomes.wasserstein_sinkhorn_comparer import WassersteinSinkhornEvaluator
@@ -38,6 +38,11 @@ from src.comparing_connectomes.graph_kernel_networkx_comparer import GraphKernel
 
 from src.comparing_connectomes.network_mutual_information_comparer import NetworkMutualInformationEvaluator
 
+from src.comparing_connectomes.communicability_mse_comparer import CommunicabilityMSEEvaluator
+from src.comparing_connectomes.communicability_jsd_comparer import CommunicabilityJSDEvaluator
+
+from src.comparing_connectomes.frobenius_comparer import FrobeniusEvaluator
+from src.comparing_connectomes.jaccard_comparer import JaccardEvaluator
 
 from src.utils.extract_params_from_filenames import get_eta_gamma_id_from_filename
 
@@ -541,6 +546,19 @@ def main(dataset_name: str,
             evaluator = NetworkMutualInformationEvaluator()
             print("Using Network Mutual Information evaluation")
         
+        elif evaluation_mode == "communicability_mse":
+            evaluator = CommunicabilityMSEEvaluator()
+            print("Using Communicability MSE evaluation")    
+        elif evaluation_mode == "communicability_jsd":
+            evaluator = CommunicabilityJSDEvaluator()
+            print("Using Communicability JSD evaluation")   
+        elif evaluation_mode == "frobenius":
+            evaluator = FrobeniusEvaluator()
+            print("Using Frobenius evaluation")    
+        elif evaluation_mode == "jaccard":
+            evaluator = JaccardEvaluator()
+            print("Using Jaccard evaluation")
+
         elif evaluation_mode == "energy":
             print("Loading distance matrices...")
             distance_matrices = np.load(distance_matrices_path)
@@ -707,39 +725,15 @@ if __name__ == "__main__":
     #     number_multiprocessing_processes=10, # 2, 
     # )
     
-    results = main(
+    methods_to_evaluate = ["communicability_mse", "communicability_jsd", "frobenius", "jaccard"]
+    
+    for m in methods_to_evaluate: 
+        results = main(
         dataset_name="suarez_MaMI_dataset",
         # experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
         experiment_name="95_ring_seed_100_sweep_animal_206", 
-        evaluation_mode="wasserstein_gromov", #"graph_edit_distance", # "delta_con", # cosine_embedding", # edit_distance", # wasserstein", # multiplex_layer_similarity", # communicability", # graph_kernel", # wasserstein", # spectral_distance", # "energy", # portrait", #energy", # portrait",  # or "energy", "f1", "communicability"
+        evaluation_mode=m,
         debug_subject_ids=[206], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
         number_multiprocessing_processes=10, # 2, 
     )
-    
-    # results = main(
-    #     dataset_name="suarez_MaMI_dataset",
-    #     # experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
-    #     experiment_name="95_ring_seed_100_sweep_animal_206", 
-    #     evaluation_mode="hungarian_alignment", #"graph_edit_distance", # "delta_con", # cosine_embedding", # edit_distance", # wasserstein", # multiplex_layer_similarity", # communicability", # graph_kernel", # wasserstein", # spectral_distance", # "energy", # portrait", #energy", # portrait",  # or "energy", "f1", "communicability"
-    #     debug_subject_ids=[206], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
-    #     number_multiprocessing_processes=10, # 2, 
-    # )
-    
-    # results = main(
-    #     dataset_name="suarez_MaMI_dataset",
-    #     # experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
-    #     experiment_name="95_ring_seed_100_sweep_animal_206", 
-    #     evaluation_mode="graph_kernel_networkx", #"graph_edit_distance", # "delta_con", # cosine_embedding", # edit_distance", # wasserstein", # multiplex_layer_similarity", # communicability", # graph_kernel", # wasserstein", # spectral_distance", # "energy", # portrait", #energy", # portrait",  # or "energy", "f1", "communicability"
-    #     debug_subject_ids=[206], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
-    #     number_multiprocessing_processes=10, # 2, 
-    # )
-    
-    # results = main(
-    #     dataset_name="suarez_MaMI_dataset",
-    #     # experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
-    #     experiment_name="95_ring_seed_100_sweep_animal_206", 
-    #     evaluation_mode="network_mutual_information", #"graph_edit_distance", # "delta_con", # cosine_embedding", # edit_distance", # wasserstein", # multiplex_layer_similarity", # communicability", # graph_kernel", # wasserstein", # spectral_distance", # "energy", # portrait", #energy", # portrait",  # or "energy", "f1", "communicability"
-    #     debug_subject_ids=[206], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
-    #     number_multiprocessing_processes=10, # 2, 
-    # )
     
