@@ -89,7 +89,7 @@ def get_processed_subject_ids(output_path: Path, metric_prefix: str, num_subject
                 subject_id = int(match.group(1))
                 processed_ids.add(subject_id)
         
-        print(f"📊 Found {len(processed_ids)} already processed subjects: {sorted(processed_ids)}")
+        print(f"  Found {len(processed_ids)} already processed subjects: {sorted(processed_ids)}")
         return processed_ids
         
     except Exception as e:
@@ -125,7 +125,7 @@ def get_processed_timing_subject_ids(timing_path: Path, num_subjects: int) -> Se
                 subject_id = int(match.group(1))
                 processed_ids.add(subject_id)
         
-        print(f"⏱️  Found timing data for {len(processed_ids)} subjects")
+        print(f"    Found timing data for {len(processed_ids)} subjects")
         return processed_ids
         
     except Exception as e:
@@ -404,7 +404,7 @@ def main(dataset_name: str,
         if debug_subject_ids is not None:
             subjects_to_process = [s for s in subjects_to_process if s in debug_subject_ids]
 
-        print(f"\n📋 Subject processing status:")
+        print(f"\n Subject processing status:")
         print(f"   Total subjects: {num_subjects}")
         print(f"   Already processed: {len(processed_subject_ids)}")
         print(f"   With timing data: {len(processed_timing_subject_ids)}")
@@ -687,7 +687,7 @@ if __name__ == "__main__":
         dataset_name="suarez_MaMI_dataset",
         # experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
         experiment_name="95_ring_seed_100_sweep_animal_206", 
-        evaluation_mode=m,
+        evaluation_mode="m",
         debug_subject_ids=[206], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
         number_multiprocessing_processes=10, # 2, 
     )

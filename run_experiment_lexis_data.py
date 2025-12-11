@@ -99,15 +99,13 @@ def main(animals_to_analyze):
     print(f"{'='*80}\n")
     
     try:
-        
         # 0,Rat4,
         # 103,Orangutan2,
         # 169,RedKangaroo3,
         # 188,FruitBat5,
         # 206,Chimpanzee,
 
-
-        for animal_id in animals_to_analyze:   #  range(ANIMAL_START, ANIMAL_END + 1):
+        for animal_id in animals_to_analyze:   
             try:
                 # Create modified config
                 modify_config_for_id(BASE_CONFIG_PATH, TEMP_CONFIG_PATH, animal_id)

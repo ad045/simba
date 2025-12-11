@@ -4,7 +4,7 @@
   
 ### ⚠️ A Note on the Current State:
 
-> This is a preliminary and absolutely crazyyyy version of this repo. Hopefully it will be cleaner as time continues. You might need to also get my version of the GNM library - I made a few changes (for the better or worse - I am unsure about that). Lmk if this is the case. 
+> This is a preliminary and completely chaotic repo. Hopefully it will be cleaner as time continues. You might need to also get my version of the GNM library - I made a few changes (for the better or worse - I am unsure about that). Lmk if this is the case. 
 
 ---
 ### The big goal (for now)
