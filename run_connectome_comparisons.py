@@ -499,61 +499,79 @@ def main(dataset_name: str,
         if evaluation_mode == "portrait":
             evaluator = PortraitDivergence()
             print("Using Portrait Divergence evaluation")
+            
         elif evaluation_mode == "f1":
             evaluator = F1Evaluator()
             print("Using F1 evaluation")
+            
         elif evaluation_mode == "communicability":
             evaluator = CommunicabilityEvaluator()
             print("Using Communicability evaluation")
+            
         elif evaluation_mode == "delta_con":
             evaluator = DeltaConEvaluator()
             print("Using DeltaCon evaluation")  
+            
         elif evaluation_mode == "spectral_distance":
             evaluator = SpectralDistanceEvaluator()
             print("Using Spectral Distance evaluation")
+            
         elif evaluation_mode == "edit_distance":
             evaluator = EditDistanceEvaluator()
             print("Using Edit Distance evaluation")
+            
         elif evaluation_mode == "cosine_embedding":
             evaluator = CosineEmbeddingEvaluator()
             print("Using Cosine Embedding evaluation")
+            
         elif evaluation_mode == "wasserstein_gromov":
             evaluator = GromovWassersteinEvaluator()
             print("Using Gromov-Wasserstein evaluation")
+            
         elif evaluation_mode == "wasserstein_sinkhorn":
             evaluator = WassersteinSinkhornEvaluator()
             print("Using Wasserstein Sinkhorn evaluation")
+            
         elif evaluation_mode == "hungarian_alignment":
             evaluator = HungarianAlignmentEvaluator()
             print("Using Hungarian Alignment evaluation")
+            
         elif evaluation_mode == "graph_kernel":
             evaluator = GraphKernelEvaluator()
             print("Using Graph Kernel evaluation")
+            
         elif evaluation_mode == "graph_kernel_networkx":
             evaluator = GraphKernelNetworkxEvaluator()
             print("Using Graph Kernel NetworkX evaluation")
+            
         elif evaluation_mode == "multiplex_layer_similarity":
             evaluator = MultiplexLayerSimilarityEvaluator()
             print("Using Multiplex Layer Similarity evaluation")
+            
         elif evaluation_mode == "resistance_distance":
             evaluator = ResistanceDistanceEvaluator()
             print("Using Resistance Distance evaluation")
+            
         elif evaluation_mode == "graph_edit_distance":
             evaluator = GraphEditDistanceEvaluator()
             print("Using Graph Edit Distance evaluation")
+            
         elif evaluation_mode == "network_mutual_information":
             evaluator = NetworkMutualInformationEvaluator()
             print("Using Network Mutual Information evaluation")
         
         elif evaluation_mode == "communicability_mse":
             evaluator = CommunicabilityMSEEvaluator()
-            print("Using Communicability MSE evaluation")    
+            print("Using Communicability MSE evaluation")  
+              
         elif evaluation_mode == "communicability_jsd":
             evaluator = CommunicabilityJSDEvaluator()
             print("Using Communicability JSD evaluation")   
+            
         elif evaluation_mode == "frobenius":
             evaluator = FrobeniusEvaluator()
             print("Using Frobenius evaluation")    
+            
         elif evaluation_mode == "jaccard":
             evaluator = JaccardEvaluator()
             print("Using Jaccard evaluation")
@@ -680,15 +698,19 @@ def main(dataset_name: str,
 
 if __name__ == "__main__":
     
-    methods_to_evaluate = ["communicability_mse", "communicability_jsd", "frobenius", "jaccard"]
+    methods_to_evaluate = ["communicability_mse",
+                           "communicability_jsd", 
+                           "frobenius", 
+                           "jaccard"
+                           # Add more here, if wanted 
+                           ] 
     
-    for m in methods_to_evaluate: 
+    for method in methods_to_evaluate: 
         results = main(
-        dataset_name="suarez_MaMI_dataset",
-        # experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
-        experiment_name="95_ring_seed_100_sweep_animal_206", 
-        evaluation_mode="m",
-        debug_subject_ids=[206], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
-        number_multiprocessing_processes=10, # 2, 
-    )
+            dataset_name="suarez_MaMI_dataset",
+            experiment_name="95_ring_seed_100_sweep_animal_206", 
+            evaluation_mode=method,
+            debug_subject_ids=[206], # None for all subjects, or [0,1,2,...] for specific subjects
+            number_multiprocessing_processes=10, # 2, 
+        )
     
