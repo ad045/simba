@@ -146,4 +146,4 @@ def main(animals_to_analyze):
 
 
 if __name__ == "__main__":
-    main(animals_to_analyze=[0]) # 0, as consensus network. 
+    main(animals_to_analyze=[0])

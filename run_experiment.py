@@ -1,16 +1,9 @@
 """
-YAML-based configuration system integrated with existing ConfigManager.
 This script orchestrates running an experiment multiple times, manages configuration
 files, and records the total execution time.
 """
 
-
-
-###########################################################################################
-# ============================================================================
-# CRITICAL: Set multiprocessing method BEFORE any other imports
-# This must be the very first code that runs (after docstring)
-# ============================================================================
+# Set multiprocessing method BEFORE any other imports (for MacOS)
 import multiprocessing as mp
 import os
 import sys
@@ -27,15 +20,11 @@ if __name__ == "__main__":
     os.environ['NUMEXPR_NUM_THREADS'] = '1'
 ###########################################################################################
 
-
-
 import argparse
 import filecmp
 import json
-import os
 import shutil
 import subprocess
-import sys
 import time
 from pathlib import Path
 from typing import Optional
@@ -71,7 +60,7 @@ class ExperimentRunner:
         if not experiment_name:
             raise ValueError("'name' not found under 'experiment' in the config file.")
         
-        self.output_dir = self.path_config.output_experiment_dir # os.path.join("output", "gnm", experiment_name)
+        self.output_dir = self.path_config.output_experiment_dir 
         print(f"✅ Experiment name: '{experiment_name}'")
         print(f"✅ Output directory set to: '{self.output_dir}'")
         
@@ -95,10 +84,10 @@ class ExperimentRunner:
     
     def run_experiments(self):
         """Execute the experiment multiple times."""
-        print(f"\n🚀 Starting {self.num_runs} experiment run(s)...")
+        print(f"\n   Starting {self.num_runs} experiment run(s)...")
         
         for i in range(1, self.num_runs + 1):
-            print(f"\n⏱️  Starting run #{i}/{self.num_runs} ⏱️")
+            print(f"\n   Starting run #{i}/{self.num_runs} ⏱️")
             run_from_yaml(self.config_path)
             print(f"✅ Finished run #{i}/{self.num_runs} ✅")
         
@@ -109,10 +98,10 @@ class ExperimentRunner:
         combine_script = Path("src/utils/combine_csvs.py")
         
         if not combine_script.exists():
-            print(f"\nℹ️  Skipping CSV combination: '{combine_script}' not found.")
+            print(f"\n    Skipping CSV combination: '{combine_script}' not found.")
             return
         
-        print("\n📊 Combining 'results' and 'indiv_connectome' CSVs...")
+        print("\n   Combining 'results' and 'indiv_connectome' CSVs...")
         subprocess.run(
             [sys.executable, str(combine_script), self.output_dir],
             check=True,
@@ -172,7 +161,7 @@ class ExperimentRunner:
             sys.exit(1)
         finally:
             duration = time.time() - self.start_time
-            print(f"\n⏱️  Total execution time: {duration:.2f} seconds ({duration/60:.2f} minutes).")
+            print(f"\n   Total execution time: {duration:.2f} seconds ({duration/60:.2f} minutes).")
             self.save_timing_info(duration)
 
 
