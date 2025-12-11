@@ -23,7 +23,6 @@ from src.comparing_connectomes.portrait_divergence_comparer import PortraitDiver
 from src.comparing_connectomes.f1_comparer import F1Evaluator
 from src.comparing_connectomes.communicability_comparer import CommunicabilityEvaluator
 from src.comparing_connectomes.graph_kernel_comparer import GraphKernelEvaluator
-# from src.comparing_connectomes.more_experimental_comparers import GromovWassersteinEvaluator, GraphKernelEvaluator,  MultiplexLayerSimilarityEvaluator, CosineEmbeddingEvaluator
 from src.comparing_connectomes.spectral_distance_comparer import SpectralDistanceEvaluator
 from src.comparing_connectomes.wasserstein_gromov_comparer import GromovWassersteinEvaluator
 from src.comparing_connectomes.multiplex_layer_similarity_comparer import MultiplexLayerSimilarityEvaluator
@@ -680,50 +679,6 @@ def main(dataset_name: str,
 
 
 if __name__ == "__main__":
-    # results = main(
-    #     dataset_name="hcp_schaefer_100_dataset",
-    #     experiment_name="07_high_res_90_000_plot",
-    #     evaluation_mode="portrait",  # or "energy", "f1", "communicability"
-    #     debug_subject_ids=None, # [0,1,2,3,4,5],  # None for all subjects
-    #     number_multiprocessing_processes=12, 
-    # )
-
-    # results = main(
-    #     dataset_name="hcp_schaefer_100_dataset",
-    #     experiment_name="07_high_res_90_000_plot",
-    #     evaluation_mode="f1", # portrait",  # or "energy", "f1", "communicability"
-    #     debug_subject_ids=None, # [0,1,2,3,4,5],  # None for all subjects
-    #     number_multiprocessing_processes=12, 
-    # )
-
-    # results = main(
-    #     dataset_name="hcp_schaefer_100_dataset",
-    #     experiment_name="02_test", # 07_high_res_90_000_plot",
-    #     evaluation_mode="portrait", # "energy", # portrait",  # or "energy", "f1", "communicability"
-    #     debug_subject_ids=[1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
-    #     number_multiprocessing_processes=1, # 2, 
-    # )
-    
-    # for i in range(1, 21): 
-    #     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/81_all_animals_10_000_animal_20
-    #     print(f"Subject {i}")
-    #     results = main(
-    #         dataset_name="suarez_MaMI_dataset",
-    #         experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
-    #         evaluation_mode="energy", # portrait",  # or "energy", "f1", "communicability"
-    #         debug_subject_ids=[i], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
-    #         number_multiprocessing_processes=10, # 2, 
-    #     )
-        
-        
-    # results = main(
-    #     dataset_name="suarez_MaMI_dataset",
-    #     # experiment_name=f"81_all_animals_10_000_animal_{i}", # 07_high_res_90_000_plot",
-    #     experiment_name="95_ring_seed_100_sweep_animal_206", 
-    #     evaluation_mode="resistance_distance", #"graph_edit_distance", # "delta_con", # cosine_embedding", # edit_distance", # wasserstein", # multiplex_layer_similarity", # communicability", # graph_kernel", # wasserstein", # spectral_distance", # "energy", # portrait", #energy", # portrait",  # or "energy", "f1", "communicability"
-    #     debug_subject_ids=[206], # [1], # None, # [0,1,2], # None, # [0,1,2,3,4,5],  # None for all subjects
-    #     number_multiprocessing_processes=10, # 2, 
-    # )
     
     methods_to_evaluate = ["communicability_mse", "communicability_jsd", "frobenius", "jaccard"]
     
