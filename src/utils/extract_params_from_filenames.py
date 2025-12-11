@@ -1,5 +1,3 @@
-
-
 def get_eta_gamma_id_from_filename(filename):
     """
     Extract eta and gamma values from the network filename.
@@ -33,3 +31,4 @@ def get_eta_gamma_id_from_filename(filename):
     except (IndexError, ValueError) as e:
         print(f"Warning: Could not parse filename '{filename}': {e}")
         return None, None, None
+ 

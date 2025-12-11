@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 from pathlib import Path
-
 import numpy as np
 import pandas as pd
 
@@ -26,8 +24,6 @@ def save_dataframe(path: Path, df: pd.DataFrame) -> None:
     print(f"Saved: {path}")
 
 
-
-
 def setup_paths(dataset_name) -> dict:
     env = setup(dataset_name=dataset_name)
     
@@ -41,10 +37,6 @@ def setup_paths(dataset_name) -> dict:
     path_02_distance_matrices = path_preprocessed / "02_distance_matrices"  # / dataset_name
     path_03_graph_measures = path_preprocessed / "03_graph_measures"  # / dataset_name
     path_04_further_info = path_preprocessed / "04_further_info" # / dataset_name
-    
-
-    # INPUT_DATA_PATH: Path = env["PREPROCESSED_PATH"] / dataset_name / "00_preprocessed"
-
 
     for dir_path in [path_00_preprocessed, path_01_connectomes, path_02_distance_matrices, 
                      path_03_graph_measures, path_04_further_info, path_output_for_logs_and_plots,

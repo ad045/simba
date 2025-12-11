@@ -13,10 +13,8 @@ from preprocessing.threshold_to_density import threshold_to_density
 from preprocessing.preprocessing_setup import setup
 
 from netneurotools.networks import struct_consensus
-# from preprocessing.threshold_to_density import threshold_to_density
 
 from analysis.structural_measures import analyze_connectomes
-
 from src.preprocessing.utils import setup_paths, save_dataframe
 
 
@@ -111,14 +109,6 @@ def setup_paths(dataset_name: str) -> dict:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Preprocess Griffa 70-subject connectomes")
-    # p.add_argument(
-    #     "--mat-path",
-    #     type=Path,
-    #     default=Path(
-    #         "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/griffa_70_human_connectomes_dataset/00_preprocessed/SC_68.mat"
-    #     ),
-    #     help="Absolute path to the MATLAB file containing the connectomes",
-    # )
     p.add_argument(
         "--analyze-density",
         type=int,
@@ -166,7 +156,6 @@ def main(resolution=None) -> None:
 
     # Calculate consensus with netneurotools (weighted) 
     dist_mat = np.load(paths["path_02_distance_matrices"] / f"distance_matrix_{resolution}.npy")
-    # hemi_id = np.load(paths["path_04_further_info"] / f"hemi_id_{resolution}.npy")
     consensus_weighted = struct_consensus(all_connectomes.T, distance=dist_mat, hemiid=hemi_id.to_numpy().reshape(-1, 1), weighted=True)
     out_cons = paths["path_01_connectomes"] / f"01_consensus_wei_{resolution}.npy"
     _save_numpy(out_cons, consensus_weighted)
@@ -227,16 +216,6 @@ def main(resolution=None) -> None:
         analysis_path,
         df_graph_measures,
     )
-
-    # if args.do_plots:
-    #     step_plot_consensus(
-    #         paths=paths,
-    #         consensus_conn_bin=None, # consensus_bin,
-    #         consensus_conn_wei=consensus_weighted, # consensus_all,
-    #         density_bin=None, # d_bin,
-    #         density_all=None, # d_all,
-    #         analyze_density=analyze_density,
-    #     )
 
     # Print summary to console
     print("\nPipeline completed successfully. Summary:")

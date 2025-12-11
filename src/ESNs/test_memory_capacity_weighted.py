@@ -93,25 +93,6 @@ def evaluate_memory_capacity_from_connectome(connectome: np.ndarray,
             "mc_values_for_indiv_lags": mc_values_for_indiv_lags,
             "h_params": h_params
             }
-    
-    #                                          calculate_criticality:  Optional[bool] = False,
-    #                                          calculate_info_dynamics: Optional[bool] = False, 
-    #                                          mc_lengths: Optional[List[int]] = None, 
-                                             
-                                             
-    # # TODO: This is not integrated yet - do this later on? -> maybe also in "alternate_evaluate_mc" function?     
-    # # What about entropy?                           
-    # if (calculate_criticality or calculate_info_dynamics) and all_states_for_metrics:
-    #     # Concatenate states from all runs for a more robust estimation
-    #     concatenated_states = np.vstack(all_states_for_metrics)
-        
-    #     if calculate_criticality:
-    #         branching_ratio = _calculate_branching_ratio(concatenated_states)
-    #         mc_result_dict['branching_ratio'] = branching_ratio
-            
-    #     if calculate_info_dynamics:
-    #         info_dyn_results = _calculate_information_dynamics(concatenated_states)
-    #         mc_result_dict.update(info_dyn_results)
 
     return mc_result_dict
     

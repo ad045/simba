@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import threading
-
+import numpy as np
 
 class RunLogger:
     """Centralized logger for all pipeline runs."""
@@ -45,11 +45,6 @@ class RunLogger:
             # Create a session ID for this execution
             self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
             self.session_start = datetime.now().isoformat()
-            
-            # Paths for different log files 
-            # self.all_runs_path = self.output_dir / f"all_runs_{self.session_id}.jsonl"
-            # self.session_summary_path = self.output_dir / f"session_summary_{self.session_id}.json"
-            # self.global_log_path = self.output_dir / "global_runs.jsonl"  # Persistent across sessions
             
             # Initialize session summary
             self.session_summary = {
@@ -101,23 +96,6 @@ class RunLogger:
             "metadata": metadata or {}
         }
         
-        # run_record = {
-        #     "session_id": self.logger.session_id,
-        #     "run_id": f"{self.logger.session_id}_{self.logger.session_summary['total_runs']}",
-        #     "timestamp": datetime.now().isoformat(),
-        #     "run_type": run_type,
-        #     "experiment_name": experiment_name,
-        #     "parameters": parameters,
-        #     "results": results,
-        #     "metadata": metadata or {}
-        # }
-        
-        # Log to session file (JSONL format - one line per run)
-        # self._append_jsonl(self.all_runs_path, run_record)
-        
-        # Log to global file
-        # self._append_jsonl(self.global_log_path, run_record)
-        
         # Update session summary
         self.session_summary["total_runs"] += 1
         self.session_summary["runs"].append({
@@ -141,90 +119,10 @@ class RunLogger:
         exp_summary["run_types"].append(run_type)
         exp_summary["last_update"] = run_record["timestamp"]
         
-        # Convert set to list for JSON serialization
-        # for exp in self.session_summary["experiments"].values():
-            # if isinstance(exp.get("run_types"), set): 
-            #     if exp.get("run_types"): 
-            #         exp["run_types"] = list(exp["run_types"])
-            #     else: 
-            #         exp["run_types"] = []
-            
-        
-        # # Save session summary
-        # self._save_session_summary()
-        
         # Log to wandb if available
         if self._wandb_available:
             self._log_to_wandb(run_type, parameters, results)
     
-    # def log_gnm_sweep(self,
-    #                  experiments: List[Any],
-    #                  evaluation_criteria: Any,
-    #                  config: Any,
-    #                  experiment_name: str) -> None:
-    #     """
-    #     Specialized method for logging GNM parameter sweep results.
-        
-    #     Args:
-    #         experiments: List of GNM experiment objects
-    #         evaluation_criteria: Evaluation criteria used
-    #         config: Configuration object
-    #         experiment_name: Name of the experiment
-    #     """
-    #     for i, exp in enumerate(experiments):
-    #         try:
-    #             print("DEBUG: Logging GNM experiment", i)
-    #             # Extract parameters
-    #             parameters = {
-    #                 "eta": float(exp.model.binary_parameters.eta),
-    #                 "gamma": float(exp.model.binary_parameters.gamma),
-    #                 # "lamdah": float(exp.model.binary_parameters.lamdah),
-    #                 "generative_rule": str(exp.model.binary_parameters.generative_rule),
-    #                 "num_iterations": int(exp.model.binary_parameters.num_iterations), # getattr(bp, 'num_iterations', None),
-    #                 "distance_relationship": str(exp.model.binary_parameters.distance_relationship_type), # getattr(bp, 'distance_relationship_type', 'powerlaw')
-    #             }
-    #             print("DEBUG: Getting parameters worked") 
-                
-    #             # Extract results
-    #             # try:
-    #             #     energy = float(exp.evaluation_dict[evaluation_criteria])
-    #             # except:
-    #             #     energy = float(exp.evaluation_dict.get(str(evaluation_criteria), float("nan")))
-    #             energy_list = exp.evaluation_results.binary_evaluations
-
-    #             # Get individual energies if available
-    #             individual_energies = {}
-    #             for j, eval_method in enumerate(energy_list):
-    #                 individual_energies[f"sim_{j}"] = energy_list[eval_method] # float(energy_list[eval_method]) 
-    #                 print("testing")
-                
-    #             print("DEBUG: Getting results worked")
-                
-    #             # results = {
-    #             #     "energy": energy,
-    #             #     "individual_energies": individual_energies,
-    #             #     "rank": i
-    #             # }
-                
-    #             # metadata = {
-    #             #     "num_simulations": config.gnm.num_simulations,
-    #             #     "device": config.gnm.device,
-    #             #     "sweep_method": "bayesian"
-    #             # }
-                
-    #             print("DEBUG: Getting metadata worked")
-                
-    #             self.log_run(
-    #                 run_type="gnm_sweep",
-    #                 experiment_name=experiment_name,
-    #                 parameters=parameters,
-    #                 # results=results,
-    #                 # metadata=metadata
-    #             )
-    #             print(f"[{i+1}/{len(experiments)}] GNM experiment logged successfully.")
-                
-    #         except Exception as e:
-    #             print(f"[Warning] Could not log experiment {i}: {e}")
     
     def log_gnm_sweep(self,
                      experiments: List[Any],
@@ -243,11 +141,10 @@ class RunLogger:
             config: The configuration object for the run.
             experiment_name: Name of the experiment.
         """
-        import numpy as np # Add numpy import for type checking
 
         for i, exp in enumerate(experiments):
             try:
-                # 1. Extract GNM parameters from the run configuration for safety
+                # Extract GNM parameters from the run configuration for safety
                 params_obj = exp.run_config.binary_parameters
                 parameters = {
                     "eta": float(params_obj.eta),
@@ -258,10 +155,10 @@ class RunLogger:
                     "num_iterations": int(params_obj.num_iterations),
                 }
 
-                # 2. Extract standard GNM evaluation results (e.g., DegreeKS)
+                # Extract standard GNM evaluation results (e.g., DegreeKS)
                 results = {k: v for k, v in exp.evaluation_results.binary_evaluations.items()}
 
-                # 3. Check for, validate, and add elaborate analysis results
+                # Check for, validate, and add elaborate analysis results
                 if hasattr(exp.evaluation_results, 'elaborate_results'):
                     elaborate_data = exp.evaluation_results.elaborate_results
                     # Clean data: ensure all values are JSON-serializable Python natives
@@ -271,14 +168,14 @@ class RunLogger:
                     }
                     results.update(cleaned_elaborate_data)
 
-                # 4. Define metadata for the run
+                # Define metadata for the run
                 metadata = {
                     "num_simulations": exp.run_config.num_simulations,
                     "device": config.gnm.device,
                     "rank_in_sweep": i
                 }
                 
-                # 5. Log the complete, flattened record
+                # Log the complete, flattened record
                 self.log_run(
                     run_type="gnm_sweep_elaborate" if 'mc_mean' in results else "gnm_sweep",
                     experiment_name=experiment_name,
@@ -372,9 +269,7 @@ class RunLogger:
         print(f"\nLogging session completed:")
         print(f"  Session ID: {self.session_id}")
         print(f"  Total runs logged: {self.session_summary['total_runs']}")
-        # print(f"  Session log: {self.all_runs_path}")
-        # print(f"  Session summary: {self.session_summary_path}")
-        # print(f"  Global log: {self.global_log_path}")
+        
     
     def get_session_stats(self) -> Dict[str, Any]:
         """Get statistics for the current session."""

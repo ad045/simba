@@ -11,31 +11,20 @@ import torch
 # Import GNM configuration structures
 from gnm import fitting, generative_rules, evaluation, weight_criteria
 
-# # Import project constants
-# from .constants import (
-#     DEFAULT_RESOLUTION, DEFAULT_RANDOM_SEED, DEFAULT_N_ETA, DEFAULT_N_GAMMA, DEFAULT_N_LAMBDA,
-#     DEFAULT_SPECTRAL_RADIUS, DEFAULT_INPUT_LENGTH, DEFAULT_INPUT_SCALING, DEFAULT_N_RUNS,
-#     DEFAULT_N_LAGS, DEFAULT_TEST_LENGTH, DEFAULT_N_TRANSIENT, DEFAULT_LEAK_RATE, DEFAULT_BIAS,
-#     DEFAULT_DENSITIES, DEFAULT_REGULARIZATION_METHOD, DEFAULT_GENERATIVE_RULES,
-#     DEFAULT_EVALUATION_METRICS, DEFAULT_WEIGHT_CRITERION, DEFAULT_ETA_RANGE, DEFAULT_GAMMA_RANGE,
-#     DEFAULT_LAMBDA_RANGE, DEFAULT_ALPHA, DEFAULT_NUM_SIMULATIONS, DEFAULT_APPEND_INTERVAL,
-#     CONNECTOMES_WEIGHTED_PATTERN, CONNECTOMES_BINARY_PATTERN, DISTANCE_MATRIX_PATTERN
-# )
-
 
 @dataclass
 class ESNConfig:
     """ESN hyperparameter configuration."""
-    spectral_radius: float = DEFAULT_SPECTRAL_RADIUS
-    input_length: int = DEFAULT_INPUT_LENGTH
-    input_scaling: float = DEFAULT_INPUT_SCALING
-    regularization_method: str = DEFAULT_REGULARIZATION_METHOD
-    n_runs: int = DEFAULT_N_RUNS
-    n_lags: int = DEFAULT_N_LAGS
-    test_len: int = DEFAULT_TEST_LENGTH
-    n_transient: int = DEFAULT_N_TRANSIENT
-    leak_rate: float = DEFAULT_LEAK_RATE
-    bias: float = DEFAULT_BIAS
+    spectral_radius: float
+    input_length: int
+    input_scaling: float
+    regularization_method: str
+    n_runs: int
+    n_lags: int
+    test_len: int
+    n_transient: int
+    leak_rate: float
+    bias: float
 
 
 @dataclass
@@ -44,15 +33,7 @@ class GNMConfig:
     # Use GNM's fitting structures directly
     binary_sweep_params: Optional[fitting.BinarySweepParameters] = None
     weighted_sweep_params: Optional[fitting.WeightedSweepParameters] = None
-    
-    # # Default parameter ranges
-    # eta_range: tuple = DEFAULT_ETA_RANGE
-    # gamma_range: tuple = DEFAULT_GAMMA_RANGE
-    # lambda_range: tuple = DEFAULT_LAMBDA_RANGE
-    # n_eta: int = DEFAULT_N_ETA    
-    # n_gamma: int = DEFAULT_N_GAMMA
-    # n_lambda: int = DEFAULT_N_LAMBDA
-    
+
     # Generative rules to test
     generative_rules_to_test: List[str] = field(default_factory=lambda: DEFAULT_GENERATIVE_RULES.copy())
     
@@ -174,19 +155,16 @@ class GNMConfig:
 @dataclass
 class DataConfig:
     """Data loading and preprocessing configuration."""
-    resolution: int # = DEFAULT_RESOLUTION
-    densities: List[int] # = field(default_factory=lambda: DEFAULT_DENSITIES.copy())
-    # use_weighted: bool # = True
-    # use_gnm_defaults: bool # = False  # Option to use GNM's default data
-
+    resolution: int
+    densities: List[int]
 
 @dataclass
 class ComputeConfig:
     """Computational settings."""
-    n_workers: int # = None  
-    timing_flag: bool #  = True
-    append_interval: int # = DEFAULT_APPEND_INTERVAL
-    random_seed: int  # = DEFAULT_RANDOM_SEED
+    n_workers: int
+    timing_flag: bool
+    append_interval: int
+    random_seed: int
 
 
 @dataclass
@@ -213,49 +191,23 @@ class PathConfig:
 class ConfigManager: # Is it used? Unsure. 
     """Optimized configuration manager using GNM structures."""
     
-    def __init__(self, 
-                #  esn_config: Optional[ESNConfig] = None,
-                #  gnm_config: Optional[GNMConfig] = None,
-                #  data_config: Optional[DataConfig] = None,
-                #  compute_config: Optional[ComputeConfig] = None,
-                #  path_config: Optional[PathConfig] = None
-                 ):
-        
-        # self.esn = esn_config or ESNConfig()
-        # self.gnm = gnm_config or GNMConfig()
+    def __init__(self):
         
         self.esn = ESNConfig()
         self.gnm = GNMConfig()
-        
         
         self.data = DataConfig(
             resolution=self.data.resolution, 
             densities=self.data.densities, 
         )
         
-    #     class DataConfig:
-    # """Data loading and preprocessing configuration."""
-    # resolution: int = DEFAULT_RESOLUTION
-    # densities: List[int] = field(default_factory=lambda: DEFAULT_DENSITIES.copy())
-    # use_weighted: bool = True
-    # use_gnm_defaults: bool = False  # Option to use GNM's default data
-
-        # self.compute = compute_config or ComputeConfig(
-        #                                     n_workers=self.compute.n_workers, 
-        #                                     timing_flag=self.compute.timing_flag, 
-        #                                     random_seed=self.compute.random_seed,
-        #                                 )
-        # self.paths = path_config or PathConfig()
-        
         self.compute = ComputeConfig(n_workers=self.compute.n_workers, 
                                      timing_flag=self.compute.timing_flag, 
                                      random_seed=self.compute.random_seed,
                                     )
-        self.paths = PathConfig(
-            # root_dir=self.data.
-        )
-    
-    
+        self.paths = PathConfig()
+
+
     def get_gnm_evaluation_criteria(self, distance_matrix: torch.Tensor) -> Any:
         """Get evaluation criteria for GNM."""
         return self.gnm.create_evaluation_criteria(distance_matrix)

@@ -3,16 +3,11 @@ YAML-based configuration system integrated with existing ConfigManager.
 This bridges YAML files with the existing config.py structure.
 """
 
-# TODO: 
-    # - Save in run_info.txt the actual config used (including lists for grid search)
-    
 import yaml
 from pathlib import Path
 
-# from config.manager import PathConfig
 from config.path import PathConfig
 
-# from config.manager import ConfigManager, PathConfig
 
 class YAMLConfigLoader:
     """Load and merge YAML configurations with existing ConfigManager."""
@@ -55,7 +50,6 @@ class YAMLConfigLoader:
             animal=self.config['experiment']['animal']
         )
         
-        # self._create_path_config()
         config.update(path_config.to_dict())
         
         return config

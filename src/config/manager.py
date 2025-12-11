@@ -3,12 +3,6 @@ import numpy as np
 
 from gnm import fitting, generative_rules
 
-# from config.GNM import GNMConfig, create_weighted_sweep_parameters
-# from src.config.ESN import ESNConfig
-# from config.data import DataConfig
-# from config.compute import ComputeConfig
-# from config.path import PathConfig
-
 
 def create_gnm_sweep_config(config,
                             distance_matrix: torch.Tensor,
@@ -66,7 +60,7 @@ def create_gnm_sweep_config(config,
         preferential_relationship_type=config["gnm"]["preferential_relationship_type"],
         heterochronicity_relationship_type=config["gnm"]["heterochronicity_relationship_type"],
         generative_rule=rules,
-        num_iterations=[n_edges], # int(density * n * n)]
+        num_iterations=[n_edges], 
     )
     
     return fitting.SweepConfig(

@@ -23,9 +23,6 @@ class PathConfig:
         self.dir_01_connectomes = self.connectome_dir / "01_connectomes"
         self.dir_02_distance_matrices = self.connectome_dir / "02_distance_matrices"
         
-        # if self.animal is not None: 
-        #     self.output_dir = self.root_dir / f"output_{self.animal}" 
-        # else: 
         self.output_dir = self.root_dir / "output" 
         self.output_specific_dataset_dir = self.output_dir / "empirical_data" / self.dataset_name
         
@@ -37,7 +34,6 @@ class PathConfig:
             
         self.dynamic_gnm_output_dir = self.output_dir / "dynamic_gnm" / self.experiment_name
         
-
         # Create directories
         for dir_path in [self.connectome_dir, self.output_specific_dataset_dir, 
                          self.output_gnm_dir, self.dynamic_gnm_output_dir,
@@ -58,7 +54,6 @@ class PathConfig:
                             'output_experiment_dir': self.output_experiment_dir,
                             'dynamic_gnm_output_dir': self.dynamic_gnm_output_dir,
                             
-                             
                             '01_connectomes': self.dir_01_connectomes,
                             '02_distance_matrices': self.dir_02_distance_matrices,
                         

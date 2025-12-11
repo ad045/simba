@@ -16,7 +16,7 @@ from multiprocessing import Pool
 import time
 
 from src.config.path import PathConfig
-from src.config.GNM import create_evaluation_criteria
+from config.GNM import create_evaluation_criteria
 from src.comparing_connectomes.base_comparer import NetworkEvaluator
 from src.comparing_connectomes.energy_comparer import EnergyEvaluator
 from src.comparing_connectomes.portrait_divergence_comparer import PortraitDivergence

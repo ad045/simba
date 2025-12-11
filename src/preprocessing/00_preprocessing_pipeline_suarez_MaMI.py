@@ -46,26 +46,20 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from pathlib import Path
-
+from scipy.spatial.distance import pdist, squareform
+import networkx as nx
 import bct
 from netneurotools.networks import threshold_network, struct_consensus
 from scipy.spatial.distance import cdist
 
-
-# Local imports from your codebase
-# from notebook_setup import setup
 from preprocessing.get_distance_matrix import get_distance_matrix_from_coords, get_distance_matrix_from_fiber_lengths
 from analysis.structural_measures import analyze_connectomes
-
 from src.preprocessing.preprocessing_setup import setup
 from preprocessing.threshold_to_density import threshold_to_density
+from src.preprocessing.utils import setup_paths
 
 
-from src.preprocessing.utils import setup_paths, ensure_dir, save_numpy, save_dataframe # TODO: Remove this again, not needed. 
-# ----------------------------
 # Config & argument parsing
-# ----------------------------
 @dataclass
 class PipelineConfig:
     resolution: int = 68
@@ -77,7 +71,6 @@ class PipelineConfig:
     comm_mode: str = "estrada_scaled"
     rich_nodes_global: Optional[np.ndarray] = None
     rich_top_percent: float = 0.20
-
 
 
 def parse_args() -> PipelineConfig:
@@ -110,19 +103,18 @@ def parse_args() -> PipelineConfig:
         rich_top_percent=args.rich_top_percent,
     )
 
-# def main(resolution = None):
-# cfg = parse_args()
 
 cfg = PipelineConfig(
-        resolution=50, # args.resolution, # CHANGE THIS HERE ?
-        goal_densities=[10], # tuple(args.goal_densities),
-        analyze_density=10, # args.analyze_density,
-        do_plots=True, # args.do_plots,
-        comm_mode="estrada_scaled", # args.comm_mode,
-        rich_top_percent=0.2) 
+        resolution=50,
+        goal_densities=[10],
+        analyze_density=10,
+        do_plots=True,
+        comm_mode="estrada_scaled",
+        rich_top_percent=0.2
+    )
 
 
-paths = setup_paths(dataset_name="suarez_MaMI_dataset") 
+paths = setup_paths(dataset_name="suarez_MaMI_dataset")
 
 def enrich_animal_metadata(animal_names_df, info_csv_path):
     """
@@ -200,35 +192,6 @@ def enrich_animal_metadata(animal_names_df, info_csv_path):
     return enriched_df
 
 
-import networkx as nx
-import numpy as np
-from scipy.spatial.distance import pdist, squareform
-
-# def find_optimal_pairs_nx(points):
-#     n = len(points)
-#     if n % 2 != 0:
-#         raise ValueError("Number of points must be even")
-    
-#     # Create complete graph
-#     G = nx.Graph()
-    
-#     # Add edges with weights (distances)
-#     for i in range(n):
-#         for j in range(i+1, n):
-#             dist = np.linalg.norm(points[i] - points[j])
-#             G.add_edge(i, j, weight=dist)
-    
-#     # Find minimum weight matching
-#     matching = nx.min_weight_matching(G)
-    
-#     total_distance = sum(G[i][j]['weight'] for i, j in matching)
-    
-#     return list(matching), total_distance
-
-
-import networkx as nx
-import numpy as np
-
 def merge_paired_nodes(coordinates, connectome):
     """
     Find optimal pairs and merge them in both coordinates and connection matrix.
@@ -276,17 +239,6 @@ def merge_paired_nodes(coordinates, connectome):
     # Combine all pairs
     pairs = pairs_first + pairs_second
     
-    # # Create complete graph with distance weights
-    # G = nx.Graph()
-    # for i in range(n):
-    #     for j in range(i+1, n):
-    #         dist = np.linalg.norm(coordinates[i] - coordinates[j])
-    #         G.add_edge(i, j, weight=dist)
-    
-    # # Find minimum weight matching
-    # matching = nx.min_weight_matching(G)
-    # pairs = list(matching)
-    
     # Create mapping from old indices to new indices
     old_to_new = {}
     new_idx = 0
@@ -319,93 +271,6 @@ def merge_paired_nodes(coordinates, connectome):
 
     return connectome_downsampled, new_coordinates, new_distance_matrix
 
-
-# def reduce_nodes(connection_matrix, coordinates, resolution):
-#     """
-#     Reduce nodes in a brain connectivity matrix by merging the two pairs such as you just did. 
-    
-#     Args:
-#         connection_matrix: (200, 200) connectivity matrix
-#         coordinates: (200, 3) node coordinates
-#         resolution: target number of nodes (default 100)
-    
-#     Returns:
-#         new_matrix: (n_target, n_target) reduced connectivity matrix
-#         new_coords: (n_target, 3) reduced coordinates
-#         orig_distances: (200,200) distance matrix 
-#     """
-    
-    
-#     return new_matrix, new_coords, orig_distances
-
-
-
-# def reduce_nodes(connection_matrix, coordinates, resolution):
-#     """
-#     Reduce nodes in a brain connectivity matrix by merging closest pairs.
-    
-#     Args:
-#         connection_matrix: (200, 200) connectivity matrix
-#         coordinates: (200, 3) node coordinates
-#         resolution: target number of nodes (default 100)
-    
-#     Returns:
-#         new_matrix: (n_target, n_target) reduced connectivity matrix
-#         new_coords: (n_target, 3) reduced coordinates
-#     """
-#     n_nodes = len(coordinates)
-#     n_per_half = n_nodes // 2
-#     n_target_per_half = resolution // 2
-    
-#     # Process each hemisphere
-#     new_coords_list = []
-#     merge_maps = []
-    
-#     orig_distances = cdist(coordinates, coordinates)
-#     np.fill_diagonal(orig_distances, np.inf)
-            
-#     for half_idx in range(2):
-#         start_idx = half_idx * n_per_half
-#         end_idx = start_idx + n_per_half
-        
-#         # Get hemisphere data
-#         coords_half = coordinates[start_idx:end_idx].copy()
-#         active = np.ones(n_per_half, dtype=bool)
-#         merge_map = np.arange(n_per_half)
-        
-#         # Merge nodes until target reached
-#         n_to_merge = n_per_half - n_target_per_half
-#         for _ in range(n_to_merge):
-#             active_indices = np.where(active)[0]
-#             active_coords = coords_half[active_indices]
-            
-#             # Find closest pair
-#             distances = cdist(active_coords, active_coords)
-#             np.fill_diagonal(distances, np.inf)
-#             i, j = np.unravel_index(distances.argmin(), distances.shape)
-#             idx_i, idx_j = active_indices[i], active_indices[j]
-            
-#             # Merge: keep idx_i, remove idx_j
-#             coords_half[idx_i] = (coords_half[idx_i] + coords_half[idx_j]) / 2
-#             active[idx_j] = False
-#             merge_map[merge_map == idx_j] = idx_i
-        
-#         new_coords_list.append(coords_half[active])
-#         merge_maps.append(merge_map + start_idx)
-    
-#     # Combine hemispheres
-#     new_coords = np.vstack(new_coords_list)
-#     full_merge_map = np.concatenate(merge_maps)
-    
-#     # Build new connectivity matrix
-#     new_matrix = np.zeros((resolution, resolution))
-#     for i in range(resolution):
-#         for j in range(resolution):
-#             mask_i = (full_merge_map == full_merge_map[i])
-#             mask_j = (full_merge_map == full_merge_map[j])
-#             new_matrix[i, j] = connection_matrix[np.ix_(mask_i, mask_j)].mean()
-    
-#     return new_matrix, new_coords, orig_distances
 
 
 # Setup paths
@@ -461,7 +326,6 @@ for name in animal_names:
     np.fill_diagonal(original_distance_matrix, 0) # np.inf)
     
     # Reduce resolution
-    # new_matrix, new_coords, orig_dist_matrx = reduce_nodes(connection_matrix, coordinates, resolution=resolution)
     connectome_downsampled, new_coordinates, new_distance_matrix = merge_paired_nodes(coordinates=coordinates, 
                                                                      connectome=connection_matrix)
     # Append orig data 
@@ -491,8 +355,7 @@ for name in animal_names:
         
         # Use your existing function
         thres_conn, final_density = threshold_to_density(
-            conn_wei=connectome_downsampled, # connection_matrix, 
-            # n_nodes=resolution, 
+            conn_wei=connectome_downsampled,
             density=density, 
             output_folder=temp_output, 
             conn_type="connectomes_resampled"
@@ -546,7 +409,7 @@ for density in cfg.goal_densities:
             file.unlink()
         temp_output.rmdir()
 
-# Optionally: Analyze binarized connectomes at the specified density
+# Analyze binarized connectomes at the specified density
 if cfg.analyze_density in cfg.goal_densities:
     print(f"\nAnalyzing binarized connectomes at {cfg.analyze_density}% density...")
     bin_results = []

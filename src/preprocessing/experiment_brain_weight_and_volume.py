@@ -4,9 +4,6 @@ import requests
 from io import StringIO
 import warnings
 warnings.filterwarnings('ignore')
- 
- 
-# ad . 
 
 
 # File paths

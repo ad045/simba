@@ -6,14 +6,13 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, Optional, Union
 import warnings
-# from config.manager import ConfigManager
 from src.config.constants import NUMERICAL_TOLERANCE
 
 
 class DataLoader:
     """Handles loading and preprocessing of connectome data."""
     
-    def __init__(self, config): # : ConfigManager):
+    def __init__(self, config): 
         self.config = config
         self.resolution = self.config['data']['connectome_resolution']
        
@@ -31,16 +30,6 @@ class DataLoader:
             return dist_matrix
         except Exception as e:
             raise RuntimeError(f"Failed to load distance matrix: {e}")
-    
-    
-    # def load_weighted_connectome(self) -> np.ndarray:
-    #     """Load the weighted connectome data."""
-    #     try:
-    #         weighted_conn = np.load(self.config['paths']['01_connectomes'] / f"01_consensus_wei_{self.resolution}.npy") # subj, resolution, resolution
-    #         self._validate_connectome(weighted_conn, "weighted")
-    #         return weighted_conn
-    #     except Exception as e:
-    #         raise RuntimeError(f"Failed to load weighted connectome: {e}")
     
     
     def load_binary_connectomes(self,
@@ -74,13 +63,11 @@ class DataLoader:
                 print("Experiment name was", self.config["data"]["dataset_name"], "but this is not defined. ")
                 raise ValueError(f"Unknown dataset: {self.config['data']['dataset_name']}")
             
-            # binary_conn = np.load(binary_conn_path) 
             self._validate_connectome(binary_conn, f"binary (density {density}%)")
             binary_connectomes[density] = binary_conn
             
         except Exception as e:
             warnings.warn(f"Failed to load binary connectome for density {density}%: {e}")
-            # continue
         
         if not binary_connectomes:
             raise RuntimeError("No binary connectomes could be loaded")

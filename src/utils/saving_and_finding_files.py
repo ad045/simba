@@ -42,8 +42,6 @@ def get_latest_file_name_of_data(dir_path, pattern="gnm_grid_results_*.csv"):
     latest_file = max(files, key=extract_ts)
 
     # Extract the timestamp from the file name
-    # file_name_str = str(latest_file)
-    # file_timestamp = file_name_str.split(".")[-2].split("_")[-2:]  # this gives us the time stamp
     m = pattern.search(latest_file.name)
     file_timestamp = m.group(1) if m else None
     

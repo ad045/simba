@@ -29,7 +29,7 @@ def _calculate_information_dynamics(states: np.ndarray, k: int = 1) -> Dict[str,
 
     n_time_steps, n_nodes = states.shape
     
-    # 1. Discretize states into integer bins (same as before)
+    # Discretize states into integer bins (same as before)
     bins = np.quantile(states, [0, 0.25, 0.5, 0.75, 1.0])
     bins[0] = -np.inf
     bins[-1] = np.inf
@@ -39,9 +39,8 @@ def _calculate_information_dynamics(states: np.ndarray, k: int = 1) -> Dict[str,
     total_te = 0.0
     
     for i in range(n_nodes):
-        # --- 2. Calculate Active Information for node i: I(X_t ; X_{t-1}) ---
+        # Calculate Active Information for node i: I(X_t ; X_{t-1})
         # AI = H(X_t) + H(X_{t-1}) - H(X_t, X_{t-1})
-        
         present_i = discretized_states[k:, i]
         past_i = discretized_states[:-k, i]
 
@@ -62,7 +61,7 @@ def _calculate_information_dynamics(states: np.ndarray, k: int = 1) -> Dict[str,
         
         total_ais += h_present_i + h_past_i - h_joint_ai
 
-        # --- 3. Calculate Transfer Entropy from all other nodes j to node i ---
+        # Calculate Transfer Entropy from all other nodes j to node i 
         # TE(j->i) = H(I_t, J_t) + H(I_{t+1}, I_t) - H(I_t) - H(I_{t+1}, I_t, J_t)
         for j in range(n_nodes):
             if i == j: continue

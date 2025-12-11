@@ -13,7 +13,7 @@ from typing import Dict, List, Tuple, Optional
 import csv
 
 from src.config.path import PathConfig
-from src.config.GNM import create_evaluation_criteria
+from config.GNM import create_evaluation_criteria
 from multiprocessing import Pool
 
 

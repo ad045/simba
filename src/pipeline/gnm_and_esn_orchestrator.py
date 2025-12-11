@@ -13,17 +13,15 @@ import os
 from pathlib import Path
 from collections import defaultdict
 
-# For parallel processing
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
-# Import our optimized modules
 from config.manager import create_gnm_sweep_config
 from src.GNMs.gnm_network_generator import GNMGenerator
 from src.utils.data_loader import DataLoader
 from src.utils.run_logger import get_logger
 
-from src.config.GNM import create_evaluation_criteria
+from config.GNM import create_evaluation_criteria
 
 from analysis.structural_measures import analyze_connectomes
 from ESNs.esn_evaluation import evaluate_memory_capacity_from_connectome
@@ -141,14 +139,9 @@ def _run_and_save_single_simulation(
     evaluation_criteria, 
     target_network,
     seed_adjacency_matrix, 
-    
     n_edges,
     calculate_energy: bool, 
-    
     elaborate_analysis: bool, 
-    # calculate_energies_of_all_individual_connectomes: bool, 
-    # individual_networks: Optional[np.ndarray], # only needs to be set if compare_to_all_individual_empirical_connectomes is True
-    
     device_str: str, 
     output_dir: Path, 
     temp_dir: str, 
@@ -163,13 +156,12 @@ def _run_and_save_single_simulation(
     from gnm import generative_rules 
     from gnm.model import BinaryGenerativeParameters
     
-    # --- Reconstruct the RunConfig object from the dictionary ---
+    # Reconstruct the RunConfig object from the dictionary
     bp_data = task_data['binary_parameters']
     
     # Get the rule class from the gnm library using its name
     RuleClass = getattr(generative_rules, bp_data['generative_rule_name'])
     
-    # n_edges = int(target_network.sum().item() // 2)
     binary_params = BinaryGenerativeParameters(
         eta=bp_data['eta'],
         gamma=bp_data['gamma'],
@@ -180,20 +172,12 @@ def _run_and_save_single_simulation(
         distance_relationship_type=bp_data['distance_relationship_type'],
         preferential_relationship_type=bp_data['preferential_relationship_type']
     )
-    
-    # # if seed_adjacency_matrix is not None:
-    # #     binary_params.seed_adjacency_matrix = seed_adjacency_matrix
-    # if bp_data['seed_matrix'] is not None:
-    #     seed_adjacency_matrix = bp_data['seed_matrix']
-    # else:
-    #     seed_adjacency_matrix = None
-            
+     
     run_config = RunConfig(
         num_simulations=None,
         binary_parameters=binary_params,
         distance_matrix=task_data['distance_matrix'], 
-        # seed_adjacency_matrix=bp_data['seed_matrix'] if bp_data['seed_matrix'] is not None else None
-        seed_adjacency_matrix=seed_adjacency_matrix # bp_data['seed_matrix'] if bp_data['seed_matrix'] is not None else None
+        seed_adjacency_matrix=seed_adjacency_matrix 
     )
 
     flat_record = {}
@@ -228,7 +212,7 @@ def _run_and_save_single_simulation(
                 device=torch.device(device_str),
             )
 
-        # 2. Prepare the data record for this iteration
+        # Prepare the data record for this iteration
         params = experiment.run_config.binary_parameters
         params.eta = floor_to_14_decimal_places(float(params.eta))
         params.gamma = floor_to_14_decimal_places(float(params.gamma))
@@ -242,40 +226,21 @@ def _run_and_save_single_simulation(
             "num_iterations": int(params.num_iterations),
         })
 
-        # if calculate_energies_of_all_individual_connectomes: 
-        #     indiv_networks_record.update({
-        #         "eta": params.eta,
-        #         "gamma": params.gamma,
-        #         "id_of_generated_network": net_id,
-        #         # "id_of_animal": id_manager.get_animal_id()
-        #     })
-
         if calculate_energy: 
             for energy_metric_name in list(experiment.evaluation_results.binary_evaluations.keys()):
                  
                 energy_value_mean = experiment.evaluation_results.binary_evaluations[energy_metric_name].mean().item()
                 flat_record.update({energy_metric_name: energy_value_mean})
-
-                # if calculate_energies_of_all_individual_connectomes:
-                #     indiv_energy_values = experiment.evaluation_results.binary_evaluations[energy_metric_name].numpy().flatten()
-                #     for i in range(individual_networks.shape[0]):
-                #         indiv_networks_record.update(
-                #             {energy_metric_name + "_indiv_" + str(i): indiv_energy_values[i]}
-                #         )
+                
             
-
-        # 3. If elaborate_analysis is true, run detailed analysis and save network
+        # If elaborate_analysis is true, run detailed analysis and save network
         if elaborate_analysis and experiment.model:
             networks_np = experiment.model.adjacency_matrix.cpu().numpy()
 
             # Generate filename with ID using the manager
             rule_name = params.generative_rule.__class__.__name__
-            # turn id into something like "000", "001", etc. for consistent sorting
             net_id_str = f"{net_id:03d}"
             
-            # if net_id == 0:
-            #     filename = f"net_eta{np.floor(params.eta.item(),10)}_gamma{np.floor(params.gamma.item(),10)}_rule{rule_name}.npy"
-            # else:
             filename = f"net_eta{params.eta}_gamma{params.gamma}_rule{rule_name}_id{net_id_str}.npy"
 
             save_path = output_dir / "generated_networks" / filename
@@ -320,7 +285,7 @@ def _run_and_save_single_simulation(
             "error": str(e)
         })
 
-    # 4. Save the results to a unique file in the temporary directory
+    # Save the results to a unique file in the temporary directory
     if flat_record:
         result_filename = f"result_{uuid.uuid4()}.csv"
         Path(temp_dir).mkdir(exist_ok=True)
@@ -404,10 +369,6 @@ class GNMandESNPipelineOrchestrator:
                         print(f"Using seed adjacency matrix ID {seed_id} from {seed_adjacency_matrices_path}.")
                         all_seed_adjacency_matrices = all_seed_adjacency_matrices[seed_id,:,:] # TODO: Make nicer. 
 
-                    # else:
-                    #     print(f"Warning: Seed ID {seed_id} out of bounds. Proceeding without seed.")
-                    #     seed_adjacency_matrix = None
-                        
                 # Load the specified seed adjacency matrix
                 seed_adjacency_matrix = torch.tensor(
                     all_seed_adjacency_matrices, 
@@ -432,19 +393,14 @@ class GNMandESNPipelineOrchestrator:
             n_edges = int((distance_matrix.shape[0]*(distance_matrix.shape[0]-1))*(first_density/100) // 2)
             target_network = np.zeros(shape=(resolution, resolution))
             
-        # Load the empirical networks TODO: What was this doing??
-        # empirical_binary_connectomes = np.zeros(shape=(1, resolution, resolution))
-        
         # Get number of simulations
         num_simulations = self.config['gnm']['num_simulations']
         
         # Create sweep config 
-        # print("DEBUG: ", self.config) # DEBUG
         sweep_config = create_gnm_sweep_config(
             config=self.config, # CHECK HERE!! is it already rounded? Does it contain eta and gamma? 
             distance_matrix=torch.Tensor(distance_matrix),
             mode=self.config['experiment']['search']['method'],
-            # num_iterations=num_iterations,
             n_edges=n_edges,
             num_simulations=num_simulations,
         )
@@ -480,7 +436,6 @@ class GNMandESNPipelineOrchestrator:
                     "preferential_relationship_type": str(run_config.binary_parameters.preferential_relationship_type),
                 },
                 "distance_matrix": run_config.distance_matrix, 
-                # "seed_matrix": run_config.seed_adjacency_matrix if run_config.seed_adjacency_matrix is not None else None,
             }
             deconstructed_tasks.append(task)
 
@@ -495,10 +450,6 @@ class GNMandESNPipelineOrchestrator:
                     calculate_energy=self.config['experiment']['calculate_energy'],
                     n_edges=n_edges,
                     elaborate_analysis=self.config['experiment']['elaborate_analysis'],
-                    # TODO: MAKE SURE THE TWO LINES BELOW WOULD WORK, in case the first line is set to true. 
-                    # calculate_energies_of_all_individual_connectomes=self.config['experiment']['calculate_energies_of_all_individual_connectomes'], # self.config['experiment']['calculate_energies_of_all_individual_connectomes'], 
-                    # individual_networks=None, # does not need to be set - does only need to be set if calculate_energies_of_all_individual_connectomes is true.  
-            
                     device_str=self.config['compute']['device'],
                     output_dir=self.output_dir, 
                     temp_dir=temp_results_dir,

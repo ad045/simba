@@ -50,9 +50,9 @@ from preprocessing.threshold_to_density import threshold_to_density
 
 
 from src.preprocessing.utils import setup_paths, save_dataframe # TODO: Remove this again, not needed. 
-# ----------------------------
+
+
 # Config & argument parsing
-# ----------------------------
 @dataclass
 class PipelineConfig:
     resolution: int = 68
@@ -110,10 +110,6 @@ def step_load_identifiers(paths: dict, resolution: int) -> Tuple[pd.DataFrame, n
     return df_identifiers, hemi_id
 
 
-# ----------------------------
-# Main orchestrator
-# ----------------------------
-
 def main(resolution = None):
     cfg = parse_args()
     if resolution: 
@@ -139,8 +135,6 @@ def main(resolution = None):
     
     np.save(paths["path_01_connectomes"] / f"01_consensus_wei_{resolution}.npy", conns) # here only one
     
-    
-     
     # Analyze the weighted connectome
     df_graph_measures = pd.DataFrame(
         analyze_connectomes(
@@ -157,9 +151,7 @@ def main(resolution = None):
         df_graph_measures,
     )
     
-    
     thres_conn, final_density = threshold_to_density(consensus_wei=conns, 
-                                                    # n_nodes=resolution, 
                                                     density=10, 
                                                     output_folder=paths["path_01_connectomes"])
 

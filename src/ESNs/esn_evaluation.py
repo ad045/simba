@@ -16,20 +16,18 @@ import pandas as pd
 
 import echoes
 from scipy.stats import pearsonr
-# from config.manager import ConfigManager
 from src.utils.data_loader import DataLoader
 
 from ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome # needs to be here (even if "unused") - why?? 
 from utils.saving_and_finding_files import time_stamp_for_saving
 from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
-# from src.ESNs.utils_math import _calculate_branching_ratio
 
 
 class ESNEvaluator:
     """Handles ESN evaluation across multiple subjects and hyperparameters."""
     
     def __init__(self, 
-                 config: dict, # ConfigManager, 
+                 config: dict, 
                  data_loader: DataLoader):
         self.config = config
         self.data_loader = data_loader
@@ -49,14 +47,14 @@ class ESNEvaluator:
         df.to_csv(path, mode="a", index=False, header=not path.exists())
     
 
-    def _alternative_evaluate_mc(W,  # it gets to this one
+    def _alternative_evaluate_mc(W, 
                                  n_lags, 
                                  train_len, 
                                  test_len, 
                                  n_transient):
         """Evaluates the Memory Capacity of a given reservoir matrix W."""
         
-        # 1. Generate data for the MC task
+        # Generate data for the MC task
         random_sequence = np.random.uniform(-0.5, 0.5, train_len + test_len)
         X = random_sequence.reshape(-1, 1)
         y = np.zeros((len(X), n_lags))
@@ -66,7 +64,7 @@ class ESNEvaluator:
         X_train, X_test = X[:train_len], X[train_len:]
         y_train, y_test = y[:train_len], y[train_len:]
 
-        # 2. Create and train the ESN
+        # Create and train the ESN
         esn = echoes.ESNRegressor(
             W=W, 
             spectral_radius=0.99, 
@@ -79,7 +77,7 @@ class ESNEvaluator:
         esn.fit(X_train, y_train)
         y_pred = esn.predict(X_test)
 
-        # 3. Calculate the MC score
+        # Calculate the MC score
         mc_score = 0
         for i in range(n_lags):
             corr, _ = pearsonr(y_test[n_transient:, i], y_pred[n_transient:, i]) # Discard initial transient
@@ -112,7 +110,7 @@ class ESNEvaluator:
             t_metrics = 0.0  
             t_esn0 = time.perf_counter()
         
-        with warnings.catch_warnings(): # This one fails... 
+        with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
             np.seterr(over="ignore", divide="ignore", invalid="ignore")
 
@@ -141,17 +139,8 @@ class ESNEvaluator:
                 "random_state": 0, # random_state,
                 },
             }
-    
-            # if (calculate_criticality or calculate_info_dynamics) and all_states_for_metrics:
-            #     # Concatenate states from all runs for a more robust estimation
-            #     concatenated_states = np.vstack(all_states_for_metrics)
-                
+      
             mc_result_dict['branching_ratio'] = 0 # branching_ratio
-                    
-                # if calculate_info_dynamics:
-                #     info_dyn_results = _calculate_information_dynamics(concatenated_states)
-                # mc_result_dict.update({"info_dyn_results": 0})
-
         
             # Merge all hyperparameters into the result
             returned_hp = mc_result_dict.get("hparams", {})
@@ -171,7 +160,6 @@ class ESNEvaluator:
         return mc_result_dict, timing_dict
     
 
-    
     def evaluate_single_subject(self, 
                                subject_idx: int,
                                connectome: np.ndarray,
@@ -501,11 +489,6 @@ def create_esn_evaluator(config_path: Optional[Union[str, Path]] = None,
     Returns:
         ESNEvaluator instance
     """
-    # if config_manager is None:
-    #     if config_path is not None:
-    #         config_manager = config_manager, # ConfigManager.load_config(Path(config_path))
-    #     else:
-    #         config_manager = ConfigManager()
     
     if data_loader is None:
         from src.utils.data_loader import DataLoader

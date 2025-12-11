@@ -375,7 +375,7 @@ import re
 from typing import Dict, List, Tuple, Callable
 
 # Import the evaluation criteria function
-from src.config.GNM import create_evaluation_criteria
+from config.GNM import create_evaluation_criteria
 from gnm.fitting import RunConfig
 from gnm.model import BinaryGenerativeParameters
 from multiprocessing import Pool
