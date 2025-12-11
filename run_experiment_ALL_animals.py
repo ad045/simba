@@ -58,8 +58,6 @@ def run_experiment_for_animal(animal_id: int, temp_config_path: str, run_script:
     
     try:
         # Run the experiment script
-        # Note: The script uses HARDCODED_CONFIG_PATH, so we need to modify that
-        # or pass the config path as an argument
         result = subprocess.run(
             [sys.executable, run_script, temp_config_path, "--num_runs", str(NUMBER_RUNS_PER_ANIMAL)],
             check=True,
@@ -89,9 +87,7 @@ def cleanup_temp_config(temp_config_path: str):
         print(f"⚠️ Could not remove temp config: {e}")
 
 
-def main(
-        animals_to_analyze # CHANGE THIS IN __main__! = [0, 206] # 169, 103, 188] # , 188] # range(ANIMAL_START, ANIMAL_END + 1) 206, 0, 188,
-        ):
+def main(animals_to_analyze):
     """Main execution loop."""
     
     start_time = time.time()
@@ -101,9 +97,8 @@ def main(
     failed = 0
     
     print(f"\n{'='*80}")
-    print(f"🚀 Starting batch experiment run")
-    # print(f"   Animals: {ANIMAL_START} to {ANIMAL_END} (total: {total_animals})")
-    print(f"   Base config: {BASE_CONFIG_PATH}")
+    print(f"Starting batch experiment run")
+    print(f"Base config: {BASE_CONFIG_PATH}")
     print(f"{'='*80}\n")
     
     try:
@@ -115,7 +110,7 @@ def main(
         # 206,Chimpanzee,
 
 
-        for animal_id in animals_to_analyze:   #  range(ANIMAL_START, ANIMAL_END + 1):
+        for animal_id in animals_to_analyze:  
             try:
                 # Create modified config
                 modify_config_for_animal(BASE_CONFIG_PATH, TEMP_CONFIG_PATH, animal_id)
@@ -131,34 +126,6 @@ def main(
                 # Clean up after each run
                 cleanup_temp_config(TEMP_CONFIG_PATH)
                 
-                
-                # results = complete_comparison_main(
-                #     dataset_name="hcp_schaefer_100_dataset",
-                #         experiment_name="06_with_seeds", # 05_second_big_overnight_run_10201", 
-                #         evaluation_mode="portrait", # communicability", # f1", # portrait",  # or "energy"
-                #         debug_subject_ids=None, # [0,1,2,3,4,5,6,7,8,9] #None,  # turn this to "None" if not in debug mode. Or array [1,2,]
-                #         number_multiprocessing_processes=8, 
-                #     )
-                # # ############
-                
-                # # Create modified config
-                # TEMP_CONFIG_PATH_2 = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset_focused.yaml"
-                # modify_config_for_animal(BASE_CONFIG_PATH, TEMP_CONFIG_PATH_2, animal_id)
-                
-                # # Run experiment
-                # success = run_experiment_for_animal(animal_id, TEMP_CONFIG_PATH_2, RUN_SCRIPT)
-                
-                # if success:
-                #     successful += 1
-                # else:
-                #     failed += 1
-                
-                # # Clean up after each run
-                # cleanup_temp_config(TEMP_CONFIG_PATH_2)
-                
-                
-                #############
-                
             except KeyboardInterrupt:
                 print("\n\n⚠️ User interrupted the batch run")
                 cleanup_temp_config(TEMP_CONFIG_PATH)
@@ -168,36 +135,6 @@ def main(
                 failed += 1
                 cleanup_temp_config(TEMP_CONFIG_PATH)
                 continue
-            
-            #########################################################################
-            # try:
-            #     # Create modified config
-            #     TEMP_CONFIG_PATH_2 = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset_focused.yaml"
-            #     modify_config_for_animal(BASE_CONFIG_PATH, TEMP_CONFIG_PATH_2, animal_id)
-                
-            #     # Run experiment
-            #     success = run_experiment_for_animal(animal_id, TEMP_CONFIG_PATH_2, RUN_SCRIPT)
-                
-            #     if success:
-            #         successful += 1
-            #     else:
-            #         failed += 1
-                
-            #     # Clean up after each run
-            #     cleanup_temp_config(TEMP_CONFIG_PATH_2)
-                
-            # except KeyboardInterrupt:
-            #     print("\n\n⚠️ User interrupted the batch run")
-            #     cleanup_temp_config(TEMP_CONFIG_PATH_2)
-            #     break
-            # except Exception as e:
-            #     print(f"\n❌ Unexpected error for Animal {animal_id}: {e}")
-            #     failed += 1
-            #     cleanup_temp_config(TEMP_CONFIG_PATH_2)
-            #     continue
-            
-            
-            
     
     finally:
         duration = time.time() - start_time
@@ -212,5 +149,6 @@ def main(
 
 
 if __name__ == "__main__":
-    # main(animals_to_analyze=[int(i) for i in range(1,225)]) # 124]) # 206
-    main(animals_to_analyze=set([int(i) for i in range(9, 225)]) - set([0, 22, 103, 124, 169]))
+    # Calculate e.g. one animal with: 
+    # main(animals_to_analyze=[124])  # <- this calculates one animal 
+    main(animals_to_analyze=set([int(i) for i in range(9, 225)]) - set([0, 22, 103, 124, 169])) # <- this calculates multiple animals (so animals 9,10,11,12,...224 except for a few). 

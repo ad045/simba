@@ -25,7 +25,7 @@ def calculate_portrait_divergence(
         Portrait divergence value (JSD)
     """
     # Import here to avoid circular dependencies
-    from network_portrait_divergence import portrait_divergence
+    from X_network_portrait_divergence import portrait_divergence
     
     # Convert to numpy if torch tensor
     if isinstance(generated_network, torch.Tensor):

@@ -28,17 +28,6 @@ if __name__ == "__main__":
 ###########################################################################################
 
 
-# ###########################################################################################
-# # HARDCODED CONFIGURATION
-# # Set the path to your configuration file here.
-# # All command-line arguments will be ignored when these are set.
-# ###########################################################################################
-# HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_shafiei_human_consensus_dataset.yaml" 
-# HARDCODED_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
-# HARDCODED_NUM_RUNS = 2
-# ###########################################################################################
-
-
 
 import argparse
 import filecmp
@@ -77,7 +66,6 @@ class ExperimentRunner:
         self.path_config = PathConfig( # is this even necessary? 
             dataset_name=dataset_name,
             experiment_name=experiment_name, 
-            # animal=self.config['experiment']['animal']
         )
         
         if not experiment_name:
