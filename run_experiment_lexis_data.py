@@ -2,6 +2,7 @@
 Run experiments across multiple animals by modifying the config file.
 """
 
+# Attention: Instead of "animal", read in every case "participant". I left the old naming for now, as the itterations through the "participants / animals" might become useful later. 
 import yaml
 import subprocess
 import sys
