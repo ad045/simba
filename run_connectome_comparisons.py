@@ -237,8 +237,13 @@ def process_network_for_subjects(args: Tuple) -> Tuple[Dict, Dict]:
     network_idx, network, generated_parameters, filename, \
         empirical_networks_tensor, evaluator, subject_ids_to_process = args
     
-    gen_network_tensor = torch.tensor(network, dtype=torch.float32) # IMPORTANT: THIS WAS PERVIOUSLY A BUG FOR ENERGY (does it impact portrait, too?).unsqueeze(0)
-    
+    # TODO: Which shape does network need to be going forward? 
+    # print(network.shape)
+    # if len(network.shape) == 2: # this was previously 
+    #     gen_network_tensor = torch.tensor(network, dtype=torch.float32).unsqueeze(0)
+    # else:
+    gen_network_tensor = torch.tensor(network, dtype=torch.float32)
+
     results = {
         'network_index': network_idx,
         'filename': filename,
@@ -336,7 +341,7 @@ def main(dataset_name: str,
         empirical_networks_path = path_01_connectomes / "01_indiv_connectomes_bin_density_10_percent_68.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_68.npy"
     
-    if dataset_name == "hcp_schaefer_100_dataset": 
+    if dataset_name == "hcp_schaefer_100_dataset" or dataset_name == "lexis_data": 
         empirical_networks_path = path_01_connectomes / "00_connectomes_density10.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
     
@@ -580,7 +585,7 @@ def main(dataset_name: str,
             print("Loading distance matrices...")
             distance_matrices = np.load(distance_matrices_path)
             distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
-            if dataset_name in ["shafiei_human_consensus_dataset", "hcp_schaefer_100_dataset"]: 
+            if dataset_name in ["shafiei_human_consensus_dataset", "hcp_schaefer_100_dataset", "lexis_data"]:
                 distance_matrices = distance_matrices.unsqueeze(0)
                 print("Note: Distance matrix unsqueezed for this dataset")
             print(f"Loaded distance matrix with shape: {distance_matrices.shape}")
@@ -698,19 +703,64 @@ def main(dataset_name: str,
 
 if __name__ == "__main__":
     
-    methods_to_evaluate = ["communicability_mse",
-                           "communicability_jsd", 
-                           "frobenius", 
-                           "jaccard"
-                           # Add more here, if wanted 
-                           ] 
-    
-    for method in methods_to_evaluate: 
+    all_methods = [
+        # "f1", 
+        # "portrait", 
+        # "energy", "spectral_distance",
+        # "graph_kernel", "multiplex_layer_similarity", "cosine_embedding",
+        # "graph_edit_distance", "network_mutual_information", "hungarian_alignment",
+        # "graph_kernel_networkx", "delta_con", "resistance_distance",
+        # "wasserstein_gromov", "wasserstein_sinkhorn",
+        
+        "f1", 
+        "portrait",  
+        "communicability", 
+        "delta_con", 
+        "spectral_distance",
+        "edit_distance", 
+        "cosine_embedding", 
+        "wasserstein_gromov",
+        "wasserstein_sinkhorn", 
+        "hungarian_alignment", 
+        "graph_kernel", 
+        "graph_kernel_networkx", 
+        "multiplex_layer_similarity", 
+        "resistance_distance", 
+        "graph_edit_distance", 
+        "network_mutual_information", 
+        "communicability_mse", 
+        "communicability_jsd", 
+        "frobenius", 
+        "jaccard", 
+        "energy"]
+
+    for method in all_methods:
         results = main(
-            dataset_name="suarez_MaMI_dataset",
-            experiment_name="95_ring_seed_100_sweep_animal_206", 
+            dataset_name="lexis_data", # suarez_MaMI_dataset",
+            experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
             evaluation_mode=method,
-            debug_subject_ids=[206], # None for all subjects, or [0,1,2,...] for specific subjects
-            number_multiprocessing_processes=10, # 2, 
+            debug_subject_ids=[0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
+            number_multiprocessing_processes=10, # 0, # 2, 
         )
     
+        # "f1", 
+        # "portrait",  
+        # "communicability", 
+        # "delta_con", 
+        # "spectral_distance",
+        # "edit_distance", 
+        # "cosine_embedding", 
+        # "wasserstein_gromov",
+        # "wasserstein_sinkhorn", 
+        # "hungarian_alignment", 
+        # "graph_kernel", 
+        # "graph_kernel_networkx", 
+        # "multiplex_layer_similarity", 
+        # "resistance_distance", 
+        # "graph_edit_distance", 
+        # "network_mutual_information", 
+        # "communicability_mse", 
+        # "communicability_jsd", 
+        # "frobenius", 
+        # "jaccard", 
+        # "energy"

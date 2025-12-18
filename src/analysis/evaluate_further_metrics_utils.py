@@ -484,10 +484,10 @@ def process_network_with_metrics(args):
     return process_network_file(file_info, distance_matrix_path, metric_categories, metrics_to_calculate)
 
 
-def multiprocess_networks(n_processes=None, 
-                          experiment="", 
-                          dataset="", 
-                          distance_matrix_filename="distance_matrix_50.npy", # this is for MaMI, though... 
+def multiprocess_networks(experiment, 
+                          dataset, 
+                        #   distance_matrix_filename, # this is for MaMI, though... suarez_MaMI_dataset
+                          n_processes=None, 
                           base_path="", 
                           interesting_metrics=None, 
                           save_interval=50,
@@ -510,10 +510,15 @@ def multiprocess_networks(n_processes=None,
     output_path = base_path / "output" / "gnm" / dataset / experiment
     generated_networks_dir = output_path / "generated_networks"
     
-    if dataset == "hcp_schaefer_100_dataset":
-        print("WARNING: POTENTIALLY WRONG DISTANCE MATRIX FOR THIS DATASET!")
+    # Get distance matrix path
+    if dataset == "hcp_schaefer_100_dataset" or dataset=="lexis_data":
+        distance_matrix_filename = "distance_matrix_100.npy"
+    elif dataset == "suarez_MaMI_dataset": 
+        distance_matrix_filename="distance_matrix_50.npy"
+    else: 
+        print("Error loading distance matrix (in evaluate_further_metrics_utils.py)") 
     distance_matrix_path = base_path / "data/preprocessed" / dataset / "02_distance_matrices" / distance_matrix_filename
-
+    
     # # Use metric categories directly
     print("Using provided metric categories...")
     metric_categories = interesting_metrics
@@ -659,78 +664,80 @@ def multiprocess_networks(n_processes=None,
     return final_dfs
 
 
-if __name__ == "__main__":
-    
-    EXPERIMENT = "76_90000_samples_animal_206"
-    # "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 71_testing_animal_0"
+# THIS IS NOT USED ANYMORE; I GUESS? 
 
-    DATASET = "suarez_MaMI_dataset"
-    base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
+# if __name__ == "__main__":
     
-    CREATE_BIG_UPDATE_CSV = True  # Set to True to create combined CSV file
-    
-    # Define metrics to calculate
-    interesting_metrics = {
-        "static": [
-            # "density", # works # done
-            # "avg_clustering", # works # done
-            # "avg_degree", # works # done
-            # "degree_assortativity", # works # done
-            # "modularity", # works # done
-            # "characteristic_path_length", # works # done
-            # "transitivity", # works # done
-            
-            "wiring_cost", # works
-            # "shortest_path_distance", # works
-            # "structural_complexity", # works
-            # "n_connected_components", # works
-            
-            # "omega", # works
-            # "topological_distance", # works
-            # # "resistance_distance", # DOES NOT WORK!! 
-            # "degree_gini", # works
-        ], 
-        "dynamic": [
-            # "spectral_radius", # works
-            # "spectral_gap", # works
-            # "spectral_gap_fatemeh", # works?
-            # "global_efficiency", # works
-            # "diffusion_efficiency", # -> Returns 0 if unconnected nodes exist: Error calculating diffusion_efficiency for net_eta3.5_gamma1.0_ruleMatchingIndex_id017.npy: Array must not contain infs or NaNs
-            # "propagation_efficiency", # works
-            "nct_control",  # works
-            "nct_energies", # works
-            # "metastability", # works
-            # "synchronizability_eigenratio", # works 
-            # "algebraic_connectivity_nx", # works
-            # "kuramoto_synchronization", # works. But takes ages (maybe 3 hours for 11,000 networks?)
-            # "community_synchronization_vulnerability", # works 
-        ],
-        "computational": [
-            
-            # "kernel_rank", # works
-            # "kernel_rank_fatemeh", # -> Lots of Runtime warnings in the echoes part of it (generate_esn_open) -> switch to pinv instad of ridge?: /opt/miniconda3/envs/ma_thesis/lib/python3.13/site-packages/sklearn/linear_model/_ridge.py:252: UserWarning: Singular matrix in solving dual problem. Using least-squares solution instead.
-            # "effective_dimensionality", # works
-            # "multifunctionality", # works?? - or does at least produce values??
-        ]
-    }
+#     EXPERIMENT = "76_90000_samples_animal_206"
+#     # "75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0" # 75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_206" # 71_testing_animal_0"
 
-    # Run the multiprocessing
-    df_final = multiprocess_networks(n_processes=12, 
-                                     experiment=EXPERIMENT, 
-                                     dataset=DATASET, 
-                                     base_path=base_path,
-                                     interesting_metrics=interesting_metrics,
-                                     save_interval=50, 
-                                     debug=False,
-                                     create_big_update_csv=CREATE_BIG_UPDATE_CSV)
+#     DATASET = "suarez_MaMI_dataset"
+#     base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
     
-    if df_final is not None:
-        print("\n✓ All done!")
-        for category in ['static', 'dynamic', 'computational']:
-            if category in df_final:
-                print(f"✓ {category.capitalize()} dataframe shape: {df_final[category].shape}")
-    else:
-        print("\n✓ Processing complete (no new data to merge)")
+#     CREATE_BIG_UPDATE_CSV = True  # Set to True to create combined CSV file
     
-    # Final cleanup
-    gc.collect()
+#     # Define metrics to calculate
+#     interesting_metrics = {
+#         "static": [
+#             # "density", # works # done
+#             # "avg_clustering", # works # done
+#             # "avg_degree", # works # done
+#             # "degree_assortativity", # works # done
+#             # "modularity", # works # done
+#             # "characteristic_path_length", # works # done
+#             # "transitivity", # works # done
+            
+#             "wiring_cost", # works
+#             # "shortest_path_distance", # works
+#             # "structural_complexity", # works
+#             # "n_connected_components", # works
+            
+#             # "omega", # works
+#             # "topological_distance", # works
+#             # # "resistance_distance", # DOES NOT WORK!! 
+#             # "degree_gini", # works
+#         ], 
+#         "dynamic": [
+#             # "spectral_radius", # works
+#             # "spectral_gap", # works
+#             # "spectral_gap_fatemeh", # works?
+#             # "global_efficiency", # works
+#             # "diffusion_efficiency", # -> Returns 0 if unconnected nodes exist: Error calculating diffusion_efficiency for net_eta3.5_gamma1.0_ruleMatchingIndex_id017.npy: Array must not contain infs or NaNs
+#             # "propagation_efficiency", # works
+#             "nct_control",  # works
+#             "nct_energies", # works
+#             # "metastability", # works
+#             # "synchronizability_eigenratio", # works 
+#             # "algebraic_connectivity_nx", # works
+#             # "kuramoto_synchronization", # works. But takes ages (maybe 3 hours for 11,000 networks?)
+#             # "community_synchronization_vulnerability", # works 
+#         ],
+#         "computational": [
+            
+#             # "kernel_rank", # works
+#             # "kernel_rank_fatemeh", # -> Lots of Runtime warnings in the echoes part of it (generate_esn_open) -> switch to pinv instad of ridge?: /opt/miniconda3/envs/ma_thesis/lib/python3.13/site-packages/sklearn/linear_model/_ridge.py:252: UserWarning: Singular matrix in solving dual problem. Using least-squares solution instead.
+#             # "effective_dimensionality", # works
+#             # "multifunctionality", # works?? - or does at least produce values??
+#         ]
+#     }
+
+#     # Run the multiprocessing
+#     df_final = multiprocess_networks(n_processes=12, 
+#                                      experiment=EXPERIMENT, 
+#                                      dataset=DATASET, 
+#                                      base_path=base_path,
+#                                      interesting_metrics=interesting_metrics,
+#                                      save_interval=50, 
+#                                      debug=False,
+#                                      create_big_update_csv=CREATE_BIG_UPDATE_CSV)
+    
+#     if df_final is not None:
+#         print("\n✓ All done!")
+#         for category in ['static', 'dynamic', 'computational']:
+#             if category in df_final:
+#                 print(f"✓ {category.capitalize()} dataframe shape: {df_final[category].shape}")
+#     else:
+#         print("\n✓ Processing complete (no new data to merge)")
+    
+#     # Final cleanup
+#     gc.collect()

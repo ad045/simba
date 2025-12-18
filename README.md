@@ -15,3 +15,4 @@
 ### Recommended scripts: 
 * run_experiment_lexis_data.py: Generate GNMs for Lexi's dataset (ask Adrian to get proper preprocessed data) 
 * run_evaluate_further_metrics.py: calculate more metrics
+* run_connectome_comparisons.py: Compare generated and empirical connectomes with different comparison techniques 

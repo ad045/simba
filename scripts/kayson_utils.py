@@ -15,7 +15,7 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 from tqdm_joblib import tqdm_joblib
 from sklearn.metrics.pairwise import cosine_similarity
-from kayson_generative import resistance_distance, shortest_path_distance, propagation_distance, topological_distance
+from analysis.kayson_generative import resistance_distance, shortest_path_distance, propagation_distance, topological_distance
 import pandas as pd
 import bct
 from sklearn.decomposition import PCA

@@ -14,7 +14,7 @@ BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code
 TEMP_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/temp_config.yaml"
 RUN_SCRIPT = "run_experiment.py"
 
-NUMBER_RUNS_PER_ID = 1 # 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied. 
+NUMBER_RUNS_PER_ID = 10 # 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied. 
 
 def modify_config_for_id(base_config_path: str, temp_config_path: str, animal_id: int): # , loop_number: int):
     """
@@ -30,12 +30,18 @@ def modify_config_for_id(base_config_path: str, temp_config_path: str, animal_id
     
     # Modify the animal number
     config['experiment']['animal'] = animal_id
-    config['gnm']['seed_params']['seed_id'] = animal_id
+    print("here")
+    if 'seed_params' in config['gnm']: # if config['gnm']['seed_params']: 
+        print("here", config['gnm']['seed_params']['seed_id'])# Check first if there is a seed_matrix at all... 
+        config['gnm']['seed_params']['seed_id'] = animal_id
     
+    # Modify random seed 
+    config['compute']['random_seed'] = animal_id
+
     # Modify the experiment name to include animal ID
     original_name = config['experiment']['name']
     config['experiment']['name'] = f"{original_name}_animal_{animal_id}" 
-    
+
     # Save modified config
     with open(temp_config_path, 'w') as f:
         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
