@@ -21,6 +21,7 @@ from src.comparing_connectomes.base_comparer import NetworkEvaluator
 from src.comparing_connectomes.energy_comparer import EnergyEvaluator
 from src.comparing_connectomes.portrait_divergence_comparer import PortraitDivergence
 from src.comparing_connectomes.f1_comparer import F1Evaluator
+from src.comparing_connectomes.hamming_comparer import HammingEvaluator
 from src.comparing_connectomes.communicability_comparer import CommunicabilityEvaluator
 from src.comparing_connectomes.graph_kernel_comparer import GraphKernelEvaluator
 from src.comparing_connectomes.spectral_distance_comparer import SpectralDistanceEvaluator
@@ -30,12 +31,12 @@ from src.comparing_connectomes.edit_distance_comparer import EditDistanceEvaluat
 from src.comparing_connectomes.cosine_embedding_comparer import CosineEmbeddingEvaluator
 from comparing_connectomes.resistance_distance_comparer import ResistanceDistanceEvaluator
 from src.comparing_connectomes.delta_con_evaluator import DeltaConEvaluator
-from src.comparing_connectomes.graph_edit_distance_comparer import GraphEditDistanceEvaluator
+# from src.comparing_connectomes.graph_edit_distance_comparer import GraphEditDistanceEvaluator
 from src.comparing_connectomes.wasserstein_sinkhorn_comparer import WassersteinSinkhornEvaluator
 from src.comparing_connectomes.hungarian_alignment_comparer import HungarianAlignmentEvaluator
 from src.comparing_connectomes.graph_kernel_networkx_comparer import GraphKernelNetworkxEvaluator
 
-from src.comparing_connectomes.network_mutual_information_comparer import NetworkMutualInformationEvaluator
+from src.comparing_connectomes.network_mutual_information_comparer import NetworkMutualInformationEvaluator, DCNetworkMutualInformationEvaluator
 
 from src.comparing_connectomes.communicability_mse_comparer import CommunicabilityMSEEvaluator
 from src.comparing_connectomes.communicability_jsd_comparer import CommunicabilityJSDEvaluator
@@ -509,6 +510,10 @@ def main(dataset_name: str,
             evaluator = F1Evaluator()
             print("Using F1 evaluation")
             
+        elif evaluation_mode == "hamming":
+            evaluator = HammingEvaluator()
+            print("Using Hamming evaluation")
+            
         elif evaluation_mode == "communicability":
             evaluator = CommunicabilityEvaluator()
             print("Using Communicability evaluation")
@@ -564,6 +569,10 @@ def main(dataset_name: str,
         elif evaluation_mode == "network_mutual_information":
             evaluator = NetworkMutualInformationEvaluator()
             print("Using Network Mutual Information evaluation")
+            
+        elif evaluation_mode == "dc_network_mutual_information":
+            evaluator = DCNetworkMutualInformationEvaluator()
+            print("Using Degree-Corrected Network Mutual Information evaluation")
         
         elif evaluation_mode == "communicability_mse":
             evaluator = CommunicabilityMSEEvaluator()
@@ -704,46 +713,8 @@ def main(dataset_name: str,
 if __name__ == "__main__":
     
     all_methods = [
-        # "f1", 
-        # "portrait", 
-        # "energy", "spectral_distance",
-        # "graph_kernel", "multiplex_layer_similarity", "cosine_embedding",
-        # "graph_edit_distance", "network_mutual_information", "hungarian_alignment",
-        # "graph_kernel_networkx", "delta_con", "resistance_distance",
-        # "wasserstein_gromov", "wasserstein_sinkhorn",
-        
-        "f1", 
-        "portrait",  
-        "communicability", 
-        "delta_con", 
-        "spectral_distance",
-        "edit_distance", 
-        "cosine_embedding", 
-        "wasserstein_gromov",
-        "wasserstein_sinkhorn", 
-        "hungarian_alignment", 
-        "graph_kernel", 
-        "graph_kernel_networkx", 
-        "multiplex_layer_similarity", 
-        "resistance_distance", 
-        "graph_edit_distance", 
-        "network_mutual_information", 
-        "communicability_mse", 
-        "communicability_jsd", 
-        "frobenius", 
-        "jaccard", 
-        "energy"]
-
-    for method in all_methods:
-        results = main(
-            dataset_name="lexis_data", # suarez_MaMI_dataset",
-            experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
-            evaluation_mode=method,
-            debug_subject_ids=[0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
-            number_multiprocessing_processes=10, # 0, # 2, 
-        )
-    
-        # "f1", 
+        # "f1",
+        # "hamming", 
         # "portrait",  
         # "communicability", 
         # "delta_con", 
@@ -758,9 +729,22 @@ if __name__ == "__main__":
         # "multiplex_layer_similarity", 
         # "resistance_distance", 
         # "graph_edit_distance", 
-        # "network_mutual_information", 
+        "network_mutual_information", 
+        "dc_network_mutual_information",
         # "communicability_mse", 
         # "communicability_jsd", 
         # "frobenius", 
         # "jaccard", 
         # "energy"
+        ]
+
+    for method in all_methods:
+        results = main(
+            dataset_name="lexis_data", # suarez_MaMI_dataset",
+            # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
+            experiment_name="02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+            evaluation_mode=method,
+            debug_subject_ids=[0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
+            number_multiprocessing_processes=10, # 0, # 2, 
+        )
+    
