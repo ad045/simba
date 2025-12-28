@@ -5,7 +5,7 @@ from typing import Dict
 from src.comparing_connectomes.base_comparer import NetworkEvaluator
 
 
-class CommunicabilityEvaluator(NetworkEvaluator):
+class CommunicabilityCorrEvaluator(NetworkEvaluator):
     """Evaluate networks via communicability correlation."""
 
     def __init__(self):

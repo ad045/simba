@@ -266,8 +266,8 @@ if __name__ == "__main__":
     # dataset_name = "kaysons_generated_networks_propagation" # diffusion" # 
     # dataset_name = "hcp_schaefer_100_dataset" 
     # experiment_name = "07_high_res_90_000_plot" # 
-    dataset_name = "suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # "suarez_MaMI_dataset"
-    experiment_name = "95_ring_seed_100_sweep_animal_206" # 94_ring_seed_testing_animal_206" # 90_ring_seed_animal_206" 
+    dataset_name = "lexis_data" # suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # "suarez_MaMI_dataset"
+    experiment_name = "04_mst_animal_0" # "95_ring_seed_100_sweep_animal_206" # 94_ring_seed_testing_animal_206" # 90_ring_seed_animal_206" 
     # experiment_name = "81_all_animals_10_000_animal_15" # 76_90000_samples_animal_206" # 81_all_animals_10_000_animal_20" 
     # experiment_name = "05_second_big_overnight_run_10201" # 07_high_res_90_000_plot" # "05_second_big_overnight_run_10201"
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/80_more_animals_animal_0/all_metrics_for_80_more_animals_animal_0.csv
@@ -578,7 +578,7 @@ if __name__ == "__main__":
                 annotate_extremes = False
                 # cmap = default_cmaps["hb_bw"]
                 cmap = default_cmaps["metric_purple_beige"]
-                if dataset_name == "hcp_schaefer_100_dataset": 
+                if dataset_name == "hcp_schaefer_100_dataset" or dataset_name == "lexis_data": 
                     dot_color = "#44cfcf" # black" default_colors["colds"]["TEAL"] (or so)
                 elif dataset_name == "suarez_MaMI_dataset": 
                     dot_color = default_colors["warms"]["LECKER_RED"]

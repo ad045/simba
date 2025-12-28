@@ -10,7 +10,7 @@ import time
 from pathlib import Path    
     
 # Configuration
-BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_with_ring_seeds_lexis_dataset.yaml"
+BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_with_mst_seeds_lexis_dataset.yaml" # config_gnm_run_with_ring_seeds_lexis_dataset.yaml"
 TEMP_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/temp_config.yaml"
 RUN_SCRIPT = "run_experiment.py"
 

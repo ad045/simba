@@ -22,7 +22,7 @@ from src.comparing_connectomes.energy_comparer import EnergyEvaluator
 from src.comparing_connectomes.portrait_divergence_comparer import PortraitDivergence
 from src.comparing_connectomes.f1_comparer import F1Evaluator
 from src.comparing_connectomes.hamming_comparer import HammingEvaluator
-from src.comparing_connectomes.communicability_comparer import CommunicabilityEvaluator
+from src.comparing_connectomes.communicability_comparer import CommunicabilityCorrEvaluator
 from src.comparing_connectomes.graph_kernel_comparer import GraphKernelEvaluator
 from src.comparing_connectomes.spectral_distance_comparer import SpectralDistanceEvaluator
 from src.comparing_connectomes.wasserstein_gromov_comparer import GromovWassersteinEvaluator
@@ -31,6 +31,7 @@ from src.comparing_connectomes.edit_distance_comparer import EditDistanceEvaluat
 from src.comparing_connectomes.cosine_embedding_comparer import CosineEmbeddingEvaluator
 from comparing_connectomes.resistance_distance_comparer import ResistanceDistanceEvaluator
 from src.comparing_connectomes.delta_con_evaluator import DeltaConEvaluator
+from src.comparing_connectomes.delta_con_distance_evaluator import DeltaConDistanceEvaluator
 # from src.comparing_connectomes.graph_edit_distance_comparer import GraphEditDistanceEvaluator
 from src.comparing_connectomes.wasserstein_sinkhorn_comparer import WassersteinSinkhornEvaluator
 from src.comparing_connectomes.hungarian_alignment_comparer import HungarianAlignmentEvaluator
@@ -497,6 +498,16 @@ def main(dataset_name: str,
                 f"but empirical networks have {empirical_networks.shape[-1]} nodes."
             )
         
+        # Get distance matrices if needed
+        if evaluation_mode == "energy" or evaluation_mode == "delta_con_distance": 
+            print("Loading distance matrices...")
+            distance_matrices = np.load(distance_matrices_path)
+            distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
+            if dataset_name in ["shafiei_human_consensus_dataset", "hcp_schaefer_100_dataset", "lexis_data"]:
+                distance_matrices = distance_matrices.unsqueeze(0)
+                print("Note: Distance matrix unsqueezed for this dataset")
+            print(f"Loaded distance matrix with shape: {distance_matrices.shape}")
+            
         # INITIALIZE EVALUATOR
         print("\n" + "=" * 60)
         print("INITIALIZING EVALUATOR")
@@ -513,17 +524,21 @@ def main(dataset_name: str,
         elif evaluation_mode == "hamming":
             evaluator = HammingEvaluator()
             print("Using Hamming evaluation")
-            
-        elif evaluation_mode == "communicability":
-            evaluator = CommunicabilityEvaluator()
-            print("Using Communicability evaluation")
-            
+        elif evaluation_mode == "communicability_corr":
+            evaluator = CommunicabilityCorrEvaluator()
+            print("Using Communicability Correlation evaluation")
+
         elif evaluation_mode == "delta_con":
             evaluator = DeltaConEvaluator()
             print("Using DeltaCon evaluation")  
             
+        elif evaluation_mode == "delta_con_distance":
+            evaluator = DeltaConDistanceEvaluator(distance_matrices[0]) # TODO: This is a cheat rn 
+            print("Using DeltaCon evaluation")  
+            print("ATTENTION: Only looking at first distance matrix right now.")
+            
         elif evaluation_mode == "spectral_distance":
-            evaluator = SpectralDistanceEvaluator()
+            evaluator = SpectralDistanceEvaluator(method='normalized_laplacian') # 'adjacency'
             print("Using Spectral Distance evaluation")
             
         elif evaluation_mode == "edit_distance":
@@ -591,14 +606,6 @@ def main(dataset_name: str,
             print("Using Jaccard evaluation")
 
         elif evaluation_mode == "energy":
-            print("Loading distance matrices...")
-            distance_matrices = np.load(distance_matrices_path)
-            distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
-            if dataset_name in ["shafiei_human_consensus_dataset", "hcp_schaefer_100_dataset", "lexis_data"]:
-                distance_matrices = distance_matrices.unsqueeze(0)
-                print("Note: Distance matrix unsqueezed for this dataset")
-            print(f"Loaded distance matrix with shape: {distance_matrices.shape}")
-            
             evaluation_criteria_list = create_evaluation_criteria_list(
                 distance_matrices=distance_matrices,
                 config_dict=config_dict
@@ -713,14 +720,14 @@ def main(dataset_name: str,
 if __name__ == "__main__":
     
     all_methods = [
-        # "f1",
-        # "hamming", 
-        # "portrait",  
-        # "communicability", 
-        # "delta_con", 
-        # "spectral_distance",
-        # "edit_distance", 
-        # "cosine_embedding", 
+        "f1",
+        "hamming", 
+        "portrait",   
+        "delta_con", 
+        # "delta_con_distance",
+        "spectral_distance",
+        "edit_distance", 
+        "cosine_embedding", 
         # "wasserstein_gromov",
         # "wasserstein_sinkhorn", 
         # "hungarian_alignment", 
@@ -729,10 +736,10 @@ if __name__ == "__main__":
         # "multiplex_layer_similarity", 
         # "resistance_distance", 
         # "graph_edit_distance", 
-        "network_mutual_information", 
-        "dc_network_mutual_information",
+        # "network_mutual_information", 
         # "communicability_mse", 
-        # "communicability_jsd", 
+        "communicability_jsd",
+        "communicability_corr", # test at some point... 
         # "frobenius", 
         # "jaccard", 
         # "energy"
@@ -742,7 +749,7 @@ if __name__ == "__main__":
         results = main(
             dataset_name="lexis_data", # suarez_MaMI_dataset",
             # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
-            experiment_name="02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+            experiment_name="04_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
             evaluation_mode=method,
             debug_subject_ids=[0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
             number_multiprocessing_processes=10, # 0, # 2, 
