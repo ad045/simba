@@ -4,6 +4,28 @@ Supports energy-based and portrait divergence metrics.
 Now with incremental subject-by-subject evaluation and timing tracking.
 """
 
+
+# Set multiprocessing method BEFORE any other imports (for MacOS)
+import multiprocessing as mp
+import os
+import sys
+
+if __name__ == "__main__":
+    # Force spawn method for macOS compatibility
+    mp.set_start_method('spawn', force=True)
+    
+    # Disable threading in numeric libraries
+    os.environ['OMP_NUM_THREADS'] = '1'
+    os.environ['MKL_NUM_THREADS'] = '1'
+    os.environ['OPENBLAS_NUM_THREADS'] = '1'
+    os.environ['VECLIB_MAXIMUM_THREADS'] = '1'
+    os.environ['NUMEXPR_NUM_THREADS'] = '1'
+    
+    # Bad fix, but necessary for "ma_thesis_duplicate" env
+    os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+###########################################################################################
+
+
 import numpy as np
 import pandas as pd
 import torch
@@ -18,23 +40,22 @@ import time
 from src.config.path import PathConfig
 from config.GNM import create_evaluation_criteria
 from src.comparing_connectomes.base_comparer import NetworkEvaluator
-from src.comparing_connectomes.energy_comparer import EnergyEvaluator
+from src.comparing_connectomes.energy_comparer import EnergyEvaluator, EnergyEvaluatorTestSoNoMax
 from src.comparing_connectomes.portrait_divergence_comparer import PortraitDivergence
 from src.comparing_connectomes.f1_comparer import F1Evaluator
 from src.comparing_connectomes.hamming_comparer import HammingEvaluator
 from src.comparing_connectomes.communicability_comparer import CommunicabilityCorrEvaluator
-from src.comparing_connectomes.graph_kernel_comparer import GraphKernelEvaluator
+# from src.comparing_connectomes.graph_kernel_comparer import GraphKernelEvaluator
 from src.comparing_connectomes.spectral_distance_comparer import SpectralDistanceEvaluator
-from src.comparing_connectomes.wasserstein_gromov_comparer import GromovWassersteinEvaluator
-from src.comparing_connectomes.multiplex_layer_similarity_comparer import MultiplexLayerSimilarityEvaluator
-from src.comparing_connectomes.edit_distance_comparer import EditDistanceEvaluator
+# from src.comparing_connectomes.wasserstein_gromov_comparer import GromovWassersteinEvaluator
+# from src.comparing_connectomes.multiplex_layer_similarity_comparer import MultiplexLayerSimilarityEvaluator
 from src.comparing_connectomes.cosine_embedding_comparer import CosineEmbeddingEvaluator
 from comparing_connectomes.resistance_distance_comparer import ResistanceDistanceEvaluator
 from src.comparing_connectomes.delta_con_evaluator import DeltaConEvaluator
 from src.comparing_connectomes.delta_con_distance_evaluator import DeltaConDistanceEvaluator
-# from src.comparing_connectomes.graph_edit_distance_comparer import GraphEditDistanceEvaluator
+from src.comparing_connectomes.graph_edit_distance_comparer import GraphEditDistanceEvaluator
 from src.comparing_connectomes.wasserstein_sinkhorn_comparer import WassersteinSinkhornEvaluator
-from src.comparing_connectomes.hungarian_alignment_comparer import HungarianAlignmentEvaluator
+# from src.comparing_connectomes.hungarian_alignment_comparer import HungarianAlignmentEvaluator
 from src.comparing_connectomes.graph_kernel_networkx_comparer import GraphKernelNetworkxEvaluator
 
 from src.comparing_connectomes.network_mutual_information_comparer import NetworkMutualInformationEvaluator, DCNetworkMutualInformationEvaluator
@@ -44,6 +65,8 @@ from src.comparing_connectomes.communicability_jsd_comparer import Communicabili
 
 from src.comparing_connectomes.frobenius_comparer import FrobeniusEvaluator
 from src.comparing_connectomes.jaccard_comparer import JaccardEvaluator
+
+from src.comparing_connectomes.netrd_comparer import NetrdEvaluator # resistance, net_smile, net_lsd, quantum_jsd
 
 from src.utils.extract_params_from_filenames import get_eta_gamma_id_from_filename
 
@@ -191,7 +214,7 @@ def create_evaluation_criteria_list(
                 evaluation.ClusteringKS(),
                 evaluation.EdgeLengthKS(distance_matrix),
                 evaluation.BetweennessKS()
-            )
+            ) 
         
         evaluation_criteria_list.append(criteria)
     
@@ -498,8 +521,8 @@ def main(dataset_name: str,
                 f"but empirical networks have {empirical_networks.shape[-1]} nodes."
             )
         
-        # Get distance matrices if needed
-        if evaluation_mode == "energy" or evaluation_mode == "delta_con_distance": 
+        # Get distance matrices if needed (energy, DeltaCon, tests)
+        if evaluation_mode == "energy" or evaluation_mode == "delta_con_distance" or "test_energy" in evaluation_mode: 
             print("Loading distance matrices...")
             distance_matrices = np.load(distance_matrices_path)
             distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
@@ -537,45 +560,47 @@ def main(dataset_name: str,
             print("Using DeltaCon evaluation")  
             print("ATTENTION: Only looking at first distance matrix right now.")
             
-        elif evaluation_mode == "spectral_distance":
+        elif evaluation_mode == "spectral_distance_norm_laplacian":
             evaluator = SpectralDistanceEvaluator(method='normalized_laplacian') # 'adjacency'
-            print("Using Spectral Distance evaluation")
-            
-        elif evaluation_mode == "edit_distance":
-            evaluator = EditDistanceEvaluator()
-            print("Using Edit Distance evaluation")
-            
+            print("Using Spectral Distance evaluation - Normalized Laplacian")
+        elif evaluation_mode == "spectral_distance_laplacian":
+            evaluator = SpectralDistanceEvaluator(method='laplacian')
+            print("Using Spectral Distance evaluation - Laplacian")
+        elif evaluation_mode == "spectral_distance_adjacency":
+            evaluator = SpectralDistanceEvaluator(method='adjacency')
+            print("Using Spectral Distance evaluation - Adjacency")
+
         elif evaluation_mode == "cosine_embedding":
             evaluator = CosineEmbeddingEvaluator()
             print("Using Cosine Embedding evaluation")
             
-        elif evaluation_mode == "wasserstein_gromov":
-            evaluator = GromovWassersteinEvaluator()
-            print("Using Gromov-Wasserstein evaluation")
+        # elif evaluation_mode == "wasserstein_gromov":
+        #     evaluator = GromovWassersteinEvaluator()
+        #     print("Using Gromov-Wasserstein evaluation")
             
         elif evaluation_mode == "wasserstein_sinkhorn":
             evaluator = WassersteinSinkhornEvaluator()
             print("Using Wasserstein Sinkhorn evaluation")
             
-        elif evaluation_mode == "hungarian_alignment":
-            evaluator = HungarianAlignmentEvaluator()
-            print("Using Hungarian Alignment evaluation")
+        # elif evaluation_mode == "hungarian_alignment":
+        #     evaluator = HungarianAlignmentEvaluator()
+        #     print("Using Hungarian Alignment evaluation")
             
-        elif evaluation_mode == "graph_kernel":
-            evaluator = GraphKernelEvaluator()
-            print("Using Graph Kernel evaluation")
+        # elif evaluation_mode == "graph_kernel":
+        #     evaluator = GraphKernelEvaluator()
+        #     print("Using Graph Kernel evaluation")
             
         elif evaluation_mode == "graph_kernel_networkx":
             evaluator = GraphKernelNetworkxEvaluator()
             print("Using Graph Kernel NetworkX evaluation")
             
-        elif evaluation_mode == "multiplex_layer_similarity":
-            evaluator = MultiplexLayerSimilarityEvaluator()
-            print("Using Multiplex Layer Similarity evaluation")
+        # elif evaluation_mode == "multiplex_layer_similarity":
+        #     evaluator = MultiplexLayerSimilarityEvaluator()
+        #     print("Using Multiplex Layer Similarity evaluation")
             
-        elif evaluation_mode == "resistance_distance":
-            evaluator = ResistanceDistanceEvaluator()
-            print("Using Resistance Distance evaluation")
+        # elif evaluation_mode == "resistance_distance":
+        #     evaluator = ResistanceDistanceEvaluator()
+        #     print("Using Resistance Distance evaluation")
             
         elif evaluation_mode == "graph_edit_distance":
             evaluator = GraphEditDistanceEvaluator()
@@ -605,6 +630,34 @@ def main(dataset_name: str,
             evaluator = JaccardEvaluator()
             print("Using Jaccard evaluation")
 
+        elif evaluation_mode in [
+                                "resistance", # netrd methods
+                                "net_simile", 
+                                "net_lsd", 
+                                "quantum_jsd", 
+                                "graph_diffusion", 
+                                "polynomial_dissimilarity", 
+                                "degree_divergence", 
+                                "onion_divergence", 
+                                 
+                                "netrd_deltacon", 
+                                "netrd_communicability_jsd",
+                                "distributional_nbd", 
+                                "dk_series", 
+                                "d_measure", 
+                                "netrd_frobenius",
+                                "netrd_hamming",
+                                "hamming_ipsen_mikhailov",
+                                "ipsen_mikhailov", 
+                                "netrd_jaccard",
+                                "netrd_laplacian_spectral",
+                                "netrd_non_backtracking_spectral",
+                                "netrd_portrait_divergence"
+                                ]:
+            
+            evaluator = NetrdEvaluator(method=evaluation_mode)
+            print(f"Using NetRD {evaluation_mode.replace('_', ' ').title()} evaluation")
+            
         elif evaluation_mode == "energy":
             evaluation_criteria_list = create_evaluation_criteria_list(
                 distance_matrices=distance_matrices,
@@ -612,6 +665,55 @@ def main(dataset_name: str,
             )
             evaluator = EnergyEvaluator(evaluation_criteria_list)
             print("Using Energy evaluation")    
+        
+        elif "test_energy" in evaluation_mode: 
+            # This code is a HACK (i.e.: A short-cut) that only works if there is only one distance matrix given. 
+            from gnm import evaluation
+            if evaluation_mode == "test_energy_degree": 
+                criteria = evaluation.DegreeKS() #evaluation.MaxCriteria(
+                    # evaluation.DegreeKS(),
+                    # evaluation.ClusteringKS(),
+                    # evaluation.EdgeLengthKS(distance_matrix),
+                    # evaluation.BetweennessKS()
+                # ) 
+                evaluator = EnergyEvaluatorTestSoNoMax(criteria) # evaluation_criteria_list)
+                print("Using Energy evaluation in test mode")  
+            elif evaluation_mode == "test_energy_clustering":  
+                criteria = evaluation.ClusteringKS()
+                # evaluation.MaxCriteria(
+                # # evaluation.DegreeKS(),
+                # evaluation.ClusteringKS(),
+                # # evaluation.EdgeLengthKS(distance_matrix),
+                # # evaluation.BetweennessKS()
+                # )
+                evaluator = EnergyEvaluatorTestSoNoMax(criteria) # evaluation_criteria_list)
+                print("Using Energy evaluation in test mode")  
+            elif evaluation_mode == "test_energy_edge_length": 
+                criteria = evaluation.EdgeLengthKS(distance_matrices[0]) 
+                # evaluation.MaxCriteria(
+                # evaluation.DegreeKS(),
+                # evaluation.ClusteringKS(),
+                # evaluation.EdgeLengthKS(distance_matrices[0]),
+                # evaluation.BetweennessKS()
+                # )
+                evaluator = EnergyEvaluatorTestSoNoMax(criteria) # evaluation_criteria_list)
+                print("Using Energy evaluation in test mode")  
+            elif evaluation_mode == "test_energy_betweenness": 
+                criteria = evaluation.BetweennessKS() 
+                # evaluation.MaxCriteria(
+                # evaluation.DegreeKS(),
+                # evaluation.ClusteringKS(),
+                # evaluation.EdgeLengthKS(distance_matrix),
+                # evaluation.BetweennessKS()
+                # )
+                evaluator = EnergyEvaluatorTestSoNoMax(criteria) # evaluation_criteria_list)
+                print("Using Energy evaluation in test mode")  
+                
+            # evaluation_criteria_list = create_evaluation_criteria_list(
+            #     distance_matrices=distance_matrices,
+            #     config_dict=config_dict
+            # )
+        
         else:
             raise ValueError(f"Unknown evaluation mode: {evaluation_mode}")
         
@@ -720,38 +822,62 @@ def main(dataset_name: str,
 if __name__ == "__main__":
     
     all_methods = [
-        "f1",
-        "hamming", 
-        "portrait",   
-        "delta_con", 
-        # "delta_con_distance",
-        "spectral_distance",
-        "edit_distance", 
-        "cosine_embedding", 
-        # "wasserstein_gromov",
-        # "wasserstein_sinkhorn", 
-        # "hungarian_alignment", 
-        # "graph_kernel", 
-        # "graph_kernel_networkx", 
-        # "multiplex_layer_similarity", 
-        # "resistance_distance", 
-        # "graph_edit_distance", 
-        # "network_mutual_information", 
-        # "communicability_mse", 
-        "communicability_jsd",
-        "communicability_corr", # test at some point... 
-        # "frobenius", 
-        # "jaccard", 
-        # "energy"
+        # "f1", # runs!
+        # "hamming", # runs!
+        # "portrait", # runs!
+        # "delta_con", # runs!
+        # "delta_con_distance", # runs! 
+        # "spectral_distance_adjacency", # runs! 
+        # "spectral_distance_norm_laplacian", # runs!
+        # "spectral_distance_laplacian", # runs!
+                        # "cosine_embedding", # gets stuck: OMP: Error #179: Function pthread_mutex_init failed: OMP: System error #22: Invalid argument for 05. 
+        # "wasserstein_sinkhorn", # math errors
+            # "hungarian_alignment", 
+        # "graph_kernel_networkx", # math errors
+            # "multiplex_layer_similarity", 
+            # "graph_edit_distance", # stupid error??? -> but I argued now that we do not need it, so I can SKIP it! 
+        # "network_mutual_information", # runs! 
+        # "dc_network_mutual_information", # runs!
+        # "communicability_mse", # runs, but unsure if it generated any errors? 
+        # "communicability_jsd", # runs, but unsure if it generated any errors? 
+        # "communicability_corr", # runs, but unsure if it generated any errors? 
+        # "frobenius", # runs!
+        # "jaccard", # runs!
+        # "energy", # runs! 
+        
+        # "resistance", # runs!
+        # "net_simile", # runs!
+        # "net_lsd", # runs!
+        # "quantum_jsd", # runs, but has overflow complaints
+        # "graph_diffusion", # runs, similar to quantum_jsd in style. Also has small complaints, but does not influence anything
+        # "polynomial_dissimilarity", # runs
+        # "degree_divergence", # runs
+        # "onion_divergence",
+        # "netrd_deltacon", 
+        # "netrd_communicability_jsd",
+        # "distributional_nbd", 
+        # "dk_series", 
+        # "d_measure", 
+        # "netrd_frobenius",
+        # "netrd_hamming",
+        # "hamming_ipsen_mikhailov",
+        # "ipsen_mikhailov", 
+        # "netrd_jaccard",
+        # "netrd_laplacian_spectral",
+        # "netrd_non_backtracking_spectral",
+        # "netrd_portrait_divergence",
+        
+        "test_energy_degree", "test_energy_clustering", "test_energy_edge_length", "test_energy_betweenness"
         ]
 
     for method in all_methods:
         results = main(
             dataset_name="lexis_data", # suarez_MaMI_dataset",
             # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
-            experiment_name="04_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+            # experiment_name="02_ring_sweeps_animal_0", # 
+            experiment_name="05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
             evaluation_mode=method,
             debug_subject_ids=[0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
-            number_multiprocessing_processes=10, # 0, # 2, 
+            number_multiprocessing_processes=10, # 10, # 0, # 2, 
         )
     

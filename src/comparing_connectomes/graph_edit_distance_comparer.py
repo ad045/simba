@@ -5,8 +5,8 @@ import networkx as nx
 from src.comparing_connectomes.base_comparer import NetworkEvaluator
 
 
-class ExactGraphEditDistanceEvaluator(NetworkEvaluator):
-    """Evaluate networks using exact graph edit distance with node correspondence.
+class GraphEditDistanceEvaluator(NetworkEvaluator):
+    """Evaluate networks using exact graph edit distance with node correspondence (!!!). This basically makes it O(m). 
     
     Since nodes correspond between graphs, we enforce that nodes can only 
     match to their corresponding node in the other graph. This makes exact 
@@ -60,7 +60,7 @@ class ExactGraphEditDistanceEvaluator(NetworkEvaluator):
         G1 = self._adjacency_to_graph_with_ids(gen_np)
         
         # Prepare matching functions
-        node_match = self._create_node_match_func() if self.node_match_required else None
+        node_match = self._create_node_match_func() # if self.node_match_required else None
         
         for target_idx in range(n_targets):
             target_np = target[target_idx].cpu().numpy()
@@ -83,5 +83,5 @@ class ExactGraphEditDistanceEvaluator(NetworkEvaluator):
 
     @property
     def metric_prefix(self) -> str:
-        suffix = "_aligned" if self.node_match_required else "_unaligned"
-        return f"ExactGED{suffix}"
+        # suffix = "_aligned" #if self.node_match_required else "_unaligned"
+        return f"ExactGED" # {suffix}"

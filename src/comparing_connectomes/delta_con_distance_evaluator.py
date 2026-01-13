@@ -109,7 +109,7 @@ class DeltaConDistanceEvaluator(NetworkEvaluator):
     Uses fast belief propagation to capture local and global changes.
     """
     def __init__(self, distance_matrix: np.ndarray):
-        self.distance_matrix = distance_matrix
+        self.distance_matrix = distance_matrix.cpu().numpy()
         
     
     def __call__(self, generated: torch.Tensor, target: torch.Tensor) -> Dict[str, float]:

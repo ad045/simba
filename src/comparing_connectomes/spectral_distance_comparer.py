@@ -27,29 +27,41 @@ class SpectralDistanceEvaluator(NetworkEvaluator):
         self.method = method
         self.p = p
     
+        
+    # def _compute_spectrum_networkx(self, adj_matrix: np.ndarray) -> np.ndarray:
+    #     G = nx.from_numpy_array(adj_matrix)
+    #     if self.method == 'normalized_laplacian':
+    #     elif self.method == 'laplacian':
+            
+    
     def _compute_spectrum(self, adj_matrix: np.ndarray) -> np.ndarray:
         """Compute eigenvalues based on selected method."""
         n = adj_matrix.shape[0]
         k_actual = min(self.k, n - 2)
+        G = nx.from_numpy_array(adj_matrix)
         
         if self.method == 'adjacency':
             # Largest k eigenvalues of adjacency matrix
             eigenvalues, _ = eigsh(adj_matrix, k=k_actual, which='LM')
+            return np.array(sorted(eigenvalues)[::-1])
         elif self.method == 'laplacian':
             # Smallest k eigenvalues of Laplacian L = D - A
-            D = np.diag(adj_matrix.sum(axis=1))
-            L = D - adj_matrix
-            eigenvalues, _ = eigsh(L, k=k_actual, which='SM')
+            return np.array(sorted(nx.laplacian_spectrum(G))[:self.k])
+            # D = np.diag(adj_matrix.sum(axis=1))
+            # L = D - adj_matrix
+            # eigenvalues, _ = eigsh(L, k=k_actual, which='SM')
         elif self.method == 'normalized_laplacian':
             # Eigenvalues of normalized Laplacian
-            D = np.diag(adj_matrix.sum(axis=1))
-            D_inv_sqrt = np.diag(1.0 / np.sqrt(np.diag(D) + 1e-10))
-            L_norm = np.eye(n) - D_inv_sqrt @ adj_matrix @ D_inv_sqrt
-            eigenvalues, _ = eigsh(L_norm, k=k_actual, which='SM')
+            return np.array(sorted(nx.normalized_laplacian_spectrum(G))[:self.k])
+        
+            # D = np.diag(adj_matrix.sum(axis=1))
+            # D_inv_sqrt = np.diag(1.0 / np.sqrt(np.diag(D) + 1e-10))
+            # L_norm = np.eye(n) - D_inv_sqrt @ adj_matrix @ D_inv_sqrt
+            # eigenvalues, _ = eigsh(L_norm, k=k_actual, which='SM')
         else:
             raise ValueError(f"Unknown method: {self.method}")
         
-        return np.sort(eigenvalues)
+        # return np.sort(eigenvalues)
     
     def __call__(self, generated: torch.Tensor, target: torch.Tensor) -> Dict[str, float]:
         """Compute spectral distance for generated network against target batch."""

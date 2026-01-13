@@ -5,6 +5,7 @@ transformed into random chaos through edge rewiring.
 Creates 20 independent processes, each showing the degradation from structure to randomness.
 """
 
+
 # Set multiprocessing method BEFORE any other imports (for MacOS)
 import multiprocessing as mp
 import os
@@ -20,7 +21,29 @@ if __name__ == "__main__":
     os.environ['OPENBLAS_NUM_THREADS'] = '1'
     os.environ['VECLIB_MAXIMUM_THREADS'] = '1'
     os.environ['NUMEXPR_NUM_THREADS'] = '1'
+    
+    # Bad fix, but necessary for "ma_thesis_duplicate" env
+    os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 ###########################################################################################
+
+
+
+# # Set multiprocessing method BEFORE any other imports (for MacOS)
+# import multiprocessing as mp
+# import os
+# import sys
+
+# if __name__ == "__main__":
+#     # Force spawn method for macOS compatibility
+#     mp.set_start_method('spawn', force=True)
+    
+#     # Disable threading in numeric libraries
+#     os.environ['OMP_NUM_THREADS'] = '1'
+#     os.environ['MKL_NUM_THREADS'] = '1'
+#     os.environ['OPENBLAS_NUM_THREADS'] = '1'
+#     os.environ['VECLIB_MAXIMUM_THREADS'] = '1'
+#     os.environ['NUMEXPR_NUM_THREADS'] = '1'
+# ###########################################################################################
 
 import numpy as np
 import pandas as pd
@@ -32,29 +55,63 @@ from typing import List, Dict
 from multiprocessing import Pool
 import time
 
+# from src.config.path import PathConfig
+# from config.GNM import create_evaluation_criteria
+# from src.comparing_connectomes.energy_comparer import EnergyEvaluator
+# from src.comparing_connectomes.portrait_divergence_comparer import PortraitDivergence
+# from src.comparing_connectomes.f1_comparer import F1Evaluator
+# from src.comparing_connectomes.communicability_comparer import CommunicabilityEvaluator
+# from src.comparing_connectomes.delta_con_evaluator import DeltaConEvaluator
+# from src.comparing_connectomes.spectral_distance_comparer import SpectralDistanceEvaluator
+# from src.comparing_connectomes.edit_distance_comparer import EditDistanceEvaluator
+# from src.comparing_connectomes.cosine_embedding_comparer import CosineEmbeddingEvaluator
+# from src.comparing_connectomes.wasserstein_gromov_comparer import GromovWassersteinEvaluator
+# from src.comparing_connectomes.wasserstein_sinkhorn_comparer import WassersteinSinkhornEvaluator
+# from src.comparing_connectomes.hungarian_alignment_comparer import HungarianAlignmentEvaluator
+# from src.comparing_connectomes.graph_kernel_comparer import GraphKernelEvaluator
+# from src.comparing_connectomes.graph_kernel_networkx_comparer import GraphKernelNetworkxEvaluator
+# from src.comparing_connectomes.multiplex_layer_similarity_comparer import MultiplexLayerSimilarityEvaluator
+# from src.comparing_connectomes.resistance_distance_comparer import ResistanceDistanceEvaluator
+# from src.comparing_connectomes.graph_edit_distance_comparer import GraphEditDistanceEvaluator
+# from src.comparing_connectomes.network_mutual_information_comparer import NetworkMutualInformationEvaluator
+# from src.comparing_connectomes.communicability_mse_comparer import CommunicabilityMSEEvaluator
+# from src.comparing_connectomes.communicability_jsd_comparer import CommunicabilityJSDEvaluator
+# from src.comparing_connectomes.frobenius_comparer import FrobeniusEvaluator
+# from src.comparing_connectomes.jaccard_comparer import JaccardEvaluator
+
+
 from src.config.path import PathConfig
 from config.GNM import create_evaluation_criteria
+from src.comparing_connectomes.base_comparer import NetworkEvaluator
 from src.comparing_connectomes.energy_comparer import EnergyEvaluator
 from src.comparing_connectomes.portrait_divergence_comparer import PortraitDivergence
 from src.comparing_connectomes.f1_comparer import F1Evaluator
-from src.comparing_connectomes.communicability_comparer import CommunicabilityEvaluator
-from src.comparing_connectomes.delta_con_evaluator import DeltaConEvaluator
+from src.comparing_connectomes.hamming_comparer import HammingEvaluator
+from src.comparing_connectomes.communicability_comparer import CommunicabilityCorrEvaluator
+# from src.comparing_connectomes.graph_kernel_comparer import GraphKernelEvaluator
 from src.comparing_connectomes.spectral_distance_comparer import SpectralDistanceEvaluator
-from src.comparing_connectomes.edit_distance_comparer import EditDistanceEvaluator
+# from src.comparing_connectomes.wasserstein_gromov_comparer import GromovWassersteinEvaluator
+# from src.comparing_connectomes.multiplex_layer_similarity_comparer import MultiplexLayerSimilarityEvaluator
 from src.comparing_connectomes.cosine_embedding_comparer import CosineEmbeddingEvaluator
-from src.comparing_connectomes.wasserstein_gromov_comparer import GromovWassersteinEvaluator
-from src.comparing_connectomes.wasserstein_sinkhorn_comparer import WassersteinSinkhornEvaluator
-from src.comparing_connectomes.hungarian_alignment_comparer import HungarianAlignmentEvaluator
-from src.comparing_connectomes.graph_kernel_comparer import GraphKernelEvaluator
-from src.comparing_connectomes.graph_kernel_networkx_comparer import GraphKernelNetworkxEvaluator
-from src.comparing_connectomes.multiplex_layer_similarity_comparer import MultiplexLayerSimilarityEvaluator
-from src.comparing_connectomes.resistance_distance_comparer import ResistanceDistanceEvaluator
+from comparing_connectomes.resistance_distance_comparer import ResistanceDistanceEvaluator
+from src.comparing_connectomes.delta_con_evaluator import DeltaConEvaluator
+from src.comparing_connectomes.delta_con_distance_evaluator import DeltaConDistanceEvaluator
 from src.comparing_connectomes.graph_edit_distance_comparer import GraphEditDistanceEvaluator
-from src.comparing_connectomes.network_mutual_information_comparer import NetworkMutualInformationEvaluator
+from src.comparing_connectomes.wasserstein_sinkhorn_comparer import WassersteinSinkhornEvaluator
+# from src.comparing_connectomes.hungarian_alignment_comparer import HungarianAlignmentEvaluator
+from src.comparing_connectomes.graph_kernel_networkx_comparer import GraphKernelNetworkxEvaluator
+
+from src.comparing_connectomes.network_mutual_information_comparer import NetworkMutualInformationEvaluator, DCNetworkMutualInformationEvaluator
+
 from src.comparing_connectomes.communicability_mse_comparer import CommunicabilityMSEEvaluator
 from src.comparing_connectomes.communicability_jsd_comparer import CommunicabilityJSDEvaluator
+
 from src.comparing_connectomes.frobenius_comparer import FrobeniusEvaluator
 from src.comparing_connectomes.jaccard_comparer import JaccardEvaluator
+
+from src.comparing_connectomes.netrd_comparer import NetrdEvaluator # resistance, net_smile, net_lsd, quantum_jsd, ...
+
+from src.utils.extract_params_from_filenames import get_eta_gamma_id_from_filename
 
 
 def load_consensus_connectome(path: Path) -> np.ndarray:
@@ -231,12 +288,21 @@ def initialize_evaluator(evaluation_mode: str, dataset_name: str, path_config: P
         evaluator = PortraitDivergence()
     elif evaluation_mode == "f1":
         evaluator = F1Evaluator()
-    elif evaluation_mode == "communicability":
-        evaluator = CommunicabilityEvaluator()
+    elif evaluation_mode == "hamming":
+            evaluator = HammingEvaluator()
+            
+    elif evaluation_mode == "communicability_corr":
+        evaluator = CommunicabilityCorrEvaluator()
     elif evaluation_mode == "delta_con":
         evaluator = DeltaConEvaluator()
-    elif evaluation_mode == "spectral_distance":
-        evaluator = SpectralDistanceEvaluator()
+    # elif evaluation_mode == "delta_con_distance":
+    #     evaluator = DeltaConDistanceEvaluator(distance_matrices[0]) # TODO: This is a cheat rn 
+    elif evaluation_mode == "spectral_distance_norm_laplacian":
+        evaluator = SpectralDistanceEvaluator(method='normalized_laplacian') # 'adjacency'
+    elif evaluation_mode == "spectral_distance_laplacian":
+        evaluator = SpectralDistanceEvaluator(method='laplacian')
+    elif evaluation_mode == "spectral_distance_adjacency":
+        evaluator = SpectralDistanceEvaluator(method='adjacency')
     elif evaluation_mode == "edit_distance":
         evaluator = EditDistanceEvaluator()
     elif evaluation_mode == "cosine_embedding":
@@ -253,12 +319,14 @@ def initialize_evaluator(evaluation_mode: str, dataset_name: str, path_config: P
         evaluator = GraphKernelNetworkxEvaluator()
     elif evaluation_mode == "multiplex_layer_similarity":
         evaluator = MultiplexLayerSimilarityEvaluator()
-    elif evaluation_mode == "resistance_distance":
-        evaluator = ResistanceDistanceEvaluator()
+    # elif evaluation_mode == "resistance_distance":
+    #     evaluator = ResistanceDistanceEvaluator()
     elif evaluation_mode == "graph_edit_distance":
         evaluator = GraphEditDistanceEvaluator()
     elif evaluation_mode == "network_mutual_information":
         evaluator = NetworkMutualInformationEvaluator()
+    elif evaluation_mode == "dc_network_mutual_information":
+        evaluator = DCNetworkMutualInformationEvaluator()
     elif evaluation_mode == "communicability_mse":
         evaluator = CommunicabilityMSEEvaluator()
     elif evaluation_mode == "communicability_jsd":
@@ -267,6 +335,16 @@ def initialize_evaluator(evaluation_mode: str, dataset_name: str, path_config: P
         evaluator = FrobeniusEvaluator()
     elif evaluation_mode == "jaccard":
         evaluator = JaccardEvaluator()
+    elif evaluation_mode == "resistance": # resistance, net_smile, net_lsd, quantum_jsd
+        evaluator = NetrdEvaluator(method='resistance')
+    elif evaluation_mode == "net_simile":
+        evaluator = NetrdEvaluator(method='net_simile')
+    elif evaluation_mode == "net_lsd":
+        evaluator = NetrdEvaluator(method='net_lsd')
+    elif evaluation_mode == "quantum_jsd":
+        evaluator = NetrdEvaluator(method='quantum_jsd')
+    elif evaluation_mode == "netrd_non_backtracking_spectral": 
+        evaluator = NetrdEvaluator(method='netrd_non_backtracking_spectral')
     else:
         raise ValueError(f"Unknown evaluation mode: {evaluation_mode}")
     
@@ -410,40 +488,87 @@ def main(
 
 if __name__ == "__main__":
         
-    all_methods = [
-                    "f1", 
-                    "portrait",  
-                    "communicability", 
-                    "delta_con", 
-                    "spectral_distance",
-                    "edit_distance", 
-                    "cosine_embedding", 
-                    "wasserstein_gromov",
-                    "wasserstein_sinkhorn", 
-                    "hungarian_alignment", 
-                    "graph_kernel", 
-                    "graph_kernel_networkx", 
-                    "multiplex_layer_similarity", 
-                    "resistance_distance", 
-                    "graph_edit_distance", 
-                    "network_mutual_information", 
-                    "communicability_mse", 
-                    "communicability_jsd", 
-                    "frobenius", 
-                    "jaccard", 
-                    "energy"
-            ]
+    all_methods = [ "netrd_non_backtracking_spectral", # add: graph_diffusion!!! 
+                    # "energy", 
+                    # "portrait", 
+                    # "spectral_distance_adjacency",
+                    # "spectral_distance_norm_laplacian", 
                     
+                    # "communicability_corr",
+                    # "communicability_jsd",
+                    # "network_mutual_information",
+                    # "dc_network_mutual_information", 
+                    
+                    # "net_simile", 
+                    
+                    # "resistance", 
+                    # "delta_con", 
+                    
+                    # "f1", 
+                    # "hamming",
+                    # "frobenius", 
+                    # "jaccard", 
+            
+        # Get the name of all measures
+
+    
+
+        # Just copied from the other script thingy - all "runs" do not count... 
+        # "f1", # runs!
+        # "hamming", # runs!
+        # "portrait", # runs!
+        # "delta_con", # runs!
+        # # "delta_con_distance", # runs! 
+        # "spectral_distance_adjacency", # runs! 
+        # "spectral_distance_norm_laplacian", # runs!
+        # "spectral_distance_laplacian", # runs!
+        #                 # "cosine_embedding", # gets stuck: OMP: Error #179: Function pthread_mutex_init failed: OMP: System error #22: Invalid argument for 05. 
+        # "wasserstein_sinkhorn", # math errors
+        #     # "hungarian_alignment", 
+        # "graph_kernel_networkx", # math errors
+            # "multiplex_layer_similarity", 
+            # "resistance_distance", 
+        # "graph_edit_distance", # takes CRAZILY long... stupid error
+        # "network_mutual_information", # runs! 
+        # "dc_network_mutual_information", # runs!
+        # "communicability_mse", # runs, but unsure if it generated any errors? 
+        # "communicability_jsd", # runs, but unsure if it generated any errors? 
+        # "communicability_corr", # runs, but unsure if it generated any errors? 
+        # "frobenius", # runs!
+        # "jaccard", # runs!
+        
+        # "resistance", # runs!
+        # "net_simile", # runs!
+        # "net_lsd", # runs!
+        # "quantum_jsd", # runs, but has overflow complaints 
+        
+        # "energy", # runs! 
+        ]
+
+    successes = [] 
+    errors = []
+    
     for method in all_methods:
         print(f"\n{'=' * 80}")
         print(f"RUNNING ANALYSIS FOR: {method}")
         print(f"{'=' * 80}")
         
-        results = main(
-            dataset_name="lexis_data",
-            num_processes=200,  # 20 independent runs
-            num_steps=100,  # 50 steps from original to chaos
-            evaluation_mode=method,
-            num_multiprocessing_cores=10, # 0,
-            seed_base=42
-        )
+        try: 
+            results = main(
+                dataset_name="lexis_data",
+                num_processes=200,  # 20 independent runs
+                num_steps=100,  # 50 steps from original to chaos
+                evaluation_mode=method,
+                num_multiprocessing_cores=10, # 0,
+                seed_base=42
+            )
+            successes.append(method)
+        except Exception as e:
+            print(f"Error during analysis for {method}: {e}")
+            errors.append((method, str(e)))
+        
+    print(f"\n{'=' * 80}")
+    print("ANALYSIS SUMMARY")
+    print(f"{'=' * 80}")
+    print(f"Successful methods ({len(successes)}): {successes}")
+    print(f"Errored methods ({len(errors)}): {errors}")

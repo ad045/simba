@@ -1,22 +1,21 @@
 experiment:
   experiment_type: gnm_sweep
   type: gnm_sweep
-  name: 09_mst_10000 # _no_ring_sweeps
-  animal: 444 # placeholder
-  calculate_energy: true # false # will be calculated later.. 
+  name: 09_mst_10000_animal_0
+  animal: 0
+  calculate_energy: true
   average_connectomes: true
   elaborate_analysis: true
   calculate_energies_of_all_individual_connectomes: false
   search:
     method: grid
-    n_samples: 10000 # 10000
+    n_samples: 10000
 data:
-  dataset_name: lexis_data # suarez_MaMI_dataset # hcp_schaefer_100_dataset
+  dataset_name: lexis_data
   connectome_resolution: 50
   density: 10
   paths:
     project_root: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code
-    # animal_metadata: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_50_processed.csv
 gnm:
   eta_range:
   - -8.0
@@ -42,14 +41,12 @@ gnm:
   - powerlaw
   heterochronicity_relationship_type:
   - powerlaw
-  seed_params: 
+  seed_params:
     seed_adjacency_matrices: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/seeds/mst_schaeffer.npy
-    seed_id: 444 # placeholder
-# dyn_gnm:
-#   dynamic_fitness_metric: mc_mean
+    seed_id: 0
 esn:
   spectral_radius: 0.9
-  input_scaling: 1.0 # 1.0
+  input_scaling: 1.0
   train_len: 5000
   regression_method: pinv
   n_runs: 50
@@ -61,9 +58,9 @@ esn:
   random_state: 42
 compute:
   device: cpu
-  n_workers: -1 # -1
+  n_workers: -1
   timing_flag: true
-  random_seed: 42
+  random_seed: 0
 output:
   figure_format: pdf
   verbosity: INFO
