@@ -387,8 +387,12 @@ def main(
         experiment_name="chaos_analysis"
     )
     
-    consensus_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/connectome_distances/data/preprocessed/{dataset_name}/01_connectomes/00_connectomes_density10.npy")
-    
+    # consensus_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/connectome_distances/data/preprocessed/{dataset_name}/01_connectomes/00_connectomes_density10.npy")
+    if dataset_name == "lexis_data": 
+        consensus_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/connectome_distances/data/preprocessed/{dataset_name}/01_connectomes/00_connectomes_density10.npy")
+    elif dataset_name == "hcp_schaefer_100_dataset":
+        consensus_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/hcp_schaefer_100_dataset/01_connectomes/01_consensus_bin_density_10_percent_100.npy")
+        
     # Load consensus connectome
     print("\n" + "=" * 80)
     print("LOADING CONSENSUS CONNECTOME")
@@ -488,7 +492,19 @@ def main(
 
 if __name__ == "__main__":
         
-    all_methods = [ "netrd_non_backtracking_spectral", # add: graph_diffusion!!! 
+    all_methods = [ # "energy", 
+                    # "portrait", 
+                    # "spectral_distance_adjacency",
+                     "communicability_corr",
+                    # "net_simile", 
+                    # "netrd_non_backtracking_spectral", 
+                    # "resistance", 
+                    # "delta_con", 
+                    
+                    # "frobenius", 
+                    
+        
+        # "netrd_non_backtracking_spectral", # add: graph_diffusion!!! 
                     # "energy", 
                     # "portrait", 
                     # "spectral_distance_adjacency",
@@ -555,7 +571,7 @@ if __name__ == "__main__":
         
         try: 
             results = main(
-                dataset_name="lexis_data",
+                dataset_name="hcp_schaefer_100_dataset", # "lexis_data",
                 num_processes=200,  # 20 independent runs
                 num_steps=100,  # 50 steps from original to chaos
                 evaluation_mode=method,

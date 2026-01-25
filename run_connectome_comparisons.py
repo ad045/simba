@@ -43,6 +43,8 @@ from src.comparing_connectomes.base_comparer import NetworkEvaluator
 from src.comparing_connectomes.energy_comparer import EnergyEvaluator, EnergyEvaluatorTestSoNoMax
 from src.comparing_connectomes.portrait_divergence_comparer import PortraitDivergence
 from src.comparing_connectomes.f1_comparer import F1Evaluator
+from src.comparing_connectomes.f1_with_distance_comparer import F1DistEvaluator
+
 from src.comparing_connectomes.hamming_comparer import HammingEvaluator
 from src.comparing_connectomes.communicability_comparer import CommunicabilityCorrEvaluator
 # from src.comparing_connectomes.graph_kernel_comparer import GraphKernelEvaluator
@@ -362,19 +364,23 @@ def main(dataset_name: str,
         empirical_networks_path = path_01_connectomes / "01_consensus_bin_density_10_percent_50.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_50.npy"
     
-    if dataset_name == "shafiei_human_consensus_dataset": 
+    elif dataset_name == "shafiei_human_consensus_dataset": 
         empirical_networks_path = path_01_connectomes / "01_indiv_connectomes_bin_density_10_percent_68.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_68.npy"
     
-    if dataset_name == "hcp_schaefer_100_dataset" or dataset_name == "lexis_data": 
+    elif dataset_name == "hcp_schaefer_100_dataset": 
+        empirical_networks_path = path_01_connectomes / "01_consensus_bin_density_10_percent_100.npy"
+        distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
+
+    elif dataset_name == "lexis_data": 
         empirical_networks_path = path_01_connectomes / "00_connectomes_density10.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
-    
-    if dataset_name == "kaysons_generated_networks_diffusion": 
+
+    elif dataset_name == "kaysons_generated_networks_diffusion": 
         empirical_networks_path = path_01_connectomes / "diffusion_20_percent.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
 
-    if dataset_name == "kaysons_generated_networks_propagation": 
+    elif dataset_name == "kaysons_generated_networks_propagation": 
         empirical_networks_path = path_01_connectomes / "propagation_20_percent.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
 
@@ -522,7 +528,7 @@ def main(dataset_name: str,
             )
         
         # Get distance matrices if needed (energy, DeltaCon, tests)
-        if evaluation_mode == "energy" or evaluation_mode == "delta_con_distance" or "test_energy" in evaluation_mode: 
+        if evaluation_mode in ["energy", "delta_con_distance", "f1_dist"] or "test_energy" in evaluation_mode: 
             print("Loading distance matrices...")
             distance_matrices = np.load(distance_matrices_path)
             distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
@@ -543,6 +549,10 @@ def main(dataset_name: str,
         elif evaluation_mode == "f1":
             evaluator = F1Evaluator()
             print("Using F1 evaluation")
+            
+        elif evaluation_mode == "f1_dist":
+            evaluator = F1DistEvaluator(distance_matrices[0]) # TODO: This is a cheat rn
+            print("Using F1 with Distance evaluation")
             
         elif evaluation_mode == "hamming":
             evaluator = HammingEvaluator()
@@ -822,20 +832,21 @@ def main(dataset_name: str,
 if __name__ == "__main__":
     
     all_methods = [
+        "f1_dist",
         # "f1", # runs!
         # "hamming", # runs!
         # "portrait", # runs!
         # "delta_con", # runs!
-        # "delta_con_distance", # runs! 
+        # # "delta_con_distance", # runs! 
         # "spectral_distance_adjacency", # runs! 
         # "spectral_distance_norm_laplacian", # runs!
         # "spectral_distance_laplacian", # runs!
-                        # "cosine_embedding", # gets stuck: OMP: Error #179: Function pthread_mutex_init failed: OMP: System error #22: Invalid argument for 05. 
-        # "wasserstein_sinkhorn", # math errors
-            # "hungarian_alignment", 
-        # "graph_kernel_networkx", # math errors
-            # "multiplex_layer_similarity", 
-            # "graph_edit_distance", # stupid error??? -> but I argued now that we do not need it, so I can SKIP it! 
+        #                 # "cosine_embedding", # gets stuck: OMP: Error #179: Function pthread_mutex_init failed: OMP: System error #22: Invalid argument for 05. 
+        # # "wasserstein_sinkhorn", # math errors
+        #     # "hungarian_alignment", 
+        # # "graph_kernel_networkx", # math errors
+        #     # "multiplex_layer_similarity", 
+        #     # "graph_edit_distance", # stupid error??? -> but I argued now that we do not need it, so I can SKIP it! 
         # "network_mutual_information", # runs! 
         # "dc_network_mutual_information", # runs!
         # "communicability_mse", # runs, but unsure if it generated any errors? 
@@ -867,15 +878,16 @@ if __name__ == "__main__":
         # "netrd_non_backtracking_spectral",
         # "netrd_portrait_divergence",
         
-        "test_energy_degree", "test_energy_clustering", "test_energy_edge_length", "test_energy_betweenness"
+        # "test_energy_degree", "test_energy_clustering", "test_energy_edge_length", "test_energy_betweenness"
         ]
 
     for method in all_methods:
         results = main(
-            dataset_name="lexis_data", # suarez_MaMI_dataset",
+            dataset_name="hcp_schaefer_100_dataset", 
+            # dataset_name="lexis_data", # suarez_MaMI_dataset",
             # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
             # experiment_name="02_ring_sweeps_animal_0", # 
-            experiment_name="05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+            experiment_name="105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
             evaluation_mode=method,
             debug_subject_ids=[0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
             number_multiprocessing_processes=10, # 10, # 0, # 2, 

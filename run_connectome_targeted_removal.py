@@ -433,7 +433,20 @@ def main(
         experiment_name=f"importance_degradation_{importance_method}"
     )
     
-    consensus_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/connectome_distances/data/preprocessed/{dataset_name}/01_connectomes/00_connectomes_density10.npy")
+    if dataset_name == "lexis_data": 
+        consensus_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/connectome_distances/data/preprocessed/{dataset_name}/01_connectomes/00_connectomes_density10.npy")
+    elif dataset_name == "hcp_schaefer_100_dataset":
+        consensus_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/hcp_schaefer_100_dataset/01_connectomes/01_consensus_bin_density_10_percent_100.npy")
+        
+#         dataset_name = "hcp_schaefer_100_dataset" # lexis_data" # "suarez_MaMI_dataset"
+# experiment_name = "105_distance_metrics_mst_animal_0" # 05_mst_animal_0" # 02_ring_sweeps_animal_0" # 05_mst_animal_0" # 
+
+
+
+    else: 
+        print(f"ERROR: The consensus path for this dataset '{dataset_name}' is not defined.")
+        sys.exit(1)
+    
     
     # Load consensus connectome
     print("\n" + "=" * 80)
@@ -552,16 +565,17 @@ if __name__ == "__main__":
     ]
     
     evaluation_methods = [
-        "energy", 
-        "portrait", 
-        "spectral_distance_adjacency",
+        # "energy", 
+        # "portrait", 
+        # "spectral_distance_adjacency",
         
-        "net_simile", 
-        "netrd_non_backtracking_spectral", 
-        "resistance", 
-        "delta_con", 
+        # "net_simile", 
+        # "netrd_non_backtracking_spectral", 
+        # "resistance", 
+        # "delta_con", 
         
-        "frobenius", 
+        # "frobenius", 
+        "communicability_corr",
     ]
     
     successes = []
@@ -575,7 +589,8 @@ if __name__ == "__main__":
             
             try:
                 results = main(
-                    dataset_name="lexis_data",
+                    dataset_name="hcp_schaefer_100_dataset", 
+                    # dataset_name="lexis_data",
                     num_processes=20,
                     num_steps=50,
                     importance_method=importance_method,
