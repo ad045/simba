@@ -266,8 +266,13 @@ if __name__ == "__main__":
     # dataset_name = "kaysons_generated_networks_propagation" # diffusion" # 
     # dataset_name = "hcp_schaefer_100_dataset" 
     # experiment_name = "07_high_res_90_000_plot" # 
-    dataset_name = "lexis_data" # suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # "suarez_MaMI_dataset"
-    experiment_name = "04_mst_animal_0" # "95_ring_seed_100_sweep_animal_206" # 94_ring_seed_testing_animal_206" # 90_ring_seed_animal_206" 
+    
+    # dataset_name = "lexis_data" # suarez_MaMI_dataset" # hcp_schaefer_100_dataset" # "suarez_MaMI_dataset"
+    # experiment_name = "04_mst_animal_0" # "95_ring_seed_100_sweep_animal_206" # 94_ring_seed_testing_animal_206" # 90_ring_seed_animal_206" 
+        
+    dataset_name = "hcp_schaefer_100_dataset" # lexis_data" # "suarez_MaMI_dataset"
+    experiment_name = "105_distance_metrics_mst_animal_0" # 05_mst_animal_0" # 02_ring_sweeps_animal_0" # 05_mst_animal_0" # 
+
     # experiment_name = "81_all_animals_10_000_animal_15" # 76_90000_samples_animal_206" # 81_all_animals_10_000_animal_20" 
     # experiment_name = "05_second_big_overnight_run_10201" # 07_high_res_90_000_plot" # "05_second_big_overnight_run_10201"
     # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/80_more_animals_animal_0/all_metrics_for_80_more_animals_animal_0.csv
@@ -324,8 +329,9 @@ if __name__ == "__main__":
             
             # Merge the rest
             for df in dfs_to_merge[1:]:
-                # Use outer merge to keep all rows from both dataframes
-                df_combined = df_combined.merge(df, on=['eta', 'gamma'], how='outer', suffixes=('', '_dup'))
+                # Use outer merge to keep all rows from both dataframes. NEW: CHANGED TO INNER! 
+                df_combined = df_combined.merge(df, on=['eta', 'gamma'], how='inner', # 'outer', 
+                                                suffixes=('', '_dup'))
                 
                 # Remove duplicate columns that end with '_dup'
                 dup_cols = [col for col in df_combined.columns if col.endswith('_dup')]

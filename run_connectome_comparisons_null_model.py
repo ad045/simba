@@ -495,7 +495,7 @@ if __name__ == "__main__":
     all_methods = [ # "energy", 
                     # "portrait", 
                     # "spectral_distance_adjacency",
-                     "communicability_corr",
+                    #  "communicability_corr",
                     # "net_simile", 
                     # "netrd_non_backtracking_spectral", 
                     # "resistance", 
@@ -521,7 +521,7 @@ if __name__ == "__main__":
                     # "delta_con", 
                     
                     # "f1", 
-                    # "hamming",
+                    "hamming",
                     # "frobenius", 
                     # "jaccard", 
             

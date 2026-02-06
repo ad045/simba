@@ -328,10 +328,10 @@ def merge_new_columns_to_csv(output_path: Path, new_results: List[Dict]):
     # Determine column prefixes to keep
     if 'time_subject_' in str(df_new.columns):
         # This is a timing file
-        subject_cols = [col for col in df_new.columns if col.startswith('time_subject_')]
+        subject_cols = [col for col in df_new.columns if "_subject_" in col] # col.startswith('time_subject_')]
     else:
         # This is a results file
-        subject_cols = [col for col in df_new.columns if col.startswith(('energy_subject_', 'portrait_subject_', 'f1_subject_', 'communicability_subject_'))]
+        subject_cols = [col for col in df_new.columns if "_subject_" in col] # if col.startswith(('energy_subject_', 'portrait_subject_', 'f1_subject_', 'communicability_subject_'))]
     
     df_to_merge = df_new[[merge_key] + subject_cols]
     
@@ -346,6 +346,7 @@ def merge_new_columns_to_csv(output_path: Path, new_results: List[Dict]):
 def main(dataset_name: str, 
          experiment_name: str,
          evaluation_mode: str = "energy",  # "energy" or "portrait" or other. 
+         type_of_data: str = "individual", # "consensus" or "individual"
          debug_subject_ids: List[int] | None = None, 
          number_multiprocessing_processes: int = 8
          ):
@@ -362,29 +363,58 @@ def main(dataset_name: str,
     
     path_01_connectomes = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/{dataset_name}/01_connectomes") 
     
-    if dataset_name == "suarez_MaMI_dataset": 
+    if dataset_name == "suarez_MaMI_dataset" and type_of_data == "individual":
+        empirical_networks_path = path_01_connectomes / "00_connectomes_50.npy"
+        # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_50.npy
+        distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_50.npy"
+    elif dataset_name == "suarez_MaMI_dataset" and type_of_data == "consensus":
         empirical_networks_path = path_01_connectomes / "01_consensus_bin_density_10_percent_50.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_50.npy"
     
-    elif dataset_name == "shafiei_human_consensus_dataset": 
+    elif dataset_name == "shafiei_human_consensus_dataset" and type_of_data == "individual": 
         empirical_networks_path = path_01_connectomes / "01_indiv_connectomes_bin_density_10_percent_68.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_68.npy"
-    
-    elif dataset_name == "hcp_schaefer_100_dataset": 
+    elif dataset_name == "shafiei_human_consensus_dataset" and type_of_data == "consensus":
+        print("ERROR: No consensus data implemented for shafiei_human_consensus_dataset.")
+        return 
+
+    elif dataset_name == "hcp_schaefer_100_dataset" and type_of_data == "individual": 
+        empirical_networks_path = path_01_connectomes / "00_connectomes_density10.npy"
+        # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/hcp_schaefer_100_dataset/01_connectomes/00_connectomes_density10.npy
+        distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
+    elif dataset_name == "hcp_schaefer_100_dataset" and type_of_data == "consensus":
         empirical_networks_path = path_01_connectomes / "01_consensus_bin_density_10_percent_100.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
 
-    elif dataset_name == "lexis_data": 
+    elif dataset_name == "lexis_data" and type_of_data == "individual":
         empirical_networks_path = path_01_connectomes / "00_connectomes_density10.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
+    elif dataset_name == "lexis_data" and type_of_data == "consensus":
+        print("ERROR: No consensus data implemented for lexis_data.")
+        return 
+        # empirical_networks_path = path_01_connectomes / "01_consensus_bin_density_10_percent_100.npy"
+        # distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
 
-    elif dataset_name == "kaysons_generated_networks_diffusion": 
-        empirical_networks_path = path_01_connectomes / "diffusion_20_percent.npy"
+    elif dataset_name == "kaysons_generated_networks_diffusion" and type_of_data == "individual": 
+        empirical_networks_path = path_01_connectomes / "diffusion_10_percent.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
+    elif dataset_name == "kaysons_generated_networks_diffusion" and type_of_data == "consensus":
+        print("ERROR: No consensus data implemented for kaysons_generated_networks_diffusion.")
+        return
 
-    elif dataset_name == "kaysons_generated_networks_propagation": 
-        empirical_networks_path = path_01_connectomes / "propagation_20_percent.npy"
+    elif dataset_name == "kaysons_generated_networks_propagation" and type_of_data == "individual": 
+        empirical_networks_path = path_01_connectomes / "propagation_10_percent.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
+    elif dataset_name == "kaysons_generated_networks_propagation" and type_of_data == "consensus":
+        print("ERROR: No consensus data implemented for kaysons_generated_networks_propagation.")
+        return
+
+    elif dataset_name == "kaysons_generated_networks_routing" and type_of_data == "individual": 
+        empirical_networks_path = path_01_connectomes / "routing_10_percent.npy" # previously 20?? 
+        distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
+    elif dataset_name == "kaysons_generated_networks_routing" and type_of_data == "consensus":
+        print("ERROR: No consensus data implemented for kaysons_generated_networks_routing.")
+        return
 
     ##########################################################################
     
@@ -841,9 +871,9 @@ if __name__ == "__main__":
         # "energy_w_o_gnm_library",
         # "f1_dist",
         # "f1", # runs!
-        "hamming", # runs!
+        # "hamming", # runs!
         # "portrait", # runs!
-        # "delta_con", # runs!
+        "delta_con", # runs!
         # # "delta_con_distance", # runs! 
         # "spectral_distance_adjacency", # runs! 
         # "spectral_distance_norm_laplacian", # runs!
@@ -890,13 +920,19 @@ if __name__ == "__main__":
 
     for method in all_methods:
         results = main(
+            # dataset_name="kaysons_generated_networks_diffusion", # optimal_networks_diffusion", # hcp_schaefer_100_dataset",
+            # _routing", # _propagation", # 
+            # dataset_name="suarez_MaMI_dataset", # 
             dataset_name="hcp_schaefer_100_dataset", 
             # dataset_name="lexis_data", # suarez_MaMI_dataset",
             # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
             # experiment_name="02_ring_sweeps_animal_0", # 
-            experiment_name="105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+            # experiment_name="05_mst_animal_0_compared_with_mami", # 
+            experiment_name = "05_mst_animal_0_compared_with_hcp_schaefer_100", # "05_mst_animal_0_compared_with_diffusion", #_propagation",  # 105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+            type_of_data = "individual", 
             evaluation_mode=method,
-            debug_subject_ids=[0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
+            # Maybe add a label: We use diffusion or so?
+            debug_subject_ids=None, # [0, 2, 4], # [0,1,2], # None, # [0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
             number_multiprocessing_processes=10, # 10, # 0, # 2, 
         )
     
