@@ -62,13 +62,12 @@ def alternative_evaluate_mc(W,
     return mc_score, np.array(r2_scores)
 
 
+# This one is the main function to call for evaluating the memory capacity from a connectome. It will call the "alternative_evaluate_mc" function multiple times and then calculate the mean and std of the MC values across runs.
 def evaluate_memory_capacity_from_connectome(connectome: np.ndarray, 
                                              h_params: Optional[Dict[str, Any]] = None,
                                              
                                              calculate_criticality:  Optional[bool] = False,
-                                             calculate_info_dynamics: Optional[bool] = False, 
-                                             
-                                             
+                                             calculate_info_dynamics: Optional[bool] = False,              
  ) -> Dict[str, float]:
     
     mc_values: List[float] = []

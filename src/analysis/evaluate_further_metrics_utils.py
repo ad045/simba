@@ -9,7 +9,7 @@ import sys
 import gc
 import re
 
-from src.analysis.metric_calculators import StaticMetricCalculator, DynamicMetricCalculator, ComputationMetricCalculator     
+from src.analysis.metric_calculators import StaticMetricCalculator, DynamicMetricCalculator, ComputationMetricCalculator, FurtherMetricCalculator     
 
 ONLY_SUMMARIZE = False
 
@@ -34,6 +34,8 @@ def get_metric_category(metric_name, static_calc, dynamic_calc, computation_calc
         return 'dynamic'
     elif metric_name in computation_calc.implemented_metrics:
         return 'computational'
+    elif metric_name in further_calc.implemented_metrics:
+        return 'further'
     else:
         return None
 
@@ -60,12 +62,13 @@ def merge_checkpoint_files(output_path, experiment_name, df_original_dict, metri
     checkpoint_files = {
         'static': sorted(temp_dir.glob('result_static_*.csv')),
         'dynamic': sorted(temp_dir.glob('result_dynamic_*.csv')),
-        'computational': sorted(temp_dir.glob('result_computational_*.csv'))
+        'computational': sorted(temp_dir.glob('result_computational_*.csv')),
+        'further': sorted(temp_dir.glob('result_further_*.csv'))
     }
     
     results = {}
-    
-    for category in ['static', 'dynamic', 'computational']:
+
+    for category in ['static', 'dynamic', 'computational', 'further']:
         files = checkpoint_files[category]
         
         if not files:
@@ -203,7 +206,7 @@ def create_combined_csv(output_path, experiment_name, df_dict):
     Args:
         output_path: Path to the experiment output directory
         experiment_name: Name of the experiment
-        df_dict: Dict of DataFrames {'static': df, 'dynamic': df, 'computational': df}
+        df_dict: Dict of DataFrames {'static': df, 'dynamic': df, 'computational': df, 'further': df}
     """
     print("\n" + "=" * 60)
     print("CREATING COMBINED CSV FILE")
@@ -239,6 +242,18 @@ def create_combined_csv(output_path, experiment_name, df_dict):
                 how='outer'
             )
             print(f"✓ Merged {len(computational_cols)} computational metrics")
+            
+    # Merge further metrics
+    if not df_dict['further'].empty:
+        further_cols = [col for col in df_dict['further'].columns if col not in ['eta', 'gamma', 'id']]
+        
+        if further_cols:
+            df_combined = df_combined.merge(
+                df_dict['further'][['eta', 'gamma', 'id'] + further_cols],
+                on=['eta', 'gamma', 'id'],
+                how='outer'
+            )
+            print(f"✓ Merged {len(further_cols)} further metrics")
     
     # Save combined file
     combined_file = output_path / f'all_metrics_for_{experiment_name}_updated.csv'
@@ -256,7 +271,7 @@ def get_missing_work(df_dict, network_files, metric_categories):
     ONLY calculates metrics that are NaN or missing - preserves existing values.
     
     Returns:
-        dict: {network_index: {'static': [...], 'dynamic': [...], 'computational': [...]}}
+        dict: {network_index: {'static': [...], 'dynamic': [...], 'computational': [...], 'further': [...]}}
     """
     missing_work = {}
     
@@ -266,10 +281,11 @@ def get_missing_work(df_dict, network_files, metric_categories):
         network_missing = {
             'static': [],
             'dynamic': [],
-            'computational': []
+            'computational': [],
+            'further': []
         }
-        
-        for category in ['static', 'dynamic', 'computational']:
+
+        for category in ['static', 'dynamic', 'computational', 'further']:
             df = df_dict[category]
             
             # Create mask
@@ -347,7 +363,7 @@ def process_network_file(file_info, distance_matrix_path, metric_categories, met
     Process a single network file and return dictionaries of results by category.
     
     Returns:
-        dict: {'static': {...}, 'dynamic': {...}, 'computational': {...}}
+        dict: {'static': {...}, 'dynamic': {...}, 'computational': {...}, 'further': {...}}
     """
     idx, name, full_path = file_info
     
@@ -356,7 +372,8 @@ def process_network_file(file_info, distance_matrix_path, metric_categories, met
         metrics_to_calculate = {
             'static': metric_categories['static'],
             'dynamic': metric_categories['dynamic'],
-            'computational': metric_categories['computational']
+            'computational': metric_categories['computational'],
+            'further': metric_categories['further']
         }
     
     # Skip if no metrics needed for this network
@@ -376,18 +393,21 @@ def process_network_file(file_info, distance_matrix_path, metric_categories, met
         static_calc = StaticMetricCalculator(A=A, distance_matrix=distance_matrix)
         dynamic_calc = DynamicMetricCalculator(A=A)
         computation_calc = ComputationMetricCalculator(A=A)
+        further_calc = FurtherMetricCalculator(A=A, distance_matrix=distance_matrix)
         
         # Calculate metrics by category
         results = {
             'static': {"eta": eta, "gamma": gamma, "id": net_id},
             'dynamic': {"eta": eta, "gamma": gamma, "id": net_id},
-            'computational': {"eta": eta, "gamma": gamma, "id": net_id}
+            'computational': {"eta": eta, "gamma": gamma, "id": net_id}, 
+            'further': {"eta": eta, "gamma": gamma, "id": net_id}
         }
         
         for category, calculator in [
             ('static', static_calc),
             ('dynamic', dynamic_calc),
-            ('computational', computation_calc)
+            ('computational', computation_calc),
+            ('further', further_calc)
         ]:
             for metric in metrics_to_calculate.get(category, []):
                 try:
@@ -434,7 +454,7 @@ def process_network_file(file_info, distance_matrix_path, metric_categories, met
                     results[category][metric] = np.nan
         
         # Clean up
-        del A, static_calc, dynamic_calc, computation_calc
+        del A, static_calc, dynamic_calc, computation_calc, further_calc
         gc.collect()
         
         if (idx + 1) % 50 == 0:
@@ -457,16 +477,17 @@ def save_results_to_csv(results_list, df_path_out, metric_categories, checkpoint
     results_by_category = {
         'static': [],
         'dynamic': [],
-        'computational': []
+        'computational': [],
+        'further': []
     }
     
     for result in results_list:
-        for category in ['static', 'dynamic', 'computational']:
+        for category in ['static', 'dynamic', 'computational', 'further']:
             if result[category] and len(result[category]) > 3:  # More than just eta, gamma, id
                 results_by_category[category].append(result[category])
     
     # Save each category separately
-    for category in ['static', 'dynamic', 'computational']:
+    for category in ['static', 'dynamic', 'computational', 'further']:
         if not results_by_category[category]:
             continue
         
@@ -514,7 +535,7 @@ def multiprocess_networks(experiment,
     if dataset == "hcp_schaefer_100_dataset" or dataset=="lexis_data":
         distance_matrix_filename = "distance_matrix_100.npy"
     elif dataset == "suarez_MaMI_dataset": 
-        distance_matrix_filename="distance_matrix_50.npy"
+        distance_matrix_filename="distance_matrix_50_scaled_to_schaeffer.npy" # !!!! distance_matrix_50.npy"
     else: 
         print("Error loading distance matrix (in evaluate_further_metrics_utils.py)") 
     distance_matrix_path = base_path / "data/preprocessed" / dataset / "02_distance_matrices" / distance_matrix_filename
@@ -525,6 +546,7 @@ def multiprocess_networks(experiment,
     print(f"Static metrics: {metric_categories['static']}")
     print(f"Dynamic metrics: {metric_categories['dynamic']}")
     print(f"Computational metrics: {metric_categories['computational']}")
+    print(f"Further metrics: {metric_categories['further']}")
     
     # # Get all network files
     if not ONLY_SUMMARIZE: 
@@ -541,7 +563,7 @@ def multiprocess_networks(experiment,
     
     # Load existing results for each category
     df_dict = {}
-    for category in ['static', 'dynamic', 'computational']:
+    for category in ['static', 'dynamic', 'computational', 'further']:
         df_path = output_path / f"all_{category}_metrics_for_{experiment}_updated.csv"
         
         # Check if updated version exists, otherwise try original
@@ -652,7 +674,7 @@ def multiprocess_networks(experiment,
     
     if final_dfs is not None:
         print(f"\n✓ Processing complete!")
-        for category in ['static', 'dynamic', 'computational']:
+        for category in ['static', 'dynamic', 'computational', 'further']:
             print(f"✓ {category.capitalize()} results: {len(final_dfs[category])} networks")
         
         # Create combined CSV if requested

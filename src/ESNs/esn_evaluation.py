@@ -18,7 +18,7 @@ import echoes
 from scipy.stats import pearsonr
 from src.utils.data_loader import DataLoader
 
-from ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome # needs to be here (even if "unused") - why?? 
+from ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome # needs to be here (even if "unused") - because it is referenced then in in the follow up file... 
 from utils.saving_and_finding_files import time_stamp_for_saving
 from src.ESNs.utils import _summarize_hparam_space, _write_run_info_txt
 

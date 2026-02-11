@@ -64,6 +64,14 @@ from src.analysis.computational_measures import (
 
 from src.analysis.my_attempt_at_metastability import calculate_metastability as calculate_metastability_2
 
+from src.analysis.computational_capacity_measures import computational_capacity
+
+from src.analysis.further_measures import (ollivier_ricci_curvature, 
+                                           rich_club_coefficient, 
+                                           participation_coefficient, 
+                                           persistent_homology, 
+                                           targeted_attack_robustness, 
+                                           algebraic_connectivity) 
 
 class MetricCalculator(ABC):
     def __init__(self, A=None, distance_matrix=None):
@@ -292,6 +300,7 @@ class ComputationMetricCalculator(MetricCalculator):
             "kernel_rank_fatemeh",
             "effective_dimensionality",
             "multifunctionality",
+            "computational_capacity", 
         }
         
         
@@ -310,6 +319,9 @@ class ComputationMetricCalculator(MetricCalculator):
         elif metric_name == "kernel_rank_fatemeh":
             return compute_kernel_rank_fatemeh(np.float64(self.A)) # , dtype=np.float32))
         
+        elif metric_name == "computational_capacity":
+            return computational_capacity(self.A)
+            
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
@@ -322,6 +334,46 @@ class ComputationMetricCalculator(MetricCalculator):
 # # #         # [ ] $Rˆ{2}$ (maybe not useful for MaMI, as we have no fixed connectome?)
 # # #         if metric_name == "density":
 # # #             return self._calculate_temporal_density()
+
+
+
+
+class FurtherMetricCalculator(MetricCalculator):
+    
+    def __init__(self, A=None, distance_matrix=None):
+        super().__init__(A=A, distance_matrix=distance_matrix)
+        self.implemented_metrics = {
+            "further_ollivier_ricci_curvature", 
+            "further_rich_club_coefficient", 
+            "further_participation_coefficient", 
+            "further_persistent_homology", 
+            "further_targeted_attack_robustness", 
+            "further_algebraic_connectivity"
+        }
+        
+        
+    def calculate_metric(self, metric_name):
+        
+        if metric_name == "further_ollivier_ricci_curvature":
+            return ollivier_ricci_curvature(self.A)
+
+        if metric_name == "further_rich_club_coefficient":
+            return rich_club_coefficient(self.A)
+
+        if metric_name == "further_participation_coefficient":
+            return participation_coefficient(self.A)
+
+        if metric_name == "further_persistent_homology":
+            return persistent_homology(self.A)
+
+        if metric_name == "further_targeted_attack_robustness":
+            return targeted_attack_robustness(self.A)
+
+        if metric_name == "further_algebraic_connectivity":
+            return algebraic_connectivity(self.A)
+        
+        else:
+            raise ValueError(f"Unknown metric: {metric_name}")
 
 
 

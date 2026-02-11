@@ -254,14 +254,15 @@ def evaluate_adjacency(empirical_adj, simulated_adj): # Accuracy, F1, ...
 
     return accuracy, f1
 
-# def randomize_graph(G, nswap=None, max_tries=None):
-#     """Randomizes the graph using double edge swap."""
-#     if nswap is None:
-#         nswap = 20 * G.number_of_edges()  # Adjust as needed
-#     if max_tries is None:
-#         max_tries = nswap * 20
-#     G_random = nx.double_edge_swap(G.copy(), nswap=nswap, max_tries=max_tries)
-#     return G_random
+# This function is actually used... 
+def randomize_graph(G, nswap=None, max_tries=None):
+    """Randomizes the graph using double edge swap."""
+    if nswap is None:
+        nswap = 20 * G.number_of_edges()  # Adjust as needed
+    if max_tries is None:
+        max_tries = nswap * 20
+    G_random = nx.double_edge_swap(G.copy(), nswap=nswap, max_tries=max_tries)
+    return G_random
 
 # def compute_random_metrics(G, nrandomizations=10, nswap=None, max_tries=None):
 #     """

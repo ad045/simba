@@ -384,13 +384,16 @@ class GNMandESNPipelineOrchestrator:
             seed_adjacency_matrix = None
                 
         # Get number iterations
+        nodes = distance_matrix.shape[0]
         if target_network is not None and calculate_energy: 
             # num_iterations = int(target_network[first_density].sum().item() // 2) # no density needed, as this is already part of the target network?? (at least for HPC)) 
             # TODO: Check how it is for the other datasets.
             n_edges = int(target_network.sum().item() // 2) # divided by 2 because undirected -> should be 495 approximately for 100*100 and 10 percent
+            n_edges = n_edges - nodes + 1 # subtract nodes due to MST / seed
         else: 
             # num_iterations = (distance_matrix.shape[0]*(distance_matrix.shape[0]-1))*(first_density/100)
-            n_edges = int((distance_matrix.shape[0]*(distance_matrix.shape[0]-1))*(first_density/100) // 2)
+            # n_edges = int((distance_matrix.shape[0]*(distance_matrix.shape[0]-1))*(first_density/100) // 2)
+            n_edges = int((first_density / 100) * ((nodes * (nodes - 1)) / 2)) - nodes + 1 # subtract nodes due to MST / seed
             target_network = np.zeros(shape=(resolution, resolution))
             
         # Get number of simulations
