@@ -71,7 +71,9 @@ from src.analysis.further_measures import (ollivier_ricci_curvature,
                                            participation_coefficient, 
                                            persistent_homology, 
                                            targeted_attack_robustness, 
-                                           algebraic_connectivity) 
+                                           algebraic_connectivity,
+                                           basic_measures) 
+
 
 class MetricCalculator(ABC):
     def __init__(self, A=None, distance_matrix=None):
@@ -343,33 +345,36 @@ class FurtherMetricCalculator(MetricCalculator):
     def __init__(self, A=None, distance_matrix=None):
         super().__init__(A=A, distance_matrix=distance_matrix)
         self.implemented_metrics = {
-            "further_ollivier_ricci_curvature", 
-            "further_rich_club_coefficient", 
-            "further_participation_coefficient", 
-            "further_persistent_homology", 
-            "further_targeted_attack_robustness", 
-            "further_algebraic_connectivity"
+            "ollivier_ricci_curvature", 
+            "rich_club_coefficient", 
+            "participation_coefficient", 
+            "persistent_homology", 
+            "targeted_attack_robustness", 
+            "algebraic_connectivity", 
+            "basic_measures",
         }
         
         
     def calculate_metric(self, metric_name):
+        if metric_name == "basic_measures":
+            return basic_measures(self.A, self.distance_matrix)
         
-        if metric_name == "further_ollivier_ricci_curvature":
+        if metric_name == "ollivier_ricci_curvature":
             return ollivier_ricci_curvature(self.A)
 
-        if metric_name == "further_rich_club_coefficient":
+        if metric_name == "rich_club_coefficient":
             return rich_club_coefficient(self.A)
 
-        if metric_name == "further_participation_coefficient":
+        if metric_name == "participation_coefficient":
             return participation_coefficient(self.A)
 
-        if metric_name == "further_persistent_homology":
+        if metric_name == "persistent_homology":
             return persistent_homology(self.A)
 
-        if metric_name == "further_targeted_attack_robustness":
+        if metric_name == "targeted_attack_robustness":
             return targeted_attack_robustness(self.A)
 
-        if metric_name == "further_algebraic_connectivity":
+        if metric_name == "algebraic_connectivity":
             return algebraic_connectivity(self.A)
         
         else:

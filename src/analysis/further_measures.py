@@ -2,6 +2,7 @@
 Additional graph properties for connectome / network analysis.
 
 Functions:
+    - basic_measures(A, dist)
     - ollivier_ricci_curvature(A)
     - rich_club_coefficient(A)
     - participation_coefficient(A)
@@ -24,13 +25,31 @@ Dependencies:
 Install optional deps:
     pip install GraphRicciCurvature giotto-tda scikit-learn
 """
-
 import numpy as np
 import networkx as nx
 from scipy import sparse
 from scipy.sparse.linalg import eigsh
 import warnings
 
+from src.analysis.structural_measures import analyze_connectomes
+
+
+def basic_measures(A, dist):
+    """
+    Communicability etc - all the properties already evaluated in my GNM pipeline. 
+    """
+    res_dict = analyze_connectomes([A], distance_matrix=dist, comm_mode="estrada_scaled")[0]
+
+    # Dont return the entire res_dict, but only the relevant measures:
+    relevant_measures = [
+        "avg_communicability", "global_efficiency",
+        "modularity", "avg_clustering", "avg_degree", "density_bct",
+        "transitivity", "avg_edge_distance", "wiring_cost", "char_path_length", 
+        "richclub_n_edges", "richclub_avg_length"
+    ]
+
+    return {k: res_dict[k] for k in relevant_measures if k in res_dict}
+           
 
 # =============================================================================
 # 1. Ollivier-Ricci Curvature
@@ -70,7 +89,8 @@ def ollivier_ricci_curvature(A):
     Repo: https://github.com/saibalmars/GraphRicciCurvature
     """
     try:
-        from GraphRicciCurvature.OllivierRicci import OllivierRicci
+        # from GraphRicciCurvature.OllivierRicci import OllivierRicci
+        from src.analysis.ollivier_ricci_curvature import OllivierRicci
     except ImportError:
         raise ImportError(
             "GraphRicciCurvature is required. "
@@ -97,6 +117,7 @@ def ollivier_ricci_curvature(A):
 
     orc = OllivierRicci(G, alpha=0.5, verbose="ERROR")
     orc.compute_ricci_curvature()
+    print(orc.G.nodes(data=True))
 
     curvatures = []
     for u, v, data in orc.G.edges(data=True):

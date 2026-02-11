@@ -237,6 +237,7 @@ def calculate_degree_gini(A):
 #     avg_rc_length = float(np.mean(rc_lengths)) if rc_lengths else np.nan
 
 
+# This one runs for the GNM creation pipeline. 
 def analyze_connectomes(connectomes,  
                         distance_matrix,
                         comm_mode="estrada_scaled", 
