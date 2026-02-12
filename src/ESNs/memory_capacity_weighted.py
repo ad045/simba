@@ -28,6 +28,8 @@ def alternative_evaluate_mc(W,
     X_train, X_test = X[:train_len], X[train_len:]
     y_train, y_test = y[:train_len], y[train_len:]
 
+    W = np.array(W, dtype=np.float32)
+     
     # 2. Create and train the ESN
     if h_params: 
         esn = echoes.ESNRegressor(

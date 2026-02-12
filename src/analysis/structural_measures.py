@@ -1,16 +1,10 @@
 import numpy as np
 import networkx as nx
 from networkx.algorithms import community as nx_comm
+from networkx.algorithms import smallworld
+from networkx.algorithms.community import modularity, louvain_communities
 
 from bct import density_und
-
-from networkx.algorithms import smallworld
-
-import networkx as nx
-import numpy as np
-
-from networkx.algorithms.community import modularity, louvain_communities
-import networkx as nx
 
 # from netneurotools import modularity # -> clashes with louvain (networkx) implementation
 

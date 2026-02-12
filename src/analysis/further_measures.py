@@ -117,7 +117,7 @@ def ollivier_ricci_curvature(A):
 
     orc = OllivierRicci(G, alpha=0.5, verbose="ERROR")
     orc.compute_ricci_curvature()
-    print(orc.G.nodes(data=True))
+    # print(orc.G.nodes(data=True))
 
     curvatures = []
     for u, v, data in orc.G.edges(data=True):

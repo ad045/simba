@@ -56,11 +56,13 @@ from src.analysis.dynamic_measures import (
 
      
 from src.analysis.computational_measures import (
-                                                kernel_rank, 
-                                                effective_dimensionality, 
-                                                multifunctionality, 
+                                                kernel_rank,
+                                                effective_dimensionality,
+                                                multifunctionality,
                                                 compute_kernel_rank_fatemeh,
-                                                )   
+                                                )
+
+from src.ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome   
 
 from src.analysis.my_attempt_at_metastability import calculate_metastability as calculate_metastability_2
 
@@ -74,7 +76,9 @@ from src.analysis.further_measures import (ollivier_ricci_curvature,
                                            algebraic_connectivity,
                                            basic_measures) 
 
-
+    
+    
+    
 class MetricCalculator(ABC):
     def __init__(self, A=None, distance_matrix=None):
         self.A = A
@@ -302,7 +306,8 @@ class ComputationMetricCalculator(MetricCalculator):
             "kernel_rank_fatemeh",
             "effective_dimensionality",
             "multifunctionality",
-            "computational_capacity", 
+            "computational_capacity",
+            "mc_original",
         }
         
         
@@ -323,7 +328,38 @@ class ComputationMetricCalculator(MetricCalculator):
         
         elif metric_name == "computational_capacity":
             return computational_capacity(self.A)
+        
+        elif metric_name == "mc_original":
             
+            # TODO: Get hyperparameters for the memory capacity evaluation. These can be adjusted as needed, but for now I'm using the same ones as in the original script.
+            # Currently just hardcoded 
+            h_params = {
+                "spectral_radius": 0.9,
+                "n_lags": 50,
+                "train_len": 5000,
+                "test_len": 1000,
+                "n_runs": 50,
+                "input_scaling": 1.0,
+                "regression_method": "pinv",
+                "n_transient": 100,
+                "leak_rate": 1.0,
+                "bias": 0.0,
+                "random_state": 42
+            }
+
+            result = evaluate_memory_capacity_from_connectome(np.float64(self.A), h_params=h_params)
+
+            # Flatten per-lag MC values into individual keys (mc_0, mc_1, ..., mc_49)
+            flat_result = {
+                "mc_mean": result["mc_mean"],
+                "mc_std": result["mc_std"],
+            }
+            mc_per_lag = result.get("mc_values_for_indiv_lags", [])
+            for i, val in enumerate(mc_per_lag):
+                flat_result[f"mc_{i}"] = float(val)
+
+            return flat_result
+
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
