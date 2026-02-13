@@ -175,6 +175,34 @@ def calculate_wiring_cost(G, distance_matrix) -> float: # similar to avg_edge_di
     return wiring_cost
 
 
+def calculate_proportion_long_range_connections(A, distance_matrix, thresholds=[0.1, 0.3, 0.5]) -> dict:
+    """
+    Fraction of actual edges whose distance exceeds the given quantile
+    of all possible pairwise distances.
+    
+    Returns:
+        - fraction of edges that are "long-range" (float)
+    """
+    # All possible pairwise distances (upper triangle, excluding diagonal)
+    triu = np.triu_indices_from(distance_matrix, k=1)
+    all_distances = distance_matrix[triu]
+    thresholds_dict = {}
+    for quantile in thresholds:
+        threshold = np.quantile(all_distances, quantile)
+
+        # Distances of actual edges
+        edges = np.array(np.where(np.triu(A) > 0)).T
+        if len(edges) == 0:
+            thresholds_dict[quantile] = 0.0
+            continue
+        edge_distances = distance_matrix[edges[:, 0], edges[:, 1]]
+
+        thresholds_dict[f"{quantile}"] = float(np.mean(edge_distances > threshold))
+
+    return thresholds_dict
+
+
+
 def calculate_char_path_length(G) -> float: # or np.nan
     """
     Characteristic path length on the largest connected component (NaN if <2 nodes).

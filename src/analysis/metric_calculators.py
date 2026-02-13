@@ -32,7 +32,7 @@ from src.analysis.structural_measures import (
                                             #   calculate_wiring_cost,  -> I'm using Kaysons 
                                               calculate_char_path_length, 
                                               calculate_degree_gini, 
-                                              
+                                              calculate_proportion_long_range_connections,
                                               calculate_directed_simplices
                                              )
 
@@ -193,6 +193,9 @@ class StaticMetricCalculator(MetricCalculator):
         
         elif metric_name == "directed_simplices":
             return calculate_directed_simplices(self.A)
+        
+        elif metric_name == "proportion_long_range_connections":
+            return calculate_proportion_long_range_connections(self.A, self.distance_matrix, thresholds=[0.1, 0.3, 0.5]) 
 
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
