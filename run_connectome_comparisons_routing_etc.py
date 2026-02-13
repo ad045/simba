@@ -364,9 +364,9 @@ def main(dataset_name: str,
     path_01_connectomes = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/{dataset_name}/01_connectomes") 
     
     if dataset_name == "suarez_MaMI_dataset" and type_of_data == "individual":
-        empirical_networks_path = path_01_connectomes / "00_connectomes_50.npy"
+        empirical_networks_path = path_01_connectomes / "00_connectomes_50_bin_wo_idx_95.npy" # 00_connectomes_50.npy"
         # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_50.npy
-        distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_50.npy"
+        distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_50_scaled_to_schaeffer_wo_idx_95.npy" # distance_matrix_50.npy"
     elif dataset_name == "suarez_MaMI_dataset" and type_of_data == "consensus":
         empirical_networks_path = path_01_connectomes / "01_consensus_bin_density_10_percent_50.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_50.npy"
@@ -564,8 +564,11 @@ def main(dataset_name: str,
             print("Loading distance matrices...")
             distance_matrices = np.load(distance_matrices_path)
             distance_matrices = torch.tensor(distance_matrices, dtype=torch.float32)
-            if dataset_name in ["shafiei_human_consensus_dataset", "hcp_schaefer_100_dataset", "lexis_data"]:
+            # Ensure batch dimension always exists
+            if distance_matrices.ndim == 2:
                 distance_matrices = distance_matrices.unsqueeze(0)
+            # if dataset_name in ["shafiei_human_consensus_dataset", "hcp_schaefer_100_dataset", "lexis_data"]:
+            #     distance_matrices = distance_matrices.unsqueeze(0)
                 print("Note: Distance matrix unsqueezed for this dataset")
             print(f"Loaded distance matrix with shape: {distance_matrices.shape}")
             
@@ -873,7 +876,7 @@ if __name__ == "__main__":
         # "f1", # runs!
         # "hamming", # runs!
         # "portrait", # runs!
-        "delta_con", # runs!
+        # "delta_con", # runs!
         # # "delta_con_distance", # runs! 
         # "spectral_distance_adjacency", # runs! 
         # "spectral_distance_norm_laplacian", # runs!
@@ -891,7 +894,7 @@ if __name__ == "__main__":
         # "communicability_corr", # runs, but unsure if it generated any errors? 
         # "frobenius", # runs!
         # "jaccard", # runs!
-        # "energy", # runs! 
+        "energy", # runs! 
         
         # "resistance", # runs!
         # "net_simile", # runs!
@@ -918,21 +921,96 @@ if __name__ == "__main__":
         # "test_energy_degree", "test_energy_clustering", "test_energy_edge_length", "test_energy_betweenness"
         ]
 
+    # for method in all_methods:
+    #     results = main(
+    #         # dataset_name="kaysons_generated_networks_diffusion", # optimal_networks_diffusion", # hcp_schaefer_100_dataset",
+    #         # _routing", # _propagation", # 
+    #         # dataset_name="suarez_MaMI_dataset", # 
+    #         dataset_name="hcp_schaefer_100_dataset", 
+    #         # dataset_name="lexis_data", # suarez_MaMI_dataset",
+    #         # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
+    #         # experiment_name="02_ring_sweeps_animal_0", # 
+    #         # experiment_name="05_mst_animal_0_compared_with_mami", # 
+    #         experiment_name = "05_mst_animal_0_compared_with_hcp_schaefer_100",
+
+    #         # "05_mst_animal_0_compared_with_diffusion", #_propagation",  # 105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+    #         type_of_data = "individual", 
+    #         evaluation_mode=method,
+    #         # Maybe add a label: We use diffusion or so?
+    #         debug_subject_ids=None, # [0, 2, 4], # [0,1,2], # None, # [0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
+    #         number_multiprocessing_processes=10, # 10, # 0, # 2, 
+    #     )
+
+    # for method in all_methods:
+    #     results = main(
+    #         dataset_name="kaysons_generated_networks_diffusion", # optimal_networks_diffusion", # hcp_schaefer_100_dataset",
+    #         # _routing", # _propagation", # 
+    #         # dataset_name="suarez_MaMI_dataset", # 
+    #         # dataset_name="hcp_schaefer_100_dataset", 
+    #         # dataset_name="lexis_data", # suarez_MaMI_dataset",
+    #         # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
+    #         # experiment_name="02_ring_sweeps_animal_0", # 
+    #         # experiment_name="05_mst_animal_0_compared_with_mami", # 
+    #         # experiment_name = "05_mst_animal_0_compared_with_hcp_schaefer_100",            
+    #         experiment_name = "05_mst_animal_0_compared_with_diffusion", #_propagation",  # 105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+    #         type_of_data = "individual", 
+    #         evaluation_mode=method,
+    #         # Maybe add a label: We use diffusion or so?
+    #         debug_subject_ids=[0], # None, # [0, 2, 4], # [0,1,2], # None, # [0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
+    #         number_multiprocessing_processes=10, # 10, # 0, # 2, 
+    #     )
+
+
+    # # First run in the evening: hamming and energy on hcp. 
+    # # Run over evening and night: Hamming and energy on optimal networks.
+    # # Run over night: Hamming and energy for mami. 
+    # for method in all_methods:
+    #     for opt_type in ["routing", "propagation"]: 
+    #     # for opt_type in ["diffusion", "routing", "propagation"]: 
+    #         results = main(
+    #             dataset_name=f"kaysons_generated_networks_{opt_type}", # optimal_networks_diffusion", # hcp_schaefer_100_dataset",
+    #             # _routing", # _propagation", # 
+    #             # dataset_name="suarez_MaMI_dataset", # 
+    #             # dataset_name="hcp_schaefer_100_dataset", 
+    #             # dataset_name="lexis_data", # suarez_MaMI_dataset",
+    #             # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
+    #             # experiment_name="02_ring_sweeps_animal_0", # 
+    #             # experiment_name="05_mst_animal_0_compared_with_mami", # 
+    #             # experiment_name = "05_mst_animal_0_compared_with_hcp_schaefer_100",            
+    #             experiment_name = f"05_mst_animal_0_compared_with_{opt_type}", #_propagation",  # 105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+    #             type_of_data = "individual", 
+    #             evaluation_mode=method,
+    #             # Maybe add a label: We use diffusion or so?
+    #             debug_subject_ids=[0], # None, # [0, 2, 4], # [0,1,2], # None, # [0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
+    #             number_multiprocessing_processes=10, # 10, # 0, # 2, 
+    #         )
+
+
     for method in all_methods:
+    
         results = main(
+            # dataset_name=f"kaysons_generated_networks_{opt_type}", # optimal_networks_diffusion", # hcp_schaefer_100_dataset",
+            # dataset_name="kaysons_generated_networks_routing", # _propagation", # 
             # dataset_name="kaysons_generated_networks_diffusion", # optimal_networks_diffusion", # hcp_schaefer_100_dataset",
-            # _routing", # _propagation", # 
-            # dataset_name="suarez_MaMI_dataset", # 
-            dataset_name="hcp_schaefer_100_dataset", 
+            dataset_name="suarez_MaMI_dataset", # 
+            # dataset_name="hcp_schaefer_100_dataset", 
             # dataset_name="lexis_data", # suarez_MaMI_dataset",
             # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
             # experiment_name="02_ring_sweeps_animal_0", # 
             # experiment_name="05_mst_animal_0_compared_with_mami", # 
-            experiment_name = "05_mst_animal_0_compared_with_hcp_schaefer_100", # "05_mst_animal_0_compared_with_diffusion", #_propagation",  # 105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+            # experiment_name = "05_mst_animal_0_compared_with_hcp_schaefer_100", 
+            # experiment_name = f"05_mst_animal_0_compared_with_diffusion", #_propagation",            
+            experiment_name = f"05_mst_animal_0_compared_with_mami", #_propagation",  # 105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
             type_of_data = "individual", 
             evaluation_mode=method,
             # Maybe add a label: We use diffusion or so?
             debug_subject_ids=None, # [0, 2, 4], # [0,1,2], # None, # [0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
             number_multiprocessing_processes=10, # 10, # 0, # 2, 
         )
-    
+        break 
+
+
+
+
+
+# python run_connectome_comparisons_routing_etc.py 

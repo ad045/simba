@@ -900,3 +900,4 @@ if __name__ == "__main__":
             number_multiprocessing_processes=10, # 10, # 0, # 2, 
         )
     
+    # ATTENTION: This one here is for the benchmarking paper, if I am correct. The one I have been using to evaluate the empirical connectomes is "run_connectome_comparisons_routing_etc"
