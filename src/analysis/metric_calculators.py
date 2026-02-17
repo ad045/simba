@@ -51,7 +51,10 @@ from src.analysis.dynamic_measures import (
                                             compute_synchronizability_eigenratio, 
                                             algebraic_connectivity_nx,
                                             kuramoto_synchronization, 
+                                            kuramoto_averaged_synchronization,
                                             community_synchronization_vulnerability,
+                                            participation_coefficient, 
+                                            departure_from_normality_schur
 )
 
      
@@ -60,6 +63,7 @@ from src.analysis.computational_measures import (
                                                 effective_dimensionality,
                                                 multifunctionality,
                                                 compute_kernel_rank_fatemeh,
+                                                # kernel_rank_esn, # Fatemeh. 
                                                 )
 
 from src.ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome   
@@ -76,7 +80,7 @@ from src.analysis.further_measures import (ollivier_ricci_curvature,
                                            algebraic_connectivity,
                                            basic_measures) 
 
-    
+from src.analysis.from_fatemeh import departure_from_normality # , # kernel_rank_esn, compute_spectral_gap_fatemeh
     
     
 class MetricCalculator(ABC):
@@ -221,6 +225,9 @@ class DynamicMetricCalculator(MetricCalculator):
             # "propagation_distance", # Does not make sense, maybe? 
             "propagation_efficiency",
             "spectral_gap_fatemeh", 
+            "kernel_rank_esn", # Fatemeh's version of kernel rank based on ESNs
+            "departure_from_normality", # also fatemeh
+            "departure_from_normality_schur", 
             "nct_control",
             "nct_energies",
             "novel_metastability", # previously: metastability... but this is for testing now 
@@ -228,6 +235,7 @@ class DynamicMetricCalculator(MetricCalculator):
             "synchronizability_eigenratio",
             "algebraic_connectivity_nx",
             "kuramoto_synchronization",
+            "kuramoto_averaged_synchronization",
             "community_synchronization_vulnerability",
         }
         
@@ -274,12 +282,28 @@ class DynamicMetricCalculator(MetricCalculator):
             return algebraic_connectivity_nx(self.A)
         
         elif metric_name == "kuramoto_synchronization":
-            return kuramoto_synchronization(self.A, n_steps=1000)
+            return kuramoto_synchronization(self.A) 
+        
+        elif metric_name == "kuramoto_averaged_synchronization":
+            return kuramoto_averaged_synchronization(self.A)
         
         elif metric_name == "community_synchronization_vulnerability":
             return community_synchronization_vulnerability(self.A)
-            # vulnerability, communities = community_synchronization_vulnerability(self.A)
-            # return {"vulnerability": vulnerability, "n_communities": len(communities)}
+
+        elif metric_name == "computational_capacity":
+            return computational_capacity(self.A)
+
+        elif metric_name == "kernel_rank_esn":
+            return kernel_rank_esn(self.A)
+        
+        elif metric_name == "departure_from_normality":
+            return departure_from_normality(self.A)
+        
+        elif metric_name == "departure_from_normality_schur": 
+            return departure_from_normality_schur(self.A)
+
+        elif metric_name == "participation_coefficient": 
+            return participation_coefficient(self.A) 
 
         else:
             raise ValueError(f"Unknown metric: {metric_name}")

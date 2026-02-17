@@ -12,6 +12,9 @@ def kernel_rank(A, threshold=0.01):
         "phase_diff_of_lambda_max_and_2nd": np.angle(eigs[np.argsort(np.abs(eigs))[-2]]) - np.angle(eigs.max()), 
     }
 
+def kernel_rank_esn(A):
+    # References Fatemeh's code. 
+    return compute_kernel_rank_fatemeh(A)
 
 # Effective dimensionality (Participation Ratio) (check) 
 def effective_dimensionality(A):
