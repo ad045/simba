@@ -81,7 +81,8 @@ from src.analysis.further_measures import (ollivier_ricci_curvature,
                                            basic_measures) 
 
 from src.analysis.from_fatemeh import departure_from_normality # , # kernel_rank_esn, compute_spectral_gap_fatemeh
-    
+from src.analysis.from_francisco_newer import repertoire, repertoire_sweep, repertoire_sweep_weighted_by_distances
+
     
 class MetricCalculator(ABC):
     def __init__(self, A=None, distance_matrix=None):
@@ -121,7 +122,7 @@ class StaticMetricCalculator(MetricCalculator):
             "topological_distance",
             "resistance_distance", 
             "degree_gini",
-            
+            "proportion_long_range_connections",
             "directed_simplices"
 
         } # TODO: Check if the list is complete or if I already implemented more than that.  
@@ -199,7 +200,7 @@ class StaticMetricCalculator(MetricCalculator):
             return calculate_directed_simplices(self.A)
         
         elif metric_name == "proportion_long_range_connections":
-            return calculate_proportion_long_range_connections(self.A, self.distance_matrix, thresholds=[0.1, 0.3, 0.5]) 
+            return calculate_proportion_long_range_connections(self.A, self.distance_matrix)
 
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
@@ -335,6 +336,7 @@ class ComputationMetricCalculator(MetricCalculator):
             "multifunctionality",
             "computational_capacity",
             "mc_original",
+            "repertoire", "repertoire_sweep", "repertoire_sweep_weighted_by_distances"
         }
         
         
@@ -356,6 +358,14 @@ class ComputationMetricCalculator(MetricCalculator):
         elif metric_name == "computational_capacity":
             return computational_capacity(self.A)
         
+        elif metric_name == "repertoire": 
+            return repertoire(self.A, T=0.1)
+
+        elif metric_name == "repertoire_sweep": 
+            return repertoire_sweep(self.A) # np.logspace(-2, 0, 201), for denser thing
+
+        elif metric_name == "repertoire_sweep_weighted_by_distances": 
+            return repertoire_sweep_weighted_by_distances(self.A, self.distance_matrix) # np.logspace(-2, 0, 201), for denser thing
         elif metric_name == "mc_original":
             
             # TODO: Get hyperparameters for the memory capacity evaluation. These can be adjusted as needed, but for now I'm using the same ones as in the original script.

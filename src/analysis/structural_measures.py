@@ -175,7 +175,9 @@ def calculate_wiring_cost(G, distance_matrix) -> float: # similar to avg_edge_di
     return wiring_cost
 
 
-def calculate_proportion_long_range_connections(A, distance_matrix, thresholds=[0.1, 0.3, 0.5]) -> dict:
+def calculate_proportion_long_range_connections(A, distance_matrix, thresholds=[0.1, 0.3,
+                                                                                0.3956, # 0.356,
+                                                                                0.5]) -> dict:
     """
     Fraction of actual edges whose distance exceeds the given quantile
     of all possible pairwise distances.

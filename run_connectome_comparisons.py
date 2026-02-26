@@ -841,7 +841,7 @@ if __name__ == "__main__":
         # "energy_w_o_gnm_library",
         # "f1_dist",
         # "f1", # runs!
-        "hamming", # runs!
+        # "hamming", # runs!
         # "portrait", # runs!
         # "delta_con", # runs!
         # # "delta_con_distance", # runs! 
@@ -859,7 +859,7 @@ if __name__ == "__main__":
         # "communicability_mse", # runs, but unsure if it generated any errors? 
         # "communicability_jsd", # runs, but unsure if it generated any errors? 
         # "communicability_corr", # runs, but unsure if it generated any errors? 
-        # "frobenius", # runs!
+        "frobenius", # runs!
         # "jaccard", # runs!
         # "energy", # runs! 
         
@@ -894,7 +894,7 @@ if __name__ == "__main__":
             # dataset_name="lexis_data", # suarez_MaMI_dataset",
             # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
             # experiment_name="02_ring_sweeps_animal_0", # 
-            experiment_name="105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+            experiment_name="11_mst_2500_animal_0", # 105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
             evaluation_mode=method,
             debug_subject_ids=[0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
             number_multiprocessing_processes=10, # 10, # 0, # 2, 

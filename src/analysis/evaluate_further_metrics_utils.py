@@ -391,8 +391,8 @@ def process_network_file(file_info, distance_matrix_path, metric_categories, met
         
         # Initialize calculators with distance matrix
         static_calc = StaticMetricCalculator(A=A, distance_matrix=distance_matrix)
-        dynamic_calc = DynamicMetricCalculator(A=A)
-        computation_calc = ComputationMetricCalculator(A=A)
+        dynamic_calc = DynamicMetricCalculator(A=A, distance_matrix=distance_matrix)
+        computation_calc = ComputationMetricCalculator(A=A, distance_matrix=distance_matrix)
         further_calc = FurtherMetricCalculator(A=A, distance_matrix=distance_matrix)
         
         # Calculate metrics by category
