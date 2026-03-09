@@ -364,7 +364,7 @@ def main(dataset_name: str,
     path_01_connectomes = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/{dataset_name}/01_connectomes") 
     
     if dataset_name == "suarez_MaMI_dataset" and type_of_data == "individual":
-        empirical_networks_path = path_01_connectomes / "00_connectomes_50_bin_wo_idx_95.npy" # 00_connectomes_50.npy"
+        empirical_networks_path = path_01_connectomes / "00_connectomes_50.npy" # 00_connectomes_50_bin_wo_idx_95.npy" # 00_connectomes_50.npy"
         # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_50.npy
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_50_scaled_to_schaeffer_wo_idx_95.npy" # distance_matrix_50.npy"
     elif dataset_name == "suarez_MaMI_dataset" and type_of_data == "consensus":
@@ -943,7 +943,12 @@ if __name__ == "__main__":
         ]
 
     method = "delta_con" # "frobenius"
-    for dataset in ["lexis_data_developing"]: # , "lexis_data_aging", "lexis_data_young"]:
+    for dataset in [# 
+                    "suarez_MaMI_dataset", 
+                    # "lexis_data_aging", 
+                    # "lexis_data_young", 
+                    # "lexis_data_developing"                    
+                    ]: 
         results = main(
                 # dataset_name="kaysons_generated_networks_diffusion", # optimal_networks_diffusion", # hcp_schaefer_100_dataset",
                 # _routing", # _propagation", # 
@@ -952,7 +957,7 @@ if __name__ == "__main__":
                 # dataset_name="lexis_data", # suarez_MaMI_dataset",
                 # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
                 # experiment_name="02_ring_sweeps_animal_0", # 
-                experiment_name=f"05_mst_animal_0_compared_with_{dataset}", # 05_mst_animal_0_compared_with_mami", # 
+                experiment_name=f"05_mst_animal_0_compared_with_{dataset}" if dataset != "suarez_MaMI_dataset" else "05_mst_animal_0_compared_with_mami", 
                 # experiment_name = "05_mst_animal_0_compared_with_hcp_schaefer_100",
 
                 # "05_mst_animal_0_compared_with_diffusion", #_propagation",  # 105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",

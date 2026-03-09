@@ -66,7 +66,7 @@ from src.analysis.computational_measures import (
                                                 # kernel_rank_esn, # Fatemeh. 
                                                 )
 
-from src.ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome   
+from src.ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_connectome, evaluate_nonlinear_capacity_from_connectome  
 
 from src.analysis.my_attempt_at_metastability import calculate_metastability as calculate_metastability_2
 
@@ -81,7 +81,7 @@ from src.analysis.further_measures import (ollivier_ricci_curvature,
                                            basic_measures) 
 
 from src.analysis.from_fatemeh import departure_from_normality # , # kernel_rank_esn, compute_spectral_gap_fatemeh
-from src.analysis.from_francisco_newer import repertoire, repertoire_sweep, repertoire_sweep_weighted_by_distances
+from src.analysis.from_francisco_newer import repertoire_sweep_weighted_by_distances # repertoire, repertoire_sweep, 
 
     
 class MetricCalculator(ABC):
@@ -226,7 +226,7 @@ class DynamicMetricCalculator(MetricCalculator):
             # "propagation_distance", # Does not make sense, maybe? 
             "propagation_efficiency",
             "spectral_gap_fatemeh", 
-            "kernel_rank_esn", # Fatemeh's version of kernel rank based on ESNs
+            "kernel_rank_esn", # Fatemeh's version of kernel rank based on ESNs. War schon ausgeklammert... 
             "departure_from_normality", # also fatemeh
             "departure_from_normality_schur", 
             "nct_control",
@@ -335,7 +335,7 @@ class ComputationMetricCalculator(MetricCalculator):
             "effective_dimensionality",
             "multifunctionality",
             "computational_capacity",
-            "mc_original",
+            "mc_original", "mc_nonlinear_original", 
             "repertoire", "repertoire_sweep", "repertoire_sweep_weighted_by_distances"
         }
         
@@ -366,7 +366,7 @@ class ComputationMetricCalculator(MetricCalculator):
 
         elif metric_name == "repertoire_sweep_weighted_by_distances": 
             return repertoire_sweep_weighted_by_distances(self.A, self.distance_matrix) # np.logspace(-2, 0, 201), for denser thing
-        elif metric_name == "mc_original":
+        elif metric_name == "mc_original" or metric_name == "mc_nonlinear_original":
             
             # TODO: Get hyperparameters for the memory capacity evaluation. These can be adjusted as needed, but for now I'm using the same ones as in the original script.
             # Currently just hardcoded 
@@ -383,17 +383,23 @@ class ComputationMetricCalculator(MetricCalculator):
                 "bias": 0.0,
                 "random_state": 42
             }
-
-            result = evaluate_memory_capacity_from_connectome(np.float64(self.A), h_params=h_params)
+            
+            if metric_name == "mc_original": 
+                result = evaluate_memory_capacity_from_connectome(np.float64(self.A), h_params=h_params)
+                
+            elif metric_name == "mc_nonlinear_original":
+                result = evaluate_nonlinear_capacity_from_connectome(np.float64(self.A), h_params=h_params)
 
             # Flatten per-lag MC values into individual keys (mc_0, mc_1, ..., mc_49)
             flat_result = {
                 "mc_mean": result["mc_mean"],
                 "mc_std": result["mc_std"],
             }
-            mc_per_lag = result.get("mc_values_for_indiv_lags", [])
-            for i, val in enumerate(mc_per_lag):
-                flat_result[f"mc_{i}"] = float(val)
+            
+            if metric_name == "mc_original": 
+                mc_per_lag = result.get("mc_values_for_indiv_lags", [])
+                for i, val in enumerate(mc_per_lag):
+                    flat_result[f"mc_{i}"] = float(val)
 
             return flat_result
 

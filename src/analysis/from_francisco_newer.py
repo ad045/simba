@@ -325,52 +325,53 @@ def bin_state(state, bin_size):
 
 ### NEW (ADRIAN + CLAUDE) 
 
-def repertoire(A, T: float) -> tuple[float, float]:
-    """Returns (repertoire_size, repertoire_diversity) for a given adjacency matrix and threshold T."""
+# FORGOT WEIGHTS! 
+# def repertoire(A, T: float) -> tuple[float, float]:
+#     """Returns (repertoire_size, repertoire_diversity) for a given adjacency matrix and threshold T."""
 
-    # Spectral normalization. I guess this is NOT needed here, but for evaluation - so I dediced to add it here, too, just in case? 
-    eval, _ = np.linalg.eig(A)  
-    A /= np.nanmax(np.abs(eval))
+#     # Spectral normalization. I guess this is NOT needed here, but for evaluation - so I dediced to add it here, too, just in case? 
+#     eval, _ = np.linalg.eig(A)  
+#     A /= np.nanmax(np.abs(eval))
 
-    state = simulate_cellular_automaton(W=A, sim_time=1000, T=T)
-    state_binned = bin_state(state, bin_size=1)
-    rs, rd = get_repertoire_metrics(state_binned)
-    return {"size": rs, "diversity": rd}
+#     state = simulate_cellular_automaton(W=A, sim_time=1000, T=T)
+#     state_binned = bin_state(state, bin_size=1)
+#     rs, rd = get_repertoire_metrics(state_binned)
+#     return {"size": rs, "diversity": rd}
 
 
+# FORGOT WEIGHTS!
+# def repertoire_sweep(A, T_vec=np.logspace(-2, 0, 50)) -> dict:
+#     """
+#     Sweeps over T values and returns T, repertoire size, and repertoire diversity.
+#     Returns the results for all T values, plus the T and metrics at peak repertoire size.
+#     """
+#     # Spectral normalisation
+#     eval, _ = np.linalg.eig(A)
+#     A = A / np.nanmax(np.abs(eval))
 
-def repertoire_sweep(A, T_vec=np.logspace(-2, 0, 50)) -> dict:
-    """
-    Sweeps over T values and returns T, repertoire size, and repertoire diversity.
-    Returns the results for all T values, plus the T and metrics at peak repertoire size.
-    """
-    # Spectral normalisation
-    eval, _ = np.linalg.eig(A)
-    A = A / np.nanmax(np.abs(eval))
+#     sizes, diversities = [], []
 
-    sizes, diversities = [], []
+#     for T in T_vec:
+#         state = simulate_cellular_automaton(W=A, sim_time=1000, T=T)
+#         state_binned = bin_state(state, bin_size=1)
+#         rs, rd = get_repertoire_metrics(state_binned)
+#         sizes.append(rs)
+#         diversities.append(rd)
 
-    for T in T_vec:
-        state = simulate_cellular_automaton(W=A, sim_time=1000, T=T)
-        state_binned = bin_state(state, bin_size=1)
-        rs, rd = get_repertoire_metrics(state_binned)
-        sizes.append(rs)
-        diversities.append(rd)
+#     sizes = np.array(sizes)
+#     diversities = np.array(diversities)
 
-    sizes = np.array(sizes)
-    diversities = np.array(diversities)
+#     # Find critical T as the peak repertoire size
+#     peak_idx = np.argmax(sizes)
 
-    # Find critical T as the peak repertoire size
-    peak_idx = np.argmax(sizes)
-
-    return {
-        "T_vec":          T_vec,
-        "sizes":          sizes,
-        "diversities":    diversities,
-        "T_critical":     T_vec[peak_idx],
-        "size_critical":  sizes[peak_idx],
-        "diversity_critical": diversities[peak_idx],
-    }
+#     return {
+#         "T_vec":          T_vec,
+#         "sizes":          sizes,
+#         "diversities":    diversities,
+#         "T_critical":     T_vec[peak_idx],
+#         "size_critical":  sizes[peak_idx],
+#         "diversity_critical": diversities[peak_idx],
+#     }
     
     
 
@@ -381,6 +382,7 @@ def repertoire_sweep_weighted_by_distances(A, D, T_vec=np.logspace(-2, 0, 50)) -
     Returns the results for all T values, plus the T and metrics at peak repertoire size.
     """
 
+    # Distance weighting
     A = A / (D + 1e-8)  # Avoid division by zero
     
     # Spectral normalisation

@@ -64,6 +64,67 @@ def alternative_evaluate_mc(W,
     return mc_score, np.array(r2_scores)
 
 
+
+
+
+def evaluate_nonlinear_capacity(W, 
+                                h_params):
+    """Evaluates the quadratic MC = sum of R² for x(t-k)² targets, of a given reservoir matrix W."""
+    
+    train_len = h_params["train_len"]
+    test_len = h_params["test_len"]
+    n_lags = h_params["n_lags"]
+    
+    # 1. Generate data for the MC task
+    random_sequence = np.random.uniform(-0.5, 0.5, train_len + test_len)
+    X = random_sequence.reshape(-1, 1)
+    y = np.zeros((len(X), n_lags))
+    for i in range(1, n_lags + 1):
+        y[i:, i - 1] = X[:-i, 0]
+    
+    X_train, X_test = X[:train_len], X[train_len:]
+    
+    # NEW: Use the quadratic targets for the nonlinear memory capacity evaluation
+    y_train, y_test = y[:train_len]**2, y[train_len:]**2
+    # y_train, y_test = y[:train_len], y[train_len:]
+
+    W = np.array(W, dtype=np.float32)
+     
+    # 2. Create and train the ESN
+    if h_params: 
+        esn = echoes.ESNRegressor(
+            W=W, 
+            spectral_radius=float(h_params["spectral_radius"]), 
+            input_scaling=float(h_params["input_scaling"]),  # tends to be string (like "1e-5")
+            leak_rate=h_params["leak_rate"], 
+            bias=h_params["bias"],
+            regression_method=h_params["regression_method"],
+            random_state=h_params["random_state"]
+        )
+    else: 
+        Warning("Oh no, no h_params were given to the ESNRegressor in alternative_test_memory_capacity_weighted.py. ")
+    
+    X_train = np.array(X_train, dtype=np.float32)
+    y_train = np.array(y_train, dtype=np.float32)
+    X_test = np.array(X_test, dtype=np.float32)
+    y_test = np.array(y_test, dtype=np.float32)
+    esn.fit(X_train, y_train)
+    
+    y_pred = esn.predict(X_test)
+
+    # 3. Calculate the MC score
+    mc_score = 0
+    r2_scores = []
+    for i in range(n_lags):
+        # Discard initial transient phase from test data for stable correlation
+        corr, _ = pearsonr(y_test[h_params["n_transient"]:, i], y_pred[h_params["n_transient"]:, i]) # Discard initial transient. (statistic, p_value)
+        r2_scores.append(corr**2)
+        mc_score += corr**2
+        
+    return mc_score, np.array(r2_scores)
+
+
+
 # This one is the main function to call for evaluating the memory capacity from a connectome. It will call the "alternative_evaluate_mc" function multiple times and then calculate the mean and std of the MC values across runs.
 def evaluate_memory_capacity_from_connectome(connectome: np.ndarray, 
                                              h_params: Optional[Dict[str, Any]] = None,
@@ -114,6 +175,48 @@ def evaluate_memory_capacity_from_connectome(connectome: np.ndarray,
         if calculate_info_dynamics:
             info_dyn_results = _calculate_information_dynamics(concatenated_states)
             mc_result_dict.update(info_dyn_results)
+
+    return mc_result_dict
+    
+    
+    
+    
+
+
+# This one is the main function to call for evaluating the memory capacity from a connectome. It will call the "alternative_evaluate_mc" function multiple times and then calculate the mean and std of the MC values across runs.
+def evaluate_nonlinear_capacity_from_connectome(connectome: np.ndarray, 
+                                             h_params: Optional[Dict[str, Any]] = None,
+                                             
+                                             calculate_criticality:  Optional[bool] = False,
+                                             calculate_info_dynamics: Optional[bool] = False,              
+ ) -> Dict[str, float]:
+    
+    mc_values: List[float] = []
+    all_states_for_metrics: List[np.ndarray] = []   
+    mc_values_indiv_array = []
+
+    # Loop through the number of runs
+    for _ in range(h_params["n_runs"]):
+        
+        (mc_mean, individual_mc_values) = evaluate_nonlinear_capacity(connectome, 
+                                                                #   n_lags=n_lags, 
+                                                                #   train_len=train_len, 
+                                                                #   test_len=test_len,
+                                                                  h_params=h_params, 
+                                                                  )  
+        mc_values.append(mc_mean) # which is only the mean value
+        mc_values_indiv_array.append(np.array(individual_mc_values)) # 
+        
+    # Get the MC for different lags 
+    mc_values = np.array(mc_values)
+    mc_values_for_indiv_lags = np.mean(np.array(mc_values_indiv_array), axis=0) 
+    
+    mc_result_dict = {
+            "mc_mean": float(np.mean(mc_values)),
+            "mc_std": float(np.std(mc_values)), 
+            "mc_values_for_indiv_lags": mc_values_for_indiv_lags,
+            "h_params": h_params
+            }
 
     return mc_result_dict
     

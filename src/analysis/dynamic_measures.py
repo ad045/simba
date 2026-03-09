@@ -38,54 +38,12 @@ def calculate_diffusion_efficiency(A):
     
     if n_components > 1:
         print(f"Warning: Network has {n_components} strongly connected components")
-        # Return NaN for disconnected networks
-        return 0 #  np.nan
-        # Option 2: Only compute on largest component
-        # largest_component = np.argmax(np.bincount(labels))
-        # mask = labels == largest_component
-        # A = A[np.ix_(mask, mask)]
+        return np.nan
         
     diff_efficiency_coeff, _ = diffusion_efficiency(A)
     return diff_efficiency_coeff
 
 
-# def average_controllability(A):
-#     return average_controllability(A)
- 
- 
-# def average_controllability(A): # Not sure if this works correctly??
-#     """
-#     Average controllability from Gu et al. 2015
-#     Formula: AC_i = Tr(W_i) where W_i = ∫_0^∞ e^(At) B_i B_i^T e^(A^T t) dt
-#     Solved via Lyapunov equation: A W_i + W_i A^T + B_i B_i^T = 0
-#     """
-#     from scipy.linalg import solve_continuous_lyapunov
-    
-#     N = A.shape[0]
-#     controllability = np.zeros(N)
-    
-#     for i in range(N):
-#         # B_i is a column vector with 1 at position i, 0 elsewhere
-#         B_i = np.zeros((N, 1))
-#         B_i[i, 0] = 1
-        
-#         # Solve Lyapunov equation: A W + W A^T + B B^T = 0
-#         try:
-#             W_i = solve_continuous_lyapunov(A, -B_i @ B_i.T)
-#             controllability[i] = np.trace(W_i)
-#         except:
-#             controllability[i] = np.nan
-    
-#     return controllability
- 
- 
-#  "spectral_radius", 
-#             # kernel_rank",
-#             "spectral_gap",
-#             "diffusion_efficiency",
-#             "average_controllability",
-# "calculate_nct_energies"
-# "calculate_nct_control"
 
 
 from nctpy.utils import matrix_normalization
@@ -98,16 +56,9 @@ def calculate_nct_control(A,
                       ):
     system = 'discrete'  # 'continuous' or 'discrete'
     A_norm = matrix_normalization(A=A, c=1, system=system)
-    # n_nodes = A.shape[0]
-    # U = np.zeros((n_nodes, T))  # the input to the system
-    # U[:,0] = 1  # impulse, 1 input at the first time point delivered to all nodes. "0" (or 15 or anything) is the point when the stimulus is given
-    # B = np.eye(n_nodes)  # uniform full control set
-    # x0 = np.ones((n_nodes, 1))  # initial state, all nodes set to 1 unit of neural activity
-    # x = sim_state_eq(A_norm=A_norm, B=B, x0=x0, U=U, system=system)
 
     ac = ave_control(A_norm=A_norm, system=system)
     n_90 = np.sum(np.cumsum(np.sort(ac)[::-1]) <= 0.9 * sum(ac)) # + 1
-    # print('number of nodes accounting for 90% of total control =', n_90)   
     n_50 = np.sum(np.cumsum(np.sort(ac)[::-1]) <= 0.5 * sum(ac)) # + 1
     n_10 = np.sum(np.cumsum(np.sort(ac)[::-1]) <= 0.1 * sum(ac)) # + 1
 
@@ -163,12 +114,8 @@ from src.analysis.from_francisco import evaluate_network_2
 
 def calculate_metastability(A): 
 
-    # data_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/01_connectomes/00_connectomes_50.npy"
-    # c = np.load(data_path)[0]
-
-    meta_global, meta_local, _ = evaluate_network_2(W=A)  # takes like 6.6 seconds... 
-    # print("META LOCAL: ", meta_local)
-    # print("META LOCAL MEAN: ", np.mean(meta_local))
+    meta_global, meta_local, _ = evaluate_network_2(W=A)  
+    
     return{
         "global": meta_global, 
         "local_mean": np.nanmean(meta_local), 
@@ -206,37 +153,6 @@ def compute_synchronizability_eigenratio(A): # Claude
 def algebraic_connectivity_nx(adjacency_matrix): # Claude
     G = nx.from_numpy_array(adjacency_matrix)
     return nx.algebraic_connectivity(G)
-
-
-# def kuramoto_synchronization(adjacency_matrix, n_steps=1000): # Claude
-#     """
-#     Simulate Kuramoto oscillators on the network
-#     Returns: final order parameter (0=desynchronized, 1=synchronized)
-#     """
-#     n_nodes = adjacency_matrix.shape[0]
-    
-#     # Initialize random phases
-#     theta = np.random.uniform(0, 2*np.pi, n_nodes)
-#     omega = np.random.normal(0, 0.1, n_nodes)  # Natural frequencies
-    
-#     # Coupling strength
-#     K = 1.0
-#     dt = 0.01
-    
-#     # Simulate
-#     for _ in range(n_steps):
-#         # Kuramoto equation
-#         coupling = np.zeros(n_nodes)
-#         for i in range(n_nodes):
-#             for j in range(n_nodes):
-#                 coupling[i] += adjacency_matrix[i,j] * np.sin(theta[j] - theta[i])
-        
-#         theta += dt * (omega + K * coupling / n_nodes)
-    
-#     # Order parameter
-#     r = np.abs(np.mean(np.exp(1j * theta)))
-#     return r
-
 
 
 def kuramoto_synchronization(A, coupling=1.0, dt=0.01, T=10.0, seed=42): # wrapper by claude
@@ -318,70 +234,6 @@ def kuramoto_averaged_synchronization(A, coupling=1.0, dt=0.01, T=20.0,  # claud
         "r_mean_se": float(np.std(r_means) / np.sqrt(n_trials)),  # standard error
         "r_std_se": float(np.std(r_stds) / np.sqrt(n_trials)),    # SE of metastability
     }
-    
-# def community_synchronization_vulnerability(adjacency_matrix): # Claude
-#     """
-#     Measures how easily synchronization can spread between communities
-#     High = cascades easily (epilepsy risk?)
-    
-#     This function:
-#     1. Detects communities using the Louvain algorithm
-#     2. Calculates within-community and between-community coupling strengths
-#     3. Returns vulnerability score (between/within ratio)
-    
-#     Parameters:
-#     -----------
-#     adjacency_matrix : np.ndarray
-#         Network adjacency matrix
-    
-#     Returns:
-#     --------
-#     vulnerability : float
-#         Ratio of between-community to within-community coupling
-#     communities : list of lists
-#         Detected communities (node indices)
-#     """
-#     import networkx as nx
-#     # import nx.community as community_louvain
-#     from networkx.algorithms.community.louvain import louvain_communities # louvain_partitions
-    
-#     # Create graph from adjacency matrix
-#     G = nx.from_numpy_array(adjacency_matrix)
-    
-#     # Detect communities using Louvain algorithm
-#     communities = louvain_communities(G) # louvain_partitions(G)
-    
-#     # Convert partition dict to list of communities
-#     # num_communities = max(partition.values()) + 1
-#     # communities = [[] for _ in range(num_communities)]
-#     # for node, comm_id in partition.items():
-#     #     communities[comm_id].append(node)
-    
-#     # Within-community coupling strength
-#     within_strength = []
-#     # Between-community coupling strength  
-#     between_strength = []
-    
-#     communities_as_lists = [list(c) for c in communities]
-#     for c in communities_as_lists: 
-#         for i, comm_i in enumerate(communities_as_lists):
-#             for j, comm_j in enumerate(communities_as_lists):
-#                 # comm_i_2 = [c for c in comm_i]
-#                 # comm_j_2 = [c for c in comm_j]
-#                 coupling = adjacency_matrix[np.ix_(comm_i, comm_j)].sum()
-
-#             if i == j:
-#                 within_strength.append(coupling)
-#             else:
-#                 between_strength.append(coupling)
-    
-#     # Vulnerability score
-#     vulnerability = np.mean(between_strength) / np.mean(within_strength)
-    
-#     # return # vulnerability, communities
-#     return {"vulnerability": vulnerability, "n_communities": len(communities)}
-
-
 
 def community_synchronization_vulnerability(A): # claude: corrected. 
     """

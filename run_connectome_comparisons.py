@@ -843,7 +843,7 @@ if __name__ == "__main__":
         # "f1", # runs!
         # "hamming", # runs!
         # "portrait", # runs!
-        # "delta_con", # runs!
+        "delta_con", # runs!
         # # "delta_con_distance", # runs! 
         # "spectral_distance_adjacency", # runs! 
         # "spectral_distance_norm_laplacian", # runs!
@@ -859,7 +859,7 @@ if __name__ == "__main__":
         # "communicability_mse", # runs, but unsure if it generated any errors? 
         # "communicability_jsd", # runs, but unsure if it generated any errors? 
         # "communicability_corr", # runs, but unsure if it generated any errors? 
-        "frobenius", # runs!
+        # "frobenius", # runs!
         # "jaccard", # runs!
         # "energy", # runs! 
         
