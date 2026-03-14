@@ -253,3 +253,5 @@ output/
 
 *-workspace
 
+*call.json
+*multiscroll.config.json

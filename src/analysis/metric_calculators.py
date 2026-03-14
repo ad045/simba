@@ -9,6 +9,16 @@ import signal
 import sys
 import gc  # Garbage collector
 
+import numpy as np
+from typing import List, Dict, Optional, Any
+
+
+from src.ESNs.utils_math import _entropy, _calculate_information_dynamics, _calculate_branching_ratio
+import echoes
+import numpy as np
+from scipy.stats import pearsonr
+
+
 from abc import ABC, abstractmethod   
 
 from src.analysis.kayson_utils import (compute_structural_complexity, 
@@ -56,6 +66,8 @@ from src.analysis.dynamic_measures import (
                                             participation_coefficient, 
                                             departure_from_normality_schur
 )
+
+import src.analysis.utils_kayson_damicelli as ut
 
      
 from src.analysis.computational_measures import (
@@ -336,10 +348,84 @@ class ComputationMetricCalculator(MetricCalculator):
             "multifunctionality",
             "computational_capacity",
             "mc_original", "mc_nonlinear_original", 
-            "repertoire", "repertoire_sweep", "repertoire_sweep_weighted_by_distances"
+            "mc_lin_cut40", 
+            "mc_nonlin_cut40",
+            "repertoire", "repertoire_sweep", "repertoire_sweep_weighted_by_distances", 
         }
         
+        # Load the esn data for the memory capacity evaluation. This is currently hardcoded, but it could be made more flexible if needed. 
+        # self.X_train, self.X_test, self.y_train_linear, self.y_test_linear, self.y_train_nonlinear, self.y_test_nonlinear = self._load_esn_data()
+        self.X_train_cut40, self.X_test_cut40, self.y_train_linear_cut40, self.y_test_linear_cut40, self.y_train_nonlinear_cut40, self.y_test_nonlinear_cut40 = self._load_esn_data()
+
+
+    def _load_esn_data(self):
+        # Load the data for the memory capacity evaluation. This is currently hardcoded, but it could be made more flexible if needed. 
+        base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/tasks/esn")
+        X_train = np.load(base_path / "X_train.npy")
+        X_test = np.load(base_path / "X_test.npy")
+        y_train_linear = np.load(base_path / "y_train_linear.npy")
+        y_test_linear = np.load(base_path / "y_test_linear.npy")
+        y_train_nonlinear = np.load(base_path / "y_train_nonlinear.npy")
+        y_test_nonlinear = np.load(base_path / "y_test_nonlinear.npy")
         
+        # cut40 version:
+        X_train_cut40 = np.load(base_path / "X_train_cut40.npy")
+        X_test_cut40 = np.load(base_path / "X_test_cut40.npy")
+        y_train_linear_cut40 = np.load(base_path / "y_train_linear_cut40.npy")
+        y_test_linear_cut40 = np.load(base_path / "y_test_linear_cut40.npy")
+        y_train_nonlinear_cut40 = np.load(base_path / "y_train_nonlinear_cut40.npy")
+        y_test_nonlinear_cut40 = np.load(base_path / "y_test_nonlinear_cut40.npy")
+
+        # return X_train_cut40, X_test_cut40, y_train_linear_cut40, y_test_linear_cut40, y_train_nonlinear_cut40, y_test_nonlinear_cut40
+        return X_train_cut40, X_test_cut40, y_train_linear_cut40, y_test_linear_cut40, y_train_nonlinear_cut40, y_test_nonlinear_cut40
+
+
+    def evaluate_esn_memory_capacity(self, h_params, X_train, X_test, y_train, y_test):
+        
+        from scipy.stats import pearsonr
+        
+        for run in range(h_params["n_runs"]):
+            
+            # h_params = {
+            #     "spectral_radius": 0.99, # default
+            #     "leak_rate": 1, # default. 0.3, #3, # 5, # 1.0,
+            #     "n_lags": 40, 
+            #     # "train_len": 5000,
+            #     # "test_len": 1000,
+            #     "n_runs": 10, 
+            #     "input_scaling": 1e-5, 
+            #     "regression_method": "pinv", # ridge", # pinv",
+            #     "n_transient": 100, # 100,
+            
+            #     "bias": 1, # default. 0.5, # 1.0,
+            #     "random_state": None
+            # }
+            
+            # Initialize empty results array for this run
+            results = np.zeros((h_params["n_runs"], 1))  # Assuming 1 subject for now, can be expanded to more subjects if needed
+            meaned_results = [] 
+
+            esn = echoes.ESNRegressor(W=np.array(self.A, dtype=np.float64), # W=self.A, 
+                               spectral_radius=h_params["spectral_radius"],
+                               input_scaling=h_params["input_scaling"],
+                               leak_rate=h_params["leak_rate"],
+                               bias=h_params["bias"],
+                               regression_method=h_params["regression_method"],
+                               n_transient=h_params["n_transient"],
+                               random_state=h_params["random_state"]
+                               )
+            y_pred = esn.fit(X_train, y_train).predict(X_test)
+
+            # Evaluates the MC score: evaluated[1] is the sum of the R^2 values across all lags, and evaluated[0] is the list of R^2 values for each individual lag.
+            evaluated = ut.forgetting(y_test[h_params["n_transient"]:], y_pred[h_params["n_transient"]:])
+
+            return {
+                "mc_mean": evaluated[1],
+                "mc_std": np.std(evaluated[0]), 
+                "mc_values_for_indiv_lags": evaluated[0]
+            }
+            
+
     def calculate_metric(self, metric_name):
         # [ ] Memory capacity
 
@@ -366,34 +452,64 @@ class ComputationMetricCalculator(MetricCalculator):
 
         elif metric_name == "repertoire_sweep_weighted_by_distances": 
             return repertoire_sweep_weighted_by_distances(self.A, self.distance_matrix) # np.logspace(-2, 0, 201), for denser thing
+        
         elif metric_name == "mc_original" or metric_name == "mc_nonlinear_original":
             
             # TODO: Get hyperparameters for the memory capacity evaluation. These can be adjusted as needed, but for now I'm using the same ones as in the original script.
             # Currently just hardcoded 
+            # h_params = {
+            #     "spectral_radius": 0.9,
+            #     "n_lags": 50,
+            #     "train_len": 5000,
+            #     "test_len": 1000,
+            #     "n_runs": 50,
+            #     "input_scaling": 1.0,
+            #     "regression_method": "pinv",
+            #     "n_transient": 0, # 100,
+            #     "leak_rate": 1.0,
+            #     "bias": 0.0,
+            #     "random_state": 42
+            # }
+            
+            from scipy.stats import pearsonr
+            
             h_params = {
-                "spectral_radius": 0.9,
-                "n_lags": 50,
-                "train_len": 5000,
-                "test_len": 1000,
-                "n_runs": 50,
-                "input_scaling": 1.0,
-                "regression_method": "pinv",
-                "n_transient": 100,
-                "leak_rate": 1.0,
-                "bias": 0.0,
-                "random_state": 42
+                "spectral_radius": 0.99, # 0.9
+                "n_lags": 40, 
+                # "train_len": 5000,
+                # "test_len": 1000,
+                "n_runs": 10, 
+                "input_scaling": 1e-5, 
+                "regression_method": "pinv", # ridge", # pinv",
+                "n_transient": 100, # 100,
+                "leak_rate": 1, # default. 0.3, #3, # 5, # 1.0,
+                "bias": 1, # default. 0.5, # 1.0,
+                "random_state": None
             }
             
             if metric_name == "mc_original": 
-                result = evaluate_memory_capacity_from_connectome(np.float64(self.A), h_params=h_params)
+                X_train = self.X_train
+                X_test = self.X_test
+                y_train = self.y_train_linear
+                y_test = self.y_test_linear
+                
+                result = self.evaluate_esn_memory_capacity(h_params=h_params, 
+                                                           X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
                 
             elif metric_name == "mc_nonlinear_original":
-                result = evaluate_nonlinear_capacity_from_connectome(np.float64(self.A), h_params=h_params)
+                X_train = self.X_train
+                X_test = self.X_test
+                y_train = self.y_train_nonlinear
+                y_test = self.y_test_nonlinear
+
+                result = self.evaluate_esn_memory_capacity(h_params=h_params, 
+                                                           X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
 
             # Flatten per-lag MC values into individual keys (mc_0, mc_1, ..., mc_49)
             flat_result = {
                 "mc_mean": result["mc_mean"],
                 "mc_std": result["mc_std"],
+                # "mc_values_for_indiv_lags": result["mc_values_for_indiv_lags"]
             }
             
             if metric_name == "mc_original": 
@@ -402,7 +518,145 @@ class ComputationMetricCalculator(MetricCalculator):
                     flat_result[f"mc_{i}"] = float(val)
 
             return flat_result
+        
 
+
+        elif metric_name == "mc_lin_cut40" or metric_name == "mc_nonlin_cut40":
+
+            # TODO: Get hyperparameters for the memory capacity evaluation. These can be adjusted as needed, but for now I'm using the same ones as in the original script.
+            # Currently just hardcoded 
+            # h_params = {
+            #     "spectral_radius": 0.9,
+            #     "n_lags": 50,
+            #     "train_len": 5000,
+            #     "test_len": 1000,
+            #     "n_runs": 50,
+            #     "input_scaling": 1.0,
+            #     "regression_method": "pinv",
+            #     "n_transient": 0, # 100,
+            #     "leak_rate": 1.0,
+            #     "bias": 0.0,
+            #     "random_state": 42
+            # }
+            
+            from scipy.stats import pearsonr
+            
+            h_params = {
+                "spectral_radius": 0.95, # 0.9
+                "n_lags": 40, 
+                # "train_len": 5000,
+                # "test_len": 1000,
+                "n_runs": 1000, 
+                "input_scaling": 0.1, # 1e-5, 
+                "regression_method": "pinv", # ridge", # pinv",
+                "n_transient": 100, # 100,
+                "leak_rate": 1, # default. 0.3, #3, # 5, # 1.0,
+                "bias": 1, # default. 
+                "random_state": None
+            }
+            
+            if metric_name == "mc_lin_cut40": 
+                X_train = self.X_train_cut40
+                X_test = self.X_test_cut40
+                y_train = self.y_train_linear_cut40
+                y_test = self.y_test_linear_cut40
+
+                result = self.evaluate_esn_memory_capacity(h_params=h_params, 
+                                                           X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+
+            elif metric_name == "mc_nonlin_cut40":
+                X_train = self.X_train_cut40
+                X_test = self.X_test_cut40
+                y_train = self.y_train_nonlinear_cut40
+                y_test = self.y_test_nonlinear_cut40
+
+                result = self.evaluate_esn_memory_capacity(h_params=h_params, 
+                                                           X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+
+            # Flatten per-lag MC values into individual keys (mc_0, mc_1, ..., mc_49)
+            flat_result = {
+                "mc_mean": result["mc_mean"],
+                "mc_std": result["mc_std"],
+                # "mc_values_for_indiv_lags": result["mc_values_for_indiv_lags"]
+            }
+            
+            if metric_name == "mc_lin_cut40": 
+                mc_per_lag = result.get("mc_values_for_indiv_lags", [])
+                for i, val in enumerate(mc_per_lag):
+                    flat_result[f"mc_{i}"] = float(val)
+
+            return flat_result
+        
+        
+
+        elif metric_name == "mc_input_scaling_0_1" or metric_name == "mc_nonlinear_input_scaling_0_1":
+            
+            # TODO: Get hyperparameters for the memory capacity evaluation. These can be adjusted as needed, but for now I'm using the same ones as in the original script.
+            # Currently just hardcoded 
+            # h_params = {
+            #     "spectral_radius": 0.9,
+            #     "n_lags": 50,
+            #     "train_len": 5000,
+            #     "test_len": 1000,
+            #     "n_runs": 50,
+            #     "input_scaling": 1.0,
+            #     "regression_method": "pinv",
+            #     "n_transient": 0, # 100,
+            #     "leak_rate": 1.0,
+            #     "bias": 0.0,
+            #     "random_state": 42
+            # }
+            
+            from scipy.stats import pearsonr
+            
+            h_params = {
+                "spectral_radius": 0.9, # 0.9
+                "n_lags": 40, 
+                # "train_len": 5000,
+                # "test_len": 1000,
+                "n_runs": 500, # 10, 
+                "input_scaling": 0.1, #  1e-5, 
+                "regression_method": "pinv", # ridge", # pinv",
+                "n_transient": 100, # 100,
+                "leak_rate": 0.3, # default. 0.3, #3, # 5, # 1.0,
+                "bias": 0, # 1, # default. 0.5, # 1.0,
+                "random_state": None
+            }
+            
+            if metric_name == "mc_input_scaling_0_1": # "mc_original": 
+                X_train = self.X_train
+                X_test = self.X_test
+                y_train = self.y_train_linear
+                y_test = self.y_test_linear
+                
+                result = self.evaluate_esn_memory_capacity(h_params=h_params, 
+                                                           X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+
+            elif metric_name == "mc_nonlinear_input_scaling_0_1": # "mc_nonlinear_original":
+                X_train = self.X_train
+                X_test = self.X_test
+                y_train = self.y_train_nonlinear
+                y_test = self.y_test_nonlinear
+
+                result = self.evaluate_esn_memory_capacity(h_params=h_params, 
+                                                           X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+
+            # Flatten per-lag MC values into individual keys (mc_0, mc_1, ..., mc_49)
+            flat_result = {
+                "mc_mean": result["mc_mean"],
+                "mc_std": result["mc_std"],
+                # "mc_values_for_indiv_lags": result["mc_values_for_indiv_lags"]
+            }
+            
+            if metric_name == "mc_input_scaling_0_1": 
+                mc_per_lag = result.get("mc_values_for_indiv_lags", [])
+                for i, val in enumerate(mc_per_lag):
+                    flat_result[f"mc_{i}"] = float(val)
+
+            return flat_result
+        
+        
+        
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 

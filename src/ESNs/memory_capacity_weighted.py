@@ -22,11 +22,21 @@ def alternative_evaluate_mc(W,
     random_sequence = np.random.uniform(-0.5, 0.5, train_len + test_len)
     X = random_sequence.reshape(-1, 1)
     y = np.zeros((len(X), n_lags))
-    for i in range(1, n_lags + 1):
-        y[i:, i - 1] = X[:-i, 0]
+    # for i in range(1, n_lags + 1):
+    #     y[i:, i - 1] = X[:-i, 0]
     
-    X_train, X_test = X[:train_len], X[train_len:]
-    y_train, y_test = y[:train_len], y[train_len:]
+    
+    
+    for i in range(1, n_lags + 1):
+        # y[i:, i - 1] = X[:-i, 0]
+        y[:-i, i-1] = X[i:, 0]
+    
+    # POTENTIAL BUG FIX ?
+    X = X[:-n_lags,:]          
+    y = y[:-n_lags,:]
+
+    X_train, X_test = X[:train_len,:], X[train_len:,:]
+    y_train, y_test = y[:train_len,:], y[train_len:,:]
 
     W = np.array(W, dtype=np.float32)
      
@@ -76,12 +86,17 @@ def evaluate_nonlinear_capacity(W,
     n_lags = h_params["n_lags"]
     
     # 1. Generate data for the MC task
-    random_sequence = np.random.uniform(-0.5, 0.5, train_len + test_len)
+    random_sequence = np.random.uniform(0, 1, train_len + test_len) # -0.5, 0.5, train_len + test_len)
     X = random_sequence.reshape(-1, 1)
     y = np.zeros((len(X), n_lags))
     for i in range(1, n_lags + 1):
-        y[i:, i - 1] = X[:-i, 0]
+        # y[i:, i - 1] = X[:-i, 0]
+        y[:-i, i-1] = X[i:, 0]
     
+    # POTENTIAL BUG FIX ?
+    X = X[:-n_lags]          
+    y = y[:-n_lags]
+
     X_train, X_test = X[:train_len], X[train_len:]
     
     # NEW: Use the quadratic targets for the nonlinear memory capacity evaluation
@@ -185,10 +200,10 @@ def evaluate_memory_capacity_from_connectome(connectome: np.ndarray,
 
 # This one is the main function to call for evaluating the memory capacity from a connectome. It will call the "alternative_evaluate_mc" function multiple times and then calculate the mean and std of the MC values across runs.
 def evaluate_nonlinear_capacity_from_connectome(connectome: np.ndarray, 
-                                             h_params: Optional[Dict[str, Any]] = None,
-                                             
-                                             calculate_criticality:  Optional[bool] = False,
-                                             calculate_info_dynamics: Optional[bool] = False,              
+                                                h_params: Optional[Dict[str, Any]] = None,
+                                                
+                                                calculate_criticality:  Optional[bool] = False,
+                                                calculate_info_dynamics: Optional[bool] = False,              
  ) -> Dict[str, float]:
     
     mc_values: List[float] = []
