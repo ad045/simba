@@ -82,7 +82,10 @@ from src.ESNs.memory_capacity_weighted import evaluate_memory_capacity_from_conn
 
 from src.analysis.my_attempt_at_metastability import calculate_metastability as calculate_metastability_2
 
-from src.analysis.computational_capacity_measures import computational_capacity
+from src.analysis.computational_capacity_measures import (computational_capacity, 
+                                                            evaluate_memory_capacities_notebook, 
+                                                            evaluate_memory_capacities_notebook_damicelli,
+                                                            evaluate_supplementary_kayson)
 
 from src.analysis.further_measures import (ollivier_ricci_curvature, 
                                            rich_club_coefficient, 
@@ -347,6 +350,10 @@ class ComputationMetricCalculator(MetricCalculator):
             "effective_dimensionality",
             "multifunctionality",
             "computational_capacity",
+            "computational_capacity",
+            "computational_capacity_notebook",
+            "computational_capacity_notebook_damicelli",
+            "computational_capacity_supplementary_kayson",
             "mc_original", "mc_nonlinear_original", 
             "mc_lin_cut40", 
             "mc_nonlin_cut40",
@@ -355,8 +362,29 @@ class ComputationMetricCalculator(MetricCalculator):
         
         # Load the esn data for the memory capacity evaluation. This is currently hardcoded, but it could be made more flexible if needed. 
         # self.X_train, self.X_test, self.y_train_linear, self.y_test_linear, self.y_train_nonlinear, self.y_test_nonlinear = self._load_esn_data()
-        self.X_train_cut40, self.X_test_cut40, self.y_train_linear_cut40, self.y_test_linear_cut40, self.y_train_nonlinear_cut40, self.y_test_nonlinear_cut40 = self._load_esn_data()
+        self.X_train_cut40, self.X_test_cut40, self.y_train_linear_cut40, self.y_test_linear_cut40, self.y_train_nonlinear_cut40, self.y_test_nonlinear_cut40 = self._load_esn_data_cut40()
+        self.X_train, self.X_test, self.y_train_linear, self.y_test_linear, self.y_train_nonlinear, self.y_test_nonlinear = self._load_esn_data()
 
+
+    def _load_esn_data_cut40(self):
+        # Load the data for the memory capacity evaluation. This is currently hardcoded, but it could be made more flexible if needed. 
+        base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/tasks/esn")
+        # X_train = np.load(base_path / "X_train.npy")
+        # X_test = np.load(base_path / "X_test.npy")
+        # y_train_linear = np.load(base_path / "y_train_linear.npy")
+        # y_test_linear = np.load(base_path / "y_test_linear.npy")
+        # y_train_nonlinear = np.load(base_path / "y_train_nonlinear.npy")
+        # y_test_nonlinear = np.load(base_path / "y_test_nonlinear.npy")
+        
+        # cut40 version:
+        X_train_cut40 = np.load(base_path / "X_train_cut40.npy")
+        X_test_cut40 = np.load(base_path / "X_test_cut40.npy")
+        y_train_linear_cut40 = np.load(base_path / "y_train_linear_cut40.npy")
+        y_test_linear_cut40 = np.load(base_path / "y_test_linear_cut40.npy")
+        y_train_nonlinear_cut40 = np.load(base_path / "y_train_nonlinear_cut40.npy")
+        y_test_nonlinear_cut40 = np.load(base_path / "y_test_nonlinear_cut40.npy")
+
+        return X_train_cut40, X_test_cut40, y_train_linear_cut40, y_test_linear_cut40, y_train_nonlinear_cut40, y_test_nonlinear_cut40
 
     def _load_esn_data(self):
         # Load the data for the memory capacity evaluation. This is currently hardcoded, but it could be made more flexible if needed. 
@@ -369,15 +397,15 @@ class ComputationMetricCalculator(MetricCalculator):
         y_test_nonlinear = np.load(base_path / "y_test_nonlinear.npy")
         
         # cut40 version:
-        X_train_cut40 = np.load(base_path / "X_train_cut40.npy")
-        X_test_cut40 = np.load(base_path / "X_test_cut40.npy")
-        y_train_linear_cut40 = np.load(base_path / "y_train_linear_cut40.npy")
-        y_test_linear_cut40 = np.load(base_path / "y_test_linear_cut40.npy")
-        y_train_nonlinear_cut40 = np.load(base_path / "y_train_nonlinear_cut40.npy")
-        y_test_nonlinear_cut40 = np.load(base_path / "y_test_nonlinear_cut40.npy")
+        # X_train_cut40 = np.load(base_path / "X_train_cut40.npy")
+        # X_test_cut40 = np.load(base_path / "X_test_cut40.npy")
+        # y_train_linear_cut40 = np.load(base_path / "y_train_linear_cut40.npy")
+        # y_test_linear_cut40 = np.load(base_path / "y_test_linear_cut40.npy")
+        # y_train_nonlinear_cut40 = np.load(base_path / "y_train_nonlinear_cut40.npy")
+        # y_test_nonlinear_cut40 = np.load(base_path / "y_test_nonlinear_cut40.npy")
 
-        # return X_train_cut40, X_test_cut40, y_train_linear_cut40, y_test_linear_cut40, y_train_nonlinear_cut40, y_test_nonlinear_cut40
-        return X_train_cut40, X_test_cut40, y_train_linear_cut40, y_test_linear_cut40, y_train_nonlinear_cut40, y_test_nonlinear_cut40
+        return X_train, X_test, y_train_linear, y_test_linear, y_train_nonlinear, y_test_nonlinear
+
 
 
     def evaluate_esn_memory_capacity(self, h_params, X_train, X_test, y_train, y_test):
@@ -443,6 +471,52 @@ class ComputationMetricCalculator(MetricCalculator):
         
         elif metric_name == "computational_capacity":
             return computational_capacity(self.A)
+            
+        elif metric_name == "computational_capacity_notebook":
+            return evaluate_memory_capacities_notebook(self.A)
+        
+        elif metric_name == "computational_capacity_notebook_damicelli":
+            return evaluate_memory_capacities_notebook_damicelli(self.A)
+            
+        elif metric_name == "computational_capacity_supplementary_kayson":
+            base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/tasks/esn")
+            X_train = np.load(base_path / "X_train.npy")
+            X_test = np.load(base_path / "X_test.npy")
+            y_train_linear = np.load(base_path / "y_train_linear.npy")
+            y_test_linear = np.load(base_path / "y_test_linear.npy")
+            y_train_nonlinear = np.load(base_path / "y_train_nonlinear.npy")
+            y_test_nonlinear = np.load(base_path / "y_test_nonlinear.npy")
+            
+            result = evaluate_supplementary_kayson(
+                self.A, 
+                X_train, X_test, 
+                y_train_linear, y_test_linear, 
+                y_train_nonlinear, y_test_nonlinear,
+                spectral_radius=0.9, 
+                input_scaling=1e-5, 
+                leak_rate=1.0, 
+                bias=0, 
+                n_transient=100, 
+                n_trials=100
+            )
+            
+            # Flatten per-lag MC values into individual keys (mc_0, mc_1, ..., mc_49)
+            flat_result = {
+                "mc_mean": result["mc_mean"],
+                "mc_std": result["mc_std"],
+                "mc_nonlinear_mean": result["mc_nonlinear_mean"],
+                "mc_nonlinear_std": result["mc_nonlinear_std"]
+            }
+            
+            mc_per_lag = result.get("mc_values_for_indiv_lags", [])
+            for i, val in enumerate(mc_per_lag):
+                flat_result[f"mc_{i}"] = float(val)
+
+            mc_per_lag_nl = result.get("mc_nonlinear_values_for_indiv_lags", [])
+            for i, val in enumerate(mc_per_lag_nl):
+                flat_result[f"mc_nonlin_{i}"] = float(val)
+
+            return flat_result
         
         elif metric_name == "repertoire": 
             return repertoire(self.A, T=0.1)
@@ -645,7 +719,7 @@ class ComputationMetricCalculator(MetricCalculator):
             flat_result = {
                 "mc_mean": result["mc_mean"],
                 "mc_std": result["mc_std"],
-                # "mc_values_for_indiv_lags": result["mc_values_for_indiv_lags"]
+                "mc_values_for_indiv_lags": result["mc_values_for_indiv_lags"]
             }
             
             if metric_name == "mc_input_scaling_0_1": 

@@ -944,10 +944,10 @@ if __name__ == "__main__":
 
     method = "delta_con" # "frobenius"
     for dataset in [# 
-                    "suarez_MaMI_dataset", 
+                    # "suarez_MaMI_dataset", 
                     # "lexis_data_aging", 
                     # "lexis_data_young", 
-                    # "lexis_data_developing"                    
+                    "lexis_data_developing"                    
                     ]: 
         results = main(
                 # dataset_name="kaysons_generated_networks_diffusion", # optimal_networks_diffusion", # hcp_schaefer_100_dataset",

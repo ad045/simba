@@ -562,3 +562,176 @@ def computational_capacity(
 
 
 # comp -> computational_capacity
+
+# --------------------------------------------------------------------------------
+# Notebook simplified implementation
+# --------------------------------------------------------------------------------
+
+from sklearn.linear_model import Ridge
+
+def prepare_reservoir_notebook(W_raw, spectral_radius):
+    eigenvalues = linalg.eigvals(W_raw)
+    rho = np.max(np.abs(eigenvalues))
+    if rho > 0:
+        W = W_raw * (spectral_radius / rho)
+    else:
+        W = W_raw
+    return W
+
+def run_reservoir_notebook(W, inputs, input_scaling, leak_rate=1.0, bias_scale=0.1, seed=42):
+    rng = np.random.RandomState(seed)
+    N = W.shape[0]
+    T = len(inputs)
+    
+    # Input weights: uniform [-1, 1] scaled by input_scaling
+    W_in = rng.uniform(-1, 1, size=(N, 1)) * input_scaling
+    bias = rng.uniform(-bias_scale, bias_scale, size=N)
+    
+    states = np.zeros((T, N))
+    x = np.zeros(N)
+    
+    for t in range(T):
+        u = inputs[t]
+        x_new = np.tanh(W @ x + W_in[:, 0] * u + bias)
+        x = (1 - leak_rate) * x + leak_rate * x_new
+        states[t] = x
+        
+    return states, W_in
+
+def evaluate_memory_capacities_notebook(W_raw, spectral_radius=0.95, input_scaling=0.5, leak_rate=1.0, max_delay=40, n_trials=10):
+    """
+    A straightforward baseline implementation of linear and non-linear memory capacity
+    evaluation natively matched to what is in the hyperparameter tuning notebook.
+    """
+    # Setup
+    T_train = 2000
+    T_test = 1000
+    T_washout = 200
+    T_total = T_train + T_test + T_washout + max_delay
+    
+    all_linear_mc = []
+    all_nonlinear_mc = []
+    
+    for trial in range(n_trials):
+        # Use a different seed for each trial to ensure different input sequences and weights
+        trial_seed = 42 + trial * 1000
+        np.random.seed(trial_seed)
+        inputs = np.random.uniform(-1, 1, T_total)
+        
+        W = prepare_reservoir_notebook(W_raw, spectral_radius)
+        states, _ = run_reservoir_notebook(W, inputs, input_scaling, leak_rate=leak_rate, seed=trial_seed)
+        
+        states = states[T_washout:]
+        trial_inputs = inputs[T_washout:]
+        
+        # States available for training/testing (we start from max_delay so we have history)
+        S_valid = states[max_delay:]
+        S_train = S_valid[:T_train]
+        S_test = S_valid[T_train : T_train + T_test]
+        
+        # Evaluate Linear MC
+        linear_mc = []
+        nonlinear_mc = []
+        
+        for k in range(1, max_delay + 1):
+            # The target is the input k steps in the past
+            target_seq = trial_inputs[max_delay - k : max_delay - k + T_train + T_test]
+            
+            # 1. Linear target
+            y_train = target_seq[:T_train]
+            y_test = target_seq[T_train : T_train + T_test]
+            
+            model_lin = Ridge(alpha=1e-4)
+            model_lin.fit(S_train, y_train)
+            score_lin = model_lin.score(S_test, y_test)
+            linear_mc.append(max(0, score_lin)) # R^2
+            
+            # 2. Non-linear target (quadratic)
+            y_train_nl = y_train**2
+            y_test_nl = y_test**2
+            
+            model_nl = Ridge(alpha=1e-4)
+            model_nl.fit(S_train, y_train_nl)
+            score_nl = model_nl.score(S_test, y_test_nl)
+            nonlinear_mc.append(max(0, score_nl))
+            
+        all_linear_mc.append(linear_mc)
+        all_nonlinear_mc.append(nonlinear_mc)
+        
+    # Average across trials
+    avg_linear_mc = np.mean(all_linear_mc, axis=0)
+    avg_nonlinear_mc = np.mean(all_nonlinear_mc, axis=0)
+        
+    return {
+        'memory_capacity_total_notebook': float(np.sum(avg_linear_mc)),
+        'nonlinear_capacity_total_notebook': float(np.sum(avg_nonlinear_mc)),
+        'memory_capacity_profile_notebook': avg_linear_mc,
+        'nonlinear_capacity_profile_notebook': avg_nonlinear_mc
+    }
+
+
+def evaluate_memory_capacities_notebook_damicelli(W_raw, max_delay=40, n_trials=10):
+    """
+    Wrapper for validate evaluating the notebook implementation with parameters 
+    identified by Damicelli et al.
+    """
+    return evaluate_memory_capacities_notebook(
+        W_raw, 
+        spectral_radius=0.99, 
+        input_scaling=1e-5, 
+        leak_rate=1.0, 
+        max_delay=max_delay, 
+        n_trials=n_trials
+    )
+
+# --------------------------------------------------------------------------------
+# Supplementary Kayson implementation (from supplementary_stuff.ipynb)
+# --------------------------------------------------------------------------------
+
+def evaluate_supplementary_kayson(W_raw, X_train, X_test, y_train_lin, y_test_lin, y_train_nl, y_test_nl,
+                                  spectral_radius=0.9, input_scaling=1e-5, leak_rate=1.0, 
+                                  bias=0, n_transient=100, n_trials=100):
+    """
+    Extracts the exact plot_forgetting_curve inner-loop evaluation used in supplementary_stuff.ipynb.
+    Averages over multiple trials.
+    """
+    import echoes
+    import src.analysis.utils_kayson_damicelli as ut
+    
+    results_lin = []
+    results_nonlin = []
+    mc_lin = []
+    mc_nonlin = []
+    
+    for trial in range(n_trials):
+        esn = echoes.ESNRegressor(
+            W=np.array(W_raw, dtype=np.float64),
+            spectral_radius=spectral_radius,
+            input_scaling=input_scaling,
+            leak_rate=leak_rate,
+            bias=bias,
+            n_transient=n_transient,
+            random_state=trial,
+            regression_method="pinv" # default in Echoes
+        )
+
+        # Linear MC
+        y_pred = esn.fit(X_train, y_train_lin).predict(X_test)
+        r_lin  = ut.forgetting(y_test_lin[n_transient:], y_pred[n_transient:])
+        results_lin.append(r_lin[0])  # per-lag array
+        mc_lin.append(r_lin[1])       # total score
+
+        # Nonlinear MC
+        y_pred_nl = esn.fit(X_train, y_train_nl).predict(X_test)
+        r_nonlin  = ut.forgetting(y_test_nl[n_transient:], y_pred_nl[n_transient:])
+        results_nonlin.append(r_nonlin[0])
+        mc_nonlin.append(r_nonlin[1])
+
+    return {
+        'mc_mean': float(np.mean(mc_lin)),
+        'mc_std': float(np.std(mc_lin)),
+        'mc_values_for_indiv_lags': np.mean(results_lin, axis=0),
+        'mc_nonlinear_mean': float(np.mean(mc_nonlin)),
+        'mc_nonlinear_std': float(np.std(mc_nonlin)),
+        'mc_nonlinear_values_for_indiv_lags': np.mean(results_nonlin, axis=0)
+    }

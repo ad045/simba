@@ -374,7 +374,7 @@ def main(dataset_name: str,
         empirical_networks_path = path_01_connectomes / "01_consensus_bin_density_10_percent_100.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
 
-    elif dataset_name == "lexis_data": 
+    elif "lexis_data" in dataset_name: 
         empirical_networks_path = path_01_connectomes / "00_connectomes_density10.npy"
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
 
@@ -890,11 +890,13 @@ if __name__ == "__main__":
 
     for method in all_methods:
         results = main(
-            dataset_name="hcp_schaefer_100_dataset", 
+            dataset_name="lexis_data_developing", # hcp_schaefer_100_dataset", 
             # dataset_name="lexis_data", # suarez_MaMI_dataset",
             # experiment_name="03_no_ring_sweeps_animal_0", # 95_ring_seed_100_sweep_animal_206", 
             # experiment_name="02_ring_sweeps_animal_0", # 
-            experiment_name="11_mst_2500_animal_0", # 105_distance_metrics_mst_animal_0", # 05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+            # experiment_name="11_mst_2500_animal_0", # 105_distance_metrics_mst_animal_0", # 
+            # experiment_name="05_mst_animal_0", # 02_ring_sweeps_animal_0", # "99_ring_seed_100_sweep_human_068",
+            experiment_name="05_mst_animal_0_compared_with_lexis_data_developing", 
             evaluation_mode=method,
             debug_subject_ids=[0], # None, # [206], # None for all subjects, or [0,1,2,...] for specific subjects 
             number_multiprocessing_processes=10, # 10, # 0, # 2, 
