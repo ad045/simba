@@ -66,10 +66,10 @@ OUTPUT_DIR = ROOT_DIR / "output" / "gnm" / "synthetic_parameter_recovery"
 COMPARISON_DIR = OUTPUT_DIR / "comparison_results"
 
 PARAM_COMBOS: List[Tuple[float, float]] = [
-    (-6.9,    1.11),
-    ( 4.1,    1.11),
+    (-6.9,    0.89),
+    ( 1.9,    0.89),
     (-6.9,    0.01),
-    ( 4.1,    0.01),
+    ( 1.9,    0.01),
     (-3.734694004058838, 0.595918357372283),
 ]
 

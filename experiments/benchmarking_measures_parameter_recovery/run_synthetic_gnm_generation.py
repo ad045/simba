@@ -35,7 +35,7 @@ from tqdm import tqdm
 from gnm.model import BinaryGenerativeParameters
 from gnm import generative_rules
 from gnm.fitting import RunConfig, perform_run
-from netneurotools.networks import struct_consensus, binarize_network
+from netneurotools.networks import struct_consensus, threshold_network
 
 
 # ---------------------------------------------------------------------------
@@ -48,12 +48,11 @@ SEED_PATH = ROOT_DIR / "data" / "preprocessed" / "seeds" / "mst_schaeffer.npy"
 OUTPUT_DIR = ROOT_DIR / "output" / "gnm" / "synthetic_parameter_recovery"
 
 PARAM_COMBOS = [
-    (-6.9,    1.11),
-    ( 4.1,    1.11),
+    (-6.9,    0.89),
+    ( 1.9,    0.89),
     (-6.9,    0.01),
-    ( 4.1,    0.01),
-    # (-3.7347, 0.5959), # energy, potentially? 
-    (-3.734694004058838, 0.595918357372283) # deltacon, 105 of hcp. /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/testing_stuff.ipynb
+    ( 1.9,    0.01),
+    (-3.734694004058838, 0.595918357372283),
 ]
 
 N_TEST      = 10   # networks saved for parameter-recovery test
@@ -199,7 +198,7 @@ def main() -> None:
                 weighted=True,
             )
             # binarise to same density as HCP consensus (~10 %)
-            consensus_bin = binarize_network(consensus_weighted, retain=10)  # (100, 100)
+            consensus_bin = threshold_network(consensus_weighted, retain=10)  # (100, 100) — MST-guaranteed connected
             np.save(consensus_path, consensus_bin)
             print(f"  Saved consensus → {consensus_path},  edges: {consensus_bin.sum() / 2:.0f}")
 
