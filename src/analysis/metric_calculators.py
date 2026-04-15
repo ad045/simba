@@ -87,13 +87,16 @@ from src.analysis.computational_capacity_measures import (computational_capacity
                                                             evaluate_memory_capacities_notebook_damicelli,
                                                             evaluate_supplementary_kayson)
 
-from src.analysis.further_measures import (ollivier_ricci_curvature, 
-                                           rich_club_coefficient, 
-                                           participation_coefficient, 
-                                           persistent_homology, 
-                                           targeted_attack_robustness, 
+from src.analysis.further_measures import (ollivier_ricci_curvature,
+                                           rich_club_coefficient,
+                                           participation_coefficient,
+                                           persistent_homology,
+                                           targeted_attack_robustness,
                                            algebraic_connectivity,
-                                           basic_measures) 
+                                           basic_measures,
+                                           gromov_hyperbolicity,
+                                           betweenness_centrality_stats,
+                                           local_efficiency_stats)
 
 from src.analysis.from_fatemeh import departure_from_normality # , # kernel_rank_esn, compute_spectral_gap_fatemeh
 from src.analysis.from_francisco_newer import repertoire_sweep_weighted_by_distances # repertoire, repertoire_sweep, 
@@ -354,10 +357,11 @@ class ComputationMetricCalculator(MetricCalculator):
             "computational_capacity_notebook",
             "computational_capacity_notebook_damicelli",
             "computational_capacity_supplementary_kayson",
-            "mc_original", "mc_nonlinear_original", 
-            "mc_lin_cut40", 
+            "mc_original", "mc_nonlinear_original",
+            "mc_lin_cut40",
             "mc_nonlin_cut40",
-            "repertoire", "repertoire_sweep", "repertoire_sweep_weighted_by_distances", 
+            "repertoire", "repertoire_sweep", "repertoire_sweep_weighted_by_distances",
+            "ipc",
         }
         
         # Load the esn data for the memory capacity evaluation. This is currently hardcoded, but it could be made more flexible if needed. 
@@ -409,31 +413,15 @@ class ComputationMetricCalculator(MetricCalculator):
 
 
     def evaluate_esn_memory_capacity(self, h_params, X_train, X_test, y_train, y_test):
-        
-        from scipy.stats import pearsonr
-        
-        for run in range(h_params["n_runs"]):
-            
-            # h_params = {
-            #     "spectral_radius": 0.99, # default
-            #     "leak_rate": 1, # default. 0.3, #3, # 5, # 1.0,
-            #     "n_lags": 40, 
-            #     # "train_len": 5000,
-            #     # "test_len": 1000,
-            #     "n_runs": 10, 
-            #     "input_scaling": 1e-5, 
-            #     "regression_method": "pinv", # ridge", # pinv",
-            #     "n_transient": 100, # 100,
-            
-            #     "bias": 1, # default. 0.5, # 1.0,
-            #     "random_state": None
-            # }
-            
-            # Initialize empty results array for this run
-            results = np.zeros((h_params["n_runs"], 1))  # Assuming 1 subject for now, can be expanded to more subjects if needed
-            meaned_results = [] 
 
-            esn = echoes.ESNRegressor(W=np.array(self.A, dtype=np.float64), # W=self.A, 
+        from scipy.stats import pearsonr
+
+        # Collect per-lag MC values across all runs (each run uses different random ESN weights)
+        all_runs_per_lag = []  # shape: (n_runs, n_lags)
+        all_runs_total_mc = []  # shape: (n_runs,)
+
+        for run in range(h_params["n_runs"]):
+            esn = echoes.ESNRegressor(W=np.array(self.A, dtype=np.float64),
                                spectral_radius=h_params["spectral_radius"],
                                input_scaling=h_params["input_scaling"],
                                leak_rate=h_params["leak_rate"],
@@ -444,15 +432,154 @@ class ComputationMetricCalculator(MetricCalculator):
                                )
             y_pred = esn.fit(X_train, y_train).predict(X_test)
 
-            # Evaluates the MC score: evaluated[1] is the sum of the R^2 values across all lags, and evaluated[0] is the list of R^2 values for each individual lag.
+            # evaluated[0]: list of R^2 values per lag, evaluated[1]: sum across lags
             evaluated = ut.forgetting(y_test[h_params["n_transient"]:], y_pred[h_params["n_transient"]:])
 
-            return {
-                "mc_mean": evaluated[1],
-                "mc_std": np.std(evaluated[0]), 
-                "mc_values_for_indiv_lags": evaluated[0]
-            }
-            
+            all_runs_per_lag.append(evaluated[0])
+            all_runs_total_mc.append(evaluated[1])
+
+        # Average across runs
+        all_runs_per_lag = np.array(all_runs_per_lag)   # (n_runs, n_lags)
+        mean_per_lag = np.mean(all_runs_per_lag, axis=0)  # (n_lags,)
+
+        return {
+            "mc_mean": float(np.mean(all_runs_total_mc)),
+            "mc_std": float(np.std(all_runs_total_mc)),
+            "mc_values_for_indiv_lags": mean_per_lag.tolist()
+        }
+
+
+    def evaluate_information_processing_capacity(self, h_params):
+        """
+        Compute IPC decomposed by polynomial degree (linear=1, quadratic=2, cubic=3).
+        Uses Gram-Schmidt orthogonalization so it works for any input distribution.
+        Averaged over n_runs ESN initializations (different random W_in each run).
+
+        State sequence: ESN driven by X_train then X_test (reservoir state carries over).
+        Washout (Two) is applied inside IPC, so no states are discarded before passing in.
+
+        Returns: ipc_total_mean/std, ipc_linear_mean (deg1), ipc_nonlinear_mean (deg2+3),
+                 ipc_deg1/2/3_mean/std, and per-lag linear IPC (ipc_linear_lag_0, ...).
+        """
+        from src.ipc.utils.polynomials import ipc_univariate_polynomials
+        from src.ipc.utils.degdelaysets import single_input_degdelaysets
+
+        n_transient = h_params["n_transient"]   # used as IPC washout (Two)
+        n_lags      = h_params["n_lags"]         # max delay for degree-1 terms
+        max_degree  = h_params.get("ipc_max_degree", 3)
+
+        # Full input: train + test (reservoir state carries over between them)
+        X_full = np.concatenate([self.X_train.flatten(), self.X_test.flatten()])
+        T_full = len(X_full)
+
+        # IPC washout must be >= max delay for any degree
+        max_delay_per_deg = {deg: max(1, n_lags // deg) for deg in range(1, max_degree + 1)}
+        Two = max(n_transient, max(max_delay_per_deg.values()))
+        T_eff = T_full - Two   # effective timesteps after washout
+
+        # Gram-Schmidt polynomial bases on the full input (works for U[0,1])
+        univariate_polys = ipc_univariate_polynomials(X_full, max_degree, 'gramschmidt')
+        bases = univariate_polys.bases   # shape: (max_degree+1, T_full)
+
+        # Cache dir for degree-delay set .npz files (generated once, reused)
+        cache_dir = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/ipc_cache")
+        ddsets_loader = single_input_degdelaysets(zerobased=True, basedir=str(cache_dir))
+
+        def get_projection_matrix(states):
+            """SVD of centered (N, T_eff) state matrix → rank-r projection rows."""
+            x = states[:, Two:]                              # (N, T_eff)
+            x = x - x.mean(axis=1, keepdims=True)           # debias
+            u, sigma, v = np.linalg.svd(x, full_matrices=False)
+            N = x.shape[0]
+            eps = (sigma ** 2).max() * N * np.finfo(x.dtype).eps
+            idx = np.where(sigma ** 2 > eps)[0]
+            return v[idx]                                    # (rank, T_eff)
+
+        def ipc_for_degree(P, deg, delay):
+            """Sum of IPC values across all degree-delay sets for (deg, max_delay=delay)."""
+            ddsets = ddsets_loader.load(deg, delay)
+            total = 0.0
+            per_delay = {}
+            for ddset in ddsets:
+                z = np.prod(np.stack([
+                    bases[d, Two - dl : Two + T_eff - dl] for d, dl in ddset
+                ]), axis=0)
+                norm_z = np.sqrt(z.dot(z))
+                if norm_z < 1e-12:
+                    continue
+                coef = np.dot(P, z) / norm_z
+                val = float(np.sum(coef ** 2))
+                total += val
+                # Track per-lag for degree-1 (memory function)
+                if deg == 1:
+                    lag = ddset[0][1]   # [[1, lag]] → lag
+                    per_delay[lag] = val
+            return total, per_delay
+
+        # --- Average over n_runs (different random W_in) ---
+        results_by_deg = {deg: [] for deg in range(1, max_degree + 1)}
+        per_lag_runs = []   # collect per-lag linear IPC across runs
+
+        for _ in range(h_params["n_runs"]):
+            esn = echoes.ESNRegressor(
+                W=np.array(self.A, dtype=np.float64),
+                spectral_radius=h_params["spectral_radius"],
+                input_scaling=h_params["input_scaling"],
+                leak_rate=h_params["leak_rate"],
+                bias=h_params["bias"],
+                regression_method=h_params["regression_method"],
+                n_transient=0,          # we apply washout via IPC's Two
+                random_state=h_params["random_state"],
+                store_states_train=True,
+                store_states_pred=True,
+            )
+            esn.fit(self.X_train, self.y_train_linear)
+            esn.predict(self.X_test)
+
+            # (N, T_total) — reservoir state for full input sequence
+            states = np.vstack([esn.states_train_, esn.states_pred_]).T
+
+            P = get_projection_matrix(states)
+            if P.shape[0] == 0:
+                for deg in range(1, max_degree + 1):
+                    results_by_deg[deg].append(0.0)
+                per_lag_runs.append({})
+                continue
+
+            for deg in range(1, max_degree + 1):
+                delay = max_delay_per_deg[deg]
+                total, per_delay = ipc_for_degree(P, deg, delay)
+                results_by_deg[deg].append(total)
+                if deg == 1:
+                    per_lag_runs.append(per_delay)
+
+        # --- Aggregate ---
+        result = {}
+        for deg in range(1, max_degree + 1):
+            vals = results_by_deg[deg]
+            result[f"ipc_deg{deg}_mean"] = float(np.mean(vals))
+            result[f"ipc_deg{deg}_std"]  = float(np.std(vals))
+
+        result["ipc_linear_mean"]    = result["ipc_deg1_mean"]
+        result["ipc_nonlinear_mean"] = float(sum(
+            result[f"ipc_deg{deg}_mean"] for deg in range(2, max_degree + 1)
+        ))
+        result["ipc_total_mean"] = float(sum(
+            result[f"ipc_deg{deg}_mean"] for deg in range(1, max_degree + 1)
+        ))
+        result["ipc_total_std"] = float(np.std([
+            sum(results_by_deg[deg][i] for deg in range(1, max_degree + 1))
+            for i in range(h_params["n_runs"])
+        ]))
+
+        # Per-lag linear IPC (averaged across runs)
+        all_lags = sorted(set(lag for d in per_lag_runs for lag in d))
+        for lag in all_lags:
+            vals = [d.get(lag, 0.0) for d in per_lag_runs]
+            result[f"ipc_linear_lag_{lag}"] = float(np.mean(vals))
+
+        return result
+
 
     def calculate_metric(self, metric_name):
         # [ ] Memory capacity
@@ -595,71 +722,71 @@ class ComputationMetricCalculator(MetricCalculator):
         
 
 
-        elif metric_name == "mc_lin_cut40" or metric_name == "mc_nonlin_cut40":
+        # elif metric_name == "mc_lin_cut40" or metric_name == "mc_nonlin_cut40":
 
-            # TODO: Get hyperparameters for the memory capacity evaluation. These can be adjusted as needed, but for now I'm using the same ones as in the original script.
-            # Currently just hardcoded 
-            # h_params = {
-            #     "spectral_radius": 0.9,
-            #     "n_lags": 50,
-            #     "train_len": 5000,
-            #     "test_len": 1000,
-            #     "n_runs": 50,
-            #     "input_scaling": 1.0,
-            #     "regression_method": "pinv",
-            #     "n_transient": 0, # 100,
-            #     "leak_rate": 1.0,
-            #     "bias": 0.0,
-            #     "random_state": 42
-            # }
+        #     # TODO: Get hyperparameters for the memory capacity evaluation. These can be adjusted as needed, but for now I'm using the same ones as in the original script.
+        #     # Currently just hardcoded 
+        #     # h_params = {
+        #     #     "spectral_radius": 0.9,
+        #     #     "n_lags": 50,
+        #     #     "train_len": 5000,
+        #     #     "test_len": 1000,
+        #     #     "n_runs": 50,
+        #     #     "input_scaling": 1.0,
+        #     #     "regression_method": "pinv",
+        #     #     "n_transient": 0, # 100,
+        #     #     "leak_rate": 1.0,
+        #     #     "bias": 0.0,
+        #     #     "random_state": 42
+        #     # }
             
-            from scipy.stats import pearsonr
+        #     from scipy.stats import pearsonr
             
-            h_params = {
-                "spectral_radius": 0.95, # 0.9
-                "n_lags": 40, 
-                # "train_len": 5000,
-                # "test_len": 1000,
-                "n_runs": 1000, 
-                "input_scaling": 0.1, # 1e-5, 
-                "regression_method": "pinv", # ridge", # pinv",
-                "n_transient": 100, # 100,
-                "leak_rate": 1, # default. 0.3, #3, # 5, # 1.0,
-                "bias": 1, # default. 
-                "random_state": None
-            }
+        #     h_params = {
+        #         "spectral_radius": 0.95, # 0.9
+        #         "n_lags": 40, 
+        #         # "train_len": 5000,
+        #         # "test_len": 1000,
+        #         "n_runs": 1000, 
+        #         "input_scaling": 0.1, # 1e-5, 
+        #         "regression_method": "pinv", # ridge", # pinv",
+        #         "n_transient": 100, # 100,
+        #         "leak_rate": 1, # default. 0.3, #3, # 5, # 1.0,
+        #         "bias": 1, # default. 
+        #         "random_state": None
+        #     }
             
-            if metric_name == "mc_lin_cut40": 
-                X_train = self.X_train_cut40
-                X_test = self.X_test_cut40
-                y_train = self.y_train_linear_cut40
-                y_test = self.y_test_linear_cut40
+        #     if metric_name == "mc_lin_cut40": 
+        #         X_train = self.X_train_cut40
+        #         X_test = self.X_test_cut40
+        #         y_train = self.y_train_linear_cut40
+        #         y_test = self.y_test_linear_cut40
 
-                result = self.evaluate_esn_memory_capacity(h_params=h_params, 
-                                                           X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+        #         result = self.evaluate_esn_memory_capacity(h_params=h_params, 
+        #                                                    X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
 
-            elif metric_name == "mc_nonlin_cut40":
-                X_train = self.X_train_cut40
-                X_test = self.X_test_cut40
-                y_train = self.y_train_nonlinear_cut40
-                y_test = self.y_test_nonlinear_cut40
+        #     elif metric_name == "mc_nonlin_cut40":
+        #         X_train = self.X_train_cut40
+        #         X_test = self.X_test_cut40
+        #         y_train = self.y_train_nonlinear_cut40
+        #         y_test = self.y_test_nonlinear_cut40
 
-                result = self.evaluate_esn_memory_capacity(h_params=h_params, 
-                                                           X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+        #         result = self.evaluate_esn_memory_capacity(h_params=h_params, 
+        #                                                    X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
 
-            # Flatten per-lag MC values into individual keys (mc_0, mc_1, ..., mc_49)
-            flat_result = {
-                "mc_mean": result["mc_mean"],
-                "mc_std": result["mc_std"],
-                # "mc_values_for_indiv_lags": result["mc_values_for_indiv_lags"]
-            }
+        #     # Flatten per-lag MC values into individual keys (mc_0, mc_1, ..., mc_49)
+        #     flat_result = {
+        #         "mc_mean": result["mc_mean"],
+        #         "mc_std": result["mc_std"],
+        #         # "mc_values_for_indiv_lags": result["mc_values_for_indiv_lags"]
+        #     }
             
-            if metric_name == "mc_lin_cut40": 
-                mc_per_lag = result.get("mc_values_for_indiv_lags", [])
-                for i, val in enumerate(mc_per_lag):
-                    flat_result[f"mc_{i}"] = float(val)
+        #     if metric_name == "mc_lin_cut40": 
+        #         mc_per_lag = result.get("mc_values_for_indiv_lags", [])
+        #         for i, val in enumerate(mc_per_lag):
+        #             flat_result[f"mc_{i}"] = float(val)
 
-            return flat_result
+        #     return flat_result
         
         
 
@@ -728,9 +855,22 @@ class ComputationMetricCalculator(MetricCalculator):
                     flat_result[f"mc_{i}"] = float(val)
 
             return flat_result
-        
-        
-        
+
+        elif metric_name == "ipc":
+            h_params = {
+                "spectral_radius": 0.9,
+                "n_lags": 40,          # max delay for degree-1 terms; degree-k uses n_lags//k
+                "n_runs": 20,          # average over random W_in initializations
+                "input_scaling": 0.1,
+                "regression_method": "pinv",
+                "n_transient": 100,    # washout (Two in IPC terminology)
+                "leak_rate": 0.3,
+                "bias": 0,
+                "random_state": None,
+                "ipc_max_degree": 3,   # compute degrees 1 (linear), 2 (quadratic), 3 (cubic)
+            }
+            return self.evaluate_information_processing_capacity(h_params=h_params)
+
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
@@ -752,13 +892,16 @@ class FurtherMetricCalculator(MetricCalculator):
     def __init__(self, A=None, distance_matrix=None):
         super().__init__(A=A, distance_matrix=distance_matrix)
         self.implemented_metrics = {
-            "ollivier_ricci_curvature", 
-            "rich_club_coefficient", 
-            "participation_coefficient", 
-            "persistent_homology", 
-            "targeted_attack_robustness", 
-            "algebraic_connectivity", 
+            "ollivier_ricci_curvature",
+            "rich_club_coefficient",
+            "participation_coefficient",
+            "persistent_homology",
+            "targeted_attack_robustness",
+            "algebraic_connectivity",
             "basic_measures",
+            "gromov_hyperbolicity",
+            "betweenness_centrality_stats",
+            "local_efficiency_stats",
         }
         
         
@@ -783,7 +926,16 @@ class FurtherMetricCalculator(MetricCalculator):
 
         if metric_name == "algebraic_connectivity":
             return algebraic_connectivity(self.A)
-        
+
+        if metric_name == "gromov_hyperbolicity":
+            return gromov_hyperbolicity(self.A)
+
+        if metric_name == "betweenness_centrality_stats":
+            return betweenness_centrality_stats(self.G)
+
+        if metric_name == "local_efficiency_stats":
+            return local_efficiency_stats(self.G)
+
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 

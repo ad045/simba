@@ -1,6 +1,7 @@
-import numpy as np 
+import numpy as np
 import pandas as pd
 import os
+from fractions import Fraction
 from pathlib import Path
 from multiprocessing import Pool, cpu_count
 from functools import partial
@@ -138,7 +139,7 @@ def merge_checkpoint_files(output_path, experiment_name, df_original_dict, metri
                         # Check if existing value is NaN or missing
                         existing_value = df_updated.loc[mask, metric].iloc[0]
                         if pd.isna(existing_value):
-                            df_updated.loc[mask, metric] = result_row[metric]
+                            df_updated.loc[mask, metric] = float(Fraction(str(result_row[metric])))
                             updated_count += 1
                         else:
                             preserved_count += 1

@@ -428,11 +428,25 @@ def main(dataset_name: str,
         print("ERROR: No consensus data implemented for kaysons_generated_networks_topology.")
         return
     
-    elif dataset_name == "kaysons_generated_networks_resistance" and type_of_data == "individual": 
-        empirical_networks_path = path_01_connectomes / "resistance_10_percent.npy" # previously 20?? 
+    elif dataset_name == "kaysons_generated_networks_resistance" and type_of_data == "individual":
+        empirical_networks_path = path_01_connectomes / "resistance_10_percent.npy" # previously 20??
         distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
     elif dataset_name == "kaysons_generated_networks_resistance" and type_of_data == "consensus":
         print("ERROR: No consensus data implemented for kaysons_generated_networks_resistance.")
+        return
+
+    elif dataset_name == "ring_lattice_networks" and type_of_data == "individual":
+        empirical_networks_path = path_01_connectomes / "ring_lattice_10_percent.npy"
+        distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
+    elif dataset_name == "ring_lattice_networks" and type_of_data == "consensus":
+        print("ERROR: No consensus data for ring_lattice_networks.")
+        return
+
+    elif dataset_name == "erdos_renyi_networks" and type_of_data == "individual":
+        empirical_networks_path = path_01_connectomes / "erdos_renyi_10_percent.npy"
+        distance_matrices_path = path_config.dir_02_distance_matrices / "distance_matrix_100.npy"
+    elif dataset_name == "erdos_renyi_networks" and type_of_data == "consensus":
+        print("ERROR: No consensus data for erdos_renyi_networks.")
         return
 
     ##########################################################################
@@ -943,12 +957,14 @@ if __name__ == "__main__":
         ]
 
     method = "delta_con" # "frobenius"
-    for dataset in [# 
-                    # "suarez_MaMI_dataset", 
-                    # "lexis_data_aging", 
-                    # "lexis_data_young", 
-                    "lexis_data_developing"                    
-                    ]: 
+    for dataset in [#
+                    # "suarez_MaMI_dataset",
+                    # "lexis_data_aging",
+                    # "lexis_data_young",
+                    # "lexis_data_developing",
+                    "ring_lattice_networks", # _networks",
+                    # "erdos_renyi_networks", # _networks",
+                    ]:
         results = main(
                 # dataset_name="kaysons_generated_networks_diffusion", # optimal_networks_diffusion", # hcp_schaefer_100_dataset",
                 # _routing", # _propagation", # 

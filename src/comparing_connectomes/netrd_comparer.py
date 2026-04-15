@@ -115,8 +115,10 @@ class NetrdEvaluator(NetworkEvaluator):
         for target_idx in range(n_targets):
             target_np = target[target_idx].cpu().numpy()
             G_tar = nx.from_numpy_array(target_np)
-            
-            results[target_idx] = float(self.distance_metric.dist(G_gen, G_tar)) 
+            try:
+                results[target_idx] = float(self.distance_metric.dist(G_gen, G_tar))
+            except Exception:
+                results[target_idx] = float("nan")
         
         return results
     

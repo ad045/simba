@@ -620,7 +620,143 @@ def targeted_attack_robustness(A):
 
 
 # =============================================================================
-# 6. Algebraic Connectivity
+# 6. Gromov Hyperbolicity
+# =============================================================================
+
+
+
+def gromov_hyperbolicity(A):
+    
+    # Needs to be here, otherwise my slimmer conda env does not work 
+    import sage.all
+    from sage.graphs.hyperbolicity import hyperbolicity
+    from sage.graphs.graph import Graph
+    from sage.matrix.constructor import matrix
+
+    
+    G = Graph(matrix(A), format='adjacency_matrix')
+    assert G.is_connected()
+    h, _, _ = hyperbolicity(G, algorithm='BCCM')
+
+    return h
+
+    # """
+    # Compute the Gromov hyperbolicity (delta*) of the network via the
+    # four-point condition on shortest-path distances.
+
+    # Gromov hyperbolicity measures how tree-like or hierarchically organised
+    # a metric space is:
+    #     delta* = 0   →  perfect tree (all geodesics form thin triangles)
+    #     delta* large →  flat / grid-like geometry
+
+    # Brain and Internet networks have been shown to be negatively curved
+    # (hyperbolic), meaning most shortest paths are funnelled through a dense
+    # core.  This is the global geometric complement to the local
+    # Ollivier-Ricci curvature.
+
+    # Algorithm: for every quadruple of distinct nodes (a, b, c, d) compute
+    # the three pairwise-sum combinations and set
+    #     delta(a,b,c,d) = (S_max - S_mid) / 2
+    # where S_max >= S_mid >= S_min are the sorted values of
+    #     {d(a,b)+d(c,d),  d(a,c)+d(b,d),  d(a,d)+d(b,c)}.
+    # delta* = max over all quadruples.
+
+    # Complexity: O(n^4) in the number of quadruples, vectorised over the
+    # inner two indices using numpy so the effective cost is
+    # O(n^2) outer iterations each with O(n^2) numpy ops.
+    # For n=100 this is fast (<1 s per network).
+
+    # Parameters
+    # ----------
+    # A : np.ndarray
+    #     Adjacency matrix (N x N).  Binarized and symmetrized internally.
+    #     Hop-count shortest-path distances are used (metric-space
+    #     interpretation is cleanest on unweighted graphs).
+
+    # Returns
+    # -------
+    # dict
+    #     'gh_delta'            : raw delta* value
+    #     'gh_delta_normalized' : delta* / diameter  (scale-invariant)
+    #     'gh_diameter'         : graph diameter (max finite shortest path)
+
+    # References
+    # ----------
+    # Ni, C.-C., Lin, Y.-Y., Gao, J., Gu, X.D., & Saucan, E. (2015).
+    # Ricci curvature of the Internet topology. arXiv:1501.04138.
+
+    # Borassi, M., Coudert, D., Crescenzi, P., & Marino, A. (2015).
+    # On computing the hyperbolicity of real-world graphs.
+    # ESA 2015, LNCS 9294.
+    # """
+    # nan_result = {
+    #     'gh_delta': np.nan,
+    #     'gh_delta_normalized': np.nan,
+    #     'gh_diameter': np.nan,
+    # }
+
+    # # Binarize and symmetrize
+    # A_bin = ((A + A.T) > 0).astype(float)
+    # np.fill_diagonal(A_bin, 0)
+    # G = nx.from_numpy_array(A_bin)
+
+    # # Restrict to largest connected component
+    # if not nx.is_connected(G):
+    #     lcc = max(nx.connected_components(G), key=len)
+    #     G = G.subgraph(lcc).copy()
+
+    # n = G.number_of_nodes()
+    # if n < 4:
+    #     warnings.warn("Graph has fewer than 4 nodes. Cannot compute Gromov hyperbolicity.")
+    #     return nan_result
+
+    # nodes = sorted(G.nodes())
+    # idx = {v: i for i, v in enumerate(nodes)}
+
+    # # All-pairs shortest path (hop count) → dense distance matrix
+    # D = np.full((n, n), np.inf)
+    # np.fill_diagonal(D, 0.0)
+    # for u in nodes:
+    #     lengths = nx.single_source_shortest_path_length(G, u)
+    #     i = idx[u]
+    #     for v, d in lengths.items():
+    #         D[i, idx[v]] = float(d)
+
+    # finite_D = D[np.isfinite(D)]
+    # if finite_D.size == 0:
+    #     return nan_result
+    # diameter = float(np.max(finite_D))
+
+    # # Four-point condition: vectorised over (c, d) for each fixed (a, b)
+    # delta = 0.0
+    # for a in range(n):
+    #     for b in range(a + 1, n):
+    #         # S1[c, d] = D[a,b] + D[c,d]
+    #         S1 = D[a, b] + D
+    #         # S2[c, d] = D[a,c] + D[b,d]
+    #         S2 = D[a, :, None] + D[b, None, :]
+    #         # S3[c, d] = D[a,d] + D[b,c]
+    #         S3 = D[a, None, :] + D[b, :, None]
+
+    #         # Sort the three values ascending at each (c, d)
+    #         all_S = np.stack([S1, S2, S3], axis=0)   # (3, n, n)
+    #         sorted_S = np.sort(all_S, axis=0)          # ascending along axis 0
+
+    #         # delta at each (c,d) = (largest - second_largest) / 2
+    #         local_delta = (sorted_S[2] - sorted_S[1]) / 2.0
+    #         batch_max = float(np.nanmax(local_delta))
+    #         if batch_max > delta:
+    #             delta = batch_max
+
+    # return {
+    #     'gh_delta':            delta,
+    #     'gh_delta_normalized': delta / diameter if diameter > 0 else 0.0,
+    #     'gh_diameter':         diameter,
+    # }
+
+
+# =============================================================================
+# 7. Algebraic Connectivity
 # =============================================================================
 def algebraic_connectivity(A):
     """
@@ -723,5 +859,146 @@ def algebraic_connectivity(A):
         'fiedler_value_norm':           float(fiedler_norm),
         'laplacian_spectral_gap':       float(spectral_gap_ratio),
         'fiedler_bipartition_balance':  float(balance),
+    }
+
+
+# =============================================================================
+# 8. Betweenness Centrality (graph-level summary)
+# =============================================================================
+def betweenness_centrality_stats(G):
+    """
+    Graph-level summary statistics of node betweenness centrality.
+
+    Betweenness centrality of a node is the fraction of all shortest paths
+    between every other pair of nodes that pass through it.  It is a
+    node-level measure; graph-level summaries (mean, std, max) capture
+    how concentrated network routing is — high mean/max indicates a
+    bottleneck-heavy, hub-dominated topology.
+
+    Mousley et al. (2025, Nature Communications) report average betweenness
+    centrality as one of their key lifespan developmental markers.
+
+    Uses NetworkX betweenness_centrality (normalized, unweighted).
+    Binarizes A internally so weights do not distort shortest-path routing.
+
+    Parameters
+    ----------
+    A : np.ndarray  (N x N)
+        Adjacency matrix. Binarized and symmetrized internally.
+
+    Returns
+    -------
+    dict
+        'bc_mean' : mean betweenness centrality across nodes
+        'bc_std'  : std of betweenness centrality across nodes
+        'bc_max'  : maximum (most central hub node)
+        'bc_gini' : Gini coefficient of the centrality distribution
+                    (0 = uniform routing, 1 = single-hub bottleneck)
+
+    References
+    ----------
+    Freeman, L.C. (1977). A set of measures of centrality based on
+    betweenness. Sociometry, 40(1), 35-41.
+
+    Mousley, A., Akarca, D., & Astle, D.E. (2025). Premature birth changes
+    wiring constraints in neonatal structural brain networks.
+    Nature Communications. https://doi.org/10.1038/s41467-024-55178-x
+    """
+    # A_bin = ((A + A.T) > 0).astype(float)
+    # np.fill_diagonal(A_bin, 0)
+    # G = nx.from_numpy_array(A_bin)
+
+    n = G.number_of_nodes()
+    if n < 3:
+        return {k: np.nan for k in ['bc_mean', 'bc_std', 'bc_max', 'bc_gini']}
+
+    bc = nx.betweenness_centrality(G, normalized=True)
+    bc_vals = np.array([bc[i] for i in range(n)])
+
+    # Gini coefficient of centrality distribution
+    if np.sum(bc_vals) > 0:
+        sorted_v = np.sort(bc_vals)
+        ranks = np.arange(1, n + 1)
+        gini_val = (2.0 * np.sum(ranks * sorted_v) / (n * np.sum(sorted_v))) - (n + 1.0) / n
+    else:
+        gini_val = 0.0
+
+    return {
+        'mean': float(np.mean(bc_vals)),
+        'std':  float(np.std(bc_vals, ddof=1)) if n > 1 else 0.0,
+        'max':  float(np.max(bc_vals)),
+        'gini': float(gini_val),
+    }
+
+
+# =============================================================================
+# 9. Local Efficiency (graph-level summary)
+# =============================================================================
+def local_efficiency_stats(G):
+    """
+    Graph-level local efficiency and its node-level distribution.
+
+    Local efficiency of a node = global efficiency of the subgraph induced
+    by that node's immediate neighbours.  It measures how well information
+    can be exchanged in the local neighbourhood when the node itself is
+    removed — a measure of fault tolerance and local clustering quality.
+
+    Graph-level local efficiency = average local efficiency across all nodes
+    (this is what nx.local_efficiency returns and what Mousley et al. report).
+    Complements global efficiency: a network can have high global efficiency
+    (short average paths) but low local efficiency (fragile neighbourhoods),
+    or vice versa.
+
+    Binarizes A internally (consistent with Mousley et al.'s binary networks
+    and with how global efficiency is handled elsewhere in this codebase).
+
+    Parameters
+    ----------
+    A : np.ndarray  (N x N)
+        Adjacency matrix. Binarized and symmetrized internally.
+
+    Returns
+    -------
+    dict
+        'le_mean' : graph-level average local efficiency
+        'le_std'  : std of node-level local efficiencies
+        'le_min'  : minimum node-level local efficiency
+        'le_max'  : maximum node-level local efficiency
+
+    References
+    ----------
+    Latora, V. & Marchiori, M. (2001). Efficient behavior of small-world
+    networks. Physical Review Letters, 87(19), 198701.
+
+    Mousley, A., Akarca, D., & Astle, D.E. (2025). Premature birth changes
+    wiring constraints in neonatal structural brain networks.
+    Nature Communications. https://doi.org/10.1038/s41467-024-55178-x
+    """
+    # A_bin = ((A + A.T) > 0).astype(float)
+    # np.fill_diagonal(A_bin, 0)
+    # G = nx.from_numpy_array(A_bin)
+
+    n = G.number_of_nodes()
+    if n < 2:
+        return {k: np.nan for k in ['le_mean', 'le_std', 'le_min', 'le_max']}
+
+    # Graph-level average (NetworkX built-in)
+    le_mean = float(nx.local_efficiency(G))
+
+    # Node-level values for distribution statistics
+    le_node = np.zeros(n)
+    for i in G.nodes():
+        neighbors = list(G.neighbors(i))
+        if len(neighbors) < 2:
+            le_node[i] = 0.0
+        else:
+            sub = G.subgraph(neighbors)
+            le_node[i] = float(nx.global_efficiency(sub))
+
+    return {
+        'mean': le_mean,
+        'std':  float(np.std(le_node, ddof=1)) if n > 1 else 0.0,
+        'min':  float(np.min(le_node)),
+        'max':  float(np.max(le_node)),
     }
 

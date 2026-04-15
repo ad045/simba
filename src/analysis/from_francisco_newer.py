@@ -288,14 +288,15 @@ def get_repertoire_metrics(state):
     repertoire_size = unique_patterns.shape[-1]
 
     distances = []
-    
+
     for i in range(repertoire_size):
         p1 = unique_patterns[:, i]
         for j in range(i+1, repertoire_size):
             p2 = unique_patterns[:, j]
             distances.append(np.mean(1 - (p1 == p2).astype(int))) # computes Hamming distance
 
-    repertoire_diversity = np.nanmedian(distances)
+    # nanmedian([]) returns NaN; return 0.0 instead (no diversity when <= 1 pattern)
+    repertoire_diversity = float(np.nanmedian(distances)) if distances else 0.0
 
     return repertoire_size, repertoire_diversity
 
@@ -384,10 +385,28 @@ def repertoire_sweep_weighted_by_distances(A, D, T_vec=np.logspace(-2, 0, 50)) -
 
     # Distance weighting
     A = A / (D + 1e-8)  # Avoid division by zero
-    
-    # Spectral normalisation
-    eval, _ = np.linalg.eig(A)
-    A = A / np.nanmax(np.abs(eval))
+
+    # Spectral normalisation — use eigh (symmetric solver) since A/(D+eps) is symmetric.
+    # eigh is guaranteed to converge and returns real eigenvalues; eig (general solver) can
+    # fail to converge on some matrices even when they are symmetric.
+    try:
+        evals = np.linalg.eigh(A)[0]  # ascending real eigenvalues
+        rho = np.max(np.abs(evals))
+    except np.linalg.LinAlgError:
+        rho = 0.0
+
+    if rho < 1e-10:
+        # Zero or near-zero matrix — no meaningful dynamics possible
+        return {
+            "T_vec":              T_vec.tolist(),
+            "sizes":              [0] * len(T_vec),
+            "diversities":        [0.0] * len(T_vec),
+            "T_critical":         np.nan,
+            "size_critical":      0,
+            "diversity_critical": 0.0,
+        }
+
+    A = A / rho
 
     sizes, diversities = [], []
 
