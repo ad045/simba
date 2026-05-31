@@ -519,26 +519,51 @@ class ComputationMetricCalculator(MetricCalculator):
         # --- Average over n_runs (different random W_in) ---
         results_by_deg = {deg: [] for deg in range(1, max_degree + 1)}
         per_lag_runs = []   # collect per-lag linear IPC across runs
+        sr_used_runs = []   # track which spectral radius was actually stable per run
 
-        for _ in range(h_params["n_runs"]):
-            esn = echoes.ESNRegressor(
-                W=np.array(self.A, dtype=np.float64),
-                spectral_radius=h_params["spectral_radius"],
-                input_scaling=h_params["input_scaling"],
-                leak_rate=h_params["leak_rate"],
-                bias=h_params["bias"],
-                regression_method=h_params["regression_method"],
-                n_transient=0,          # we apply washout via IPC's Two
-                random_state=h_params["random_state"],
-                store_states_train=True,
-                store_states_pred=True,
-            )
-            esn.fit(self.X_train, self.y_train_linear)
-            esn.predict(self.X_test)
+        # Fallback spectral radii when reservoir dynamics blow up (overflow/NaN)
+        _sr_fallbacks = [h_params["spectral_radius"], 0.7, 0.5, 0.3]
+
+        import warnings
+        for run_idx in range(h_params["n_runs"]):
+            states = None
+            for sr in _sr_fallbacks:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", RuntimeWarning)
+                    with np.errstate(all="ignore"):
+                        try:
+                            esn = echoes.ESNRegressor(
+                                W=np.array(self.A, dtype=np.float64),
+                                spectral_radius=sr,
+                                input_scaling=h_params["input_scaling"],
+                                leak_rate=h_params["leak_rate"],
+                                bias=h_params["bias"],
+                                regression_method=h_params["regression_method"],
+                                n_transient=0,
+                                random_state=run_idx if h_params["random_state"] is None else h_params["random_state"] + run_idx,
+                                store_states_train=True,
+                                store_states_pred=True,
+                            )
+                            esn.fit(self.X_train, self.y_train_linear)
+                            esn.predict(self.X_test)
+                            candidate = np.vstack([esn.states_train_, esn.states_pred_]).T
+                        except Exception:
+                            continue
+                if not (np.any(np.isnan(candidate)) or np.any(np.isinf(candidate))):
+                    states = candidate
+                    sr_used_runs.append(sr)
+                    break  # stable run found
+            else:
+                sr_used_runs.append(float("nan"))
+
+            if states is None:
+                # All fallbacks produced NaN/Inf — skip this run gracefully
+                for deg in range(1, max_degree + 1):
+                    results_by_deg[deg].append(0.0)
+                per_lag_runs.append({})
+                continue
 
             # (N, T_total) — reservoir state for full input sequence
-            states = np.vstack([esn.states_train_, esn.states_pred_]).T
-
             P = get_projection_matrix(states)
             if P.shape[0] == 0:
                 for deg in range(1, max_degree + 1):
@@ -577,6 +602,10 @@ class ComputationMetricCalculator(MetricCalculator):
         for lag in all_lags:
             vals = [d.get(lag, 0.0) for d in per_lag_runs]
             result[f"ipc_linear_lag_{lag}"] = float(np.mean(vals))
+
+        valid_sr = [s for s in sr_used_runs if not np.isnan(s)]
+        result["ipc_sr_used_mean"] = float(np.mean(valid_sr)) if valid_sr else float("nan")
+        result["ipc_sr_used_min"]  = float(np.min(valid_sr))  if valid_sr else float("nan")
 
         return result
 
