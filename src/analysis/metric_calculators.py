@@ -457,6 +457,9 @@ class ComputationMetricCalculator(MetricCalculator):
 
         State sequence: ESN driven by X_train then X_test (reservoir state carries over).
         Washout (Two) is applied inside IPC, so no states are discarded before passing in.
+        Capacity is estimated OUT-OF-SAMPLE: the linear readout is fit on the train
+        portion of the states and scored on the held-out test portion (same as
+        evaluate_esn_memory_capacity), so degree-1 IPC reduces to linear MC.
 
         Returns: ipc_total_mean/std, ipc_linear_mean (deg1), ipc_nonlinear_mean (deg2+3),
                  ipc_deg1/2/3_mean/std, and per-lag linear IPC (ipc_linear_lag_0, ...).
@@ -485,18 +488,36 @@ class ComputationMetricCalculator(MetricCalculator):
         cache_dir = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/ipc_cache")
         ddsets_loader = single_input_degdelaysets(zerobased=True, basedir=str(cache_dir))
 
-        def get_projection_matrix(states):
-            """SVD of centered (N, T_eff) state matrix → rank-r projection rows."""
-            x = states[:, Two:]                              # (N, T_eff)
-            x = x - x.mean(axis=1, keepdims=True)           # debias
-            u, sigma, v = np.linalg.svd(x, full_matrices=False)
-            N = x.shape[0]
-            eps = (sigma ** 2).max() * N * np.finfo(x.dtype).eps
-            idx = np.where(sigma ** 2 > eps)[0]
-            return v[idx]                                    # (rank, T_eff)
+        # --- Out-of-sample readout setup ---
+        # Split the effective window [Two, T_full) at the original train/test
+        # boundary so the readout is fit on TRAIN states and scored on held-out
+        # TEST states — mirroring evaluate_esn_memory_capacity. The previous
+        # implementation projected each target onto the SVD subspace of the SAME
+        # sequence (in-sample), which saturates at the reservoir's effective rank
+        # and tracks dimensionality rather than retained memory.
+        T_train_full = len(self.X_train.flatten())
+        split = T_train_full - Two              # train length inside the washed window
+        # echoes resets the reservoir to zero at predict(), so the test segment has
+        # its own cold-start transient — discard the first n_transient test states
+        # (exactly what ut.forgetting does via y_test[n_transient:]).
+        test_start = split + n_transient
+        assert 0 < split < test_start < T_eff, "train/test split outside effective window"
 
-        def ipc_for_degree(P, deg, delay):
-            """Sum of IPC values across all degree-delay sets for (deg, max_delay=delay)."""
+        def build_readout(states):
+            """Design matrices + train-side pseudo-inverse for an OOS linear readout."""
+            A = states[:, Two:].T                          # (T_eff, N)
+            A = np.hstack([A, np.ones((A.shape[0], 1))])   # + intercept column
+            A_tr, A_te = A[:split], A[test_start:]
+            Pinv_tr = np.linalg.pinv(A_tr)                 # (N+1, T_tr)
+            return A_te, Pinv_tr
+
+        def ipc_for_degree(A_te, Pinv_tr, deg, delay):
+            """Sum of out-of-sample R^2 across all degree-delay sets for (deg, max_delay=delay).
+
+            For each polynomial target the readout is fit on the train states and
+            scored by squared Pearson correlation on the held-out test states —
+            identical scoring to ut.forgetting, so degree-1 reduces to linear MC.
+            """
             ddsets = ddsets_loader.load(deg, delay)
             total = 0.0
             per_delay = {}
@@ -504,11 +525,16 @@ class ComputationMetricCalculator(MetricCalculator):
                 z = np.prod(np.stack([
                     bases[d, Two - dl : Two + T_eff - dl] for d, dl in ddset
                 ]), axis=0)
-                norm_z = np.sqrt(z.dot(z))
-                if norm_z < 1e-12:
+                z_tr, z_te = z[:split], z[test_start:]
+                if z_tr.std() < 1e-12 or z_te.std() < 1e-12:
                     continue
-                coef = np.dot(P, z) / norm_z
-                val = float(np.sum(coef ** 2))
+                w = Pinv_tr @ z_tr                          # train-fit readout
+                pred = A_te @ w                             # predict held-out test
+                if pred.std() < 1e-12:
+                    val = 0.0
+                else:
+                    r = np.corrcoef(z_te, pred)[0, 1]
+                    val = 0.0 if np.isnan(r) else float(r ** 2)
                 total += val
                 # Track per-lag for degree-1 (memory function)
                 if deg == 1:
@@ -563,17 +589,12 @@ class ComputationMetricCalculator(MetricCalculator):
                 per_lag_runs.append({})
                 continue
 
-            # (N, T_total) — reservoir state for full input sequence
-            P = get_projection_matrix(states)
-            if P.shape[0] == 0:
-                for deg in range(1, max_degree + 1):
-                    results_by_deg[deg].append(0.0)
-                per_lag_runs.append({})
-                continue
+            # Build OOS readout: train-fit pseudo-inverse + held-out test states
+            A_te, Pinv_tr = build_readout(states)
 
             for deg in range(1, max_degree + 1):
                 delay = max_delay_per_deg[deg]
-                total, per_delay = ipc_for_degree(P, deg, delay)
+                total, per_delay = ipc_for_degree(A_te, Pinv_tr, deg, delay)
                 results_by_deg[deg].append(total)
                 if deg == 1:
                     per_lag_runs.append(per_delay)
