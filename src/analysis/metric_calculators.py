@@ -508,7 +508,7 @@ class ComputationMetricCalculator(MetricCalculator):
             A = states[:, Two:].T                          # (T_eff, N)
             A = np.hstack([A, np.ones((A.shape[0], 1))])   # + intercept column
             A_tr, A_te = A[:split], A[test_start:]
-            Pinv_tr = np.linalg.pinv(A_tr)                 # (N+1, T_tr)
+            Pinv_tr = np.linalg.pinv(A_tr)                 # (N+1, T_tr); same estimator as MC
             return A_te, Pinv_tr
 
         def ipc_for_degree(A_te, Pinv_tr, deg, delay):
@@ -589,15 +589,18 @@ class ComputationMetricCalculator(MetricCalculator):
                 per_lag_runs.append({})
                 continue
 
-            # Build OOS readout: train-fit pseudo-inverse + held-out test states
-            A_te, Pinv_tr = build_readout(states)
-
-            for deg in range(1, max_degree + 1):
-                delay = max_delay_per_deg[deg]
-                total, per_delay = ipc_for_degree(A_te, Pinv_tr, deg, delay)
-                results_by_deg[deg].append(total)
-                if deg == 1:
-                    per_lag_runs.append(per_delay)
+            # Build OOS readout: train-fit pseudo-inverse + held-out test states.
+            # Reservoir state columns are highly collinear (effective rank << N), so
+            # A_tr is rank-deficient and the pinv/matmuls raise benign FP flags; the
+            # results are guarded by corrcoef (nan -> 0), so suppress the spam.
+            with np.errstate(all="ignore"):
+                A_te, Pinv_tr = build_readout(states)
+                for deg in range(1, max_degree + 1):
+                    delay = max_delay_per_deg[deg]
+                    total, per_delay = ipc_for_degree(A_te, Pinv_tr, deg, delay)
+                    results_by_deg[deg].append(total)
+                    if deg == 1:
+                        per_lag_runs.append(per_delay)
 
         # --- Aggregate ---
         result = {}
