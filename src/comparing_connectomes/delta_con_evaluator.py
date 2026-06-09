@@ -9,7 +9,7 @@ from src.comparing_connectomes.base_comparer import NetworkEvaluator
 
 """
 Compare matrices related to Fast Belief Propagation. 
-The following part is a part from https://netrd.readthedocs.io/en/latest/_modules/netrd/distance/deltacon.html
+The following part is an edited part from https://netrd.readthedocs.io/en/latest/_modules/netrd/distance/deltacon.html
 
 Deltacon measure for graph distance, after:
 Koutra, Danai, Joshua T. Vogelstein, and Christos Faloutsos. 2013. “Deltacon: A
@@ -50,15 +50,6 @@ def compute_deltacon(G1, G2): # , exact=True, g=None):
         G1, G2 (nx.Graph)
             two networkx graphs to be compared.
 
-        # exact (bool) -> not-exact was not implemented. 
-        #     if True, use the slower but exact algorithm (DeltaCon_0)
-
-        # g (int) -> not-exact was not implemented. 
-        #     the number of groups to use in the efficient algorithm. If
-        #     exact is set to False but g is not set, the efficient algorithm
-        #     will still behave like the exact algorithm, since each node is
-        #     put in its own group.
-
         Returns
         -------
 
@@ -79,17 +70,17 @@ def compute_deltacon(G1, G2): # , exact=True, g=None):
         assert G1.number_of_nodes() == G2.number_of_nodes()
         N = G1.number_of_nodes()
 
-        # if not exact and g is None:
-        #     g = N
-
+        # For graph 1 
         A1 = nx.to_numpy_array(G1)
         L1 = nx.laplacian_matrix(G1).toarray()
-        D1 = L1 + A1
+        D1 = L1 + A1 # is the diagonal degree matrix: L = D - A
 
+        # For graph 2
         A2 = nx.to_numpy_array(G2)
         L2 = nx.laplacian_matrix(G2).toarray()
-        D2 = L2 + A2
+        D2 = L2 + A2 
 
+        # "[eps] is a small constant capturing the influence between neighboring nodes” ([Koutra et al., 2016, p. 5]) 
         eps_1 = 1 / (1 + np.max(D1))
         eps_2 = 1 / (1 + np.max(D2))
 
