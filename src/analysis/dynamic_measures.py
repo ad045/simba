@@ -46,10 +46,24 @@ def calculate_diffusion_efficiency(A):
 
 
 
+# nctpy still calls the deprecated scipy.integrate.simps (removed in recent
+# scipy in favour of `simpson`, with x/dx now keyword-only). Restore a
+# positional-compatible alias so nctpy's gramian / ave_control work again.
+import scipy.integrate as _sp_integrate
+if not hasattr(_sp_integrate, "simps"):
+    def _simps_compat(y, x=None, dx=1.0, axis=-1, even=None):
+        return _sp_integrate.simpson(y, x=x, dx=dx, axis=axis)
+    _sp_integrate.simps = _simps_compat
+
 from nctpy.utils import matrix_normalization
 from nctpy.energies import sim_state_eq
 from nctpy.metrics import ave_control
 from nctpy.energies import get_control_inputs, integrate_u
+
+# Extra NCT primitives used only by the parameterised robustness sibling below
+# (calculate_nct_energies_multi) and the transition-independent comparators.
+from nctpy.metrics import modal_control as _nct_modal_control
+from nctpy.energies import minimum_energy_fast as _nct_min_energy_fast
 
 def calculate_nct_control(A, 
                       T=20, # time horizon
@@ -107,6 +121,195 @@ def calculate_nct_energies(A):
             "n_nodes_50_percent": n_50,
             "n_nodes_10_percent": n_10,
             }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Robustness sibling of calculate_nct_energies.
+#
+# The original estimator fixes ONE x0->xf transition via the global
+# np.random.seed(42). This sibling instead averages the optimal control energy
+# over `n_pairs` independent random transitions drawn from an explicitly-seeded
+# generator (np.random.default_rng), and also reports the across-pair spread so
+# the per-cell coefficient of variation (CV) can be quantified. With the default
+# arguments (n_pairs=1, T=1, rho=1, uniform state ensemble, full control B=I) it
+# reproduces the *design* of the original single-pair estimator. The original
+# function is left untouched so nothing existing breaks.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _nct_sample_states(rng, n_nodes, state_dist):
+    """Draw one (x0, xf) transition pair as (n_nodes, 1) column vectors.
+
+    state_dist:
+      "uniform"  - U[0,1] per node (matches the original estimator's ensemble)
+      "normal"   - standard normal per node
+      "unit_norm"- standard normal then L2-normalised to a unit vector
+      "one_hot"  - impulse transition between two distinct single nodes
+    """
+    if state_dist == "uniform":
+        x0 = rng.random((n_nodes, 1))
+        xf = rng.random((n_nodes, 1))
+    elif state_dist == "normal":
+        x0 = rng.standard_normal((n_nodes, 1))
+        xf = rng.standard_normal((n_nodes, 1))
+    elif state_dist == "unit_norm":
+        x0 = rng.standard_normal((n_nodes, 1)); x0 /= np.linalg.norm(x0)
+        xf = rng.standard_normal((n_nodes, 1)); xf /= np.linalg.norm(xf)
+    elif state_dist == "one_hot":
+        i, j = rng.choice(n_nodes, size=2, replace=False)
+        x0 = np.zeros((n_nodes, 1)); x0[i] = 1.0
+        xf = np.zeros((n_nodes, 1)); xf[j] = 1.0
+    else:
+        raise ValueError(f"Unknown state_dist: {state_dist}")
+    return x0, xf
+
+
+def _nct_build_B(n_nodes, B, rng, A=None):
+    """Resolve the control-set argument into an (n_nodes, n_nodes) matrix.
+
+    B can be:
+      None / "full"  - identity (every node a control input)
+      ("random", k)  - k random nodes are controllers
+      ("hub", k)     - the k highest-degree nodes are controllers
+      np.ndarray     - used as-is
+    """
+    if B is None or (isinstance(B, str) and B == "full"):
+        return np.eye(n_nodes)
+    if isinstance(B, np.ndarray):
+        return B
+    kind, k = B
+    diag = np.zeros(n_nodes)
+    if kind == "random":
+        idx = rng.choice(n_nodes, size=k, replace=False)
+    elif kind == "hub":
+        deg = np.asarray(A).sum(axis=1)
+        idx = np.argsort(deg)[::-1][:k]
+    else:
+        raise ValueError(f"Unknown B spec: {B}")
+    diag[idx] = 1.0
+    return np.diag(diag)
+
+
+def calculate_nct_energies_multi(A,
+                                 n_pairs=1,
+                                 rng=None,
+                                 T=1.0,
+                                 rho=1.0,
+                                 state_dist="uniform",
+                                 B=None,
+                                 return_per_pair=False):
+    """Transition-averaged optimal control energy (robustness sibling).
+
+    Averages the original total/std/max nodal control energy over `n_pairs`
+    independent x0->xf transitions and records the across-pair distribution.
+
+    Args:
+        A: adjacency matrix (NxN).
+        n_pairs: number of independent random transitions to average over.
+        rng: a np.random.default_rng (or seed int). If None, seeded with 42.
+        T, rho: control horizon and trajectory-constraint mixing parameter.
+        state_dist: state ensemble ("uniform"/"normal"/"unit_norm"/"one_hot").
+        B: control set (None/"full", ("random", k), ("hub", k), or NxN array).
+        return_per_pair: if True, also return the raw per-pair total array.
+
+    Returns dict with:
+        total           - mean total energy across pairs (the headline estimator)
+        total_std       - std of total energy across pairs
+        total_cv        - coefficient of variation (total_std / total) across pairs
+        std             - mean across pairs of the per-pair nodal-energy std
+        max             - mean across pairs of the per-pair max nodal energy
+        n_nodes_90/50/10_percent - mean across pairs of the concentration measures
+        n_pairs         - number of pairs actually used
+        (per_pair_total - present only if return_per_pair=True)
+    """
+    if rng is None:
+        rng = np.random.default_rng(42)
+    elif not isinstance(rng, np.random.Generator):
+        rng = np.random.default_rng(rng)
+
+    system = 'continuous'
+    A_norm = matrix_normalization(A=A, c=1, system=system)
+    n_nodes = A.shape[0]
+    S = np.eye(n_nodes)
+    B_mat = _nct_build_B(n_nodes, B, rng, A=A)
+
+    totals, stds, maxes = [], [], []
+    n90s, n50s, n10s = [], [], []
+
+    for _ in range(n_pairs):
+        x0, xf = _nct_sample_states(rng, n_nodes, state_dist)
+        x, u, n_err = get_control_inputs(A_norm=A_norm, T=T, B=B_mat,
+                                         x0=x0, xf=xf, system=system,
+                                         rho=rho, S=S)
+        node_energy = integrate_u(u)
+        energy = np.sum(node_energy)
+        totals.append(energy)
+        stds.append(np.std(node_energy))
+        maxes.append(np.max(node_energy))
+        n90s.append(np.sum(np.cumsum(np.sort(node_energy)[::-1]) <= 0.9 * energy))
+        n50s.append(np.sum(np.cumsum(np.sort(node_energy)[::-1]) <= 0.5 * energy))
+        n10s.append(np.sum(np.cumsum(np.sort(node_energy)[::-1]) <= 0.1 * energy))
+
+    totals = np.asarray(totals, dtype=float)
+    mean_total = float(np.mean(totals))
+    std_total = float(np.std(totals))
+
+    out = {
+        "total": mean_total,
+        "total_std": std_total,
+        "total_cv": float(std_total / mean_total) if mean_total != 0 else np.nan,
+        "std": float(np.mean(stds)),
+        "max": float(np.mean(maxes)),
+        "n_nodes_90_percent": float(np.mean(n90s)),
+        "n_nodes_50_percent": float(np.mean(n50s)),
+        "n_nodes_10_percent": float(np.mean(n10s)),
+        "n_pairs": int(n_pairs),
+    }
+    if return_per_pair:
+        out["per_pair_total"] = totals
+    return out
+
+
+def calculate_nct_transition_independent(A, T=1.0, n_basis=None, rng=None):
+    """Transition-INDEPENDENT controllability measures for comparison.
+
+    None of these depend on an arbitrary x0/xf pair:
+      ave_control_mean/std   - average controllability (Gramian trace per node)
+      modal_control_mean/std - modal controllability
+      min_energy_basis_mean  - mean minimum control energy to reach an
+                               orthonormal basis of target states from the
+                               origin (B=I), averaged over the basis. This is
+                               the transition-independent analogue of the
+                               ad-hoc single-pair energy.
+    """
+    system = 'continuous'
+    A_norm = matrix_normalization(A=A, c=1, system=system)
+    n_nodes = A.shape[0]
+
+    ac = ave_control(A_norm=A_norm, system=system)
+    mc = _nct_modal_control(A_norm=A_norm)
+
+    # Minimum control energy from origin to each vector of an orthonormal basis.
+    # Use the canonical basis (identity) as a fixed, arbitrary-pair-free target
+    # set; minimum_energy_fast accepts stacked states as columns.
+    if n_basis is None:
+        n_basis = n_nodes
+    basis = np.eye(n_nodes)[:, :n_basis]
+    x0 = np.zeros((n_nodes, n_basis))
+    B = np.eye(n_nodes)
+    e = _nct_min_energy_fast(A_norm=A_norm, T=T, B=B, x0=x0, xf=basis)
+    # minimum_energy_fast returns per-node energy (n_nodes x n_targets); the
+    # total energy for each target is the column sum.
+    e = np.asarray(e)
+    per_target_total = e.sum(axis=0) if e.ndim == 2 else np.atleast_1d(e)
+
+    return {
+        "ave_control_mean": float(np.mean(ac)),
+        "ave_control_std": float(np.std(ac)),
+        "modal_control_mean": float(np.mean(mc)),
+        "modal_control_std": float(np.std(mc)),
+        "min_energy_basis_mean": float(np.mean(per_target_total)),
+        "min_energy_basis_total": float(np.sum(per_target_total)),
+    }
 
 
 # from from_francisco import evaluate_network_2

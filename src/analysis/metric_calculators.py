@@ -274,15 +274,10 @@ class DynamicMetricCalculator(MetricCalculator):
 
         elif metric_name == "diffusion_efficiency": 
             return calculate_diffusion_efficiency(self.A)
-
-        # elif metric_name == "propagation_distance": # Kayson
-        #     return propagation_distance(self.A)
             
         elif metric_name == "propagation_efficiency": # based on Kayson. but there could also be a netneurotools way?
             return 1/(propagation_distance(self.A).mean())
 
-        # elif metric_name == "average_controllability":
-        #     return average_controllability(self.A)
         elif metric_name == "nct_control":
             return calculate_nct_control(self.A)
 

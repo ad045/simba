@@ -258,3 +258,8 @@ output/
 
 # Nested autoresearch project — its own git repo, parent must not track it
 /autoresearch/autoresearching_GNM_alternatives_for_age_and_tax/
+
+# graphify knowledge-graph output (regenerable, never track)
+graphify-out/
+.DS_Store
+.vscode/
