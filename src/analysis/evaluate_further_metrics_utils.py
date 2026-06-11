@@ -41,20 +41,22 @@ def get_metric_category(metric_name, static_calc, dynamic_calc, computation_calc
         return None
 
 
-def merge_checkpoint_files(output_path, experiment_name, df_original_dict, metric_categories):
+def merge_checkpoint_files(output_path, experiment_name, df_original_dict, metric_categories, temp_dir=None):
     """
     Merge all checkpoint CSV files with the original data and save to final output files.
     Saves separate files for static, dynamic, and computational metrics.
     PRESERVES all existing metric values - only updates NaN or missing values.
-    
+
     Args:
         output_path: Path to the experiment output directory
         experiment_name: Name of the experiment
         df_original_dict: Dict of original DataFrames {'static': df, 'dynamic': df, 'computational': df}
         metric_categories: Dict of metrics by category (used for reference)
+        temp_dir: Directory containing checkpoint files (defaults to output_path/temp)
     """
-    temp_dir = output_path / "temp"
-    
+    if temp_dir is None:
+        temp_dir = output_path / "temp"
+
     if not temp_dir.exists():
         print("No temp directory found - nothing to merge")
         return df_original_dict
@@ -139,7 +141,16 @@ def merge_checkpoint_files(output_path, experiment_name, df_original_dict, metri
                         # Check if existing value is NaN or missing
                         existing_value = df_updated.loc[mask, metric].iloc[0]
                         if pd.isna(existing_value):
-                            df_updated.loc[mask, metric] = float(Fraction(str(result_row[metric])))
+                            try:
+                                new_value = float(Fraction(str(result_row[metric])))
+                            except (ValueError, ZeroDivisionError):
+                                # List-valued metrics (e.g. "..._mc_values_for_indiv_lags"
+                                # stored as "[0.1, 0.2, ...]") aren't plain numbers and
+                                # can't be written into this float column. Their values
+                                # are already captured individually in the "..._mc_0",
+                                # "..._mc_1", ... scalar columns, so just skip them here.
+                                continue
+                            df_updated.loc[mask, metric] = new_value
                             updated_count += 1
                         else:
                             preserved_count += 1
@@ -581,7 +592,17 @@ def multiprocess_networks(experiment,
                 # Create empty dataframe with mandatory columns
                 df_dict[category] = pd.DataFrame(columns=['eta', 'gamma', 'id'])
                 print(f"No existing {category} results - starting fresh")
-    
+
+    # Merge any leftover checkpoint files from previous runs.
+    # Loops over "temp_copy" first, then "temp", so both pre-existing result sets
+    # are incorporated before get_missing_work() decides what still needs computing.
+    # Each directory is cleaned up after its files are merged.
+    for _pre_dir_name in ["temp_copy", "temp"]:
+        _pre_dir = output_path / _pre_dir_name
+        if not ONLY_SUMMARIZE and _pre_dir.exists() and any(_pre_dir.glob("result_*.csv")):
+            print(f"\nFound leftover checkpoint files in '{_pre_dir_name}' - merging before continuing...")
+            df_dict = merge_checkpoint_files(output_path, experiment, df_dict, metric_categories, temp_dir=_pre_dir)
+
     # # Determine what work needs to be done
     if not ONLY_SUMMARIZE:
         print("\nAnalyzing which metrics need to be calculated...")
