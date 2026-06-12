@@ -65,3 +65,27 @@ Default canonical label strings (needs-triage, needs-info, ready-for-agent, read
 
 ### Domain docs
 Single-context layout — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+## graphify
+
+This project has a knowledge graph at `graphify-out/graph.json` (~2040 nodes / ~3800
+edges over `src/`, the `run_*` scripts, `A_benchmarking_plots/`, configs and docs; the
+`data/`/`output/` symlinks and agent-tooling files are excluded). It maps which
+function/class lives in which file and how they connect, and answers cite
+`source_file:line` you can open directly.
+
+Rules:
+- **Before grepping the whole tree to locate code, query the graph.** Run
+  `graphify query "TOKENS"` (e.g. `memory capacity reservoir connectome`),
+  `graphify path "<A>" "<B>"` for relationships, `graphify explain "<concept>"` for one
+  symbol. These return a scoped subgraph, far smaller than GRAPH_REPORT.md or raw grep.
+- **Pass space-separated keyword tokens, NOT a full sentence** — the matcher is literal
+  substring + IDF (no stemming/synonyms), so a prose question collapses to noise. The
+  `/graphify query "..."` skill auto-expands the question to graph vocabulary for you;
+  prefer it when unsure.
+- Core abstraction: `NetworkEvaluator` (`src/comparing_connectomes/base_comparer.py`)
+  + its ~20 metric subclasses is the spine of the benchmarking side.
+- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review, or when
+  query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no
+  API cost). `graphify-out/` is gitignored, so the graph is per-clone.
