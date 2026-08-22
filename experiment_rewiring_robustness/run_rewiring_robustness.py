@@ -89,12 +89,15 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 import pandas as pd
 
-ROOT_DIR = Path(__file__).resolve().parent
+ROOT_DIR = Path(__file__).resolve().parent.parent
+
+# repo root on sys.path so the sibling `experiment_real_vs_artificial` package and
+# `src.*` import when this script is run directly (sys.path[0] is this folder, not root)
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 # Reuse the S3 machinery verbatim (same evaluators / orientation / paths / style).
-from run_real_vs_artificial import (
+from experiment_real_vs_artificial.run_real_vs_artificial import (
     build_evaluators,
     SELECTED_MEASURES,
     IS_SIMILARITY,
@@ -106,44 +109,34 @@ from run_real_vs_artificial import (
 )
 
 # ---------------------------------------------------------------------------
-# Constants
+# Constants  (experiment knobs centralised in experiments_config.rewiring)
 # ---------------------------------------------------------------------------
 
+from experiments_config import rewiring as _rw
+
+N_NODES                 = _rw.N_NODES
+N_ETA                   = _rw.N_ETA
+N_GAMMA                 = _rw.N_GAMMA
+N_REPLICATES            = _rw.N_REPLICATES
+E_EDGES                 = _rw.E_EDGES                 # 10% density at 100 nodes
+ETA_RANGE               = _rw.ETA_RANGE
+GAMMA_RANGE             = _rw.GAMMA_RANGE
+SLOW_MEASURES           = _rw.SLOW_MEASURES           # window-recovery measures
+DEFAULT_NOISE_LEVELS    = _rw.DEFAULT_NOISE_LEVELS    # last entry = full-rand anchor
+FULL_ANCHOR             = _rw.FULL_ANCHOR
+R_DEFAULT               = _rw.R_DEFAULT
+R_SLOW                  = _rw.R_SLOW
+WINDOW_DEFAULT          = _rw.WINDOW_DEFAULT          # +/- cells around p0 (slow)
+FALLBACK_CUTOFF_DEFAULT = _rw.FALLBACK_CUTOFF_DEFAULT # widen on boundary hit if s <= this
+DRIFT_THRESHOLD         = _rw.DRIFT_THRESHOLD         # grid steps; N* threshold
+BASE_SEED               = _rw.BASE_SEED
+
+# derived paths / grid steps (computed from the centralised bases)
 OUT_DIR = ROOT_DIR / "output" / "rewiring_robustness"
 FIG_DIR = ROOT_DIR / "figures" / "appendix"
 GNM_DIR = MORPHO_DIR / "generated_networks"
-
-N_NODES = 100
-N_ETA = 50
-N_GAMMA = 50
-N_REPLICATES = 10
-E_EDGES = 495                       # 10% density at 100 nodes: 0.10 * 100*99/2
-
-# grid geometry (for axis labelling / param-unit conversion only)
-ETA_RANGE = (-8.0, 3.0)
-GAMMA_RANGE = (-0.1, 1.0)
-ETA_STEP = (ETA_RANGE[1] - ETA_RANGE[0]) / (N_ETA - 1)      # ~0.224
+ETA_STEP   = (ETA_RANGE[1] - ETA_RANGE[0]) / (N_ETA - 1)        # ~0.224
 GAMMA_STEP = (GAMMA_RANGE[1] - GAMMA_RANGE[0]) / (N_GAMMA - 1)  # ~0.022
-
-# measures that recover on a window around p0 (everything else uses the full grid)
-SLOW_MEASURES = {
-    "portrait",
-    "net_simile",
-    "netrd_non_backtracking_spectral",
-    "energy",
-}
-
-# default noise ladder (number of rewiring operations). The last entry is the
-# near-full-randomisation sanity anchor and is EXCLUDED from N* / AUC.
-DEFAULT_NOISE_LEVELS = [1, 2, 5, 10, 20, 50, 100, 200, E_EDGES]
-FULL_ANCHOR = E_EDGES
-
-R_DEFAULT = 20
-R_SLOW = 10
-WINDOW_DEFAULT = 10                 # +/- cells around p0 for slow measures
-FALLBACK_CUTOFF_DEFAULT = 50        # widen to full grid on a boundary hit only if s <= this
-DRIFT_THRESHOLD = 1.0               # grid steps; N* is the largest s with median_drift <= 1
-BASE_SEED = 20260612
 
 # canonical CSV that defines the GNM row order (filenames + eta + gamma + id)
 CANON_CSV = MORPHO_DIR / f"summary_indiv_frobenius_for_exp_{MORPHO_EXP}.csv"
@@ -508,54 +501,69 @@ def plot(results: pd.DataFrame, curves: pd.DataFrame, out_pdf: Path) -> None:
     import matplotlib.pyplot as plt
 
     viz, have_viz = _viz()
-    figsize = (viz.cm_to_inch((18, 20)) if have_viz else (18 / 2.54, 20 / 2.54))
+    # Matches the main-text degeneration panel: 18 cm max width, seaborn "ticks"
+    # box, dashed grid, house measure colors, no in-figure measure legend (the
+    # shared legend_8_measures.pdf is placed under the figure in the manuscript).
+    figsize = (viz.cm_to_inch((18, 8)) if have_viz else (18 / 2.54, 8 / 2.54))
     GRAY = (0.5, 0.5, 0.5)
 
-    fig, (axA, axB) = plt.subplots(2, 1, figsize=figsize,
-                                   gridspec_kw={"height_ratios": [1.3, 1.0]})
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=figsize,
+                                   gridspec_kw={"width_ratios": [1.35, 1.0]})
+
+    def _panel_letter(ax, letter):
+        ax.text(-0.16, 1.04, letter, transform=ax.transAxes,
+                fontsize=12, fontweight="bold", va="bottom", ha="left")
 
     # ---- Panel A: drift curves (median + IQR) vs fraction of edges rewired ----
     for m, g in curves.groupby("measure"):
         g = g.sort_values("frac")
         c = METRIC_COLORS.get(m, GRAY)
         x = g["frac"].clip(lower=g[g["frac"] > 0]["frac"].min() if (g["frac"] > 0).any() else 1e-3)
-        axA.plot(x, g["median"], color=c, lw=1.6, zorder=3,
+        axA.plot(x, g["median"], color=c, lw=1.2, alpha=0.9, zorder=3,
                  label=METHOD_NAMES.get(m, m))
-        axA.fill_between(x, g["q25"], g["q75"], color=c, alpha=0.18, lw=0, zorder=2)
-    axA.axhline(DRIFT_THRESHOLD, color=GRAY, ls="--", lw=0.9, zorder=1)
-    axA.text(axA.get_xlim()[1], DRIFT_THRESHOLD, "  N* threshold (1 step)",
-             va="bottom", ha="right", fontsize=6.5, color=GRAY)
+        # IQR across perturbation draws. The draws are strongly bimodal at the
+        # cliff levels (most hold the best fit, a few collapse across the grid),
+        # so these bands are tall by nature; the symlog y-axis below keeps them
+        # legible without hiding the region where N* is decided.
+        axA.fill_between(x, g["q25"], g["q75"], color=c, alpha=0.13, lw=0, zorder=2)
+    axA.axhline(DRIFT_THRESHOLD, color="black", ls="--", lw=0.8, zorder=4)
     axA.set_xscale("log")
-    axA.set_xlabel("fraction of edges rewired  (2s / E)")
-    axA.set_ylabel("recovered-parameter drift  (grid steps)")
-    axA.set_title("A   Parameter drift under progressive reference rewiring",
-                  loc="left", fontsize=10, fontweight="bold")
-    axA.legend(loc="upper left", frameon=False, fontsize=6.5, ncol=2)
-    for sp in ("top", "right"):
-        axA.spines[sp].set_visible(False)
+    # linear below one grid step (where N* is read off), compressed above it
+    axA.set_yscale("symlog", linthresh=DRIFT_THRESHOLD, linscale=0.45)
+    axA.set_yticks([0, 1, 2, 5, 10, 20, 50])
+    axA.get_yaxis().set_major_formatter(plt.matplotlib.ticker.ScalarFormatter())
+    axA.set_ylim(0, 55)
+    axA.text(0.99, DRIFT_THRESHOLD, "N* threshold (1 step)  ", transform=axA.get_yaxis_transform(),
+             va="bottom", ha="right", fontsize=7, color="black")
+    axA.grid(True, alpha=0.3, linestyle="--", linewidth=0.5)
+    axA.set_axisbelow(True)
+    axA.set_xlabel("Fraction of Edges Rewired (2s / E)")
+    axA.set_ylabel("Recovered-Parameter Drift (Grid Steps)")
+    _panel_letter(axA, "A")
 
     # ---- Panel B: robustness ranking (noise tolerance, sorted desc) ----------
     res = results.sort_values("noise_tolerance_frac", ascending=True).reset_index(drop=True)
     y = np.arange(len(res))
     colors = [METRIC_COLORS.get(m, GRAY) for m in res["measure"]]
     bars = axB.barh(y, res["noise_tolerance_frac"], color=colors, edgecolor="black",
-                    linewidth=0.4, height=0.7, zorder=2)
+                    linewidth=0.4, height=0.7, zorder=3)
     for bar, cliff in zip(bars, res["cliff_flag"]):
         if cliff:
             bar.set_hatch("///")
     axB.set_yticks(y)
-    axB.set_yticklabels([METHOD_NAMES.get(m, m) for m in res["measure"]], fontsize=8)
-    axB.set_xlabel("noise tolerance  N*  (fraction of edges rewired before drift > 1 step)")
+    axB.set_yticklabels([METHOD_NAMES.get(m, m) for m in res["measure"]])
+    axB.set_xlabel("Noise Tolerance N*")
+    axB.set_xlim(0, max(res["noise_tolerance_frac"]) * 1.18)
     for yi, v in zip(y, res["noise_tolerance_frac"]):
-        axB.text(v + 0.002, yi, f"{v:.3f}", va="center", fontsize=6.5)
+        axB.text(v + max(res["noise_tolerance_frac"]) * 0.015, yi, f"{v:.3f}",
+                 va="center", fontsize=7)
     from matplotlib.patches import Patch
     axB.legend(handles=[Patch(facecolor="white", edgecolor="black", hatch="///",
                               label="fails via cliff")],
                loc="lower right", frameon=False, fontsize=7)
-    axB.set_title("B   Robustness-to-reference-noise ranking",
-                  loc="left", fontsize=10, fontweight="bold")
-    for sp in ("top", "right"):
-        axB.spines[sp].set_visible(False)
+    axB.grid(True, axis="x", alpha=0.3, linestyle="--", linewidth=0.5)
+    axB.set_axisbelow(True)
+    _panel_letter(axB, "B")
 
     fig.tight_layout()
     out_pdf.parent.mkdir(parents=True, exist_ok=True)

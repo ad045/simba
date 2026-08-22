@@ -55,11 +55,15 @@ from src.comparing_connectomes.network_mutual_information_comparer import (
 from src.comparing_connectomes.netrd_comparer import NetrdEvaluator
 from src.comparing_connectomes.energy_comparer import EnergyEvaluator
 
-from experiments.benchmarking_measures_parameter_recovery.gnm_grid_config import (
-    TRUE_PARAM_COMBOS, GRID_COMBOS, GRID_N_ETA, GRID_N_GAMMA,
-    ETA_RANGE, GAMMA_RANGE, N_TEST, N_CONSENSUS_GRID, GENERATIVE_RULE_NAME,
-    param_dir_name, net_filename,
-)
+# Coarse parameter-recovery config (single source of truth, at the repo root).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from experiments_config import coarse as _cfg
+TRUE_PARAM_COMBOS = _cfg.TRUE_PARAM_COMBOS
+GRID_COMBOS, GRID_N_ETA, GRID_N_GAMMA = _cfg.GRID_COMBOS, _cfg.GRID_N_ETA, _cfg.GRID_N_GAMMA
+ETA_RANGE, GAMMA_RANGE = _cfg.ETA_RANGE, _cfg.GAMMA_RANGE
+N_TEST, N_CONSENSUS_GRID = _cfg.N_TEST, _cfg.N_CONSENSUS_GRID
+GENERATIVE_RULE_NAME = _cfg.GENERATIVE_RULE_NAME
+param_dir_name, net_filename = _cfg.param_dir_name, _cfg.net_filename
 
 
 # ---------------------------------------------------------------------------

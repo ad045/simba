@@ -73,78 +73,19 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-# --- repo root on sys.path (so `import src.*` works from anywhere) -----------
-ROOT_DIR = Path(__file__).resolve().parent
+# --- repo root on sys.path (so `import src.*` and the shared config resolve) --
+ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-# ---------------------------------------------------------------------------
-# Paths / constants
-# ---------------------------------------------------------------------------
-
-DATA_DIR = ROOT_DIR / "data" / "preprocessed" / "hcp_schaefer_100_dataset"
-RAW_DIR  = ROOT_DIR / "data" / "raw" / "hcp_schaefer_100"
-
-# main morphospace run that produced the cached D_art (per-network distances)
-MORPHO_DATASET = "hcp_schaefer_100_dataset"
-MORPHO_EXP     = "105_distance_metrics_mst_animal_0"
-MORPHO_DIR     = ROOT_DIR / "output" / "gnm" / MORPHO_DATASET / MORPHO_EXP
-
-CONSENSUS_PATH    = DATA_DIR / "01_connectomes" / "01_consensus_bin_density_10_percent_100.npy"
-INDIVIDUALS_PATH  = DATA_DIR / "01_connectomes" / "00_connectomes_density10.npy"
-DIST_MATRIX_PATH  = DATA_DIR / "02_distance_matrices" / "distance_matrix_100.npy"
-RAW_MAT_PATH      = RAW_DIR / "DTI_fibers_VolNorm_HCP.mat"
-RAW_COORDS_PATH   = RAW_DIR / "Schaefer_100_MNI_coords.txt"
-
-OUT_DIR = ROOT_DIR / "output" / "real_vs_artificial"
-
-HEMIID = np.array([0] * 50 + [1] * 50).reshape(-1, 1)
-DENSITY_RETAIN = 10          # percent, as in the preprocessing pipeline
-N_HARD_DEFAULT = 500         # hard-case: the N closest GNMs per measure
-
-# metadata columns present in every summary_indiv_*.csv
-META_COLS = {"network_index", "filename", "eta", "gamma", "id"}
-
-# ---------------------------------------------------------------------------
-# The 8 selected measures (manuscript). key == summary-file token.
-#   is_similarity : raw value higher => MORE similar (must be flipped to a dist)
-#   colour/name   : taken from 8_9_manuscript_selected_8_measures.ipynb
-# ---------------------------------------------------------------------------
-
-SELECTED_MEASURES: List[str] = [
-    "frobenius",
-    "delta_con",
-    "netrd_non_backtracking_spectral",
-    "spectral_distance_adjacency",
-    "communicability_corr",
-    "portrait",
-    "net_simile",
-    "energy",
-]
-
-IS_SIMILARITY = {"communicability_corr"}   # the only similarity among the 8
-
-METHOD_NAMES = {
-    "portrait": "Portrait",
-    "energy": "Energy",
-    "spectral_distance_adjacency": "Spectral (Adjacency)",
-    "delta_con": "DeltaCon",
-    "frobenius": "Frobenius",
-    "net_simile": "NetSimile",
-    "netrd_non_backtracking_spectral": "Spectral Non-BT",
-    "communicability_corr": "Communicability Corr.",
-}
-
-METRIC_COLORS = {
-    "communicability_corr": (0.6, 0.6, 0.6),
-    "netrd_non_backtracking_spectral": (0.21568627450980393, 0.49411764705882355, 0.7215686274509804),
-    "delta_con": (0.4, 0.4, 0.4),
-    "frobenius": (0.9019607843137255, 0.6705882352941176, 0.00784313725490196),
-    "net_simile": (0.4, 0.6509803921568628, 0.11764705882352941),
-    "spectral_distance_adjacency": (0.9058823529411765, 0.1607843137254902, 0.5411764705882353),
-    "energy": (0.8509803921568627, 0.37254901960784315, 0.00784313725490196),
-    "portrait": (0.10588235294117647, 0.6196078431372549, 0.4666666666666667),
-}
+# Paths, the 8 selected measures and their orientation / names / colours now
+# live in the single shared config at the repo root (experiments_config.py).
+from experiments_config import (
+    DATA_DIR, RAW_DIR, MORPHO_DATASET, MORPHO_EXP, MORPHO_DIR,
+    CONSENSUS_PATH, INDIVIDUALS_PATH, DIST_MATRIX_PATH, RAW_MAT_PATH, RAW_COORDS_PATH,
+    OUT_DIR, HEMIID, DENSITY_RETAIN, N_HARD_DEFAULT, META_COLS,
+    SELECTED_MEASURES, IS_SIMILARITY, METHOD_NAMES, METRIC_COLORS,
+)
 
 
 # ===========================================================================
@@ -408,7 +349,7 @@ def plot(results: pd.DataFrame, d_real: pd.DataFrame, out_pdf: Path,
     import matplotlib.pyplot as plt
 
     viz, have_viz = _viz()
-    figsize = (viz.cm_to_inch((18,9)) if have_viz else (18 / 2.54, 20 / 2.54))
+    figsize = (viz.cm_to_inch((12,6)) if have_viz else (18 / 2.54, 20 / 2.54))
 
     REAL_COLOR = (0.84, 0.19, 0.15)   # red
     ART_COLOR  = (0.30, 0.45, 0.69)   # blue

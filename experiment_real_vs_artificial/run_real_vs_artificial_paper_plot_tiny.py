@@ -349,35 +349,47 @@ def plot(results: pd.DataFrame, d_real: pd.DataFrame, out_pdf: Path,
     import matplotlib.pyplot as plt
 
     viz, have_viz = _viz()
-    figsize = (viz.cm_to_inch((18, 20)) if have_viz else (18 / 2.54, 20 / 2.54))
+    figsize = (viz.cm_to_inch((12,4)) if have_viz else (18 / 2.54, 20 / 2.54))
 
     REAL_COLOR = (0.84, 0.19, 0.15)   # red
     ART_COLOR  = (0.30, 0.45, 0.69)   # blue
     GRAY = (0.5, 0.5, 0.5)
 
-    fig, (axA, axB) = plt.subplots(2, 1, figsize=figsize,
-                                   gridspec_kw={"height_ratios": [1.0, 1.4]})
+    fig, (axB, axA) = plt.subplots(1,2, figsize=figsize,
+                                #    gridspec_kw={"height_ratios": [1.0, 1.4]}, 
+                                   sharey=True)
 
     # ---- Panel A: AUC ranking ----------------------------------------------
     res = results.copy()
     y = np.arange(len(res))[::-1]
     colors = [METRIC_COLORS.get(m, GRAY) for m in res["measure"]]
     axA.barh(y, res["auc"], color=colors, edgecolor="black", linewidth=0.4,
-             height=0.7, zorder=2, label="AUC (all 25k GNMs)")
-    axA.scatter(res["auc_hardcase"], y, marker="D", s=26, color="black",
-                zorder=4, label=f"AUC (hard case, {n_hard} closest)")
-    axA.axvline(0.5, color=GRAY, lw=0.9, ls="--", zorder=1, label="chance (0.5)")
+             height=0.7, zorder=2) # , label="AUC (all 25k GNMs)")
+    axA.scatter(res["auc_hardcase"], y, 
+                marker="D", 
+                s=10, # DIAMOND
+                color="black",
+                zorder=4) # , label=f"AUC (hard case, {n_hard} closest)")
+    axA.axvline(0.5, color=GRAY, lw=0.9, ls="--", zorder=1) # , label="chance (0.5)")
     axA.set_yticks(y)
-    axA.set_yticklabels(res["name"], fontsize=8)
+    axA.set_yticklabels(res["name"], fontsize=4)
     axA.set_xlim(min(0.45, float(res[["auc", "auc_hardcase"]].min().min()) - 0.03), 1.005)
-    axA.set_xlabel("AUC  (P[real subject closer to consensus than GNM])")
+    # axA.set_xlabel("AUC\n(P[real subject closer to consensus than GNM])")
+
     for yi, (a, h) in zip(y, zip(res["auc"], res["auc_hardcase"])):
-        axA.text(a + 0.004, yi + 0.18, f"{a:.3f}", va="center", fontsize=6)
-        axA.text(h, yi - 0.34, f"{h:.2f}", va="center", ha="center", fontsize=5.5, color="black")
-    axA.legend(loc="lower left", bbox_to_anchor=(0.0, 1.005), ncol=3,
-               frameon=False, fontsize=6.5, handletextpad=0.4, columnspacing=1.2)
-    axA.set_title("A   Discrimination ranking: real subjects vs GNM networks",
-                  loc="left", fontsize=10, fontweight="bold", pad=20)
+        axA.text(a + 0.004, yi + 0.18, 
+                f"{a:.3f}", 
+                fontsize=5, 
+                va="center") # , fontsize=6)
+        axA.text(h, yi - 0.34, 
+                f"{h:.2f}", 
+                va="center", ha="center",
+                fontsize=5, # fontsize=5.5, 
+                color="black")
+    # axA.legend(loc="lower left", bbox_to_anchor=(0.0, 1.005), ncol=3,
+    #            frameon=False, fontsize=6.5, handletextpad=0.4, columnspacing=1.2)
+    # axA.set_title("A   Discrimination ranking: real subjects vs GNM networks",
+    #               loc="left", fontsize=10, fontweight="bold", pad=20)
     for s in ("top", "right"):
         axA.spines[s].set_visible(False)
 
@@ -402,25 +414,27 @@ def plot(results: pd.DataFrame, d_real: pd.DataFrame, out_pdf: Path,
             # clip to lower half -> half-violin below the row baseline
             verts = body.get_paths()[0].vertices
             verts[:, 1] = np.clip(verts[:, 1], -np.inf, pos)
-        jitter = rng.uniform(0.04, 0.30, size=len(nr))
-        axB.scatter(nr, pos + jitter, s=12, color=REAL_COLOR, alpha=0.8,
+        jitter = rng.uniform(0.04, 0.30, size=len(nr)) * 2
+        axB.scatter(nr, pos + jitter, s=4, # 12, 
+                    color=REAL_COLOR, alpha=0.8,
                     linewidths=0, zorder=3)
 
     axB.set_yticks(positions)
-    axB.set_yticklabels(res["name"], fontsize=8)
-    axB.set_xlabel("closeness to consensus  (pooled min-max normalised; higher = closer)")
+    # axB.set_yticklabels(res["name"]) # , fwontsize=8)
+    # axB.set_xlabel("closeness to consensus\n(higher = closer)") # pooled min-max normalised; 
     axB.set_xlim(-0.02, 1.02)
     axB.set_ylim(-0.8, len(order) - 0.2)
     from matplotlib.patches import Patch
     from matplotlib.lines import Line2D
-    axB.legend(handles=[
-        Patch(facecolor=ART_COLOR, alpha=0.45, label="GNM networks (25k)"),
-        Line2D([0], [0], marker="o", color="none", markerfacecolor=REAL_COLOR,
-               markersize=6, label="real subjects (100)"),
-    ], loc="upper left", frameon=True, framealpha=0.9, edgecolor="none",
-       facecolor="white", fontsize=7)
-    axB.set_title("B   Closeness distributions: real subjects (points) vs GNM networks (violins)",
-                  loc="left", fontsize=10, fontweight="bold")
+    # axB.(handles=[
+    #     Patch(facecolor=ART_COLOR, alpha=0.45, label="GNM networks (25k)"),
+    #     Line2D([0], [0], marker="o", color="none", markerfacecolor=REAL_COLOR,
+    #            markersize=6, legendlabel="real subjects (100)"),
+    # ], loc="lower left", bbox_to_anchor=(0.0, 1.005), ncol=2,
+    # loc="upper left", frameon=True, framealpha=0.9, edgecolor="none",
+    #    facecolor="white") # , fontsize=7)
+    # axB.set_title("B   Closeness distributions: real subjects (points) vs GNM networks (violins)",
+    #               loc="left", fontsize=10, fontweight="bold")
     for s in ("top", "right"):
         axB.spines[s].set_visible(False)
 
@@ -479,7 +493,7 @@ def main():
     d_real_csv = out_dir / f"d_real_{args.reference}.csv"
     results_csv = out_dir / "real_vs_artificial_results.csv"
     meta_json = out_dir / "real_vs_artificial_meta.json"
-    fig_pdf = out_dir / "fig_real_vs_artificial.pdf"
+    fig_pdf = out_dir / "fig_real_vs_artificial_tiny.pdf"
 
     print(f"Output dir : {out_dir}")
     print(f"Reference  : {args.reference}   measures: {measures}   n_subjects: {n_subjects}\n")

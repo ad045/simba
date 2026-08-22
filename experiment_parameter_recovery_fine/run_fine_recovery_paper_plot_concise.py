@@ -25,8 +25,11 @@ axis. Pearson r on eta discriminates on the only axis carrying signal, but is
 blind to bias and scale compression and is undefined when recovery is constant.
 The figure shows grid steps only; r(eta) stays in the CSV and the printout, and
 is reported in the text where the eta-only view matters. Note also that
-one fine grid step is 0.22 in eta against 1.22 on the wide grid: equal grid-step
+one fine grid step is 0.16 in eta against 1.22 on the wide grid: equal grid-step
 errors mean very different parameter errors in the two experiments.
+
+The window itself is derived from the morphospace (central 50% of the pooled
+best-fit cells of the 8 selected measures) - see derive_window.py.
 
 Usage
 -----
@@ -150,17 +153,18 @@ def make_figure(scores: pd.DataFrame, chance_axis: float, out_pdf: Path) -> None
     # gamma bars: same hue, lightened towards white. Hatching marks the
     # measures outside the eight selected ones (those without a colour).
     light = [tuple(1 - 0.45 * (1 - np.asarray(c))) for c in colors]
-    matplotlib.rcParams["hatch.linewidth"] = 0.25
-    HATCH = "//////"
-    hatches = [None if m in METRIC_COLORS else HATCH for m in scores["measure"]]
+    # measures outside the selected eight: empty bars rather than hatched ones
+    selected = [m in METRIC_COLORS for m in scores["measure"]]
+    colors = [c if s else "white" for c, s in zip(colors, selected)]
+    light = [c if s else "white" for c, s in zip(light, selected)]
 
-    for yi, ce, cg, hh, de, dg in zip(y, colors, light, hatches,
-                                      scores["d_eta_steps"],
-                                      scores["d_gamma_steps"]):
-        axA.barh(yi + h / 2, de, height=h, color=ce, edgecolor=GRAY, # DARK,
-                 linewidth=0.1, hatch=hh)
-        axA.barh(yi - h / 2, dg, height=h, color=cg, edgecolor=GRAY, # DARK,
-                 linewidth=0.1, hatch=hh)
+    for yi, ce, cg, de, dg in zip(y, colors, light,
+                                  scores["d_eta_steps"],
+                                  scores["d_gamma_steps"]):
+        axA.barh(yi + h / 2, de, height=h, color=ce, edgecolor=GRAY,
+                 linewidth=0.3)
+        axA.barh(yi - h / 2, dg, height=h, color=cg, edgecolor=GRAY,
+                 linewidth=0.3)
         # Add small eta and gamma signs
         # label_pos_e = 0.16 # 06 # de - 0.06
         # label_pos_g = 0.16 # 06 # dg - 0.06
@@ -192,6 +196,8 @@ def make_figure(scores: pd.DataFrame, chance_axis: float, out_pdf: Path) -> None
              color=GRAY, va="bottom", ha="left")
     axA.set_yticks(y)
     axA.set_yticklabels(scores["name"], fontsize=FS)
+    for lab, sel in zip(axA.get_yticklabels(), selected):
+        lab.set_color(DARK if sel else GRAY)
     axA.set_xlabel("Mean absolute index error, per axis (grid steps)", fontsize=FS)
     axA.set_xlim(0, x_max)
     axA.tick_params(axis="x", labelsize=FS)
@@ -228,12 +234,14 @@ def make_figure(scores: pd.DataFrame, chance_axis: float, out_pdf: Path) -> None
     X0, X1 = 0.0, 2.1
     for _, r in merged.iterrows():
         c = METRIC_COLORS.get(r["measure"], UNSELECTED_COLOR)
+        sel = r["measure"] in METRIC_COLORS
         axB.plot([X0, X1], [r["wide_rank"], r["fine_rank"]], "-o",
-                 color=c, lw=1.4, markersize=4)
-        axB.text(X0 - LBL_GAP, r["wide_rank"], r["name"], ha="right", va="center",
-                 fontsize=FS, color=DARK)
-        axB.text(X1 + LBL_GAP, r["fine_rank"], r["name"], ha="left", va="center",
-                 fontsize=FS, color=DARK)
+                 color=c, lw=0.9 if sel else 0.55,
+                 markersize=3 if sel else 2.2)
+        for x, rank, ha in ((X0 - LBL_GAP, r["wide_rank"], "right"),
+                            (X1 + LBL_GAP, r["fine_rank"], "left")):
+            axB.text(x, rank, r["name"], ha=ha, va="center",
+                     fontsize=FS, color=DARK if sel else GRAY)
 
     axB.set_xlim(X0 - 1.6, X1 + 1.6)
     axB.set_xticks([X0, X1])

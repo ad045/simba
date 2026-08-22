@@ -2,7 +2,7 @@
 Fine-grained parameter recovery within the human-plausible (eta, gamma) range
 =============================================================================
 
-Analysis S1. See gnm_fine_config.py for the scientific motivation.
+Analysis S1. See experiments_config.py (the `fine` section) for the scientific motivation.
 
 Pipeline (all stages idempotent — existing files are skipped):
 
@@ -49,14 +49,15 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-# --- robust imports: this folder (for the config) + repo root (for src.*) -----
+# --- repo root on sys.path: benchmarking root carries src.* and the shared
+#     experiments_config; data/ and output/ are reached via its symlinks --------
 _THIS_DIR = Path(__file__).resolve().parent
-ROOT_DIR  = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
-for _p in (str(_THIS_DIR), str(ROOT_DIR)):
+ROOT_DIR  = _THIS_DIR.parent
+for _p in (str(ROOT_DIR), str(_THIS_DIR)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import gnm_fine_config as cfg  # noqa: E402
+from experiments_config import fine as cfg  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -382,7 +383,8 @@ METRIC_NAMES: Dict[str, str] = {
 # Wide-target experiment (5 widely-spread combos) for the ranking comparison.
 WIDE_COMPARISON_DIR = (ROOT_DIR / "output" / "gnm" /
                        "synthetic_parameter_recovery_grid" / "comparison_results")
-WIDE_GRID_N_ETA = 10  # from gnm_grid_config
+from experiments_config import coarse as _coarse
+WIDE_GRID_N_ETA = _coarse.GRID_N_ETA  # the wide (coarse) recovery grid
 
 
 def _pearson(a: pd.Series, b: pd.Series) -> float:
@@ -444,7 +446,19 @@ def wide_ranking() -> pd.DataFrame | None:
         te = valid["true_eta"].apply(lambda e: int(np.argmin(np.abs(wide_eta   - e))))
         tg = valid["true_gamma"].apply(lambda g: int(np.argmin(np.abs(wide_gamma - g))))
         step = np.sqrt((pe.values - te.values) ** 2 + (pg.values - tg.values) ** 2)
-        rows.append({"measure": measure, "wide_grid_steps": float(np.nanmean(step))})
+        rows.append({
+            "measure": measure,
+            "wide_grid_steps": float(np.nanmean(step)),
+            # Same score as in the window experiment, so the two are comparable.
+            # Caveat: the wide targets are only 5 distinct (eta, gamma) values,
+            # four of them grid corners, so r here mostly reports whether a
+            # measure separates the corners - it is a coarser instrument than
+            # the same number computed over the 100 window draws.
+            "wide_r_eta":   _pearson(valid["true_eta"],   valid["predicted_eta"]),
+            "wide_r_gamma": _pearson(valid["true_gamma"], valid["predicted_gamma"]),
+            "wide_n_true_combos": int(
+                valid[["true_eta", "true_gamma"]].drop_duplicates().shape[0]),
+        })
     if not rows:
         return None
     w = pd.DataFrame(rows).sort_values("wide_grid_steps").reset_index(drop=True)

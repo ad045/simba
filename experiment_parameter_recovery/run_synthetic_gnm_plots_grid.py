@@ -56,12 +56,14 @@ _cmaps = viz.give_colormaps()
 # Configuration
 # ---------------------------------------------------------------------------
 
-# A_benchmarking_plots.benchmarking_measures_parameter_recovery
-from gnm_grid_config import (
-    TRUE_PARAM_COMBOS, COMBO_LABELS,
-    GRID_ETA, GRID_GAMMA, GRID_COMBOS, GRID_N_ETA, GRID_N_GAMMA,
-    ETA_RANGE, GAMMA_RANGE,
-)
+# Coarse parameter-recovery config (single source of truth, at the repo root).
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from experiments_config import coarse as _cfg
+TRUE_PARAM_COMBOS, COMBO_LABELS = _cfg.TRUE_PARAM_COMBOS, _cfg.COMBO_LABELS
+GRID_ETA, GRID_GAMMA, GRID_COMBOS = _cfg.GRID_ETA, _cfg.GRID_GAMMA, _cfg.GRID_COMBOS
+GRID_N_ETA, GRID_N_GAMMA = _cfg.GRID_N_ETA, _cfg.GRID_N_GAMMA
+ETA_RANGE, GAMMA_RANGE = _cfg.ETA_RANGE, _cfg.GAMMA_RANGE
 
 ROOT_DIR       = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code") # Path(__file__).parent
 COMPARISON_DIR = ROOT_DIR / "output" / "gnm" / "synthetic_parameter_recovery_grid" / "comparison_results"

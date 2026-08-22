@@ -286,7 +286,22 @@ def get_missing_work(df_dict, network_files, metric_categories):
         dict: {network_index: {'static': [...], 'dynamic': [...], 'computational': [...], 'further': [...]}}
     """
     missing_work = {}
-    
+
+    # Precompute, per category, the set of columns that are entirely NaN across
+    # the whole dataframe. These are typically list-valued sub-columns of
+    # dict-returning metrics (e.g. "..._mc_values_for_indiv_lags") that
+    # merge_checkpoint_files cannot write into a float column and therefore
+    # skips - so they stay NaN for *every* network. Such columns carry no
+    # "is this computed?" signal and must be ignored below; otherwise every
+    # network would always look "missing" and we'd recompute everything.
+    all_nan_cols = {}
+    for category in ['static', 'dynamic', 'computational', 'further']:
+        df = df_dict[category]
+        if len(df):
+            all_nan_cols[category] = set(df.columns[df.isna().all()])
+        else:
+            all_nan_cols[category] = set(df.columns)
+
     for idx, name, full_path in network_files:
         eta, gamma, net_id = get_eta_gamma_id_from_filename(name)
         
@@ -311,17 +326,34 @@ def get_missing_work(df_dict, network_files, metric_categories):
                 existing_row = df[mask].iloc[0]
                 
                 for metric in metric_categories[category]:
-                    # Check if metric column exists
-                    if metric not in df.columns:
-                        network_missing[category].append(metric)
-                    # Check for metrics that return dicts - look for any column starting with metric name
-                    elif any(col.startswith(f"{metric}_") for col in df.columns):
-                        # This is a dict-returning metric - check if any of its values are NaN
-                        metric_cols = [col for col in df.columns if col.startswith(f"{metric}_")]
-                        if any(pd.isna(existing_row[col]) for col in metric_cols):
+                    # A metric occupies either a single literal column named
+                    # exactly `metric` (scalar metrics) OR several prefixed
+                    # columns named "{metric}_<key>" (dict-returning metrics such
+                    # as mc_input_scaling_0_1 -> ..._mc_mean, ..._mc_0, ...).
+                    # NOTE: the dict-metric case MUST be checked via its prefixed
+                    # columns, because the literal "{metric}" column never exists
+                    # for those - so `metric not in df.columns` must NOT be the
+                    # first thing we branch on (that was the previous bug: it
+                    # flagged every dict metric as missing for every network).
+                    prefix_cols = [col for col in df.columns if col.startswith(f"{metric}_")]
+
+                    if metric in df.columns:
+                        # Scalar metric with a literal column: missing iff NaN.
+                        if pd.isna(existing_row[metric]):
                             network_missing[category].append(metric)
-                    # Regular scalar metric - check if NaN
-                    elif pd.isna(existing_row[metric]):
+                    elif prefix_cols:
+                        # Dict-returning metric: decide using only the columns
+                        # that actually carry a signal (drop the always-NaN
+                        # list-valued sub-columns, see all_nan_cols above).
+                        cols_to_check = [c for c in prefix_cols
+                                         if c not in all_nan_cols[category]]
+                        if not cols_to_check:
+                            cols_to_check = prefix_cols
+                        if any(pd.isna(existing_row[col]) for col in cols_to_check):
+                            network_missing[category].append(metric)
+                    else:
+                        # Neither a literal nor any prefixed column exists:
+                        # this metric has never been computed for any network.
                         network_missing[category].append(metric)
         
         # Only add to missing_work if there's actually work to do

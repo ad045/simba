@@ -48,12 +48,15 @@ from typing import Dict, List, Tuple
 
 from vizman import viz
 
-# Fine-experiment config (single source of truth for the grid).
-from gnm_fine_config import (
-    GRID_ETA, GRID_GAMMA, GRID_COMBOS, GRID_N_ETA, GRID_N_GAMMA,
-    ETA_RANGE, GAMMA_RANGE,
-    SAMPLE_ETA_RANGE, SAMPLE_GAMMA_RANGE, CENTER_ETA, CENTER_GAMMA,
-)
+# Fine-experiment config (single source of truth, at the benchmarking repo root).
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from experiments_config import fine as _cfg
+GRID_ETA, GRID_GAMMA, GRID_COMBOS = _cfg.GRID_ETA, _cfg.GRID_GAMMA, _cfg.GRID_COMBOS
+GRID_N_ETA, GRID_N_GAMMA = _cfg.GRID_N_ETA, _cfg.GRID_N_GAMMA
+ETA_RANGE, GAMMA_RANGE = _cfg.ETA_RANGE, _cfg.GAMMA_RANGE
+SAMPLE_ETA_RANGE, SAMPLE_GAMMA_RANGE = _cfg.SAMPLE_ETA_RANGE, _cfg.SAMPLE_GAMMA_RANGE
+CENTER_ETA, CENTER_GAMMA = _cfg.CENTER_ETA, _cfg.CENTER_GAMMA
 
 
 # ---------------------------------------------------------------------------
@@ -275,7 +278,7 @@ def plot_landscapes(results: Dict[str, pd.DataFrame]) -> None:
         out_path = PLOT_DIR / f"landscape_fine_{measure}_grid_steps.pdf"
         fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
         plt.close(fig)
-        print(f"  Saved landscape -> {out_path.name}")
+        print(f"  Saved landscape -> {out_path}")
 
 
 # ---------------------------------------------------------------------------
@@ -370,7 +373,7 @@ def plot_scatter(results: Dict[str, pd.DataFrame]) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
     plt.close(fig)
-    print(f"Saved scatter -> {out_path.name}")
+    print(f"Saved scatter -> {out_path}")
 
 
 # ---------------------------------------------------------------------------
