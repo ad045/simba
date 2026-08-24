@@ -60,6 +60,7 @@ _cmaps = viz.give_colormaps()
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from experiments_config import coarse as _cfg
+from experiments_config import to_distance
 TRUE_PARAM_COMBOS, COMBO_LABELS = _cfg.TRUE_PARAM_COMBOS, _cfg.COMBO_LABELS
 GRID_ETA, GRID_GAMMA, GRID_COMBOS = _cfg.GRID_ETA, _cfg.GRID_GAMMA, _cfg.GRID_COMBOS
 GRID_N_ETA, GRID_N_GAMMA = _cfg.GRID_N_ETA, _cfg.GRID_N_GAMMA
@@ -228,11 +229,17 @@ def _panel_label(ax, letter: str) -> None:
 # Figure 1 - Landscape heatmaps (one PDF per measure)
 # ---------------------------------------------------------------------------
 
-def _mean_landscape(df: pd.DataFrame, true_combo_idx: int) -> np.ndarray:
-    """(GRID_N_GAMMA, GRID_N_ETA) matrix of mean distances for one true combo."""
+def _mean_landscape(df: pd.DataFrame, true_combo_idx: int,
+                    measure: str) -> np.ndarray:
+    """(GRID_N_GAMMA, GRID_N_ETA) matrix of mean ORIENTED distances for one combo.
+
+    Oriented: the five similarity measures (Jaccard, F1, NMI, DC-NMI,
+    communicability correlation) score higher = closer, so they are flipped and
+    "lower = closer" holds for all 16 - which is what the argmin marker assumes.
+    """
     sub  = df[df["true_combo_idx"] == true_combo_idx]
     cols = _dist_grid_cols(sub)
-    mean = sub[cols].mean(axis=0).values          # (n_grid,)
+    mean = to_distance(sub[cols].mean(axis=0).values, measure)   # (n_grid,)
     return mean.reshape(GRID_N_GAMMA, GRID_N_ETA)  # rows=γ, cols=η
 
 
@@ -248,7 +255,7 @@ def plot_landscapes(results: Dict[str, pd.DataFrame]) -> None:
         )
 
         # Determine shared colour scale across all combos for this measure
-        all_vals = [_mean_landscape(df, ci) for ci in range(n_combos)]
+        all_vals = [_mean_landscape(df, ci, measure) for ci in range(n_combos)]
         vmin = min(m.min() for m in all_vals)
         vmax = max(m.max() for m in all_vals)
 

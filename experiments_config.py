@@ -78,7 +78,27 @@ SELECTED_MEASURES: List[str] = [
     "energy",
 ]
 
-IS_SIMILARITY = {"communicability_corr"}   # the only similarity among the 8
+# Raw comparer output higher => MORE similar, so it must be flipped before any
+# argmin / "closest cell" logic. Covers all 16 benchmarked measures, not just the
+# 8 selected ones (communicability_corr is the only similarity among those 8).
+IS_SIMILARITY = {
+    "communicability_corr",
+    "jaccard",
+    "f1",
+    "network_mutual_information",
+    "dc_network_mutual_information",
+}
+
+
+def to_distance(values, measure: str):
+    """Orient raw comparer output so that LOWER always means more similar.
+
+    Similarities are negated rather than mapped through 1-x: only the ordering
+    matters for argmin / ranking, and negation is defined for unbounded scores
+    (Pearson r) as well as for the bounded ones (Jaccard, F1, NMI).
+    """
+    v = np.asarray(values, dtype=float)
+    return -v if measure in IS_SIMILARITY else v
 
 METHOD_NAMES = {
     "portrait": "Portrait",

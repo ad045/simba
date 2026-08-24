@@ -495,7 +495,30 @@ def _viz():
         return None, False
 
 
-def plot(results: pd.DataFrame, curves: pd.DataFrame, out_pdf: Path) -> None:
+def _hold_curve(df_m: pd.DataFrame) -> pd.DataFrame:
+    """Per-s fraction of draws that still hold the unperturbed best fit.
+
+    The draws are bimodal at the levels where a measure gives way (most hold the
+    original cell, a few relocate across the grid), so a median/IQR summary spans
+    the empty middle. The share of draws within one grid step is the summary that
+    matches that shape; N* is the largest level at which it is still >= 0.5.
+    """
+    held = (df_m["drift"] <= DRIFT_THRESHOLD).groupby(df_m["s"]).mean()
+    cur = pd.DataFrame({"s": held.index.to_numpy(), "hold": held.to_numpy()})
+    base = pd.DataFrame([{"s": 0, "hold": 1.0}])   # s=0 holds by construction
+    cur = pd.concat([base, cur], ignore_index=True).sort_values("s").reset_index(drop=True)
+    cur["frac"] = np.minimum(1.0, 2.0 * cur["s"] / E_EDGES)
+    return cur
+
+
+def _logx(frac: "pd.Series") -> "np.ndarray":
+    """frac on a log axis: the s=0 point is clipped to the smallest tested level."""
+    pos = frac[frac > 0]
+    return frac.clip(lower=pos.min() if len(pos) else 1e-3).to_numpy()
+
+
+def plot(results: pd.DataFrame, curves: pd.DataFrame, per_draw: pd.DataFrame,
+         out_pdf: Path) -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -504,41 +527,50 @@ def plot(results: pd.DataFrame, curves: pd.DataFrame, out_pdf: Path) -> None:
     # Matches the main-text degeneration panel: 18 cm max width, seaborn "ticks"
     # box, dashed grid, house measure colors, no in-figure measure legend (the
     # shared legend_8_measures.pdf is placed under the figure in the manuscript).
-    figsize = (viz.cm_to_inch((18, 8)) if have_viz else (18 / 2.54, 8 / 2.54))
+    figsize = (viz.cm_to_inch((18, 16)) if have_viz else (18 / 2.54, 16 / 2.54))
     GRAY = (0.5, 0.5, 0.5)
 
-    fig, (axA, axB) = plt.subplots(1, 2, figsize=figsize,
-                                   gridspec_kw={"width_ratios": [1.35, 1.0]})
+    order = results.sort_values("noise_tolerance_frac", ascending=False)["measure"].tolist()
 
-    def _panel_letter(ax, letter):
-        ax.text(-0.16, 1.04, letter, transform=ax.transAxes,
+    fig = plt.figure(figsize=figsize)
+    # Two nested grids so the top row can have its own column gap: panel B's tick
+    # labels are long measure names and would otherwise run into panel A.
+    gs = fig.add_gridspec(2, 1, height_ratios=[1.5, 2.0], hspace=0.42)
+    gs_top = gs[0].subgridspec(1, 2, wspace=0.62)
+    gs_bot = gs[1].subgridspec(2, 4, wspace=0.25, hspace=0.45)
+    axA = fig.add_subplot(gs_top[0, 0])
+    axB = fig.add_subplot(gs_top[0, 1])
+    small = [fig.add_subplot(gs_bot[i // 4, i % 4]) for i in range(len(order))]
+
+    def _panel_letter(ax, letter, x=-0.16):
+        ax.text(x, 1.04, letter, transform=ax.transAxes,
                 fontsize=12, fontweight="bold", va="bottom", ha="left")
 
-    # ---- Panel A: drift curves (median + IQR) vs fraction of edges rewired ----
-    for m, g in curves.groupby("measure"):
-        g = g.sort_values("frac")
-        c = METRIC_COLORS.get(m, GRAY)
-        x = g["frac"].clip(lower=g[g["frac"] > 0]["frac"].min() if (g["frac"] > 0).any() else 1e-3)
-        axA.plot(x, g["median"], color=c, lw=1.2, alpha=0.9, zorder=3,
-                 label=METHOD_NAMES.get(m, m))
-        # IQR across perturbation draws. The draws are strongly bimodal at the
-        # cliff levels (most hold the best fit, a few collapse across the grid),
-        # so these bands are tall by nature; the symlog y-axis below keeps them
-        # legible without hiding the region where N* is decided.
-        axA.fill_between(x, g["q25"], g["q75"], color=c, alpha=0.13, lw=0, zorder=2)
-    axA.axhline(DRIFT_THRESHOLD, color="black", ls="--", lw=0.8, zorder=4)
+    # ---- Panel A: share of draws still holding the best fit -----------------
+    for m in order:
+        cur = _hold_curve(per_draw[per_draw["measure"] == m])
+        axA.plot(_logx(cur["frac"]), cur["hold"], color=METRIC_COLORS.get(m, GRAY),
+                 lw=1.2, alpha=0.9, zorder=3, label=METHOD_NAMES.get(m, m))
+    axA.axhline(0.5, color="black", ls="--", lw=0.8, zorder=4)
+    # N* itself is defined on the median drift, which coincides with a hold share
+    # of 0.5 only up to ties, so mark the reported level on the curve rather than
+    # letting the reader read it off the dashed line.
+    nstar = dict(zip(results["measure"], results["noise_tolerance_frac"]))
+    for m in order:
+        f = nstar.get(m, 0.0)
+        if f <= 0:
+            continue                       # N* = 0: fails at the first level
+        cur = _hold_curve(per_draw[per_draw["measure"] == m])
+        row = cur.iloc[(cur["frac"] - f).abs().argmin()]
+        axA.plot(row["frac"], row["hold"], "o", ms=3.5, color=METRIC_COLORS.get(m, GRAY),
+                 mec="black", mew=0.4, zorder=5)
     axA.set_xscale("log")
-    # linear below one grid step (where N* is read off), compressed above it
-    axA.set_yscale("symlog", linthresh=DRIFT_THRESHOLD, linscale=0.45)
-    axA.set_yticks([0, 1, 2, 5, 10, 20, 50])
-    axA.get_yaxis().set_major_formatter(plt.matplotlib.ticker.ScalarFormatter())
-    axA.set_ylim(0, 55)
-    axA.text(0.99, DRIFT_THRESHOLD, "N* threshold (1 step)  ", transform=axA.get_yaxis_transform(),
-             va="bottom", ha="right", fontsize=7, color="black")
+    axA.set_ylim(-0.04, 1.04)
+    axA.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
     axA.grid(True, alpha=0.3, linestyle="--", linewidth=0.5)
     axA.set_axisbelow(True)
     axA.set_xlabel("Fraction of Edges Rewired (2s / E)")
-    axA.set_ylabel("Recovered-Parameter Drift (Grid Steps)")
+    axA.set_ylabel("Draws Holding the Best Fit\n(within 1 Grid Step)")
     _panel_letter(axA, "A")
 
     # ---- Panel B: robustness ranking (noise tolerance, sorted desc) ----------
@@ -565,8 +597,43 @@ def plot(results: pd.DataFrame, curves: pd.DataFrame, out_pdf: Path) -> None:
     axB.set_axisbelow(True)
     _panel_letter(axB, "B")
 
-    fig.tight_layout()
-    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    # ---- Panel C: drift magnitude, one small panel per measure --------------
+    # One measure per panel with the other seven as grey context: the median+IQR
+    # bands are tall wherever the draws are bimodal, so overlaying all eight in
+    # one axes hides exactly the levels the comparison is about.
+    ctx = {m: curves[curves["measure"] == m].sort_values("frac") for m in order}
+    for ax, m in zip(small, order):
+        for other, g in ctx.items():
+            if other != m:
+                ax.plot(_logx(g["frac"]), g["median"], color=GRAY, lw=0.6,
+                        alpha=0.35, zorder=2)
+        g = ctx[m]
+        x = _logx(g["frac"])
+        c = METRIC_COLORS.get(m, GRAY)
+        ax.fill_between(x, g["q25"], g["q75"], color=c, alpha=0.2, lw=0, zorder=3)
+        ax.plot(x, g["median"], color=c, lw=1.4, zorder=4)
+        ax.axhline(DRIFT_THRESHOLD, color="black", ls="--", lw=0.7, zorder=5)
+        ax.set_title(METHOD_NAMES.get(m, m), fontsize=7.5, color=c, pad=3)
+        ax.set_xscale("log")
+        # linear below one grid step (where N* is read off), compressed above it
+        ax.set_yscale("symlog", linthresh=DRIFT_THRESHOLD, linscale=0.45)
+        ax.set_ylim(0, 55)
+        ax.set_yticks([0, 1, 5, 20, 50])
+        ax.get_yaxis().set_major_formatter(plt.matplotlib.ticker.ScalarFormatter())
+        ax.grid(True, alpha=0.3, linestyle="--", linewidth=0.5)
+        ax.set_axisbelow(True)
+        ax.tick_params(labelsize=7)
+        if ax not in (small[0], small[4]):
+            ax.set_yticklabels([])
+    for ax in small[:4]:
+        ax.set_xticklabels([])
+    small[0].set_ylabel("Drift (Grid Steps)", fontsize=8)
+    small[4].set_ylabel("Drift (Grid Steps)", fontsize=8)
+    small[5].set_xlabel("Fraction of Edges Rewired (2s / E)", fontsize=8,
+                        x=1.0, labelpad=6)
+    _panel_letter(small[0], "C", x=-0.42)
+
+    plt.tight_layout()
     fig.savefig(out_pdf, dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"  Saved figure -> {out_pdf}")
@@ -690,7 +757,7 @@ def main():
         print("\n" + "=" * 60, "\nStage: figure\n", "=" * 60, sep="")
         results = pd.read_csv(results_csv)
         curves = pd.read_csv(out_dir / "drift_curves_median.csv")
-        plot(results, curves, fig_pdf)
+        plot(results, curves, pd.read_csv(curves_csv), fig_pdf)
 
     print("\nDone.")
 

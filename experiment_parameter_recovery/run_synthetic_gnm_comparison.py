@@ -55,6 +55,9 @@ from src.comparing_connectomes.network_mutual_information_comparer import (
 from src.comparing_connectomes.netrd_comparer import NetrdEvaluator
 from src.comparing_connectomes.energy_comparer import EnergyEvaluator
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from experiments_config import to_distance
+
 
 # ---------------------------------------------------------------------------
 # Configuration — must match run_synthetic_gnm_generation.py
@@ -144,7 +147,8 @@ def run_comparison(evaluator, measure_name: str) -> pd.DataFrame:
 
         for net_id, net in enumerate(test_nets):
             dists    = compare_network_to_consensus_batch(net, consensus_batch, evaluator)
-            pred_idx = int(np.argmin(dists))
+            # Similarity measures score higher = closer; orient before argmin.
+            pred_idx = int(np.argmin(to_distance(dists, measure_name)))
             pred_eta, pred_gamma = PARAM_COMBOS[pred_idx]
 
             row = {

@@ -1,3 +1,5 @@
+# SLOPEGRAPH ! 
+
 """
 Main-text recovery figures (wide bars, window bars, value-spaced slopegraph)
 ===========================================================================
@@ -50,7 +52,9 @@ for _p in (str(ROOT_DIR), str(_THIS_DIR)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from experiments_config import fine as cfg, METHOD_NAMES, METRIC_COLORS  # noqa: E402
+from experiments_config import (  # noqa: E402
+    fine as cfg, coarse as wide_cfg, METHOD_NAMES, METRIC_COLORS,
+)
 from run_synthetic_gnm_fine import (  # noqa: E402
     METRIC_NAMES, WIDE_COMPARISON_DIR, WIDE_GRID_N_ETA,
 )
@@ -68,6 +72,31 @@ HATCH = "//////"
 # wide recovery grid axes (gnm_grid_config), for snapping true values to cells
 WIDE_ETA = np.linspace(-8.0, 3.0, WIDE_GRID_N_ETA)
 WIDE_GAMMA = np.linspace(-0.1, 1.0, WIDE_GRID_N_ETA)
+
+
+def _wide_chance(df: pd.DataFrame, n_draws: int = 2000,
+                 seed: int = 0) -> Tuple[float, float]:
+    """Chance level on the WIDE grid: what a measure returning a uniformly
+    random cell would score against the five widely-spread true combinations.
+
+    The window version lives in run_fine_recovery_paper_plot_concise; it is the
+    same calculation against a different ground truth, and the two levels differ
+    because the true points sit differently, not because the grids differ.
+    """
+    valid = df[df["predicted_grid_idx"] >= 0]
+    true_eta = valid["true_eta"].apply(
+        lambda e: int(np.argmin(np.abs(WIDE_ETA - e)))).to_numpy()
+    true_gamma = valid["true_gamma"].apply(
+        lambda g: int(np.argmin(np.abs(WIDE_GAMMA - g)))).to_numpy()
+    rng = np.random.default_rng(seed)
+    n = len(true_eta)
+    joint, per_axis = [], []
+    for _ in range(n_draws):
+        d_eta = rng.integers(0, wide_cfg.GRID_N_ETA, n) - true_eta
+        d_gamma = rng.integers(0, wide_cfg.GRID_N_GAMMA, n) - true_gamma
+        joint.append(np.sqrt(d_eta ** 2 + d_gamma ** 2).mean())
+        per_axis.append(np.abs(np.r_[d_eta, d_gamma]).mean())
+    return float(np.mean(joint)), float(np.mean(per_axis))
 
 
 # ---------------------------------------------------------------------------
@@ -122,14 +151,23 @@ def wide_scores() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def bars_figure(scores: pd.DataFrame, chance_axis: float, title: str,
-                out_pdf: Path) -> None:
+                out_pdf: Path, panel_letter: str | None = None) -> None:
     """Two bars per measure - eta on top in the measure colour, gamma below in
     a lightened version of it - matching panel A of the supplementary recovery
     figure. Measures outside the selected eight are drawn empty with grey
-    labels. The dashed line is the PER-AXIS chance level, since these bars are
-    per-axis errors rather than the joint grid-step error.
+    labels. The red line is the PER-AXIS chance level, since these bars are
+    per-axis errors rather than the joint grid-step error, and it is labelled
+    under the x axis where its value can be read off the same scale as the bars.
+
+    The two axes are told apart by small eta / gamma marks on the top row rather
+    than by a legend, so nothing sits between the panel and its caption.
     """
-    fig, ax = plt.subplots(figsize=viz.cm_to_inch((6, 9)))
+    from matplotlib.transforms import blended_transform_factory
+
+    F_LAB, F_TITLE, F_PANEL = 8.0, 9.0, 14.0
+    CHANCE_RED = "#e8000b"
+
+    fig, ax = plt.subplots(figsize=viz.cm_to_inch((9, 9))) # 10.5, 9.5)))
     n = len(scores)
     y = np.arange(n)[::-1]
     h = 0.38
@@ -145,9 +183,9 @@ def bars_figure(scores: pd.DataFrame, chance_axis: float, title: str,
     for yi, ce, cg, sel, (_, row) in zip(y, colors, light, selected,
                                          scores.iterrows()):
         ax.barh(yi + h / 2, row["eta_mean"], height=h, color=ce,
-                edgecolor=GRAY, linewidth=0.3, zorder=2)
+                edgecolor=GRAY, linewidth=0.4, zorder=2)
         ax.barh(yi - h / 2, row["gamma_mean"], height=h, color=cg,
-                edgecolor=GRAY, linewidth=0.3, zorder=2)
+                edgecolor=GRAY, linewidth=0.4, zorder=2)
         # variation across the ground-truth networks: the bar end is the mean,
         # so only the outward half is drawn, from the mean out to mean + 1 SD.
         # It takes the colour of its own bar, or grey where the bar is empty.
@@ -155,33 +193,42 @@ def bars_figure(scores: pd.DataFrame, chance_axis: float, title: str,
                                  (yi - h / 2, row["gamma_mean"], row["gamma_sd"], cg)):
             mark = cc if sel else GRAY
             hi = min(x_max, mean + sd)
-            ax.plot([mean, hi], [yy, yy], color=mark, lw=0.35, zorder=5,
+            ax.plot([mean, hi], [yy, yy], color=mark, lw=0.45, zorder=5,
                     solid_capstyle="butt")
-            ax.plot([hi, hi], [yy - 0.09, yy + 0.09], color=mark, lw=0.35,
+            ax.plot([hi, hi], [yy - 0.09, yy + 0.09], color=mark, lw=0.45,
                     zorder=5)
 
-    ax.axvline(chance_axis, color=GRAY, ls="-", lw=0.4, zorder=1)
-    ax.text(chance_axis + 0.05, n - 0.55, "chance\n(per axis)", fontsize=FS - 1,
-            color=GRAY, va="top", ha="left", linespacing=1.1)
+    # Which bar is which axis, marked once on the top row instead of a legend.
+    for yy, sym in ((y[0] + h / 2, r"$\eta$"), (y[0] - h / 2, r"$\gamma$")):
+        ax.text(x_max * 0.022, yy, sym, fontsize=F_LAB - 2.5, # 1.5, 
+                color=DARK, va="center", ha="left", zorder=6)
+
+    ax.axvline(chance_axis, color=CHANCE_RED, ls="-", lw=1.0, zorder=0)
+    # The label sits under the axis, so it reads against the same x scale as
+    # the bars instead of floating inside the plot.
+    ax.text(chance_axis, -0.075, "chance\n(per axis)",
+            transform=blended_transform_factory(ax.transData, ax.transAxes),
+            fontsize=F_LAB - 1.5, color=CHANCE_RED, va="top", ha="center",
+            linespacing=1.05, clip_on=False, zorder=6)
+
     ax.set_yticks(y)
-    ax.set_yticklabels(scores["name"], fontsize=FS)
+    ax.set_yticklabels(scores["name"], fontsize=F_LAB)
     for lab, sel in zip(ax.get_yticklabels(), selected):
         lab.set_color(DARK if sel else GRAY)
     ax.set_ylim(-0.8, n - 0.2)
     ax.set_xlim(0, x_max)
-    ax.set_xlabel("Mean absolute index error,\nper axis (grid steps)", fontsize=FS,
-                  linespacing=1.2)
-    ax.tick_params(axis="x", labelsize=FS)
-    ax.set_title(title, fontsize=FS + 1, loc="left")
-    from matplotlib.patches import Patch
-    ax.legend(handles=[Patch(facecolor=GRAY, edgecolor=DARK, linewidth=0.3,
-                             label=r"$\eta$ axis"),
-                       Patch(facecolor="#c8c8c8", edgecolor=DARK, linewidth=0.3,
-                             label=r"$\gamma$ axis")],
-              loc="upper center", bbox_to_anchor=(0.5, -0.20), ncol=2,
-              frameon=False, fontsize=FS)
-    for sp in ("top", "right", "left"):
+    ax.set_xlabel("Mean absolute index error, per axis (grid steps)",
+                  fontsize=F_LAB, labelpad=16)
+    ax.tick_params(axis="x", labelsize=F_LAB)
+    ax.tick_params(axis="y", length=0)
+    ax.set_title(title, fontsize=F_TITLE, fontweight="bold", color=BLACK,
+                 loc="center", pad=8)
+    for sp in ("top", "right"): # , "left"):
         ax.spines[sp].set_visible(False)
+    if panel_letter:
+        fig.text(0.0, 1.0, panel_letter, fontsize=F_PANEL, fontweight="bold",
+                 color=BLACK, va="top", ha="left")
+
     fig.tight_layout()
     out_pdf.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_pdf, dpi=300, bbox_inches="tight")
@@ -211,53 +258,102 @@ def _declutter(values: np.ndarray, min_gap: float, n_iter: int = 400) -> np.ndar
     return pos
 
 
-def slopegraph(wide: pd.DataFrame, window: pd.DataFrame, out_pdf: Path) -> None:
+def slopegraph(wide: pd.DataFrame, window: pd.DataFrame,
+               chance_wide: float, chance_window: float,
+               out_pdf: Path) -> None:
+    """Wide -> window, every measure placed at its actual error value.
+
+    Vertical distance carries meaning: measures level with each other score
+    alike, and a crossing line is a measure whose standing changes between the
+    two regimes. Each column carries its OWN chance level (the two experiments
+    place their ground truth differently, so the level a random cell would
+    score is not the same on both), drawn in red so a reader can see at a
+    glance which measures fall past it.
+    """
     m = wide.merge(window, on="measure", suffixes=("_wide", "_win"))
-    fig, ax = plt.subplots(figsize=viz.cm_to_inch((6, 9)))
+    fig, ax = plt.subplots(figsize=viz.cm_to_inch((9, 16))) # 9.5, 15)))
+
+    F_HEAD, F_LAB, F_CAP = 8.0, 7.0, 8.0
+    CHANCE_RED = "#d62728"
 
     xl, xr = 0.0, 1.0
-    lo = min(m["grid_steps_wide"].min(), m["grid_steps_win"].min())
-    hi = max(m["grid_steps_wide"].max(), m["grid_steps_win"].max())
+    vals_w = m["grid_steps_wide"].to_numpy()
+    vals_n = m["grid_steps_win"].to_numpy()
+    lo = min(vals_w.min(), vals_n.min(), chance_wide, chance_window)
+    hi = max(vals_w.max(), vals_n.max(), chance_wide, chance_window)
     span = hi - lo
-    # labels need ~2.6% of the axis height each to stay readable at 12 cm
-    lab_w = _declutter(m["grid_steps_wide"].to_numpy(), 0.026 * span)
-    lab_n = _declutter(m["grid_steps_win"].to_numpy(), 0.026 * span)
+
+    # Declutter each column WITH its chance label included, so the red label
+    # cannot land on top of a measure label.
+    min_gap = 0.030 * span
+    lab_w = _declutter(np.r_[vals_w, chance_wide], min_gap)
+    lab_n = _declutter(np.r_[vals_n, chance_window], min_gap)
+    chance_lab_w, chance_lab_n = lab_w[-1], lab_n[-1]
+    lab_w, lab_n = lab_w[:-1], lab_n[:-1]
 
     for (_, row), lw_, ln_ in zip(m.iterrows(), lab_w, lab_n):
         c = METRIC_COLORS.get(row["measure"], UNSELECTED_COLOR)
         sel = row["measure"] in METRIC_COLORS
         ax.plot([xl, xr], [row["grid_steps_wide"], row["grid_steps_win"]],
-                color=c, lw=0.9 if sel else 0.55, alpha=0.95 if sel else 0.5,
-                zorder=3 if sel else 2)
+                color=c if sel else "#d8d8d8", lw=1.8 if sel else 0.9,
+                alpha=1.0 if sel else 0.9, zorder=3 if sel else 2,
+                solid_capstyle="round")
         for x, v in ((xl, row["grid_steps_wide"]), (xr, row["grid_steps_win"])):
-            ax.plot([x], [v], marker="o", ms=2.2 if sel else 1.5, color=c,
-                    zorder=4)
-        # leader lines only where the label had to leave its value
-        for x, v, lab, ha, sgn in ((xl, row["grid_steps_wide"], lw_, "right", -1),
-                                   (xr, row["grid_steps_win"], ln_, "left", 1)):
-            if abs(lab - v) > 1e-9:
-                ax.plot([x + sgn * 0.03, x + sgn * 0.08], [v, lab],
-                        color=GRAY, lw=0.25, zorder=1)
-            ax.text(x + sgn * 0.10, lab,
-                    f"{row['name_wide']}  {v:.2f}" if ha == "right"
-                    else f"{v:.2f}  {row['name_wide']}",
-                    fontsize=FS - 0.5, color=DARK if sel else GRAY,
+            ax.plot([x], [v], marker="o", ms=5.0 if sel else 3.0,
+                    color=c if sel else "#d8d8d8",
+                    markeredgecolor="white" if sel else "none",
+                    markeredgewidth=0.6, zorder=4)
+
+        # Left column: the value only. Right column: value + measure name.
+        for x, v, lab, ha, sgn, text in (
+            (xl, row["grid_steps_wide"], lw_, "right", -1, f"{row['grid_steps_wide']:.2f}"),
+            (xr, row["grid_steps_win"], ln_, "left", 1,
+             f"{row['grid_steps_win']:.2f}  {row['name_wide']}"),
+        ):
+            if abs(lab - v) > 1e-9:      # leader line only where a label moved
+                ax.plot([x + sgn * 0.03, x + sgn * 0.09], [v, lab],
+                        color="#bbbbbb", lw=0.4, zorder=1)
+            ax.text(x + sgn * 0.11, lab, text, fontsize=F_LAB,
+                    color=DARK if sel else "#b0b0b0",
                     va="center", ha=ha, zorder=5)
 
-    ax.set_xlim(-1.15, 2.15)
-    top = lo - 0.10 * span
-    ax.set_ylim(hi + 0.05 * span, top)                # inverted: better is up
+    ax.set_xlim(-0.62, 2.55)
+    top = lo - 0.13 * span
+    bottom = hi + 0.07 * span
+    ax.set_ylim(bottom, top)                          # inverted: better is up
+
+    # The two columns as labelled arrows, so the reading direction is explicit.
+    for x, head in ((xl, "Widely-spread\nrange"), (xr, "Plausible\nwindow")):
+        ax.annotate("", xy=(x, bottom), xytext=(x, top),
+                    arrowprops=dict(arrowstyle="-|>", color=BLACK, lw=1.3,
+                                    shrinkA=0, shrinkB=0), zorder=1)
+        ax.text(x + 0.06, top, head, fontsize=F_HEAD, fontweight="bold",
+                color=BLACK, va="top", ha="left", linespacing=1.15, zorder=6)
+
+    # Per-column chance level.
+    for x, chance, lab_y, sgn, ha in ((xl, chance_wide, chance_lab_w, -1, "right"),
+                                      (xr, chance_window, chance_lab_n, 1, "left")):
+        ax.plot([x - 0.055, x + 0.055], [chance, chance],
+                color=CHANCE_RED, lw=1.4, zorder=6)
+        ax.annotate(f"{chance:.2f}  Chance level",
+                    xy=(x + sgn * 0.06, chance),
+                    xytext=(x + sgn * 0.11, lab_y),
+                    fontsize=F_LAB - 0.5, color=CHANCE_RED,
+                    va="center", ha=ha, zorder=7,
+                    arrowprops=dict(arrowstyle="->", color=CHANCE_RED, lw=0.7,
+                                    shrinkA=0, shrinkB=0),
+                    bbox=dict(boxstyle="round,pad=0.18", fc="white",
+                              ec=CHANCE_RED, lw=0.6))
+
     # every point carries its value, so the axis itself would only add clutter
     ax.set_yticks([]); ax.set_xticks([])
     for sp in ("top", "right", "bottom", "left"):
         ax.spines[sp].set_visible(False)
-    # headers point outwards from their own column, so they cannot collide
-    for x, lab, ha in ((xl, "Widely-spread\ntargets", "right"),
-                       (xr, "Plausible\nwindow", "left")):
-        ax.text(x, top, lab, fontsize=FS, color=DARK, va="top", ha=ha,
-                linespacing=1.15)
-    ax.set_xlabel("vertical position = recovery error (grid steps)",
-                  fontsize=FS - 1, color=GRAY)
+    ax.text(0.5, bottom + 0.055 * span,
+            "Recovery error\n(grid steps - lower is better)",
+            fontsize=F_CAP, fontweight="bold", color=BLACK,
+            va="top", ha="center", linespacing=1.2)
+
     fig.tight_layout()
     out_pdf.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_pdf, dpi=300, bbox_inches="tight")
@@ -277,18 +373,26 @@ def main():
     win = window_scores()
     wide = wide_scores()
 
-    any_df = pd.read_csv(sorted(COMPARISON_DIR.glob("distances_*.csv"))[0])
-    chance_joint, chance_axis = chance_grid_steps(any_df)
-    # the wide grid has the same 10x10 shape, so the same chance level applies
-    print(f"\nMeasures: {len(win)} window / {len(wide)} wide; "
-          f"chance = {chance_joint:.2f} grid steps joint, "
-          f"{chance_axis:.2f} per axis\n")
+    # Chance is experiment-specific: both grids are 10x10, but the two place
+    # their ground truth differently, so the error a random cell would score is
+    # not the same on both. (This previously reused the window level for the
+    # wide bars, understating the wide chance line.)
+    win_df = pd.read_csv(sorted(COMPARISON_DIR.glob("distances_*.csv"))[0])
+    wide_df = pd.read_csv(sorted(WIDE_COMPARISON_DIR.glob("distances_*.csv"))[0])
+    win_chance_joint, win_chance_axis = chance_grid_steps(win_df)
+    wide_chance_joint, wide_chance_axis = _wide_chance(wide_df)
+    print(f"\nMeasures: {len(win)} window / {len(wide)} wide")
+    print(f"  window chance = {win_chance_joint:.2f} joint, "
+          f"{win_chance_axis:.2f} per axis")
+    print(f"  wide   chance = {wide_chance_joint:.2f} joint, "
+          f"{wide_chance_axis:.2f} per axis\n")
 
-    bars_figure(wide, chance_axis, "Widely-spread targets",
-                outdir / "fig_recovery_bars_wide.pdf")
-    bars_figure(win, chance_axis, "Plausible window",
-                outdir / "fig_recovery_bars_window.pdf")
-    slopegraph(wide, win, outdir / "fig_recovery_slopegraph.pdf")
+    bars_figure(wide, wide_chance_axis, "Widely-spread targets",
+                outdir / "fig_recovery_bars_wide.pdf", panel_letter="A")
+    bars_figure(win, win_chance_axis, "Plausible window",
+                outdir / "fig_recovery_bars_window.pdf", panel_letter="B")
+    slopegraph(wide, win, wide_chance_joint, win_chance_joint,
+               outdir / "fig_recovery_slopegraph.pdf")
 
     merged = wide.merge(win, on="measure", suffixes=("_wide", "_win"))
     merged["rank_wide"] = merged["grid_steps_wide"].rank().astype(int)

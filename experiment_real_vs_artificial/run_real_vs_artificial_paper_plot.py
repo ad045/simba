@@ -506,7 +506,7 @@ def main():
             "n_hard": args.n_hard,
             "morphospace_run": f"{MORPHO_DATASET}/{MORPHO_EXP}",
             "d_art_source": "cached summary_indiv_<measure> CSVs (not recomputed)",
-            "similarity_measures": sorted(IS_SIMILARITY),
+            "similarity_measures": sorted(IS_SIMILARITY & set(SELECTED_MEASURES)),
             "measures": measures,
             "created": datetime.datetime.now().isoformat(timespec="seconds"),
         }

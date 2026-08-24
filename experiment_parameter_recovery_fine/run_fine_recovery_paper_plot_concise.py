@@ -57,32 +57,56 @@ for _p in (str(ROOT_DIR), str(_THIS_DIR)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from experiments_config import fine as cfg, METHOD_NAMES, METRIC_COLORS  # noqa: E402
+from experiments_config import (  # noqa: E402
+    fine as _fine_cfg, coarse as _wide_cfg, METHOD_NAMES, METRIC_COLORS,
+)
 from run_synthetic_gnm_fine import METRIC_NAMES, wide_ranking, _pearson  # noqa: E402
 
-COMPARISON_DIR = (ROOT_DIR / "output" / "gnm" /
-                  "synthetic_parameter_recovery_fine" / "comparison_results")
-DEFAULT_OUT = (ROOT_DIR / "output" / "gnm" /
-               "synthetic_parameter_recovery_fine" / "plots" /
-               "fig_fine_recovery.pdf")
+# Panel A is per-experiment; panel B always contrasts the two, so the same
+# figure is rendered for either experiment with panel A swapped.
+_OUT_GNM = ROOT_DIR / "output" / "gnm"
+EXPERIMENTS = {
+    "fine": dict(cfg=_fine_cfg,
+                 out_dir=_OUT_GNM / "synthetic_parameter_recovery_fine",
+                 stem="fine", label="Plausible window"),
+    "wide": dict(cfg=_wide_cfg,
+                 out_dir=_OUT_GNM / "synthetic_parameter_recovery_grid",
+                 stem="wide", label="Wide targets"),
+}
+
+# Set by configure(); defaults keep the historical fine-only behaviour.
+cfg = _fine_cfg
+EXP = "fine"
+COMPARISON_DIR = EXPERIMENTS["fine"]["out_dir"] / "comparison_results"
+DEFAULT_OUT = EXPERIMENTS["fine"]["out_dir"] / "plots" / "fig_fine_recovery.pdf"
 
 UNSELECTED_COLOR = (0.78, 0.78, 0.78)
 
 
-def _grid_indices(df: pd.DataFrame):
+def configure(experiment: str) -> None:
+    """Point the module at one of the two recovery experiments."""
+    global cfg, EXP, COMPARISON_DIR, DEFAULT_OUT
+    spec = EXPERIMENTS[experiment]
+    cfg, EXP = spec["cfg"], experiment
+    COMPARISON_DIR = spec["out_dir"] / "comparison_results"
+    DEFAULT_OUT = spec["out_dir"] / "plots" / f"fig_{spec['stem']}_recovery.pdf"
+
+
+def _grid_indices(df: pd.DataFrame, _cfg=None):
     """Recovered and true (eta, gamma) grid indices; true = nearest grid cell.
 
     Same convention as the wide-target experiment (gamma-outer, eta-inner flat
     index; true location snapped to its closest cell), so the resulting errors
     are directly comparable between the two.
     """
+    c = _cfg if _cfg is not None else cfg
     valid = df[df["recovered_grid_idx"] >= 0]
-    rec_gamma = (valid["recovered_grid_idx"] // cfg.GRID_N_ETA).to_numpy()
-    rec_eta = (valid["recovered_grid_idx"] % cfg.GRID_N_ETA).to_numpy()
+    rec_gamma = (valid["recovered_grid_idx"] // c.GRID_N_ETA).to_numpy()
+    rec_eta = (valid["recovered_grid_idx"] % c.GRID_N_ETA).to_numpy()
     true_eta = valid["true_eta"].apply(
-        lambda e: int(np.argmin(np.abs(cfg.GRID_ETA - e)))).to_numpy()
+        lambda e: int(np.argmin(np.abs(c.GRID_ETA - e)))).to_numpy()
     true_gamma = valid["true_gamma"].apply(
-        lambda g: int(np.argmin(np.abs(cfg.GRID_GAMMA - g)))).to_numpy()
+        lambda g: int(np.argmin(np.abs(c.GRID_GAMMA - g)))).to_numpy()
     return rec_eta, rec_gamma, true_eta, true_gamma
 
 
@@ -104,13 +128,22 @@ def chance_grid_steps(df: pd.DataFrame, n_draws: int = 2000,
     return float(np.mean(joint)), float(np.mean(per_axis))
 
 
-def load_scores() -> pd.DataFrame:
-    """Per-measure grid-step error, its per-axis parts, and r(eta), r(gamma)."""
+def load_scores(experiment: str | None = None) -> pd.DataFrame:
+    """Per-measure grid-step error, its per-axis parts, and r(eta), r(gamma).
+
+    ``experiment`` reads a specific experiment without changing module state;
+    omitted, it reads whichever one ``configure()`` last selected.
+    """
+    if experiment is None:
+        comparison_dir, _cfg = COMPARISON_DIR, cfg
+    else:
+        spec = EXPERIMENTS[experiment]
+        comparison_dir, _cfg = spec["out_dir"] / "comparison_results", spec["cfg"]
     rows = []
-    for path in sorted(COMPARISON_DIR.glob("distances_*.csv")):
+    for path in sorted(comparison_dir.glob("distances_*.csv")):
         measure = path.stem.replace("distances_", "")
         df = pd.read_csv(path)
-        rec_eta, rec_gamma, true_eta, true_gamma = _grid_indices(df)
+        rec_eta, rec_gamma, true_eta, true_gamma = _grid_indices(df, _cfg)
         d_eta = np.abs(rec_eta - true_eta)
         d_gamma = np.abs(rec_gamma - true_gamma)
         step = np.sqrt(d_eta ** 2 + d_gamma ** 2)
@@ -217,7 +250,10 @@ def make_figure(scores: pd.DataFrame, chance_axis: float, out_pdf: Path) -> None
     # Two columns, both in grid steps, so every measure appears in both (a
     # degenerate recovery still has a well-defined error).
     wide = wide_ranking()
-    fine = scores.copy()
+    # Panel B is the same contrast in both figures: the wide ranking against the
+    # plausible-window ranking. Panel A is what changes with --experiment.
+    fine = (scores if EXP == "fine" else load_scores("fine")).copy()
+    fine = fine.sort_values("grid_steps").reset_index(drop=True)
     fine["fine_rank"] = np.arange(1, len(fine) + 1)
     merged = fine.merge(wide, on="measure", how="inner")
     # "first" rather than "min": Frobenius and Hamming score identically on the
@@ -247,6 +283,8 @@ def make_figure(scores: pd.DataFrame, chance_axis: float, out_pdf: Path) -> None
     axB.set_xticks([X0, X1])
     axB.set_xticklabels(["Wide targets\n(grid steps)",
                          "Plausible window\n(grid steps)"], fontsize=FS)
+    axA.text(0.99, 1.02, EXPERIMENTS[EXP]["label"], transform=axA.transAxes,
+             ha="right", va="bottom", fontsize=FS, color=GRAY)
     axB.spines["left"].set_visible(False)
     axB.set_yticks([])
     # rank 1 (best) at the top, matching panel A; axis itself stays hidden.
@@ -279,14 +317,22 @@ def make_figure(scores: pd.DataFrame, chance_axis: float, out_pdf: Path) -> None
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=str(DEFAULT_OUT))
+    ap.add_argument("--experiment", choices=["wide", "fine"], default="fine")
+    ap.add_argument("--out", default=None)
     args = ap.parse_args()
+
+    configure(args.experiment)
+    if args.out is None:
+        args.out = str(DEFAULT_OUT)
 
     scores = load_scores()
     chance_joint, chance_axis = chance_grid_steps(
         pd.read_csv(sorted(COMPARISON_DIR.glob("distances_*.csv"))[0]))
     print(f"\nGround-truth networks per measure: {scores['n_networks'].iloc[0]}")
-    print(f"Window: eta in {cfg.SAMPLE_ETA_RANGE}, gamma in {cfg.SAMPLE_GAMMA_RANGE}")
+    if EXP == "fine":
+        print(f"Window: eta in {cfg.SAMPLE_ETA_RANGE}, gamma in {cfg.SAMPLE_GAMMA_RANGE}")
+    else:
+        print(f"Targets: {len(cfg.TRUE_PARAM_COMBOS)} widely-spread combinations")
     print(f"Chance: {chance_joint:.2f} grid steps (joint), "
           f"{chance_axis:.2f} per axis\n")
     for _, r in scores.iterrows():
@@ -296,10 +342,13 @@ def main():
               f"r(eta)={re}{'   [constant recovery]' if r['degenerate'] else ''}")
 
     merged = make_figure(scores, chance_axis, Path(args.out))
-    scores.to_csv(Path(args.out).parent / "fine_recovery_scores.csv", index=False)
+    stem = EXPERIMENTS[EXP]["stem"]
+    scores.to_csv(Path(args.out).parent / f"{stem}_recovery_scores_paper.csv",
+                  index=False)
     merged[["measure", "name", "grid_steps", "d_eta_steps", "d_gamma_steps",
             "r_eta", "wide_grid_steps", "wide_rank", "fine_rank"]] \
-        .to_csv(Path(args.out).parent / "fine_vs_wide_rank.csv", index=False)
+        .to_csv(Path(args.out).parent / f"{stem}_panelB_wide_vs_window_rank.csv",
+                 index=False)
 
 
 if __name__ == "__main__":

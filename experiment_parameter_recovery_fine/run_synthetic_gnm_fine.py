@@ -57,7 +57,7 @@ for _p in (str(ROOT_DIR), str(_THIS_DIR)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from experiments_config import fine as cfg  # noqa: E402
+from experiments_config import fine as cfg, to_distance  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -329,7 +329,8 @@ def compare(rc: RunCfg) -> None:
                 gen_t  = torch.tensor(net, dtype=torch.float32).unsqueeze(0)
                 result = evaluator(gen_t, tgt_t)
                 dists  = [float(result[i]) for i in range(n_grid)]
-                pred_idx = int(np.nanargmin(dists))
+                # Similarity measures score higher = closer; orient before argmin.
+                pred_idx = int(np.nanargmin(to_distance(dists, measure_name)))
                 pred_eta, pred_gamma = rc.grid_combos[pred_idx]
                 pred_eta_n, pred_gamma_n = rc.normalise(pred_eta, pred_gamma)
                 abs_err = float(np.sqrt((pred_eta_n - true_eta_n) ** 2 +
@@ -508,67 +509,16 @@ def plot(rc: RunCfg) -> None:
 
     figsize = (lambda wh: viz.cm_to_inch(wh)) if have_viz else (lambda wh: (wh[0]/2.54, wh[1]/2.54))
 
-    # ---- Figure 1: grouped bar of r per measure ----------------------------
-    n = len(scores)
-    fig, ax = plt.subplots(figsize=figsize((18, max(6, n * 0.55 + 2))))
-    y = np.arange(n)[::-1]  # best at top
-    h = 0.38
-    ax.barh(y + h/2, scores["r_eta"],   height=h, color=BLUE,  label=r"$\eta$",
-            edgecolor=DARK, linewidth=0.3)
-    ax.barh(y - h/2, scores["r_gamma"], height=h, color=GREEN, label=r"$\gamma$",
-            edgecolor=DARK, linewidth=0.3)
-    ax.set_yticks(y)
-    ax.set_yticklabels(scores["name"], fontsize=7)
-    ax.set_xlabel("Pearson r  (true vs recovered)")
-    ax.set_xlim(min(0, np.nanmin(scores[["r_eta", "r_gamma"]].values)) - 0.05, 1.0)
-    ax.axvline(0, color=DARK, linewidth=0.6)
-    for yi, (re, rg) in zip(y, zip(scores["r_eta"], scores["r_gamma"])):
-        if not np.isnan(re): ax.text(re + 0.01, yi + h/2, f"{re:.2f}", va="center", fontsize=5.5, color=DARK)
-        if not np.isnan(rg): ax.text(rg + 0.01, yi - h/2, f"{rg:.2f}", va="center", fontsize=5.5, color=DARK)
-    ax.legend(loc="lower right", frameon=False)
-    ax.set_title("Fine-grained parameter recovery in the plausible window\n"
-                 rf"($\eta\in{list(cfg.SAMPLE_ETA_RANGE)}$, $\gamma\in{list(cfg.SAMPLE_GAMMA_RANGE)}$, "
-                 f"{rc.n_truth} ground-truth nets)", fontsize=9)
-    if have_viz:
-        try:
-            import seaborn as sns; sns.despine(ax=ax, left=True)
-        except Exception:
-            pass
-    fig.tight_layout()
-    p1 = rc.plot_dir / "fine_recovery_r_bars.pdf"
-    fig.savefig(p1, dpi=300, bbox_inches="tight"); plt.close(fig)
-    print(f"\nSaved {p1.name}")
-
-    # ---- Figure 2: true vs recovered scatter for top measures --------------
-    top = scores.head(min(4, n))
-    fig, axes = plt.subplots(2, len(top), figsize=figsize((4.5 * len(top), 9)),
-                             squeeze=False)
-    for j, (_, srow) in enumerate(top.iterrows()):
-        df = results[srow["measure"]]
-        for i, (param, lo_hi, color) in enumerate([
-            ("eta",   rc.eta_range,   BLUE),
-            ("gamma", rc.gamma_range, GREEN),
-        ]):
-            ax = axes[i][j]
-            rng = np.random.default_rng(0)
-            jit = rng.normal(0, (lo_hi[1] - lo_hi[0]) * 0.004, size=len(df))
-            ax.scatter(df[f"true_{param}"], df[f"recovered_{param}"] + jit,
-                       s=14, alpha=0.55, color=color, linewidths=0)
-            ax.plot(lo_hi, lo_hi, color=GRAY, lw=0.8, ls="--", zorder=0)
-            rr = _pearson(df[f"true_{param}"], df[f"recovered_{param}"])
-            if i == 0:
-                ax.set_title(f"{srow['name']}", fontsize=8)
-            ax.text(0.04, 0.92, f"r={rr:.2f}", transform=ax.transAxes,
-                    fontsize=7, va="top", color=DARK)
-            if j == 0:
-                ax.set_ylabel(rf"recovered $\{param}$")
-            if i == 1:
-                ax.set_xlabel(rf"true $\{param}$")
-    fig.suptitle("True vs recovered (top measures by mean r)", fontsize=9)
-    fig.tight_layout(rect=[0, 0, 1, 0.97])
-    p2 = rc.plot_dir / "fine_recovery_scatter_top.pdf"
-    fig.savefig(p2, dpi=300, bbox_inches="tight"); plt.close(fig)
-    print(f"Saved {p2.name}")
+    # ---- Figures 1 and 2: r bars + true-vs-recovered scatter -------------
+    # Rendered by run_recovery_plots, which draws the identical figure set for
+    # the wide experiment - keeping one implementation means the two experiments
+    # cannot drift apart.
+    import run_recovery_plots as rp
+    rp.configure("fine")
+    rp.PLOT_DIR = rc.plot_dir
+    rp_scores = rp.r_scores(results)
+    rp.plot_r_bars(rp_scores, n_truth=rc.n_truth)
+    rp.plot_scatter_top(results, rp_scores)
 
     # ---- Figure 3: fine vs wide ranking ------------------------------------
     wide = wide_ranking()

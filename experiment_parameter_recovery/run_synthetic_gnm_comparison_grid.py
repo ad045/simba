@@ -64,6 +64,7 @@ ETA_RANGE, GAMMA_RANGE = _cfg.ETA_RANGE, _cfg.GAMMA_RANGE
 N_TEST, N_CONSENSUS_GRID = _cfg.N_TEST, _cfg.N_CONSENSUS_GRID
 GENERATIVE_RULE_NAME = _cfg.GENERATIVE_RULE_NAME
 param_dir_name, net_filename = _cfg.param_dir_name, _cfg.net_filename
+from experiments_config import to_distance
 
 
 # ---------------------------------------------------------------------------
@@ -138,7 +139,9 @@ def run_comparison(evaluator, measure_name: str,
         for net_id, net in enumerate(test_nets):
             try:
                 dists    = compute_distances(net, consensus_batch, evaluator)
-                pred_idx = int(np.nanargmin(dists))
+                # Similarity measures (Jaccard, F1, NMI, DC-NMI, communicability
+                # correlation) score higher = closer, so orient before argmin.
+                pred_idx = int(np.nanargmin(to_distance(dists, measure_name)))
                 pred_eta, pred_gamma = GRID_COMBOS[pred_idx]
                 pred_eta_n, pred_gamma_n = normalise(pred_eta, pred_gamma)
                 d_eta    = pred_eta_n   - true_eta_n
@@ -224,7 +227,7 @@ def main() -> None:
             df = run_comparison(evaluator, measure_name, consensus_batch)
             df.to_csv(out_path, index=False)
             mae = df["abs_error"].mean()
-            print(f"  MAE={mae:.4f}  →  saved to {out_path.name}")
+            print(f"  MAE={mae:.4f}  →  saved to {out_path}")
         except Exception as e:
             print(f"  ERROR in {measure_name}: {e}")
             import traceback; traceback.print_exc()
