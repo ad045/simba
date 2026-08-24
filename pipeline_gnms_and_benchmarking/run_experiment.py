@@ -34,6 +34,10 @@ from src.pipeline.orchestrator import run_from_yaml
 
 from config.path import PathConfig
 
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+
 
 class ExperimentRunner:
     """Manages experiment execution, configuration, and output."""
@@ -213,7 +217,7 @@ def main(entry_points_hardcoded_path=None,
 
 
 if __name__ == "__main__": 
-    entry_points_hardcoded_path = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
+    entry_points_hardcoded_path = f"{_REPO_ROOT}/configs/config_gnm_run_suarez_MaMI_dataset.yaml"
     entry_points_hardcoded_runs = 2
     main(entry_points_hardcoded_path=entry_points_hardcoded_path, 
          entry_points_hardcoded_runs=entry_points_hardcoded_runs)

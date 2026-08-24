@@ -215,16 +215,11 @@ X_*
 OLD_*
 
 *.npy
-<<<<<<< HEAD
-# *.csv
-=======
 *.csv
-summary_session_*.json 
+summary_session_*.json
 session_summary_*.json
 run_info_*.txt
 sweep_results.json
-
->>>>>>> esn_and_gnm_work
 
 # Force the inclusion of the "sharing" directory - I know, not best practice. 
 !/Users/adrian/Documents/01_projects/14_4D_lab/sharing 
@@ -267,3 +262,22 @@ graphify-out/
 # data/output live in 14_4D_lab_code (symlinked)
 /data
 /output
+
+# ---------------------------------------------------------------------------
+# Publication tree (added on cleaning_up_for_publication).
+#
+# The rules above blanket-ignore *.pdf / *.csv / *.npy / *.txt / *output* so
+# that the local run tree never lands in git. The three directories below ARE
+# the deliverable, so they are re-included wholesale.
+# ---------------------------------------------------------------------------
+!figures/
+!figures/**
+!publication_data/
+!publication_data/**
+!archive/
+!archive/**
+
+# ...with one exception: anything computed from the empirical connectomes.
+# make_publication_data.py stages it here for review, but it is never tracked.
+# See publication_data/empirical_derived/README.md before sharing any of it.
+publication_data/empirical_derived/

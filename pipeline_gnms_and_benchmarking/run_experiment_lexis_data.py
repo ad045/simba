@@ -8,10 +8,14 @@ import subprocess
 import sys
 import time
 from pathlib import Path    
+
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
     
 # Configuration
-BASE_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/config_gnm_run_with_mst_seeds_lexis_dataset.yaml" # config_gnm_run_with_ring_seeds_lexis_dataset.yaml"
-TEMP_CONFIG_PATH = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/temp_config.yaml"
+BASE_CONFIG_PATH = f"{_REPO_ROOT}/configs/config_gnm_run_with_mst_seeds_lexis_dataset.yaml" # config_gnm_run_with_ring_seeds_lexis_dataset.yaml"
+TEMP_CONFIG_PATH = f"{_REPO_ROOT}/configs/temp_config.yaml"
 RUN_SCRIPT = "run_experiment.py"
 
 NUMBER_RUNS_PER_ID = 10 # 11 # 50 # number of LOOPS - total number is: this times n_samples multiplied. 

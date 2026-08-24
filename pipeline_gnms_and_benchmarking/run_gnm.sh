@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_4_four_factors_in_energy.yaml"
+CONFIG_FILE="configs/config_gnm_run_hcp.yaml"
 # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_5_four_factors_in_energy.yaml" # example_gnm_random_5_four_factors_in_energy.yaml"
 # CONFIG_FILE="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/configs/example_gnm_random_3_indiv_connectomes.yaml"
 NUMBER_RUNS=1 # 300 # 250 # 500 # 1 #3 # 250

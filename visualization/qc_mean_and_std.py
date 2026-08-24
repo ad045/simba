@@ -5,6 +5,10 @@ import seaborn as sns
 import os
 from pathlib import Path
 
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+
 def quality_check_regarding_means_and_avgs(path_to_csv_file, bin_into_100=True):
     path_to_csv_file = Path(path_to_csv_file)
     df = pd.read_csv(path_to_csv_file)
@@ -119,7 +123,7 @@ def quality_check_regarding_means_and_avgs(path_to_csv_file, bin_into_100=True):
 
 
 # Read the CSV file
-path_to_csv_file = "/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0/all_metrics_for_75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0.csv" 
+path_to_csv_file = f"{_REPO_ROOT}/output/gnm/suarez_MaMI_dataset/75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0/all_metrics_for_75_10000_samples_hopefully_no_lost_entries_gamma_-0p1_to_1_animal_0.csv" 
 # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/suarez_MaMI_dataset/63_fine_grid_animal_0/all_metrics_for_63_fine_grid_animal_0.csv'
 quality_check_regarding_means_and_avgs(path_to_csv_file, bin_into_100=False) 
 

@@ -54,6 +54,10 @@ from src.comparing_connectomes.frobenius_comparer import FrobeniusEvaluator
 from src.comparing_connectomes.jaccard_comparer import JaccardEvaluator
 from src.comparing_connectomes.netrd_comparer import NetrdEvaluator
 
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+
 
 def load_consensus_connectome(path: Path) -> np.ndarray:
     """Load consensus connectome from .npy file."""
@@ -436,7 +440,7 @@ def main(
     if dataset_name == "lexis_data": 
         consensus_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/connectome_distances/data/preprocessed/{dataset_name}/01_connectomes/00_connectomes_density10.npy")
     elif dataset_name == "hcp_schaefer_100_dataset":
-        consensus_path = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/hcp_schaefer_100_dataset/01_connectomes/01_consensus_bin_density_10_percent_100.npy")
+        consensus_path = Path(f"{_REPO_ROOT}/data/preprocessed/hcp_schaefer_100_dataset/01_connectomes/01_consensus_bin_density_10_percent_100.npy")
         
 #         dataset_name = "hcp_schaefer_100_dataset" # lexis_data" # "suarez_MaMI_dataset"
 # experiment_name = "105_distance_metrics_mst_animal_0" # 05_mst_animal_0" # 02_ring_sweeps_animal_0" # 05_mst_animal_0" # 

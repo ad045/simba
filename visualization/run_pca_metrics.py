@@ -1,3 +1,4 @@
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,9 +7,13 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import os
 
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+
 # Define paths
-INPUT_FILE = '/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/05_second_big_overnight_run_10201/all_metrics_for_05_second_big_overnight_run_10201 copy 2.csv'
-OUTPUT_DIR = '/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/hcp_schaefer_100_dataset/05_second_big_overnight_run_10201/pca_results/'
+INPUT_FILE = f'{_REPO_ROOT}/output/gnm/hcp_schaefer_100_dataset/05_second_big_overnight_run_10201/all_metrics_for_05_second_big_overnight_run_10201 copy 2.csv'
+OUTPUT_DIR = f'{_REPO_ROOT}/output/gnm/hcp_schaefer_100_dataset/05_second_big_overnight_run_10201/pca_results/'
 
 # Ensure output directory exists
 os.makedirs(OUTPUT_DIR, exist_ok=True)

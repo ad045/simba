@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 from scipy.ndimage import gaussian_filter
 
-ROOT = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_benchmarking")
+ROOT = Path(__file__).resolve().parents[1]
 EXP = "105_distance_metrics_mst_animal_0"
 MORPHO = ROOT / "output" / "gnm" / "hcp_schaefer_100_dataset" / EXP
 

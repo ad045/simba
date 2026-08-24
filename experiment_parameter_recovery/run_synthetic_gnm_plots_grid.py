@@ -61,12 +61,16 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from experiments_config import coarse as _cfg
 from experiments_config import to_distance
+
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
 TRUE_PARAM_COMBOS, COMBO_LABELS = _cfg.TRUE_PARAM_COMBOS, _cfg.COMBO_LABELS
 GRID_ETA, GRID_GAMMA, GRID_COMBOS = _cfg.GRID_ETA, _cfg.GRID_GAMMA, _cfg.GRID_COMBOS
 GRID_N_ETA, GRID_N_GAMMA = _cfg.GRID_N_ETA, _cfg.GRID_N_GAMMA
 ETA_RANGE, GAMMA_RANGE = _cfg.ETA_RANGE, _cfg.GAMMA_RANGE
 
-ROOT_DIR       = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code") # Path(__file__).parent
+ROOT_DIR       = Path(f"{_REPO_ROOT}") # Path(__file__).parent
 COMPARISON_DIR = ROOT_DIR / "output" / "gnm" / "synthetic_parameter_recovery_grid" / "comparison_results"
 PLOT_DIR       = ROOT_DIR / "output" / "gnm" / "synthetic_parameter_recovery_grid" / "plots"
 
@@ -77,8 +81,8 @@ _PALETTE = [
     _colors["JUST_GREEN"],
     _colors["ORANGE"],
     _colors["PURPLE"],
+    _colors["NIGHT_BLUE"],   # 6th combo: dark navy, so it stays apart from LAKE_BLUE
     _colors["TEAL"],
-    _colors["NIGHT_BLUE"],
     _colors["YELLOW"],
 ]
 COMBO_COLORS = _PALETTE[: len(TRUE_PARAM_COMBOS)]

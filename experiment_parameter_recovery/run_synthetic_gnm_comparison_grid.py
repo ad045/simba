@@ -66,12 +66,16 @@ GENERATIVE_RULE_NAME = _cfg.GENERATIVE_RULE_NAME
 param_dir_name, net_filename = _cfg.param_dir_name, _cfg.net_filename
 from experiments_config import to_distance
 
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 
-ROOT_DIR       = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code") # Path(__file__).parent
+ROOT_DIR       = Path(f"{_REPO_ROOT}") # Path(__file__).parent
 DATA_DIR       = ROOT_DIR / "data" / "preprocessed" / "hcp_schaefer_100_dataset"
 OUTPUT_DIR     = ROOT_DIR / "output" / "gnm" / "synthetic_parameter_recovery_grid"
 COMPARISON_DIR = OUTPUT_DIR / "comparison_results"

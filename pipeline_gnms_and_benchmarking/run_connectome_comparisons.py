@@ -74,6 +74,10 @@ from src.comparing_connectomes.energy_comparer_no_gnm_library import StandaloneK
 
 from src.utils.extract_params_from_filenames import get_eta_gamma_id_from_filename
 
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+
 def load_empirical_networks(empirical_path: Path) -> np.ndarray:
     """Load empirical networks from .npy file."""
     empirical_path = Path(empirical_path)
@@ -360,7 +364,7 @@ def main(dataset_name: str,
         experiment_name=experiment_name, 
     )
     
-    path_01_connectomes = Path(f"/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/{dataset_name}/01_connectomes") 
+    path_01_connectomes = Path(f"{_REPO_ROOT}/data/preprocessed/{dataset_name}/01_connectomes") 
     
     if dataset_name == "suarez_MaMI_dataset": 
         empirical_networks_path = path_01_connectomes / "01_consensus_bin_density_10_percent_50.npy"

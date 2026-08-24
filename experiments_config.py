@@ -158,6 +158,7 @@ _COARSE_TRUE_PARAM_COMBOS: List[Tuple[float, float]] = [
     (-6.9,                  0.01),
     ( 1.9,                  0.01),
     (-3.734694004058838,    0.595918357372283),
+    (-2.836734771728516,    0.595918357372283),
 ]
 
 _COARSE_COMBO_LABELS: List[str] = [
@@ -166,6 +167,7 @@ _COARSE_COMBO_LABELS: List[str] = [
     r"$\eta{=}{-}6.9,\ \gamma{=}0.01$",
     r"$\eta{=}1.9,\ \gamma{=}0.01$",
     r"$\eta{=}{-}3.73,\ \gamma{=}0.60$",
+    r"$\eta{=}{-}2.84,\ \gamma{=}0.60$",
 ]
 
 _COARSE_N_ETA   = 10

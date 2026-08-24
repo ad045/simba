@@ -64,6 +64,10 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from experiments_config import coarse as _coarse, fine as _fine, to_distance
 
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+
 
 # ---------------------------------------------------------------------------
 # vizman setup
@@ -84,7 +88,7 @@ _cmaps = viz.give_colormaps()
 # Configuration
 # ---------------------------------------------------------------------------
 
-ROOT_DIR = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
+ROOT_DIR = Path(f"{_REPO_ROOT}")
 
 EXPERIMENTS = {
     "fine": SimpleNamespace(

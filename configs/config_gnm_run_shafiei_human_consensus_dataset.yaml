@@ -76,7 +76,7 @@ compute:
 
 
 output:
-  # root_dir: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code  # Override root directory
+  # root_dir: .  # Override root directory
   # base_dir: ./output  # Possibility to override base output directory
   # experiment_name: my_experiment # TODO: TAKE THIS FROM ABOVE! 
   # save_intermediate: true # TODO: REMOVE THIS AGAIN! 

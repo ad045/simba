@@ -1,3 +1,9 @@
+
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+from pathlib import Path as _Path
+_REPO_ROOT = str(_Path(__file__).resolve().parents[2])
+
 import numpy as np 
 import networkx as nx
 import pandas as pd
@@ -285,7 +291,7 @@ class DynamicMetricCalculator(MetricCalculator):
             return calculate_nct_energies(self.A)
 
         elif metric_name == "novel_metastability": # metastability_2": 
-            return calculate_metastability_2(self.A, distance_matrix=self.distance_matrix, save_debug_path="/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/metastability_debug_nov_19") # calculate_metastability(self.A)
+            return calculate_metastability_2(self.A, distance_matrix=self.distance_matrix, save_debug_path=f"{_REPO_ROOT}/output/metastability_debug_nov_19") # calculate_metastability(self.A)
  
         elif metric_name == "synchronizability_eigenratio":
             return compute_synchronizability_eigenratio(self.A)
@@ -367,7 +373,7 @@ class ComputationMetricCalculator(MetricCalculator):
 
     def _load_esn_data_cut40(self):
         # Load the data for the memory capacity evaluation. This is currently hardcoded, but it could be made more flexible if needed. 
-        base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/tasks/esn")
+        base_path = Path(f"{_REPO_ROOT}/data/tasks/esn")
         # X_train = np.load(base_path / "X_train.npy")
         # X_test = np.load(base_path / "X_test.npy")
         # y_train_linear = np.load(base_path / "y_train_linear.npy")
@@ -387,7 +393,7 @@ class ComputationMetricCalculator(MetricCalculator):
 
     def _load_esn_data(self):
         # Load the data for the memory capacity evaluation. This is currently hardcoded, but it could be made more flexible if needed. 
-        base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/tasks/esn")
+        base_path = Path(f"{_REPO_ROOT}/data/tasks/esn")
         X_train = np.load(base_path / "X_train.npy")
         X_test = np.load(base_path / "X_test.npy")
         y_train_linear = np.load(base_path / "y_train_linear.npy")
@@ -480,7 +486,7 @@ class ComputationMetricCalculator(MetricCalculator):
         bases = univariate_polys.bases   # shape: (max_degree+1, T_full)
 
         # Cache dir for degree-delay set .npz files (generated once, reused)
-        cache_dir = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/ipc_cache")
+        cache_dir = Path(f"{_REPO_ROOT}/data/ipc_cache")
         ddsets_loader = single_input_degdelaysets(zerobased=True, basedir=str(cache_dir))
 
         # --- Out-of-sample readout setup ---
@@ -654,7 +660,7 @@ class ComputationMetricCalculator(MetricCalculator):
             return evaluate_memory_capacities_notebook_damicelli(self.A)
             
         elif metric_name == "computational_capacity_supplementary_kayson":
-            base_path = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/tasks/esn")
+            base_path = Path(f"{_REPO_ROOT}/data/tasks/esn")
             X_train = np.load(base_path / "X_train.npy")
             X_test = np.load(base_path / "X_test.npy")
             y_train_linear = np.load(base_path / "y_train_linear.npy")

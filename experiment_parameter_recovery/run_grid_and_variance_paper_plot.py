@@ -46,7 +46,8 @@ from vizman import viz  # noqa: E402
 import run_synthetic_gnm_plots_grid as G  # noqa: E402
 
 OUT_PDF = Path(
-    "/Users/adrian/Desktop/Benchmarking_/figures/appendix/grid_and_variance.pdf"
+    os.environ.get("MANUSCRIPT_FIGURE_DIR", str(Path(__file__).resolve().parents[1] / "figures" / "appendix"))
+    + "/grid_and_variance.pdf"
 )
 
 # Manuscript width; the published figure is 15.65 x 8.0 cm.

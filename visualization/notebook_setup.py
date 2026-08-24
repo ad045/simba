@@ -9,8 +9,9 @@ from pathlib import Path
 import numpy as np
 
 # Define paths here 
-DATA_PATH = Path("/Users/adrian/Documents/01_projects/14_4D_lab/data")
-OUTPUT_PATH = Path("/Users/adrian/Documents/01_projects/14_4D_lab/output")
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+DATA_PATH = _REPO_ROOT / "data"
+OUTPUT_PATH = _REPO_ROOT / "output"
 
 PREPROCESSED_PATH = DATA_PATH / "preprocessed"
 OUTPUT_PATH.mkdir(parents=True, exist_ok=True)

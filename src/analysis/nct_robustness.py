@@ -13,6 +13,12 @@ no existing property CSV or landscape is overwritten.
 
 Author: robustness check (logs explicit RNG seeds; never touches np.random global).
 """
+
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+from pathlib import Path as _Path
+_REPO_ROOT = str(_Path(__file__).resolve().parents[2])
+
 import os
 import numpy as np
 import pandas as pd
@@ -26,7 +32,7 @@ from src.analysis.dynamic_measures import (
 )
 
 # ── Paths / constants ────────────────────────────────────────────────────────
-BASE = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")
+BASE = Path(f"{_REPO_ROOT}")
 DATASET = "hcp_schaefer_100_dataset"
 EXPERIMENT = "11_mst_2500_animal_0"
 EXP_DIR = BASE / "output" / "gnm" / DATASET / EXPERIMENT

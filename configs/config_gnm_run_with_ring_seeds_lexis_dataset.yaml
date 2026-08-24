@@ -15,8 +15,8 @@ data:
   connectome_resolution: 50
   density: 10
   paths:
-    project_root: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code
-    # animal_metadata: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/suarez_MaMI_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_50_processed.csv
+    project_root: .
+    # animal_metadata: ./data/preprocessed/suarez_MaMI_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_50_processed.csv
 gnm:
   eta_range:
   - -8.0
@@ -43,7 +43,7 @@ gnm:
   heterochronicity_relationship_type:
   - powerlaw
   # seed_params: 
-  #   seed_adjacency_matrices: false # /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/data/preprocessed/seeds/circulant_graph_seed_100.npy
+  #   seed_adjacency_matrices: false # ./data/preprocessed/seeds/circulant_graph_seed_100.npy
   #   seed_id: 444 # placeholder
 # dyn_gnm:
 #   dynamic_fitness_metric: mc_mean

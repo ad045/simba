@@ -2,90 +2,69 @@
 
 ## What this repo is
 
-The **benchmarking** half of the old `14_4D_lab_code` connectome pipeline (split out
-2026-06-11). Focus: **generate brain networks (GNMs) and benchmark generated vs.
-empirical connectomes** — including the reservoir-computing / memory-capacity angle
-(*"Memory Capacity as a potential driver of brain-network topology"*).
+Code and generated data for the manuscript *How Similar Are Two Brains? A
+Comprehensive Benchmark of Brain Network Similarity Measures* (Dendorfer, Luppi,
+Poli, Mousley, Astle, Fakhar). It benchmarks 16 network distance measures for
+comparing GNM output against an empirical connectome, and carries 8 through to
+the main analyses.
 
-Sibling repo: `../14_4D_property_space` (the morphospace / feature-property-space half).
+**Read `README.md` first** — it documents the full pipeline, the figure→script
+map, and the known rough edges. This file only adds what an agent needs on top.
+
+Manuscript repo: `~/Desktop/Benchmarking_` (LaTeX; has its own `CLAUDE.md` with
+the pinned numerical results — check any number you touch against it).
+Sibling repo: `../14_4D_property_space` (morphospace half).
 Read-only backup of the pre-split state: `../14_4D_lab_code`.
 
 ## Environment
 
 ```bash
-conda activate ma_thesis          # primary env for the pipeline
+conda activate ma_thesis
 ```
 
-The `A_benchmarking_plots/` notebooks came from the `connectome_distances` project and
-expect `conda activate connectome_distances` instead.
+Two local forks, both editable installs, both required:
+`../GenerativeNetworkModels` (patched GNM library, commit `e3bc425`) and
+`../Pyvizman` (plotting helpers).
 
-The pipeline depends on a **custom-patched GNM library** (Adrian's fork with local
-changes) — a stock `gnm` install may not match. Scientific stack: `nilearn`, `nibabel`,
-`networkx`, `torch`, `scipy`, `numpy`.
+**Run everything from the repository root** — paths anchor there.
 
-## Layout
+## Where things live
 
-- `src/comparing_connectomes/` — `NetworkEvaluator` base class + ~20 metric evaluators
-  (DeltaCon, portrait divergence, communicability, graph kernels, mutual information, …).
-  This is the core of the benchmarking side.
-- `src/GNMs/` — generative network model generation.
-- `src/pipeline/` — GNM + ESN orchestration (`gnm_network_generator`, `gnm_and_esn_orchestrator`).
-- `src/ESNs/` — echo-state networks / reservoir computing / memory capacity.
-- `src/preprocessing/` — connectome preprocessing pipelines (Shafiei, Suárez/MaMI, …).
-- `src/analysis/`, `src/utils/`, `src/config/` — **shared, duplicated** code (see below).
-- `A_benchmarking_plots/` — analysis notebooks copied from `connectome_distances`.
-- `autoresearch/` — GNM-alternatives autoresearch + `autoresearch_karpathy` (nanoGPT).
+- `experiments_config.py` — single source of truth: the 8 measures, their
+  orientation (`IS_SIMILARITY` / `to_distance`), colours, names, grid geometry,
+  filename conventions, paths. Change measure metadata here and nowhere else.
+- `src/comparing_connectomes/` — `NetworkEvaluator` + ~20 metric subclasses. The
+  spine of the benchmarking side.
+- `pipeline_gnms_and_benchmarking/` — GNM generation (Stage 1) and the
+  generated-vs-empirical comparison (Stage 2).
+- `experiment_*/` — one folder per analysis; each runner has a docstring
+  explaining the question it answers. Labels S2/S3/S4/S6/S6b/S6c match the
+  manuscript's supplementary analyses.
+- `visualization/` — the notebooks and scripts that draw the manuscript figures.
+- `publication_data/` — the shareable data, built by `make_publication_data.py`.
+- `archive/` — everything not part of this manuscript, kept for provenance.
 
-### Recommended entry points
-- `run_experiment.py` / `run_experiment_lexis_data.py` — generate GNMs.
-- `run_connectome_comparisons.py` (+ `_null_model`, `_routing_etc`) — compare generated vs empirical.
-- `run_connectome_targeted_removal.py`, `find_best_energy_row.py`.
+## Hard-won facts
 
-## Split caveats (important)
+- **Five of the 16 measures are similarities, not distances** (`communicability_corr`,
+  `jaccard`, `f1`, `network_mutual_information`, `dc_network_mutual_information`).
+  They must be flipped before any `argmin` / "closest cell" logic. Both recovery
+  experiments were rescored in Aug 2026 after this was found
+  (`rescore_recovery_predictions.py`). Always route raw comparer output through
+  `experiments_config.to_distance()`.
+- **`data/` and `output/` are symlinks** into `../14_4D_lab_code` (~225 GB of run
+  history). They are gitignored. Do not delete `../14_4D_lab_code`.
+- The manuscript run is `output/gnm/hcp_schaefer_100_dataset/105_distance_metrics_mst_animal_0`.
+- **The empirical connectomes cannot be shared.** Anything derived from them
+  belongs in `publication_data/empirical_derived/`, which is gitignored.
+  Preprocessing *code* is shared; preprocessing *output* is not.
+- `src/ESNs/` is unused by this paper but cannot be removed without untangling a
+  module-level import in `src/pipeline/gnm_and_esn_orchestrator.py`.
+- `configs/config_gnm_run_hcp.yaml` is **not** the exact config of the published
+  sweep — its ranges were edited afterwards. The real grid is in `experiments_config.py`.
 
-- **`src/analysis`, `src/utils`, `src/config` are duplicated** with the sibling repo.
-  Edits here do **not** propagate to `../14_4D_property_space`; apply fixes in both.
-- **`src/ipc` is present only as a transitive dependency** of `src/analysis` (its IPC
-  metric lazy-imports `src.ipc.utils.polynomials` / `degdelaysets`). It is otherwise a
-  property-space concern. The clean long-term fix is to trim that import out of this
-  repo's `analysis` copy.
-- **`scripts/` and `notebooks/` are mixed scratch** carried into both repos for pruning.
-  Some still reference property-space code — delete what doesn't belong here.
-- **`data/` and `output/` are symlinks** into `../14_4D_lab_code`. The real data still
-  lives there — do **not** delete `../14_4D_lab_code` until those dirs are relocated.
-- `graphify-out/` is gitignored (regenerable knowledge-graph output).
+## Style
 
-## Agent skills
-
-### Issue tracker
-Issues live as local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-Default canonical label strings (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `docs/agents/triage-labels.md`.
-
-### Domain docs
-Single-context layout — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
-
-## graphify
-
-This project has a knowledge graph at `graphify-out/graph.json` (~2040 nodes / ~3800
-edges over `src/`, the `run_*` scripts, `A_benchmarking_plots/`, configs and docs; the
-`data/`/`output/` symlinks and agent-tooling files are excluded). It maps which
-function/class lives in which file and how they connect, and answers cite
-`source_file:line` you can open directly.
-
-Rules:
-- **Before grepping the whole tree to locate code, query the graph.** Run
-  `graphify query "TOKENS"` (e.g. `memory capacity reservoir connectome`),
-  `graphify path "<A>" "<B>"` for relationships, `graphify explain "<concept>"` for one
-  symbol. These return a scoped subgraph, far smaller than GRAPH_REPORT.md or raw grep.
-- **Pass space-separated keyword tokens, NOT a full sentence** — the matcher is literal
-  substring + IDF (no stemming/synonyms), so a prose question collapses to noise. The
-  `/graphify query "..."` skill auto-expands the question to graph vocabulary for you;
-  prefer it when unsure.
-- Core abstraction: `NetworkEvaluator` (`src/comparing_connectomes/base_comparer.py`)
-  + its ~20 metric subclasses is the spine of the benchmarking side.
-- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review, or when
-  query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no
-  API cost). `graphify-out/` is gitignored, so the graph is per-clone.
+- Dashes: never `--` or `---`; always `-`. Same rule as the manuscript.
+- `graphify-out/` is gitignored and regenerable; run `graphify update .` after
+  code changes if you use it.

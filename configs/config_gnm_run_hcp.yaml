@@ -80,7 +80,7 @@ data:
   connectome_resolution: 50 #  100 #  50 # PER BRAIN HALF!!! 
   density: 10
   paths:
-    project_root: /Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code
+    project_root: .
     animal_metadata: data/preprocessed/hcp_schaefer_100_dataset/04_further_info/names_of_animals_with_preprocessed_connectomes_100.csv
 gnm:
   eta_range:

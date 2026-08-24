@@ -50,6 +50,10 @@ from netneurotools.networks import struct_consensus, threshold_network
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from experiments_config import coarse as _cfg
+
+# Repo root, so this file works from any clone. The `data/` and `output/`
+# symlinks at the root point at the run tree that used to be hardcoded here.
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
 TRUE_PARAM_COMBOS = _cfg.TRUE_PARAM_COMBOS
 GRID_COMBOS, GRID_N_ETA, GRID_N_GAMMA = _cfg.GRID_COMBOS, _cfg.GRID_N_ETA, _cfg.GRID_N_GAMMA
 N_TEST, N_CONSENSUS_GRID = _cfg.N_TEST, _cfg.N_CONSENSUS_GRID
@@ -61,7 +65,7 @@ param_dir_name, net_filename = _cfg.param_dir_name, _cfg.net_filename
 # Configuration
 # ---------------------------------------------------------------------------
 
-ROOT_DIR   = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code")# Path(__file__).parent.parent.parent
+ROOT_DIR   = Path(f"{_REPO_ROOT}")# Path(__file__).parent.parent.parent
 DATA_DIR   = ROOT_DIR / "data" / "preprocessed" / "hcp_schaefer_100_dataset"
 SEED_PATH  = ROOT_DIR / "data" / "preprocessed" / "seeds" / "mst_schaeffer.npy"
 OUTPUT_DIR = ROOT_DIR / "output" / "gnm" / "synthetic_parameter_recovery_grid"
