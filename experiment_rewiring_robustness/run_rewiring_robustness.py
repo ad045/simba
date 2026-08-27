@@ -408,6 +408,25 @@ def compute_measure(measure: str, layout: pd.DataFrame, consensus: np.ndarray,
 # Aggregation -> robustness metrics (spec Section 5)
 # ===========================================================================
 
+_EFF_CACHE: dict = {}
+
+
+def eff_frac(s_values) -> np.ndarray:
+    """Effective degeneration (fraction of edges actually moved) for swap counts s.
+
+    The ladder is specified in attempted swaps, but swaps get rejected and later
+    swaps can move an already-moved edge, so the fraction of edges that differ
+    from the consensus is smaller than the nominal 2s/E. The main-text
+    degeneration panels plot against this effective degeneration, so the drift
+    curves do too. Table from compute_effective_degeneration.py.
+    """
+    if not _EFF_CACHE:
+        path = OUT_DIR / "effective_degeneration.csv"
+        assert path.exists(), f"missing {path} - run compute_effective_degeneration.py"
+        _EFF_CACHE.update(pd.read_csv(path).groupby("s")["eff"].mean().to_dict())
+    return np.array([_EFF_CACHE[int(s)] for s in np.atleast_1d(s_values)], dtype=float)
+
+
 def _median_curve(df_m: pd.DataFrame) -> pd.DataFrame:
     """Per-s median / IQR drift, with the s=0 baseline prepended."""
     g = df_m.groupby("s")["drift"]
@@ -419,7 +438,7 @@ def _median_curve(df_m: pd.DataFrame) -> pd.DataFrame:
     })
     base = pd.DataFrame([{"s": 0, "median": 0.0, "q25": 0.0, "q75": 0.0}])
     cur = pd.concat([base, cur], ignore_index=True).sort_values("s").reset_index(drop=True)
-    cur["frac"] = np.minimum(1.0, 2.0 * cur["s"] / E_EDGES)
+    cur["frac"] = eff_frac(cur["s"])
     return cur
 
 
@@ -440,7 +459,7 @@ def measure_scalars(df_m: pd.DataFrame, noise_levels: List[int], R: int,
     # N*: largest s (excl. anchor) whose median drift is still <= threshold
     tol = core[core["median"] <= DRIFT_THRESHOLD]["s"]
     n_star = int(tol.max()) if len(tol) else 0
-    n_star_frac = min(1.0, 2.0 * n_star / E_EDGES)
+    n_star_frac = float(eff_frac(n_star)[0])
 
     # drift AUC on the fraction axis, normalised by the tested fraction span
     frac = core["frac"].to_numpy()
@@ -456,7 +475,7 @@ def measure_scalars(df_m: pd.DataFrame, noise_levels: List[int], R: int,
     cliff_flag = bool(total_rise > DRIFT_THRESHOLD and max_step > 0.5 * total_rise)
 
     # representative mid level for dispersion + per-axis drift (closest frac to 0.2)
-    mid_s = int(min(noise_levels, key=lambda s: abs(min(1.0, 2.0 * s / E_EDGES) - 0.2)))
+    mid_s = int(min(noise_levels, key=lambda s: abs(float(eff_frac(s)[0]) - 0.2)))
     at_mid = df_m[df_m["s"] == mid_s]
     dispersion_mid = _dispersion(at_mid["cell"].to_numpy())
     eta_drift_ref = float(at_mid["d_eta"].median()) if len(at_mid) else float("nan")
@@ -507,7 +526,7 @@ def _hold_curve(df_m: pd.DataFrame) -> pd.DataFrame:
     cur = pd.DataFrame({"s": held.index.to_numpy(), "hold": held.to_numpy()})
     base = pd.DataFrame([{"s": 0, "hold": 1.0}])   # s=0 holds by construction
     cur = pd.concat([base, cur], ignore_index=True).sort_values("s").reset_index(drop=True)
-    cur["frac"] = np.minimum(1.0, 2.0 * cur["s"] / E_EDGES)
+    cur["frac"] = eff_frac(cur["s"])
     return cur
 
 
@@ -569,7 +588,7 @@ def plot(results: pd.DataFrame, curves: pd.DataFrame, per_draw: pd.DataFrame,
     axA.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
     axA.grid(True, alpha=0.3, linestyle="--", linewidth=0.5)
     axA.set_axisbelow(True)
-    axA.set_xlabel("Fraction of Edges Rewired (2s / E)")
+    axA.set_xlabel("Effective Degeneration")
     axA.set_ylabel("Draws Holding the Best Fit\n(within 1 Grid Step)")
     _panel_letter(axA, "A")
 
@@ -579,9 +598,9 @@ def plot(results: pd.DataFrame, curves: pd.DataFrame, per_draw: pd.DataFrame,
     colors = [METRIC_COLORS.get(m, GRAY) for m in res["measure"]]
     bars = axB.barh(y, res["noise_tolerance_frac"], color=colors, edgecolor="black",
                     linewidth=0.4, height=0.7, zorder=3)
-    for bar, cliff in zip(bars, res["cliff_flag"]):
-        if cliff:
-            bar.set_hatch("///")
+    # for bar, cliff in zip(bars, res["cliff_flag"]):
+        # if cliff:
+        #     bar.set_hatch("///")
     axB.set_yticks(y)
     axB.set_yticklabels([METHOD_NAMES.get(m, m) for m in res["measure"]])
     axB.set_xlabel("Noise Tolerance N*")
@@ -589,10 +608,6 @@ def plot(results: pd.DataFrame, curves: pd.DataFrame, per_draw: pd.DataFrame,
     for yi, v in zip(y, res["noise_tolerance_frac"]):
         axB.text(v + max(res["noise_tolerance_frac"]) * 0.015, yi, f"{v:.3f}",
                  va="center", fontsize=7)
-    from matplotlib.patches import Patch
-    axB.legend(handles=[Patch(facecolor="white", edgecolor="black", hatch="///",
-                              label="fails via cliff")],
-               loc="lower right", frameon=False, fontsize=7)
     axB.grid(True, axis="x", alpha=0.3, linestyle="--", linewidth=0.5)
     axB.set_axisbelow(True)
     _panel_letter(axB, "B")
@@ -629,7 +644,7 @@ def plot(results: pd.DataFrame, curves: pd.DataFrame, per_draw: pd.DataFrame,
         ax.set_xticklabels([])
     small[0].set_ylabel("Drift (Grid Steps)", fontsize=8)
     small[4].set_ylabel("Drift (Grid Steps)", fontsize=8)
-    small[5].set_xlabel("Fraction of Edges Rewired (2s / E)", fontsize=8,
+    small[5].set_xlabel("Effective Degeneration", fontsize=8,
                         x=1.0, labelpad=6)
     _panel_letter(small[0], "C", x=-0.42)
 
