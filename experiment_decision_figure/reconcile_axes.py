@@ -20,7 +20,7 @@ import pandas as pd
 from scipy.ndimage import gaussian_filter
 
 ROOT = Path(__file__).resolve().parents[1]
-EXP = "105_distance_metrics_mst_animal_0"
+EXP = "106_distance_metrics_mst_animal_0_density10"
 MORPHO = ROOT / "output" / "gnm" / "hcp_schaefer_100_dataset" / EXP
 
 # The 8 selected measures.

@@ -158,6 +158,22 @@ def main():
                     bbox_inches="tight", transparent=True)
         plt.close(fig)
 
+    # --- measure colour strip, keyed to the shared row order ----------------
+    # The published composite carried this strip beside panel B to identify the
+    # rows. It was drawn in the vector editor, so nothing regenerated it and the
+    # rebuilt composite lost it; emitting it here keeps the figure script-built.
+    # Same y limits as the loading panels, so the blocks line up with the bars.
+    fig = plt.figure(figsize=viz.cm_to_inch((0.28, 6)))
+    ax = fig.add_subplot(111)
+    for i, m in enumerate(order):
+        ax.add_patch(plt.Rectangle((0, i - 0.5), 1, 1, color=COLORS[m], lw=0))
+    ax.set_xlim(0, 1)
+    ax.set_ylim(-0.6, len(order) - 0.4)
+    ax.invert_yaxis()
+    ax.axis("off")
+    fig.savefig(OUT / "fig_pca_loadings_strip.pdf", bbox_inches="tight", transparent=True)
+    plt.close(fig)
+
     print("\nwritten to", OUT)
 
 

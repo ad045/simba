@@ -45,6 +45,7 @@ OUT_DIR = ROOT_DIR / "output" / "cost_hemisphere_landscapes"
 OUT_CSV = OUT_DIR / "cost_hemisphere_landscape.csv"
 OUT_PDF = OUT_DIR / "fig_cost_hemisphere_landscapes.pdf"
 
+FONTSIZE = 8.0
 
 def hemisphere_mask(n_nodes: int) -> np.ndarray:
     """True where an (i, j) pair crosses hemispheres. Left = MNI x < 0."""
@@ -54,7 +55,8 @@ def hemisphere_mask(n_nodes: int) -> np.ndarray:
     return left[:, None] != left[None, :]
 
 
-def net_stats(A: np.ndarray, D: np.ndarray, cross: np.ndarray) -> dict:
+def net_stats(A: np.ndarray, D: np.ndarray, cross: np.ndarray,
+              long_pair: np.ndarray) -> dict:
     A = np.asarray(A, dtype=float)
     if A.ndim == 3:
         A = A[0]
@@ -64,6 +66,7 @@ def net_stats(A: np.ndarray, D: np.ndarray, cross: np.ndarray) -> dict:
     return {
         "total_cost": 0.5 * float((A * D).sum()),
         "mean_edge_length": float((A * D).sum() / A.sum()) if n_edges else np.nan,
+        "frac_long": float(0.5 * (A * long_pair).sum() / n_edges) if n_edges else np.nan,
         "frac_inter": float(0.5 * (A * cross).sum() / n_edges) if n_edges else np.nan,
         "n_edges": float(n_edges),
     }
@@ -75,9 +78,13 @@ def compute(n_reps: int) -> pd.DataFrame:
     D = np.load(DIST_MATRIX_PATH)
     consensus = np.load(CONSENSUS_PATH)
     cross = hemisphere_mask(D.shape[0])
+    # "long" = above the median of all node pairs, so the two panels are both
+    # fractions of edges and share the empirical consensus as a reference
+    iu = np.triu_indices_from(D, k=1)
+    long_pair = D > np.median(D[iu])
 
-    ref = net_stats(consensus, D, cross)
-    print(f"  empirical consensus: cost={ref['total_cost']:.1f}  "
+    ref = net_stats(consensus, D, cross, long_pair)
+    print(f"  empirical consensus: frac_long={ref['frac_long']:.3f}  "
           f"frac_inter={ref['frac_inter']:.3f}  edges={ref['n_edges']:.0f}")
 
     pool = pd.read_csv(MORPHO_DIR / f"summary_indiv_{SELECTED_MEASURES[0]}_for_exp_{MORPHO_EXP}.csv")
@@ -86,7 +93,7 @@ def compute(n_reps: int) -> pd.DataFrame:
 
     rows = []
     for (eta, gamma), grp in tqdm(pool.groupby(["eta", "gamma"]), desc="grid"):
-        per = [net_stats(load_net(f), D, cross) for f in grp["filename"]]
+        per = [net_stats(load_net(f), D, cross, long_pair) for f in grp["filename"]]
         row = {"eta": float(eta), "gamma": float(gamma), "n_reps": len(per)}
         row.update({k: float(np.nanmean([p[k] for p in per])) for k in per[0]})
         rows.append(row)
@@ -101,13 +108,14 @@ def compute(n_reps: int) -> pd.DataFrame:
 
 
 # --- palette, taken from the figure-1 connectome legend ------------------
-SHORT_COLOR = "#232324"      # black
-LONG_COLOR  = "#FFFCF2" # bonewhite  "#FF961F"      # orange
-INTRA_COLOR = "#232324"      # black
-INTER_COLOR = "#FFFCF2" # bonewhite  "#3FA5C4"      # blue
+SHORT_COLOR = "#FF961F"      # orange
+LONG_COLOR  = "#232324"      # black "#FFFCF2" # bonewhite              
+INTRA_COLOR = "#3FA5C4"      # blue             "#232324"      # black
+INTER_COLOR = "#232324"      # black "#FFFCF2" # bonewhite             "#3FA5C4"      # blue
+
 INK = "#232323"
 REF_COLOR = "#FF961F"     # orange, marks the empirical consensus
-ETA0_COLOR = "white"      # marks eta = 0
+ETA0_COLOR = INK          # marks eta = 0
 
 
 def plot(land: pd.DataFrame, ref: dict) -> None:
@@ -136,24 +144,26 @@ def plot(land: pd.DataFrame, ref: dict) -> None:
     # the generated networks have 594 edges against the consensus' 495, so a
     # summed cost is not on the same scale.
     panels = [
-        ("total_cost", "Total wiring cost",
+        ("frac_long", "Long-range fraction",
          LinearSegmentedColormap.from_list("cost", [SHORT_COLOR, LONG_COLOR]),
-         ("Short", "Long"), False),
+         ("Short-range", "Long-range"), True),
         ("frac_inter", "Interhemispheric fraction",
          LinearSegmentedColormap.from_list("hemi", [INTRA_COLOR, INTER_COLOR]),
          ("Intrahemispheric", "Interhemispheric"), True),
     ]
 
     fig = plt.figure(figsize=figsize)
-    gs = fig.add_gridspec(2, 2, height_ratios=[1, 0.045], hspace=0.55, wspace=0.10)
+    gs = fig.add_gridspec(1, 2, wspace=0.85)
 
     for k, (col, title, cmap, ends, show_ref) in enumerate(panels):
         G = grid_of(col)
         ax = fig.add_subplot(gs[0, k])
         ax.text(-0.06, 1.10, "AB"[k], transform=ax.transAxes,
-                ha="left", va="top", fontsize=9, fontweight="bold", color=INK)
+                ha="left", va="top", fontsize=11, fontweight="bold", color=INK)
+        # square panel: aspect in data units keeps the box 1:1
         ax.imshow(G, origin="lower", cmap=cmap, aspect="auto",
                   extent=[etas[0], etas[-1], gammas[0], gammas[-1]])
+        ax.set_box_aspect(1)
         # iso-line where the grid attains the empirical consensus (drawn on a
         # 3x3-smoothed copy, so replicate noise does not shatter it)
         if show_ref and G.min() <= ref[col] <= G.max():
@@ -161,8 +171,7 @@ def plot(land: pd.DataFrame, ref: dict) -> None:
                        colors=REF_COLOR, linewidths=0.9, linestyles="--")
         # eta = 0: boundary beyond which long connections are rewarded
         if etas[0] <= 0.0 <= etas[-1]:
-            ax.axvline(0.0, color=ETA0_COLOR, lw=0.9)
-        ax.set_title(title)
+            ax.axvline(0.0, color=ETA0_COLOR, lw=0.9, ls="--")
         # one shared axis across the two panels: the range ends carry the ticks
         ax.set_xticks([etas[0], etas[-1]]) # [etas[0]] if k == 0 else [etas[-1]])
         # ax.set_xticklabels(etas) # ["-8"] if k == 0 else ["3"])
@@ -174,24 +183,26 @@ def plot(land: pd.DataFrame, ref: dict) -> None:
             # eta sits at the shared edge of the two panels, as in figure 1
         ax.set_xlabel(r"$\eta$", labelpad=1)
             # ax.xaxis.set_label_coords(-0.06, -0.13)
+        ax.tick_params(labelsize=FONTSIZE)
         for side in ax.spines.values():
             side.set_color(INK)
             side.set_linewidth(1.0)
 
-        # --- colour bar: end labels only, plus the empirical consensus -------
-        cax = fig.add_subplot(gs[1, k])
+        # --- colour bar: to the right of the square panel, titled ------------
+        cax = ax.inset_axes([1.04, 0.0, 0.05, 1.0])
         sm = mpl.cm.ScalarMappable(
             cmap=cmap, norm=mpl.colors.Normalize(vmin=G.min(), vmax=G.max()))
-        cb = fig.colorbar(sm, cax=cax, orientation="horizontal",
+        cb = fig.colorbar(sm, cax=cax, orientation="vertical",
                           ticks=[G.min(), G.max()])
-        cb.ax.set_xticklabels(list(ends), fontsize=6.5)
-        cb.ax.tick_params(length=0, pad=1.5)
+        # cb.ax.set_yticklabels(list(ends), fontsize=5.5)
+        cb.ax.tick_params(length=0, pad=1.5, labelsize=FONTSIZE)
+        cb.set_label(title, labelpad=6)
         cb.outline.set_edgecolor(INK)
         cb.outline.set_linewidth(0.8)
-        for t, ha in zip(cb.ax.get_xticklabels(), ("left", "right")):
-            t.set_horizontalalignment(ha)
+        for t, va in zip(cb.ax.get_yticklabels(), ("bottom", "top")):
+            t.set_verticalalignment(va)
         if show_ref and G.min() <= ref[col] <= G.max():
-            cax.axvline(ref[col], color=REF_COLOR, lw=1.2)
+            cax.axhline(ref[col], color=REF_COLOR, lw=1.2)
 
     fig.savefig(OUT_PDF, bbox_inches="tight", transparent=True)
     fig.savefig(OUT_PDF.with_suffix(".png"), dpi=300, bbox_inches="tight")
@@ -205,10 +216,14 @@ def selftest() -> None:
     cross = np.array([[False, False, True],
                       [False, False, True],
                       [True, True, False]])
-    s = net_stats(A, D, cross)
+    long_pair = np.array([[False, True, True],
+                          [True, False, True],
+                          [True, True, False]])
+    s = net_stats(A, D, cross, long_pair)
     assert s["n_edges"] == 3, s
     assert s["total_cost"] == 6.0, s          # 3 edges x length 2
     assert abs(s["frac_inter"] - 2 / 3) < 1e-12, s
+    assert s["frac_long"] == 1.0, s
     assert abs(s["mean_edge_length"] - 2.0) < 1e-12, s
     print("selftest ok")
 
@@ -234,7 +249,7 @@ def main():
 
     plot(land, ref)
 
-    for col in ("total_cost", "frac_inter"):
+    for col in ("frac_long", "frac_inter"):
         print(f"  {col}: grid {land[col].min():.4g} - {land[col].max():.4g}, "
               f"empirical {ref[col]:.4g}")
 

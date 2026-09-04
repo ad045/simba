@@ -751,8 +751,9 @@ def plot_sa(res: pd.DataFrame, land: pd.DataFrame, npz_path: Path,
     """
     import matplotlib.pyplot as plt
 
-    viz, have_viz = _viz()
-    figsize = (viz.cm_to_inch((16, 6.5)) if have_viz else (16 / 2.54, 6.5 / 2.54))
+    viz, have_viz = _viz() 
+    figsize = (viz.cm_to_inch((12, 6.5)) if have_viz else (16 / 2.54, 6.5 / 2.54)) # The one figure that is by itself in the SI: hub_topography_sa_axis.pdf
+
     subj = pd.DataFrame(summary["per_subject"])
 
     z = np.load(npz_path)
@@ -797,14 +798,14 @@ def plot_sa(res: pd.DataFrame, land: pd.DataFrame, npz_path: Path,
         ax.hlines(np.median(part), i - 0.26, i + 0.26, color="black", lw=1.1, zorder=4)
     ax.axhline(0, color=GRAY, lw=0.6, ls=":")
     ax.set_xticks([0, 1])
-    ax.set_xticklabels([f"{len(land):,}\nparameter\ncombinations",
-                        f"{summary['n_subjects']}\nindividual\nconnectomes"])
+    ax.set_xticklabels([f"{len(land):,} parameter\ncombinations",
+                        f"{summary['n_subjects']} individual\nconnectomes"])
     ax.set_ylabel("$r$ to the S-A axis")
     _despine(ax)
 
     for ax, letter in zip(axes, "AB"):
         ax.text(-0.18, 1.06, letter, transform=ax.transAxes,
-                fontsize=9, fontweight="bold", va="bottom", ha="left")
+                fontsize=11, fontweight="bold", va="bottom", ha="left")
 
     _save(fig, out_pdf)
 

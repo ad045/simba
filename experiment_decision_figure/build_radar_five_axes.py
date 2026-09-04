@@ -40,7 +40,7 @@ from scipy.stats import ks_2samp, rankdata
 from vizman import viz
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from experiments_config import (ROOT_DIR, MORPHO_DIR, MORPHO_EXP, CONSENSUS_PATH,
+from experiments_config import (ROOT_DIR, MORPHO_DIR, MORPHO_EXP, TIMING_DIR, TIMING_EXP, CONSENSUS_PATH,
                                 DIST_MATRIX_PATH, fine, to_distance)
 
 viz.set_visual_style()
@@ -97,6 +97,9 @@ SENSITIVITY = "perturbation"
 # The three perturbation read-outs, all reported in the Results.
 # MAE of the rewiring response against the diagonal (lower better), from
 # visualization/run_degeneration_effective_panels.py:
+# MAE and CV below come from output/gnm/<dataset>/chaos_analysis/, which rewires the
+# CONSENSUS and compares it to itself. The consensus is unchanged by the 10%-density
+# regeneration, so both are unchanged (verified against the published values).
 REWIRING_MAE = {"communicability_corr": 0.076, "frobenius": 0.123, "delta_con": 0.126,
                 "netrd_non_backtracking_spectral": 0.129, "net_simile": 0.139,
                 "spectral_distance_adjacency": 0.161, "portrait": 0.164, "energy": 0.174}
@@ -104,25 +107,28 @@ REWIRING_MAE = {"communicability_corr": 0.076, "frobenius": 0.123, "delta_con": 
 REWIRING_CV = {"frobenius": 0.0130, "delta_con": 0.0161, "energy": 0.0422,
                "portrait": 0.0549, "netrd_non_backtracking_spectral": 0.0674,
                "spectral_distance_adjacency": 0.0849, "net_simile": 0.0996,
-               "communicability_corr": 0.1592}
+               "communicability_corr": 0.1536}
 # Noise tolerance N*: largest effective degeneration of the reference (fraction
 # of its 495 edges that actually differ) at which the median drift of the
-# best-fitting combination is still within one grid step (higher better), from
-# experiment_rewiring_robustness/run_rewiring_robustness.py. Only the ranking
-# enters the composite, and that is unchanged from the earlier nominal 2s/E
-# values (0.40, 0.20, 0.08, 0.04, 0.04, 0.02, 0.004, 0).
-NOISE_TOLERANCE = {"delta_con": 0.264, "frobenius": 0.141, "communicability_corr": 0.063,
-                   "netrd_non_backtracking_spectral": 0.029, "net_simile": 0.029,
-                   "spectral_distance_adjacency": 0.015, "portrait": 0.003, "energy": 0.0}
+# best-fitting combination is still within one grid step (higher better). Read
+# from the rewiring-robustness run rather than pinned - the recovery step is an
+# argmin over the morphospace landscape, so this moves whenever the landscapes
+# are re-scored, and a stale copy would silently mis-rank the robustness spoke.
+def _noise_tolerance() -> dict:
+    path = ROOT_DIR / "output" / "rewiring_robustness" / "rewiring_robustness_results.csv"
+    assert path.exists(), f"missing {path} - run experiment_rewiring_robustness first"
+    r = pd.read_csv(path).set_index("measure")["noise_tolerance_frac"]
+    return {m: float(r[m]) for m in MEASURES}
 
 # Bar heights of Figure 4A, reproduced to the reading precision of that panel.
 # Note the selection: the 20 best-fitting *parameter combinations* (cell means
 # over the 10 replicates), not the 20 best-fitting individual networks - the
 # latter gives a different answer (e.g. portrait 0.026 against 0.037).
-PUBLISHED_TOTAL_VARIATION = {"net_simile": 0.0020, "delta_con": 0.0044,
-                             "spectral_distance_adjacency": 0.031, "portrait": 0.037,
-                             "netrd_non_backtracking_spectral": 0.055, "energy": 0.072,
-                             "frobenius": 0.097, "communicability_corr": 0.124}
+PUBLISHED_TOTAL_VARIATION = {"delta_con": 0.0033, "energy": 0.0043,
+                             "net_simile": 0.0096, "portrait": 0.0139,
+                             "spectral_distance_adjacency": 0.0230,
+                             "netrd_non_backtracking_spectral": 0.0493,
+                             "frobenius": 0.0778, "communicability_corr": 0.1091}
 # Order sets the layout: first spoke points up, the rest follow counter-clockwise.
 # accuracy top, plausibility upper left, agreement lower left,
 # sensitivity and robustness lower right, computational efficiency upper right.
@@ -159,8 +165,20 @@ def landscape_distance(measure):
 
 
 def agreement():
-    corr = pd.read_csv(MORPHO_DIR / "method_evaluation" / "correlation_matrix.csv", index_col=0)
-    corr = corr.loc[MEASURES, MEASURES]
+    """Mean Pearson correlation of a measure's landscape with the other seven.
+
+    The correlation matrix is built here rather than read from
+    method_evaluation/correlation_matrix.csv: that file is written by a figure
+    script whose loader flips the similarity-valued measures twice (to_distance
+    negates them, then a 1 - minmax step flips them back), so communicability
+    correlation enters it as a similarity and its correlations carry the wrong
+    sign. Building it from to_distance-oriented values keeps this spoke
+    consistent with Figure 2B and with the orientation stated in the Methods.
+    """
+    cols = {m: landscape_distance(m)
+            .sort_values("network_index")["distance"].to_numpy()
+            for m in MEASURES}
+    corr = pd.DataFrame(cols).corr()
     return {m: float((corr.loc[m].sum() - 1.0) / (len(MEASURES) - 1)) for m in MEASURES}
 
 
@@ -204,7 +222,8 @@ def total_variation():
 def efficiency():
     out = {}
     for m in MEASURES:
-        paths = sorted(MORPHO_DIR.glob(f"timing_{m}_for_exp_{MORPHO_EXP}.csv"))
+        # runtime comes from the reference timing run, see experiments_config.TIMING_EXP
+        paths = sorted(TIMING_DIR.glob(f"timing_{m}_for_exp_{TIMING_EXP}.csv"))
         td = pd.read_csv(paths[0])
         cols = [c for c in td.columns if c.startswith("time_")]
         out[m] = float(np.mean(td[cols].to_numpy())) * 1000        # ms
@@ -227,7 +246,7 @@ def accuracy():
 def perturbation_composite():
     """Mean of the three perturbation ranks, higher = more robust."""
     parts = [to_scores(REWIRING_MAE, False), to_scores(REWIRING_CV, False),
-             to_scores(NOISE_TOLERANCE, True)]
+             to_scores(_noise_tolerance(), True)]
     return {m: float(np.mean([p[m] for p in parts])) for m in MEASURES}
 
 

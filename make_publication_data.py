@@ -36,7 +36,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "publication_data"
 
-RUN = ROOT / "output" / "gnm" / "hcp_schaefer_100_dataset" / "105_distance_metrics_mst_animal_0"
+RUN = ROOT / "output" / "gnm" / "hcp_schaefer_100_dataset" / "106_distance_metrics_mst_animal_0_density10"
 
 # Node-level vectors computed from the empirical consensus connectome. Not
 # redistributable without checking the HCP data use terms, so they are staged

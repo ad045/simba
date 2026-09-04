@@ -388,9 +388,9 @@ def main():
           f"{wide_chance_axis:.2f} per axis\n")
 
     bars_figure(wide, wide_chance_axis, "Widely-spread targets",
-                outdir / "fig_recovery_bars_wide.pdf", panel_letter="A")
+                outdir / "fig_recovery_bars_wide.pdf")
     bars_figure(win, win_chance_axis, "Plausible window",
-                outdir / "fig_recovery_bars_window.pdf", panel_letter="B")
+                outdir / "fig_recovery_bars_window.pdf")
     slopegraph(wide, win, wide_chance_joint, win_chance_joint,
                outdir / "fig_recovery_slopegraph.pdf")
 

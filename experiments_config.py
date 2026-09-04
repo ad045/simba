@@ -41,8 +41,17 @@ RAW_DIR  = ROOT_DIR / "data" / "raw" / "hcp_schaefer_100"
 
 # main morphospace run that produced the cached per-network distances (D_art)
 MORPHO_DATASET = "hcp_schaefer_100_dataset"
-MORPHO_EXP     = "105_distance_metrics_mst_animal_0"
+MORPHO_EXP     = "106_distance_metrics_mst_animal_0_density10"
 MORPHO_DIR     = ROOT_DIR / "output" / "gnm" / MORPHO_DATASET / MORPHO_EXP
+
+# Runtime is a property of the machine, not of the networks: the timings are
+# wall-clock and move with core count and load, so re-measuring them alongside a
+# rescore would change the reported numbers for reasons unrelated to the study.
+# The manuscript therefore quotes one reference measurement - the published run -
+# and every figure that shows runtime reads it from here rather than from
+# MORPHO_EXP. Point this at MORPHO_EXP only when deliberately re-measuring.
+TIMING_EXP     = "105_distance_metrics_mst_animal_0"
+TIMING_DIR     = ROOT_DIR / "output" / "gnm" / MORPHO_DATASET / TIMING_EXP
 
 CONSENSUS_PATH    = DATA_DIR / "01_connectomes" / "01_consensus_bin_density_10_percent_100.npy"
 INDIVIDUALS_PATH  = DATA_DIR / "01_connectomes" / "00_connectomes_density10.npy"
@@ -218,19 +227,21 @@ coarse = SimpleNamespace(
 #
 # (Superseded: a hand-set box of eta = -3.7 +- 0.8, gamma = 0.5 +- 0.10. Its
 #  gamma range sat almost entirely ABOVE where the 8 measures actually place
-#  their best fits - pooled gamma IQR is 0.08-0.44 - which is the main reason
-#  gamma looked unrecoverable there.)
+#  their best fits - which is the main reason gamma looked unrecoverable there.
+#  Superseded again: the window above is re-derived from the corrected
+#  10%-density run (MORPHO_EXP = 106_...); the previous 12%-density window was
+#  eta [-3.9592, -2.8367], gamma [0.0796, 0.4388].)
 
-_FINE_SAMPLE_ETA_RANGE:   Tuple[float, float] = (-3.9592, -2.8367)
-_FINE_SAMPLE_GAMMA_RANGE: Tuple[float, float] = ( 0.0796,  0.4388)
+_FINE_SAMPLE_ETA_RANGE:   Tuple[float, float] = (-3.9592, -1.4898)
+_FINE_SAMPLE_GAMMA_RANGE: Tuple[float, float] = ( 0.0796,  0.3041)
 
 _FINE_CENTER_ETA   = float(np.mean(_FINE_SAMPLE_ETA_RANGE))
 _FINE_CENTER_GAMMA = float(np.mean(_FINE_SAMPLE_GAMMA_RANGE))
 
 _FINE_N_ETA   = 10
 _FINE_N_GAMMA = 10
-_FINE_ETA     = np.linspace(-4.1195, -2.6764, _FINE_N_ETA)  # step ~0.160
-_FINE_GAMMA   = np.linspace( 0.0283,  0.4901, _FINE_N_GAMMA)  # step ~0.051
+_FINE_ETA     = np.linspace(-4.3120, -1.1370, _FINE_N_ETA)  # step ~0.353
+_FINE_GAMMA   = np.linspace( 0.0475,  0.3362, _FINE_N_GAMMA)  # step ~0.032
 
 _FINE_COMBOS: List[Tuple[float, float]] = [
     (float(eta), float(gamma))

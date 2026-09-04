@@ -18,8 +18,8 @@ What is new vs. reused
 ----------------------
   * D_art  (25,000 GNM-to-consensus distances per measure) is ALREADY cached by
     the main morphospace run, one CSV per measure:
-        output/gnm/hcp_schaefer_100_dataset/105_distance_metrics_mst_animal_0/
-            summary_indiv_<measure>_for_exp_105_distance_metrics_mst_animal_0.csv
+        output/gnm/hcp_schaefer_100_dataset/106_distance_metrics_mst_animal_0_density10/
+            summary_indiv_<measure>_for_exp_106_distance_metrics_mst_animal_0_density10.csv
     We load it; we do NOT recompute it (spec Section 9).
   * D_real (100 real-subject-to-consensus distances per measure) is the only new
     work. By default we use a leave-one-out (LOO) consensus C_{-i} rebuilt from
@@ -374,7 +374,7 @@ def plot(results: pd.DataFrame, d_real: pd.DataFrame, out_pdf: Path,
     axA.set_yticks(y)
     axA.set_yticklabels(res["name"], fontsize=4)
     axA.set_xlim(min(0.45, float(res[["auc", "auc_hardcase"]].min().min()) - 0.03), 1.005)
-    # axA.set_xlabel("AUC\n(P[real subject closer to consensus than GNM])")
+    axA.set_xlabel("AUC (P[real subject closer to consensus than GNM])", fontsize=5)
 
     for yi, (a, h) in zip(y, zip(res["auc"], res["auc_hardcase"])):
         axA.text(a + 0.004, yi + 0.18, 
@@ -421,7 +421,7 @@ def plot(results: pd.DataFrame, d_real: pd.DataFrame, out_pdf: Path,
 
     axB.set_yticks(positions)
     # axB.set_yticklabels(res["name"]) # , fwontsize=8)
-    # axB.set_xlabel("closeness to consensus\n(higher = closer)") # pooled min-max normalised; 
+    axB.set_xlabel("closeness to consensus (higher = closer)", fontsize=5)
     axB.set_xlim(-0.02, 1.02)
     axB.set_ylim(-0.8, len(order) - 0.2)
     from matplotlib.patches import Patch

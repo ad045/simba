@@ -43,7 +43,7 @@ MEASURES = ["energy", "portrait", "spectral_distance_adjacency", "communicabilit
             "net_simile", "netrd_non_backtracking_spectral", "delta_con", "frobenius"]
 
 # Measures stored as a similarity rather than a distance.
-INVERT = {"f1", "jaccard", "communicability_jsd", "communicability_corr"}
+INVERT = {"f1", "jaccard", "communicability_corr"}  # communicability JSD is a divergence, i.e. already a distance
 
 COLORS = {
     "communicability_corr":            (0.600, 0.600, 0.600),

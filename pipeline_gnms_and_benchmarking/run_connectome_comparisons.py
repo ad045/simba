@@ -260,6 +260,21 @@ def evaluate_network_for_subject(
     return result, elapsed_time
 
 
+# Per-worker state, set once by _init_worker. The empirical networks and the
+# evaluator used to travel inside every task tuple, so torch's shared-memory IPC
+# had to hand them over 25,000 times per measure; under that load its storage
+# manager refuses connections and the pool deadlocks. They are constant across
+# tasks, so each worker receives them once at start-up instead.
+_WORKER_STATE: Dict = {}
+
+
+def _init_worker(empirical_networks_np, evaluator) -> None:
+    _WORKER_STATE["empirical_networks_tensor"] = torch.tensor(
+        empirical_networks_np, dtype=torch.float32
+    )
+    _WORKER_STATE["evaluator"] = evaluator
+
+
 def process_network_for_subjects(args: Tuple) -> Tuple[Dict, Dict]:
     """
     Worker function to evaluate a single network against specific subjects.
@@ -268,7 +283,9 @@ def process_network_for_subjects(args: Tuple) -> Tuple[Dict, Dict]:
         Tuple of (results_dict, timing_dict)
     """
     network_idx, network, generated_parameters, filename, \
-        empirical_networks_tensor, evaluator, subject_ids_to_process = args
+        subject_ids_to_process = args
+    empirical_networks_tensor = _WORKER_STATE["empirical_networks_tensor"]
+    evaluator = _WORKER_STATE["evaluator"]
     
     # TODO: Which shape does network need to be going forward? 
     # print(network.shape)
@@ -757,8 +774,6 @@ def main(dataset_name: str,
                 network,
                 params,
                 filename,
-                empirical_networks_tensor,
-                evaluator,
                 subjects_to_process  # Only evaluate against subjects that need processing
             )
             tasks.append(task_args)
@@ -768,7 +783,11 @@ def main(dataset_name: str,
         all_results = []
         all_timing_results = []
         
-        with Pool(processes=number_multiprocessing_processes) as pool:
+        with Pool(
+            processes=number_multiprocessing_processes,
+            initializer=_init_worker,
+            initargs=(empirical_networks_tensor.numpy(), evaluator),
+        ) as pool:
             for result, timing_result in tqdm(
                 pool.imap(process_network_for_subjects, tasks), 
                 total=len(tasks), 

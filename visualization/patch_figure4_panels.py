@@ -21,7 +21,7 @@ import fitz
 
 PAPER = Path("/Users/adrian/Desktop/Benchmarking_/figures")
 SRC = PAPER / "fig_3_total_variation_degree_distance_2.pdf"     # editor export
-DST = PAPER / "fig_3_total_variation_degree_distance_3.pdf"     # what the tex includes
+DST = PAPER / "fig_3_total_variation_degree_distance_4.pdf"     # what the tex includes
 PANELS = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/"
               "hcp_schaefer_100_dataset")
 
@@ -31,7 +31,7 @@ JOBS = [
      (32.16, 6.72, 234.24, 128.88), (48.28, 212.61, 249.88, 334.17), (10, 207, 256, 362)),
     (PANELS / "chaos_analysis" / "fig_panel_F_effective.pdf",
      (42.24, 9.36, 158.88, 126.00), (50.40, 388.38, 166.45, 504.42), (6, 384, 190, 530)),   # right edge stops short of panel G's tick labels
-    (PANELS / "105_distance_metrics_mst_animal_0" / "fig_panel_H_isnr_consistent.pdf",
+    (PANELS / "106_distance_metrics_mst_animal_0_density10" / "fig_panel_H_isnr_consistent.pdf",
      (42.24, 9.36, 158.88, 126.00), (378.15, 388.38, 494.20, 504.42), (338, 384, 505, 530)),
 ]
 

@@ -51,7 +51,7 @@ OUT_PDF = Path(
 )
 
 # Manuscript width; the published figure is 15.65 x 8.0 cm.
-FIG_SIZE_CM = (15.65, 8.0)
+FIG_SIZE_CM = (16, 8) # 15.65, 8.0)
 NCOLS = 4
 
 
@@ -68,8 +68,8 @@ def plot_grid_and_variance(results, out_pdf: Path):
     n_combos = len(G.TRUE_PARAM_COMBOS)
 
     fig = plt.figure(figsize=viz.cm_to_inch(FIG_SIZE_CM))
-    outer = fig.add_gridspec(1, 2, width_ratios=[1.3, 1], wspace=0.55)
-    gs_a = outer[0].subgridspec(n_rows, NCOLS, hspace=1.15, wspace=0.3)
+    outer = fig.add_gridspec(1, 2, width_ratios=[1.5, 1], wspace=0.55)
+    gs_a = outer[0].subgridspec(n_rows, NCOLS) # , hspace=1.15, wspace=0.3)
     ax_heat = fig.add_subplot(outer[1])
 
     # ---- Panel A: recovered locations, one subpanel per measure -----------

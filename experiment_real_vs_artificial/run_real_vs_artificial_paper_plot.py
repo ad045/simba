@@ -18,8 +18,8 @@ What is new vs. reused
 ----------------------
   * D_art  (25,000 GNM-to-consensus distances per measure) is ALREADY cached by
     the main morphospace run, one CSV per measure:
-        output/gnm/hcp_schaefer_100_dataset/105_distance_metrics_mst_animal_0/
-            summary_indiv_<measure>_for_exp_105_distance_metrics_mst_animal_0.csv
+        output/gnm/hcp_schaefer_100_dataset/106_distance_metrics_mst_animal_0_density10/
+            summary_indiv_<measure>_for_exp_106_distance_metrics_mst_animal_0_density10.csv
     We load it; we do NOT recompute it (spec Section 9).
   * D_real (100 real-subject-to-consensus distances per measure) is the only new
     work. By default we use a leave-one-out (LOO) consensus C_{-i} rebuilt from

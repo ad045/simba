@@ -185,7 +185,7 @@ the manuscript are post-fix.
 | `fig_0_overview.pdf` | Hand-drawn schematic, not generated from data. |
 | `fig_huge_02_landscapes_corr_network_timing_plausible.pdf` | `visualization/8_7_manuscript_16_measures.ipynb` |
 | `fig_3_total_variation_degree_distance_2.pdf` | `visualization/8_9_manuscript_selected_8_measures.ipynb`; panels D and F from `visualization/run_degeneration_effective_panels.py` |
-| `fig_5_recovery_error_2.pdf` | `experiment_parameter_recovery_fine/run_recovery_main_figures.py` |
+| `fig_5_recovery_error_2.pdf` | `visualization/build_fig5_recovery.py` (whole figure, all five panels) |
 | `legend_8_measures.pdf` | `make_legend_8_measures.py` |
 | appendix `grid_and_variance.pdf` | `experiment_parameter_recovery/run_grid_and_variance_paper_plot.py` |
 | appendix `drift_of_recovered_parameters.pdf` | `experiment_rewiring_robustness/run_rewiring_robustness.py` |

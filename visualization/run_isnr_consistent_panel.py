@@ -37,8 +37,8 @@ from vizman import viz
 viz.set_visual_style()
 
 MORPHO = Path("/Users/adrian/Documents/01_projects/14_4D_lab/14_4D_lab_code/output/gnm/"
-              "hcp_schaefer_100_dataset/105_distance_metrics_mst_animal_0")
-EXP = "105_distance_metrics_mst_animal_0"
+              "hcp_schaefer_100_dataset/106_distance_metrics_mst_animal_0_density10")
+EXP = "106_distance_metrics_mst_animal_0_density10"
 OUT = MORPHO
 
 MEASURES = ["energy", "portrait", "spectral_distance_adjacency", "communicability_corr",
