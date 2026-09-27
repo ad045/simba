@@ -1,0 +1,46 @@
+site_name: netdistancebench
+site_description: Score a network distance measure on the brain-network similarity benchmark
+site_url: https://ad045.github.io/14_4D_benchmarking/
+repo_url: https://github.com/ad045/14_4D_benchmarking
+repo_name: ad045/14_4D_benchmarking
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: {icon: material/brightness-7, name: Dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: {icon: material/brightness-4, name: Light mode}
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Reference connectome: reference.md
+  - The five criteria: criteria.md
+  - Data: data.md
+  - Reproducing the paper: paper.md
+  - API: api.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.superfences
+  - pymdownx.arithmatex: {generic: true}
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: false
+            docstring_style: google
+            members_order: source

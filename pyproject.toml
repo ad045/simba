@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netdistancebench"
+version = "1.0.0"
+description = "Score a network distance measure on the brain-network similarity benchmark of Dendorfer et al."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Adrian Dendorfer", email = "adrian.dendorfer@gmail.com"},
+    {name = "Andrea Luppi"},
+    {name = "Francesco Poli"},
+    {name = "Alexa Mousley"},
+    {name = "Duncan Astle"},
+    {name = "Kayson Fakhar"},
+]
+keywords = ["connectome", "graph distance", "network similarity", "generative network models", "benchmark"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "pandas>=2.0",
+    "networkx>=3.0",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+docs = ["mkdocs>=1.6,<2", "mkdocs-material", "mkdocstrings[python]"]
+
+[project.urls]
+Documentation = "https://ad045.github.io/14_4D_benchmarking/"
+Source = "https://github.com/ad045/14_4D_benchmarking"
+
+[tool.setuptools]
+packages = ["netdistancebench"]
