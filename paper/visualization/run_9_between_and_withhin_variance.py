@@ -621,7 +621,7 @@ for idx, mode in enumerate(all_dist_measures):
     matrix_std = df_pivot_std.values[::-1]
 
 
-    if mode in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance: 
+    if mode in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance: 
         matrix_mean = 1 - matrix_mean
     
     matrices_of_metrics[mode] = matrix_mean
@@ -1091,7 +1091,7 @@ for idx, mode in enumerate(all_dist_measures):
     # Keep std in original scale (will be normalized later)
     matrix_std = df_pivot_std.values[::-1]
     
-    if mode in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:    
+    if mode in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:    
         matrix_mean = 1 - matrix_mean
     
     matrices_of_metrics[mode] = matrix_mean
@@ -1179,8 +1179,8 @@ for distance_measure in all_dist_measures:
     df['metric_value'] = (df['metric_value'] - df['metric_value'].min()) / (df['metric_value'].max() - df['metric_value'].min())
     
     # Turn similarities into distances 
-    # if mode in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    # if mode in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
     ############
     
@@ -1283,7 +1283,7 @@ for distance_measure in all_dist_measures:
     
     # Turn similarities into distances 
     print(df.keys())
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
     ############
 
@@ -1302,7 +1302,7 @@ for distance_measure in all_dist_measures:
         y_vals = (y_vals - y_vals.min()) / (y_vals.max() - y_vals.min()) 
 
         
-        # if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+        # if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         #     y_vals = 1 - y_vals
 
         # subtract the diagonal
@@ -1387,7 +1387,7 @@ for distance_measure in all_dist_measures:
     
     # Turn similarities into distances 
     print(df.keys())
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
     ############
 
@@ -1405,7 +1405,7 @@ for distance_measure in all_dist_measures:
         y_vals = (y_vals - y_vals.min()) / (y_vals.max() - y_vals.min()) 
 
         
-        # if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+        # if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         #     y_vals = 1 - y_vals
 
         # subtract the diagonal
@@ -1546,7 +1546,7 @@ for distance_measure in all_dist_measures:
     
     # Turn similarities into distances 
     # print(df.keys())
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
         
     # Group by rewire_fraction to get the groups, but don't aggregate yet
@@ -1590,7 +1590,7 @@ for distance_measure in all_dist_measures:
     #     y_vals = (y_vals - y_vals.min()) / (y_vals.max() - y_vals.min()) 
 
         
-    #     # if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    #     # if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
     #     #     y_vals = 1 - y_vals
 
     #     # subtract the diagonal
@@ -1680,7 +1680,7 @@ for distance_measure in all_dist_measures:
     
     # Turn similarities into distances 
     # print(df.keys())
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
         
     # Group by rewire_fraction to get the groups, but don't aggregate yet
@@ -1743,7 +1743,7 @@ for distance_measure in all_dist_measures:
     
     # Turn similarities into distances 
     # print(df.keys())
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
         
     # Group by rewire_fraction to get the groups, but don't aggregate yet
@@ -1826,7 +1826,7 @@ for distance_measure in all_dist_measures:
     
     # Turn similarities into distances 
     # print(df.keys())
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
         
     # Group by rewire_fraction to get the groups, but don't aggregate yet
@@ -1949,7 +1949,7 @@ for distance_measure in all_dist_measures:
     
     # Turn similarities into distances 
     # print(df.keys())
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
         
     df_g = df.groupby("step").median()
@@ -2017,7 +2017,7 @@ for distance_measure in all_dist_measures:
     
     # Turn similarities into distances 
     # print(df.keys())
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
         
     # Group by rewire_fraction to get the groups, but don't aggregate yet
@@ -2080,7 +2080,7 @@ for distance_measure in all_dist_measures:
     df['metric_value'] = (df['metric_value'] - df['metric_value'].min()) / (df['metric_value'].max() - df['metric_value'].min())
     
     # Turn similarities into distances 
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
         
     merged_df = pd.merge(df, hamming_df, left_index=True, right_index=True)
@@ -2161,8 +2161,8 @@ for distance_measure in all_dist_measures:
     df['metric_value'] = (df['metric_value'] - df['metric_value'].min()) / (df['metric_value'].max() - df['metric_value'].min())
     
     # Turn similarities into distances 
-    # if mode in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    # if mode in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
     ############
 
@@ -2256,8 +2256,8 @@ for distance_measure in all_dist_measures:
     df['metric_value'] = (df['metric_value'] - df['metric_value'].min()) / (df['metric_value'].max() - df['metric_value'].min())
     
     # Turn similarities into distances 
-    # if mode in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
-    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]  # communicability JSD is a divergence, i.e. already a distance:
+    # if mode in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
+    if distance_measure in ["f1", "multiplex_layer_similarity", "jaccard", "communicability_corr"]:  # communicability JSD is a divergence, i.e. already a distance:
         df['metric_value'] = 1 - df['metric_value']
     ############
     

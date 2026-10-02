@@ -92,7 +92,7 @@ RULES = [
      'plt.savefig(save_folder.parent / "correlation_graph.pdf")'),
     # Colours were assigned by position in the clustering order, which makes the
     # palette data-dependent: the density rescore reshuffled the clustering and
-    # with it every measure's colour, so Figure 2 disagreed with the radar, the
+    # with it every measure's colour, so Figure 3 disagreed with the radar, the
     # eight-measure legend and the appendix figures - the same colour meaning a
     # different measure in different figures. Pin the eight selected measures to
     # the project palette and hand the rest the leftover colours.
@@ -110,7 +110,7 @@ RULES = [
      "    else:\n"
      "        metric_colors[metric_name] = _spare[_n % len(_spare)]\n"
      "        _n += 1"),
-    # Panel E of Figure 2 iterated the measure list reversed while panel A
+    # Panel E of Figure 3 iterated the measure list reversed while panel A
     # iterated it forward, so the two 4x4 grids showed the same sixteen
     # landscapes in opposite orders and could not be read against each other.
     (re.compile(r"for idx, mode in enumerate\(all_dist_measures\[::-1\]\):"),
@@ -162,7 +162,7 @@ RULES = [
      'if metric_col in ["CommCorr_subject_0"]:'),
     # correlation_graph.pdf was written to the run directory, which every one of
     # these notebooks shares - so the KS-energy-contributor version overwrote the
-    # 16-measure one and panel C of Figure 2 silently became the wrong graph.
+    # 16-measure one and panel C of Figure 3 silently became the wrong graph.
     # Write it beside the other panels of its own figure instead, which makes the
     # collision impossible rather than something the driver has to work around.
     (re.compile(r'savefig\(save_folder\.parent / "correlation_graph\.pdf"\)'),
@@ -172,16 +172,16 @@ RULES = [
 ]
 
 
-# Cells of 8_7_manuscript_16_measures.ipynb that only produce outputs Figure 2
+# Cells of 8_7_manuscript_16_measures.ipynb that only produce outputs Figure 3
 # does not use (grayscale landscapes, colourbar variants, the dendrogram and
 # heatmap-only variants, the variance grid, the violin timing panel, ...).
 # Skipping them yields `run_fig2_panels.py`, which reproduces the six panels and
-# the legend of Figure 2 byte-for-byte in about half the runtime. Cell 18 is NOT
+# the legend of Figure 3 byte-for-byte in about half the runtime. Cell 18 is NOT
 # in here: it saves a figure of its own but also builds `timing_data`, which
 # panel D needs.
 FIG2_SKIP = {14, 29, 30, 35, 41, 42, 43, 53, 54, 60, 64}
 
-FIG2_TITLE = """Figure 2 panels only - the sixteen landscapes, the correlation
+FIG2_TITLE = """Figure 3 panels only - the sixteen landscapes, the correlation
 matrix, the correlation network, the timing boxplots and their colour strip, the
 100-best-fitting landscapes, and the measure legend.
 
@@ -238,7 +238,7 @@ def main() -> None:
     ap.add_argument("notebook", nargs="?")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--figure2", action="store_true",
-                    help="emit run_fig2_panels.py: only the panels Figure 2 uses")
+                    help="emit run_fig2_panels.py: only the panels Figure 3 uses")
     args = ap.parse_args()
 
     if args.figure2:

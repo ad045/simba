@@ -41,3 +41,7 @@ Source = "https://github.com/ad045/14_4D_benchmarking"
 
 [tool.setuptools]
 packages = ["netdistancebench"]
+
+[tool.pytest.ini_options]
+# paper/data and paper/output are symlinks to ~225 GB; never collect there
+testpaths = ["tests"]

@@ -90,7 +90,7 @@ def timings() -> pd.DataFrame:
     """Per-comparison runtime in ms from the reference timing run (TIMING_EXP).
 
     Some timing files carry several time_* columns from merged re-runs; the
-    manuscript (Table S3, Figure 2) reads the first one, so that is shipped.
+    manuscript (Table S2, Figure 3D) reads the first one, so that is shipped.
     """
     cols = {}
     for m in MEASURES:
@@ -101,7 +101,7 @@ def timings() -> pd.DataFrame:
 
 
 def degeneration() -> pd.DataFrame:
-    """The 200 x 101 progressive-rewiring trajectories (Figure 3 D/F, CV)."""
+    """The 200 x 101 progressive-rewiring trajectories (Figure 4 D/F, CV)."""
     src = GNM / "hcp_schaefer_100_dataset" / "chaos_analysis"
     frames = []
     for f in sorted(src.glob("chaos_analysis_*.csv")):

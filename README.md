@@ -13,6 +13,16 @@ measure against the same five criteria.
 
 **Documentation: https://ad045.github.io/14_4D_benchmarking/**
 
+## Coming from the paper
+
+| You want to | Go to |
+|---|---|
+| Find the code behind a Methods section, figure or number | [Reproducing the paper](docs/paper.md#from-the-paper-to-the-code) |
+| Look up a measure (paper name to code) | [`netdistancebench/measures.py`](netdistancebench/measures.py), table in [Reproducing the paper](docs/paper.md#measure-names) |
+| Recompute every per-measure read-out without the pipeline | `netdistancebench.published_readouts()` |
+| Score a new measure on the five criteria | below |
+| Re-run the whole pipeline | [Reproducing the paper](docs/paper.md) |
+
 ## Score your own measure
 
 ```bash

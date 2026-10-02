@@ -1,5 +1,5 @@
 """
-Figure 2 panels only - the sixteen landscapes, the correlation
+Figure 3 panels only - the sixteen landscapes, the correlation
 matrix, the correlation network, the timing boxplots and their colour strip, the
 100-best-fitting landscapes, and the measure legend.
 
@@ -1935,7 +1935,7 @@ for times, method in zip(timing_data, method_key_names_ordered):
 print("\\begin{center}")
 print("     \\begin{tabular}{l c}")
 print("         \\hline")
-print("         Method & Time (milliseconds, mean $\pm$ std) \\\\")
+print("         Method & Time (milliseconds, mean $\\pm$ std) \\\\")
 print("         \\hline")
 for method in method_key_names_ordered:
     mean_time, std_time = timing_results[method]

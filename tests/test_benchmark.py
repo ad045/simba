@@ -10,9 +10,9 @@ import pytest
 
 import netdistancebench as ndb
 
-# Table S2 of the paper (eight selected measures), at the precision printed there.
+# The per-measure read-outs of the paper (eight selected measures), at the precision printed there.
 PAPER = {
-    # Table S2 prints portrait 0.38: 0.3748 rounded twice (via 0.375)
+    # The paper prints portrait 0.38: 0.3748 rounded twice (via 0.375)
     "agreement": dict(frobenius=0.46, delta_con=0.43, netrd_non_backtracking_spectral=0.61,
                       spectral_distance_adjacency=0.57, communicability_corr=0.27, portrait=0.37,
                       net_simile=0.55, energy=0.45),
@@ -49,7 +49,7 @@ PAPER = {
     "recovery_window": dict(frobenius=4.01, delta_con=2.36, netrd_non_backtracking_spectral=6.68,
                             spectral_distance_adjacency=5.26, communicability_corr=3.63, portrait=3.37,
                             net_simile=3.72, energy=6.29),
-    # Table S2 prints 0.47 and 0.27 here: 0.4646 and 0.2645 rounded twice (via 0.465 / 0.265)
+    # The paper prints 0.47 and 0.27 here: 0.4646 and 0.2645 rounded twice (via 0.465 / 0.265)
     "auc_hard": dict(frobenius=1.00, delta_con=1.00, netrd_non_backtracking_spectral=0.59,
                      spectral_distance_adjacency=0.46, communicability_corr=1.00, portrait=0.26,
                      net_simile=0.10, energy=0.27),

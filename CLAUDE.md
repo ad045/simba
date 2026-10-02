@@ -10,7 +10,7 @@ number - check any number you touch against it).
 - `netdistancebench/` - the pip package. `measures.py` (16 measures as
   `f(A, B) -> float`, torch-free ports), `data.py` (bundle download, reference
   drop-in), `benchmark.py` (`evaluate`, `published_readouts`, every read-out).
-- `tests/` - `pytest`: published read-outs vs Table S2, measures vs shipped
+- `tests/` - `pytest`: published read-outs (the per-measure numbers of the paper; the SI read-out table that held them is commented out as of 2026-10-01), measures vs shipped
   distances, accuracy-only `evaluate`. Needs the data bundle, not the empirical data.
 - `docs/` + `mkdocs.yml` - documentation site; `.github/workflows/docs.yml`
   deploys it to GitHub Pages on push to main.
@@ -32,7 +32,7 @@ statistics of the empirical data are in the bundle.
 - Five measures are similarities (`jaccard`, `f1`, `communicability_corr`,
   `network_mutual_information`, `dc_network_mutual_information`); flip before
   any argmin. Package: `SIMILARITIES`; paper: `experiments_config.to_distance`.
-- `published_readouts()` recomputes every Table S2 number from the shipped raw
+- `published_readouts()` recomputes every per-measure read-out from the shipped raw
   tables with the same code `evaluate()` uses. `evaluate(frobenius)` from scratch
   reproduces Frobenius's published MAE, CV, N*, iSNR and recovery exactly.
 - Timing: the paper quotes the first `time_*` column of the 105 run's timing

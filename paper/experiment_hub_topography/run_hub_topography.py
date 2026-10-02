@@ -91,8 +91,7 @@ from experiment_structural_gradient.run_structural_gradient import best_fit_rows
 OUT_DIR   = CFG_ROOT / "output" / "hub_topography"
 # the MST seed every network in the morphospace run was grown from
 # (config_gnm_run_with_mst_seeds_lexis_dataset.yaml -> seed_adjacency_matrices)
-SEED_PATH = Path.home() / ("Documents/01_projects/14_4D_lab/14_4D_lab_code/"
-                           "data/preprocessed/seeds/mst_schaeffer.npy")
+SEED_PATH = CFG_ROOT / "data" / "preprocessed" / "seeds" / "mst_schaeffer.npy"
 MAPS_DIR  = CFG_ROOT / "data" / "preprocessed" / MORPHO_DATASET / "03_brain_maps"
 SA_CACHE  = MAPS_DIR / "sa_axis_schaefer100.npy"
 
@@ -343,7 +342,7 @@ def cell_means(measure: str) -> pd.Series:
     return df.groupby(["eta", "gamma"])[col].mean()
 
 
-N_TOP = 100          # best-fitting parameter combinations per measure (as in Fig 2A)
+N_TOP = 100          # best-fitting parameter combinations per measure (as in Figure 3E)
 SCORES = ["r_deg", "r_cent", "moran", "r_sa"]
 
 

@@ -174,7 +174,7 @@ def agreement():
     negates them, then a 1 - minmax step flips them back), so communicability
     correlation enters it as a similarity and its correlations carry the wrong
     sign. Building it from to_distance-oriented values keeps this spoke
-    consistent with Figure 2B and with the orientation stated in the Methods.
+    consistent with Figure 3B and with the orientation stated in the Methods.
     """
     cols = {m: landscape_distance(m)
             .sort_values("network_index")["distance"].to_numpy()
