@@ -3,7 +3,7 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "netdistancebench"
+name = "simba-networks"
 version = "1.0.0"
 description = "Score a network distance measure on the brain-network similarity benchmark of Dendorfer et al."
 readme = "README.md"
@@ -36,11 +36,11 @@ test = ["pytest"]
 docs = ["mkdocs>=1.6,<2", "mkdocs-material", "mkdocstrings[python]"]
 
 [project.urls]
-Documentation = "https://ad045.github.io/14_4D_benchmarking/"
-Source = "https://github.com/ad045/14_4D_benchmarking"
+Documentation = "https://ad045.github.io/simba/"
+Source = "https://github.com/ad045/simba"
 
 [tool.setuptools]
-packages = ["netdistancebench"]
+packages = ["simba_networks"]
 
 [tool.pytest.ini_options]
 # paper/data and paper/output are symlinks to ~225 GB; never collect there

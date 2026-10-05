@@ -1,18 +1,20 @@
 # Data
 
-The package downloads one bundle (about 30 MB zipped) on first use, into
-`~/netdistancebench_data/netdistancebench-data/`. Set `NETDISTANCEBENCH_HOME`
-to download elsewhere, or `NETDISTANCEBENCH_DATA` to use an unpacked copy.
-The bundle is also attached to the GitHub release `data-v1` for direct download.
+One bundle holds everything. In a clone of the repository it is already there,
+as `data/`, and the package reads it from there. A pip install downloads the
+same bundle (about 30 MB zipped) on first use, into
+`~/simba_networks_data/simba-networks-data/`. Set `SIMBA_HOME` to download
+elsewhere, or `SIMBA_DATA` to point at an unpacked copy. The bundle is also
+attached to the GitHub release `data-v1` for direct download.
 
 ## Networks
 
 ```python
-import netdistancebench as ndb
+import simba_networks as sb
 
-nets, meta = ndb.load_networks()              # (25000, 100, 100) bool, and eta/gamma/replicate
-wide = ndb.load_networks("recovery_wide")     # dict: grid, grid_members, targets, *_eta, *_gamma
-window = ndb.load_networks("recovery_window")
+nets, meta = sb.load_networks()              # (25000, 100, 100) bool, and eta/gamma/replicate
+wide = sb.load_networks("recovery_wide")     # dict: grid, grid_members, targets, *_eta, *_gamma
+window = sb.load_networks("recovery_window")
 ```
 
 | Set | Content |
@@ -27,7 +29,7 @@ Grid points are ordered gamma-outer, eta-inner: index `i` is
 ## Tables
 
 ```python
-ndb.load_table("landscapes")    # 25,000 rows: eta, gamma, replicate, one column per measure
+sb.load_table("landscapes")    # 25,000 rows: eta, gamma, replicate, one column per measure
 ```
 
 | Name | Content |
@@ -45,6 +47,6 @@ Values are the measures' raw output; similarities are not flipped.
 ## Geometry
 
 ```python
-ndb.distance_matrix()       # (100, 100) Euclidean distances between Schaefer-100 centroids, mm
-ndb.empirical_summary()     # group-level statistics of the empirical connectomes
+sb.distance_matrix()       # (100, 100) Euclidean distances between Schaefer-100 centroids, mm
+sb.empirical_summary()     # group-level statistics of the empirical connectomes
 ```

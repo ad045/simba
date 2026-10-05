@@ -2,27 +2,27 @@
 
 ## Evaluating a measure
 
-::: netdistancebench.evaluate
+::: simba_networks.evaluate
     options:
       heading_level: 3
 
-::: netdistancebench.Report
+::: simba_networks.Report
     options:
       heading_level: 3
 
-::: netdistancebench.published_readouts
+::: simba_networks.published_readouts
     options:
       heading_level: 3
 
 ## Data
 
-::: netdistancebench.data
+::: simba_networks.data
     options:
       heading_level: 3
       members: [load_networks, load_table, distance_matrix, empirical_summary, load_reference, reference_dir, home, data_dir]
 
 ## Measures
 
-::: netdistancebench.measures
+::: simba_networks.measures
     options:
       heading_level: 3

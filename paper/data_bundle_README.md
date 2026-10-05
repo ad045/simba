@@ -1,13 +1,13 @@
-# netdistancebench data bundle
+# simba_networks data bundle
 
 Data behind *How Similar Are Two Brains? A Comprehensive Benchmark of Brain
 Network Similarity Measures* (Dendorfer, Luppi, Poli, Mousley, Astle, Fakhar).
-Built by `paper/make_publication_data.py`; read by the `netdistancebench`
+Built by `paper/make_publication_data.py`; read by the `simba_networks`
 package, which downloads and unpacks it on first use.
 
 Networks are binary, 100 x 100 (Schaefer-100), bit-packed along the last axis.
 Unpack with `np.unpackbits(x, axis=-1, count=100)`, or use
-`netdistancebench.load_networks()`.
+`simba_networks.load_networks()`.
 
 | File | Content |
 |---|---|

@@ -1,6 +1,6 @@
 """Checks that the package reproduces the published benchmark.
 
-Needs the data bundle (downloaded on first use, or NETDISTANCEBENCH_DATA), but
+Needs the data bundle (downloaded on first use, or SIMBA_DATA), but
 not the empirical reference: the measures are checked on generated-vs-generated
 comparisons, which the bundle ships in full.
 """
@@ -8,7 +8,7 @@ comparisons, which the bundle ships in full.
 import numpy as np
 import pytest
 
-import netdistancebench as ndb
+import simba_networks as sb
 
 # The per-measure read-outs of the paper (eight selected measures), at the precision printed there.
 PAPER = {
@@ -58,7 +58,7 @@ PAPER = {
 
 @pytest.fixture(scope="module")
 def published():
-    return ndb.published_readouts(ndb.SELECTED)
+    return sb.published_readouts(sb.SELECTED)
 
 
 @pytest.mark.parametrize("readout", sorted(PAPER))
@@ -72,22 +72,22 @@ def test_published_readouts_match_the_paper(published, readout):
 TOLERANCE = {"netrd_non_backtracking_spectral": 2e-2}
 
 
-@pytest.mark.parametrize("name", sorted(ndb.MEASURES))
+@pytest.mark.parametrize("name", sorted(sb.MEASURES))
 def test_measure_reproduces_published_values(name):
     """Recompute a few target-vs-grid distances of the window recovery."""
-    rec = ndb.load_networks("recovery_window")
-    table = ndb.load_table("recovery_window")
+    rec = sb.load_networks("recovery_window")
+    table = sb.load_table("recovery_window")
     table = table[table.measure == name].sort_values("gt_idx")
     grid = rec["grid"].astype(float)
     for t in (0, 50):
         for g in (0, 37, 99):
-            ours = ndb.MEASURES[name](rec["targets"][t].astype(float), grid[g])
+            ours = sb.MEASURES[name](rec["targets"][t].astype(float), grid[g])
             assert ours == pytest.approx(table[f"dist_to_grid_{g}"].iloc[t], rel=TOLERANCE.get(name, 1e-4),
                                          nan_ok=True)
 
 
 def test_evaluate_accuracy_reproduces_frobenius(published):
-    report = ndb.evaluate(ndb.measures.frobenius, criteria=["accuracy"], progress=False)
+    report = sb.evaluate(sb.measures.frobenius, criteria=["accuracy"], progress=False)
     for key in ("recovery_wide", "recovery_window", "r_eta_wide", "r_eta_window"):
         assert report.table.loc[key, "frobenius"] == pytest.approx(published.loc[key, "frobenius"])
     assert np.isfinite(report.table.loc["recovery_wide", "rank"])

@@ -1,12 +1,12 @@
 """
-Build the data bundle that ``netdistancebench`` downloads
+Build the data bundle that ``simba_networks`` downloads
 =========================================================
 
 Copies the part of the local run tree that backs the manuscript into one
 directory and zips it for a GitHub release:
 
-    publication_data/netdistancebench-data/        the bundle (layout in its README)
-    publication_data/netdistancebench-data-<v>.zip what gets uploaded
+    publication_data/simba-networks-data/        the bundle (layout in its README)
+    publication_data/simba-networks-data-<v>.zip what gets uploaded
 
 Nothing computed from subject-level empirical data goes in. The empirical
 consensus connectome is not shipped either; users drop in their own copy (see
@@ -38,7 +38,10 @@ from experiments_config import (CONSENSUS_PATH, DIST_MATRIX_PATH, INDIVIDUALS_PA
                                 coarse, fine, gt_dir_name, param_dir_name)
 
 VERSION = "v1"
-OUT = ROOT / "publication_data" / "netdistancebench-data"
+OUT = ROOT / "publication_data" / "simba-networks-data"
+# The same bundle is committed to the repository, where the package reads it
+# from a clone; the zip is only for pip installs, as a GitHub release asset.
+REPO_DATA = ROOT.parent / "data"
 GNM = ROOT / "output" / "gnm"
 
 MEASURES = ["frobenius", "hamming", "jaccard", "f1", "network_mutual_information",
@@ -225,12 +228,16 @@ def build() -> None:
     (OUT / "reference" / "empirical_summary.json").write_text(json.dumps(empirical_summary(), indent=2))
     shutil.copy2(ROOT / "data_bundle_README.md", OUT / "README.md")
 
-    archive = shutil.make_archive(str(OUT.parent / f"netdistancebench-data-{VERSION}"), "zip",
+    if REPO_DATA.exists():
+        shutil.rmtree(REPO_DATA)
+    shutil.copytree(OUT, REPO_DATA)
+
+    archive = shutil.make_archive(str(OUT.parent / f"simba-networks-data-{VERSION}"), "zip",
                                   root_dir=OUT.parent, base_dir=OUT.name)
     total = sum(f.stat().st_size for f in OUT.rglob("*") if f.is_file())
     digest = hashlib.sha256(Path(archive).read_bytes()).hexdigest()
-    print(f"\n{OUT.relative_to(ROOT)} = {total / 1e6:.0f} MB, zipped -> {Path(archive).name}")
-    print(f"sha256 {digest}  <- set DATA_SHA256 in netdistancebench/data.py to this, then upload the zip")
+    print(f"\n{OUT.relative_to(ROOT)} = {total / 1e6:.0f} MB, copied to data/, zipped -> {Path(archive).name}")
+    print(f"sha256 {digest}  <- set DATA_SHA256 in simba_networks/data.py to this, then upload the zip")
 
 
 def check() -> None:

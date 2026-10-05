@@ -1,0 +1,13 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -e ".[test]"
+      # The data bundle is in the repository, so this checks that the package
+      # reproduces the published numbers without any download.
+      - run: pytest -q

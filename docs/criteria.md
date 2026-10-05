@@ -1,6 +1,6 @@
 # The five criteria
 
-Every read-out below is computed by `netdistancebench/benchmark.py`, for your
+Every read-out below is computed by `simba_networks/benchmark.py`, for your
 measure and for the published ones alike. Where the paper's Methods give more
 detail, they are the authority; this page states what the code does.
 
@@ -30,7 +30,7 @@ rule, 10 replicates per cell: 25,000 networks of 495 edges.
 | Best-fitting eta, gamma | The best-fitting combination. |
 | Combinations at eta > 0, of the 100 / 20 best | Positive $\eta$ means wiring that prefers long connections, which brains do not. The paper excluded measures with any among their 20 best. |
 | Total variation of the 20 best combinations | $\mathrm{var}(\eta) + \mathrm{var}(\gamma)$ of the 20 best combinations, each axis scaled to the morphospace extent. Lower = the measure points to one region. |
-| Mean connection length / connections beyond 90 mm | Pooled over the edges of the 20 best-fitting networks, using the Euclidean distance between parcel centroids. Compare with `ndb.empirical_summary()`: the 100 individuals span 39.5-44.8 mm and 3.4-9.3%. |
+| Mean connection length / connections beyond 90 mm | Pooled over the edges of the 20 best-fitting networks, using the Euclidean distance between parcel centroids. Compare with `sb.empirical_summary()`: the 100 individuals span 39.5-44.8 mm and 3.4-9.3%. |
 | Degree SD | Standard deviation of node degree, averaged over the 20 best-fitting networks (individuals: 3.49). |
 
 ## Computational efficiency
@@ -42,7 +42,7 @@ rule, 10 replicates per cell: 25,000 networks of 495 edges.
 Runtime depends on the machine. The published values are one reference
 measurement; a new measure is timed on yours. For a like-for-like comparison,
 time a published measure on the same machine, e.g.
-`ndb.evaluate(ndb.MEASURES["frobenius"], criteria=["efficiency"])`.
+`sb.evaluate(sb.MEASURES["frobenius"], criteria=["efficiency"])`.
 
 ## Sensitivity and robustness
 

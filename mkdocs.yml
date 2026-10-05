@@ -1,11 +1,13 @@
-site_name: netdistancebench
+site_name: SimBa
 site_description: Score a network distance measure on the brain-network similarity benchmark
-site_url: https://ad045.github.io/14_4D_benchmarking/
-repo_url: https://github.com/ad045/14_4D_benchmarking
-repo_name: ad045/14_4D_benchmarking
+site_url: https://ad045.github.io/simba/
+repo_url: https://github.com/ad045/simba
+repo_name: ad045/simba
 
 theme:
   name: material
+  logo: assets/simba.png
+  favicon: assets/simba.png
   features:
     - navigation.sections
     - content.code.copy

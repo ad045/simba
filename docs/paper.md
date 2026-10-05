@@ -10,7 +10,7 @@ figure or number of it.
 
 ### Measure names
 
-The paper uses display names; the code uses keys (`ndb.NAMES` maps one to the
+The paper uses display names; the code uses keys (`sb.NAMES` maps one to the
 other). The eight selected measures are marked.
 
 | Paper | Code key | |
@@ -35,7 +35,7 @@ other). The eight selected measures are marked.
 The five similarities (higher = more alike) are negated before any ranking:
 `experiments_config.to_distance` in the pipeline, `SIMILARITIES` in the package.
 The pipeline computed the measures with the classes in
-`paper/src/comparing_connectomes/`; `netdistancebench/measures.py` holds
+`paper/src/comparing_connectomes/`; `simba_networks/measures.py` holds
 torch-free ports that reproduce their output (checked by `tests/`).
 
 ### Materials and Methods
@@ -57,7 +57,7 @@ torch-free ports that reproduce their output (checked by `tests/`).
 | Summary comparison of the selected measures (radar) | `experiment_decision_figure/build_radar_five_axes.py` |
 
 Every per-measure number of the Results can also be recomputed without the
-pipeline, from the shipped tables: `netdistancebench.published_readouts()`.
+pipeline, from the shipped tables: `simba_networks.published_readouts()`.
 
 ### Figures
 
@@ -83,7 +83,7 @@ those in `figures/manuscript/` (see Setup).
 | S15, Table S2 | Runtime of all 16 measures | `visualization/run_8_7_manuscript_16_measures.py` (prints Table S2), on the reference timing run (see Notes) |
 | S16 | Recovered locations, whole morphospace | `experiment_parameter_recovery_fine/build_wide_uniform_scatter.py` |
 | S17 | Drift of the recovered parameters under reference noise | `experiment_rewiring_robustness/run_rewiring_robustness.py --stage plot` |
-| Table S1 | The 16 measures | `netdistancebench/measures.py` |
+| Table S1 | The 16 measures | `simba_networks/measures.py` |
 
 `python run_all_figures.py` runs all of the above in dependency order.
 Some figure scripts are named after an earlier figure numbering
@@ -92,8 +92,8 @@ Some figure scripts are named after an earlier figure numbering
 ## Setup
 
 ```bash
-git clone https://github.com/ad045/14_4D_benchmarking
-cd 14_4D_benchmarking/paper
+git clone https://github.com/ad045/simba
+cd simba/paper
 conda env create -f environment.yml      # creates the `ma_thesis` env
 conda activate ma_thesis
 
@@ -112,8 +112,10 @@ random number stream fixes the rewiring trajectories), netrd 0.3.0,
 netneurotools 0.2.5, torch 2.8.
 
 **Run every script from `paper/`.** Paths are relative to it. The scripts read
-and write two folders there, `data/` (empirical inputs) and `output/` (every run
-and result); create them, or link them to wherever your copy lives. Stage 0
+and write two folders there, `paper/data/` (empirical inputs) and
+`paper/output/` (every run and result); create them, or link them to wherever
+your copy lives. Neither is the released bundle: that is `data/` at the
+repository root, which the package reads and which holds no empirical data. Stage 0
 writes the empirical inputs to the places the rest of the pipeline reads them:
 
 ```
@@ -145,7 +147,7 @@ measures, their orientation, names, colours, the grids and the file layout.
 | 3f. Hub topography | `python experiment_hub_topography/run_hub_topography.py --stage all` | `output/hub_topography/` |
 | 3g. Edge importance | `python pipeline_gnms_and_benchmarking/run_connectome_targeted_removal.py` | `output/gnm/hcp_schaefer_100_dataset/importance_degradation_*/` |
 | 4. Every figure | `python run_all_figures.py` (`--list` shows the plan) | figure parts, collected by `collect_figure_parts.py` |
-| 5. The data bundle | `python make_publication_data.py` | `publication_data/netdistancebench-data-v1.zip` |
+| 5. The data bundle | `python make_publication_data.py` | the repository's `data/`, and `publication_data/simba-networks-data-v1.zip` for the GitHub release |
 
 Stage 3c reuses the 10 x 10 grid of `experiment_parameter_recovery/`
 (`run_synthetic_gnm_generation_grid.py`). The recovery experiments were
@@ -167,15 +169,17 @@ Set `MANUSCRIPT_FIGURES` to write them into a LaTeX project instead.
 - `configs/*.yaml` and `pipeline_gnms_and_benchmarking/run_experiment.py` are
   the generic GNM runner used for the earlier runs and the second dataset; the
   published grid is the one in `generate_morphospace.py` and `experiments_config.py`.
-- The notebooks in `visualization/` are the source of the figure scripts;
-  `visualization/extract_notebook.py` turns them into the `run_*.py` files that
-  `run_all_figures.py` executes.
+- The `run_*.py` files in `visualization/` are what `run_all_figures.py`
+  executes and what produced the published figures, so they are the record.
+  They started as extractions of the notebooks of the same name
+  (`visualization/extract_notebook.py`) but were corrected afterwards, so
+  re-running the extraction overwrites them with an older state and does not
+  reproduce the published panels. The notebooks are kept for provenance; edit
+  the scripts.
 - `experiment_structural_gradient/` and `experiment_topographic_plausibility/`
   are follow-up analyses that are not in the current manuscript;
   `run_all_figures.py` still runs them because the hub-topography analysis
   imports from the first.
-- `src/ESNs/` is not used by this paper; `src/pipeline/gnm_and_esn_orchestrator.py`
-  imports it at module level.
 - Two dataset branches of `run_connectome_comparisons_null_model.py` and
   `run_connectome_targeted_removal.py` still point into a sibling project; they
   are only reached for datasets not part of this paper.

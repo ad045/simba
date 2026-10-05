@@ -21,16 +21,16 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT.parent))                              # the netdistancebench package
-os.environ.setdefault("NETDISTANCEBENCH_DATA", str(ROOT / "publication_data" / "netdistancebench-data"))
+sys.path.insert(0, str(ROOT.parent))                              # the simba_networks package
+os.environ.setdefault("SIMBA_DATA", str(ROOT / "publication_data" / "simba-networks-data"))
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FFMpegWriter, FuncAnimation
 from scipy.stats import rankdata
 
-from netdistancebench import benchmark, data
-from netdistancebench.measures import NAMES, SIMILARITIES
+from simba_networks import benchmark, data
+from simba_networks.measures import NAMES, SIMILARITIES
 
 OUT = ROOT / "figures" / "animations" / "parameter_recovery.mp4"
 N_TARGETS = 6

@@ -21,15 +21,15 @@ ranking, as it does for the five similarities among the published measures.
 
 ## 2. Drop in the reference
 
-Put the empirical consensus at `~/netdistancebench_data/reference/consensus.npy`,
+Put the empirical consensus at `~/simba_networks_data/reference/consensus.npy`,
 or pass it as `reference=`. See [Reference connectome](reference.md).
 
 ## 3. Evaluate
 
 ```python
-import netdistancebench as ndb
+import simba_networks as sb
 
-report = ndb.evaluate(degree_l1, name="degree L1")
+report = sb.evaluate(degree_l1, name="degree L1")
 print(report)
 ```
 
@@ -45,8 +45,8 @@ landscape or inspect the best-fitting networks yourself.
 ## Choosing what to run
 
 ```python
-ndb.evaluate(degree_l1, criteria=["agreement", "plausibility", "efficiency"])
-ndb.evaluate(degree_l1, criteria=["accuracy"])    # needs no reference
+sb.evaluate(degree_l1, criteria=["agreement", "plausibility", "efficiency"])
+sb.evaluate(degree_l1, criteria=["accuracy"])    # needs no reference
 ```
 
 | Criterion | Calls of your measure |
@@ -62,7 +62,7 @@ exactly, so that the number is comparable. For a first look, leave out
 ## Parallel runs
 
 ```python
-report = ndb.evaluate(degree_l1, n_jobs=-1)     # all cores
+report = sb.evaluate(degree_l1, n_jobs=-1)     # all cores
 ```
 
 With `n_jobs` other than 1, the measure must be importable by the worker
@@ -73,8 +73,8 @@ parallel ones are inflated; measure efficiency with `n_jobs=1`.
 ## Comparing against the published measures directly
 
 ```python
-ndb.published_readouts()          # every read-out, all 16 measures
-ndb.MEASURES["delta_con"](A, B)   # any published measure as a function
+sb.published_readouts()          # every read-out, all 16 measures
+sb.MEASURES["delta_con"](A, B)   # any published measure as a function
 ```
 
 `published_readouts()` recomputes the published side from the shipped tables

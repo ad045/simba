@@ -1,0 +1,29 @@
+{
+  "note": "100 unrelated HCP S900 subjects, Schaefer-100, binarized at 10% density. Connection length in mm (Euclidean between parcel centroids).",
+  "individuals": {
+    "mean_connection_length_mm": {
+      "mean": 42.10850098393201,
+      "sd": 1.1011212035290654,
+      "min": 39.4842553814457,
+      "max": 44.847991968360695
+    },
+    "percent_beyond_90mm": {
+      "mean": 6.563636363636365,
+      "sd": 1.181288289767234,
+      "min": 3.4343434343434343,
+      "max": 9.292929292929292
+    },
+    "degree_sd": {
+      "mean": 3.48818276766711,
+      "sd": 0.19893905302479578,
+      "min": 3.093541659651604,
+      "max": 3.9812058474788765
+    }
+  },
+  "consensus": {
+    "mean_connection_length_mm": 48.68958021839068,
+    "percent_beyond_90mm": 9.696969696969697,
+    "degree_sd": 3.978693252815552,
+    "n_edges": 495
+  }
+}

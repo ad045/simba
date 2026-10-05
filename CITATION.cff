@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+title: "SimBa - Similarity Benchmark for Brain Networks"
+message: "If you use this software or the released data, please cite both the software and the paper."
+type: software
+authors:
+  - family-names: Dendorfer
+    given-names: Adrian
+    email: adrian.dendorfer@gmail.com
+  - family-names: Luppi
+    given-names: Andrea
+  - family-names: Poli
+    given-names: Francesco
+  - family-names: Mousley
+    given-names: Alexa
+  - family-names: Astle
+    given-names: Duncan
+  - family-names: Fakhar
+    given-names: Kayson
+repository-code: "https://github.com/ad045/simba"
+url: "https://ad045.github.io/simba/"
+license: MIT
+version: 1.0.0
+preferred-citation:
+  type: article
+  title: "How Similar Are Two Brains? A Comprehensive Benchmark of Brain Network Similarity Measures"
+  authors:
+    - family-names: Dendorfer
+      given-names: Adrian
+    - family-names: Luppi
+      given-names: Andrea
+    - family-names: Poli
+      given-names: Francesco
+    - family-names: Mousley
+      given-names: Alexa
+    - family-names: Astle
+      given-names: Duncan
+    - family-names: Fakhar
+      given-names: Kayson

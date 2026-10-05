@@ -38,3 +38,11 @@ wandb/
 !paper/figures/**/*.pdf
 *.log
 *.txt
+
+# Agent instructions, not part of the release
+CLAUDE.md
+
+# Exceptions to the blanket rules above: the released data bundle and the
+# documentation assets are part of the repository.
+!data/**
+!docs/assets/**

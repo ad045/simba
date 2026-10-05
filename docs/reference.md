@@ -9,7 +9,7 @@ not allow us to redistribute it, so the package does not contain it.
 ## Where to put it
 
 ```
-~/netdistancebench_data/
+~/simba_networks_data/
     reference/
         consensus.npy          required for agreement, plausibility,
                                efficiency and sensitivity
@@ -18,12 +18,12 @@ not allow us to redistribute it, so the package does not contain it.
 ```
 
 `consensus.npy` must be a (100, 100) binary, symmetric array without self-loops,
-in Schaefer-100 order. Set `NETDISTANCEBENCH_HOME` to use a different folder,
+in Schaefer-100 order. Set `SIMBA_HOME` to use a different folder,
 or skip the file and pass the array:
 
 ```python
-ndb.evaluate(my_measure, reference=my_consensus)
-ndb.reference_dir()          # prints where the package looks
+sb.evaluate(my_measure, reference=my_consensus)
+sb.reference_dir()          # prints where the package looks
 ```
 
 The two optional files enable the real-vs-artificial read-outs (AUC against the
@@ -57,7 +57,7 @@ The leave-one-out consensuses come from `build_loo_consensuses` in
 ## What is shipped from the empirical side
 
 Only group-level statistics, in `reference/empirical_summary.json` of the data
-bundle (see `ndb.empirical_summary()`): mean connection length, the fraction of
+bundle (see `sb.empirical_summary()`): mean connection length, the fraction of
 connections beyond 90 mm and the degree standard deviation, as mean, SD and
 range over the 100 subjects and for the consensus. They are the reference
 values for the plausibility read-outs.

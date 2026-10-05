@@ -1,4 +1,6 @@
-# netdistancebench
+![SimBa](assets/simba.png)
+
+# SimBa - Similarity Benchmark for Brain Networks
 
 Companion package to *How Similar Are Two Brains? A Comprehensive Benchmark of
 Brain Network Similarity Measures* (Dendorfer, Luppi, Poli, Mousley, Astle and
@@ -25,24 +27,25 @@ benchmark:
   paper next to the published measures.
 
 ```python
-import netdistancebench as ndb
+import simba_networks as sb
 
 def my_measure(A, B):
     """Lower = more alike. A: generated network, B: reference."""
     return abs(A.sum(0) - B.sum(0)).sum()
 
-report = ndb.evaluate(my_measure)
+report = sb.evaluate(my_measure)
 report.table
 ```
 
 ## Install
 
 ```bash
-pip install git+https://github.com/ad045/14_4D_benchmarking
+pip install git+https://github.com/ad045/simba
 ```
 
-Python 3.10 or newer. The first call that needs data downloads the bundle
-(about 30 MB) into `~/netdistancebench_data`.
+Python 3.10 or newer. In a clone of the repository the data bundle is already
+there, as `data/`. A pip install has no clone, so the first call that needs data
+downloads the same bundle (about 30 MB) into `~/simba_networks_data`.
 
 ## Before you run it
 
@@ -54,6 +57,7 @@ runs.
 
 ## Citing
 
-If you use the benchmark, please cite the paper. The generated networks were
+If you use the benchmark, please cite the paper; `CITATION.cff` in the
+repository holds the machine-readable metadata. The generated networks were
 produced with the `generativenetworkmodels` library, and several measures come
 from `netrd`.
