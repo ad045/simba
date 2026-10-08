@@ -1,0 +1,2270 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Score a network distance measure on the brain-network similarity benchmark">
+      
+      
+      
+        <link rel="canonical" href="https://ad045.github.io/simba/api/">
+      
+      
+        <link rel="prev" href="../paper/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/simba.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>API - SimBa</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SimBa" class="md-header__button md-logo" aria-label="SimBa" data-md-component="logo">
+      
+  <img src="../assets/simba.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SimBa
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ad045/simba" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ad045/simba
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SimBa" class="md-nav__button md-logo" aria-label="SimBa" data-md-component="logo">
+      
+  <img src="../assets/simba.png" alt="logo">
+
+    </a>
+    SimBa
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ad045/simba" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ad045/simba
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference connectome
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../criteria/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The five criteria
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../paper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproducing the paper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#evaluating-a-measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluating a measure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluating a measure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.evaluate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.Report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.published_readouts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        published_readouts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.load_networks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_networks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.load_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.distance_matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        distance_matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.empirical_summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        empirical_summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.load_reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.reference_dir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reference_dir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.home" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        home
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.data_dir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        data_dir
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Measures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        measures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.frobenius" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        frobenius
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.hamming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        hamming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.jaccard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jaccard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.f1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        f1
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.network_mutual_information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        network_mutual_information
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.dc_network_mutual_information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dc_network_mutual_information
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.spectral_distance_adjacency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        spectral_distance_adjacency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.spectral_distance_norm_laplacian" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        spectral_distance_norm_laplacian
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.netrd_non_backtracking_spectral" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        netrd_non_backtracking_spectral
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.net_simile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        net_simile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.resistance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resistance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.portrait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        portrait
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.delta_con" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        delta_con
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.communicability_corr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        communicability_corr
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.communicability_jsd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        communicability_jsd
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.energy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        energy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#evaluating-a-measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluating a measure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluating a measure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.evaluate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.Report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.published_readouts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        published_readouts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.load_networks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_networks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.load_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.distance_matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        distance_matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.empirical_summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        empirical_summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.load_reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.reference_dir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reference_dir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.home" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        home
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.data.data_dir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        data_dir
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Measures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        measures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.frobenius" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        frobenius
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.hamming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        hamming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.jaccard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jaccard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.f1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        f1
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.network_mutual_information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        network_mutual_information
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.dc_network_mutual_information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dc_network_mutual_information
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.spectral_distance_adjacency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        spectral_distance_adjacency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.spectral_distance_norm_laplacian" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        spectral_distance_norm_laplacian
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.netrd_non_backtracking_spectral" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        netrd_non_backtracking_spectral
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.net_simile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        net_simile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.resistance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resistance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.portrait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        portrait
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.delta_con" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        delta_con
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.communicability_corr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        communicability_corr
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.communicability_jsd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        communicability_jsd
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simba_networks.measures.energy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        energy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="api">API</h1>
+<h2 id="evaluating-a-measure">Evaluating a measure</h2>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<a id="simba_networks.evaluate"></a>
+    <div class="doc doc-contents first">
+
+        <p>Score a network distance measure on the benchmark.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>measure</code>
+            </td>
+            <td>
+                  <code><span title="typing.Callable">Callable</span>[[<span title="numpy.ndarray">ndarray</span>, <span title="numpy.ndarray">ndarray</span>], <span title="float">float</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>f(A, B) -&gt; float</code> on two binary, symmetric (100, 100) float
+arrays; <code>A</code> is the generated network, <code>B</code> the reference.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>label for the report (defaults to the function name).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>similarity</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>set True if higher values mean more alike.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>reference</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span> | <span title="str">str</span> | <span title="pathlib.Path">Path</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the empirical consensus connectome (array or <code>.npy</code> path).
+Defaults to <code>data.reference_dir() / "consensus.npy"</code>. Only the
+accuracy criterion runs without it.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>criteria</code>
+            </td>
+            <td>
+                  <code><span title="typing.Iterable">Iterable</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>subset of <code>("agreement", "plausibility", "efficiency",
+"sensitivity", "accuracy")</code>. Agreement, plausibility and efficiency
+share one pass over the 25,000 networks.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="simba_networks.benchmark.CRITERIA">CRITERIA</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n_jobs</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>worker processes (1 = in-process, -1 = all cores). With more
+than one, <code>measure</code> must be importable (defined in a module, not
+a lambda) and the per-comparison runtimes include pool overhead.</p>
+              </div>
+            </td>
+            <td>
+                  <code>1</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>progress</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>show progress bars.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>A</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="simba_networks.benchmark.Report" href="#simba_networks.Report">Report</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>class:<code>Report</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Cost, in calls of <code>measure</code>: 25,000 for the landscape; 20,200 for the
+degeneration read-outs (MAE, CV); 20,000 for the two recovery experiments;
+and for the noise tolerance N<em> one landscape per draw - 160 full ones for a
+fast measure, 80 windowed ones (4,410 calls each) for one slower than
+10 ms. N</em> dominates; leave out <code>"sensitivity"</code> to skip it.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="simba_networks.Report"></a>
+    <div class="doc doc-contents first">
+
+
+
+        <p>Result of :func:<code>evaluate</code>.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="simba_networks.Report.name">name</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the name given to the measure.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="simba_networks.Report.table">table</span></code></td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>one row per read-out, the new measure next to the eight selected
+published measures, with each read-out's criterion, direction and
+the new measure's rank among the nine (1 = best).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="simba_networks.Report.landscape">landscape</span></code></td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the new measure's value and runtime for every morphospace network.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<a id="simba_networks.published_readouts"></a>
+    <div class="doc doc-contents first">
+
+        <p>Every read-out of the published measures, recomputed from the shipped tables.</p>
+<p>Returns a DataFrame indexed by read-out key with one column per measure.
+Read-outs a measure was not run through (e.g. the degeneration experiments
+for the eight measures not selected) are NaN.</p>
+
+
+    </div>
+
+</div><h2 id="data">Data</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="simba_networks.data"></a>
+    <div class="doc doc-contents first">
+
+        <p>Access to the benchmark data: the 25,000 generated networks, the recovery
+networks, every result table, and the empirical reference you drop in.</p>
+<p>In a clone of the repository the bundle is already there, as <code>data/</code> next to
+this package. A pip install has no clone, so it downloads the same bundle once
+into <code>~/simba_networks_data</code> (set <code>SIMBA_HOME</code> to move it)::</p>
+<pre><code>~/simba_networks_data/
+    simba-networks-data/     downloaded on first use (about 30 MB)
+    reference/
+        consensus.npy          &lt;- you put the empirical consensus here
+        individuals.npy        &lt;- optional, for the real-vs-artificial AUCs
+        loo_consensuses.npy    &lt;- optional, ditto
+</code></pre>
+<p>The empirical connectomes are not distributed (HCP data use terms). See
+:func:<code>load_reference</code> and the documentation page "Reference connectome".</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.data.load_networks" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">load_networks</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s1">'morphospace'</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Load a set of generated networks as boolean arrays.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>which</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>"morphospace"</code> (the 25,000 networks of the main sweep),
+<code>"recovery_wide"</code> or <code>"recovery_window"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;morphospace&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="numpy.ndarray">ndarray</span>, <span title="pandas.DataFrame">DataFrame</span>] | <span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>For <code>"morphospace"</code>, <code>(networks, meta)</code>: <code>networks</code> of shape (25000, 100, 100) and <code>meta</code> a DataFrame of <code>eta</code>, <code>gamma</code>, <code>replicate</code> in the row order of <code>load_table("landscapes")</code>. For the recovery sets, a dict with <code>grid</code> (100 grid-point consensuses, gamma-outer / eta-inner), <code>grid_members</code>, <code>targets</code> (100 test networks) and <code>grid_eta</code>, <code>grid_gamma</code>, <code>target_eta</code>, <code>target_gamma</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.data.load_table" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">load_table</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Load one of the shipped result tables by name, e.g. <code>"landscapes"</code>,
+<code>"timing_ms"</code>, <code>"degeneration"</code>, <code>"recovery_wide"</code>,
+<code>"noise_tolerance_draws"</code>, <code>"real_vs_artificial"</code> or
+<code>"experiments/hub_topography/hub_topography_results"</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.data.distance_matrix" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">distance_matrix</span><span class="p">()</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Euclidean distance (mm) between the Schaefer-100 parcel centroids.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.data.empirical_summary" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">empirical_summary</span><span class="p">()</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Group-level statistics of the empirical connectomes (no subject data).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.data.load_reference" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">load_reference</span><span class="p">(</span><span class="n">reference</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the empirical reference connectome as a float (100, 100) array.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>reference</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span> | <span title="str">str</span> | <span title="pathlib.Path">Path</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>an array, a path to a <code>.npy</code> file, or <code>None</code> to read
+<code>reference_dir() / "consensus.npy"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Warns if the array is not the consensus the published numbers were computed
+against, so that a mismatch cannot pass silently.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.data.reference_dir" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">reference_dir</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Folder where :func:<code>load_reference</code> looks for <code>consensus.npy</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.data.home" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">home</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Root folder for the downloaded bundle and the dropped-in reference.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.data.data_dir" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">data_dir</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Path of the unpacked data bundle; downloads it on first call.</p>
+<p>Resolution order: <code>SIMBA_DATA</code>, the bundle in a repository clone, then the
+download into :func:<code>home</code>.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="measures">Measures</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="simba_networks.measures"></a>
+    <div class="doc doc-contents first">
+
+        <p>The 16 network distance measures benchmarked in the paper.</p>
+<p>Every measure is a plain function <code>f(A, B) -&gt; float</code> on two binary, symmetric
+(N, N) adjacency matrices. <code>A</code> is the generated network and <code>B</code> the
+reference. The implementations are ports of the ones that produced the
+published numbers (<code>paper/src/comparing_connectomes/</code>) with torch removed;
+<code>tests/test_measures.py</code> checks them against the shipped values.</p>
+<p>Five of them are similarities (higher = more alike). They are listed in
+:data:<code>SIMILARITIES</code>, and :func:<code>simba_networks.evaluate</code> flips them before
+any ranking. A new measure declares its own direction with
+<code>evaluate(..., similarity=True)</code>.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.frobenius" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">frobenius</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Frobenius norm of the difference, <code>||A - B||_F</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.hamming" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">hamming</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Number of edges present in exactly one of the two networks.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.jaccard" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">jaccard</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Jaccard index of the two edge sets (similarity).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.f1" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">f1</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>F1 score of <code>A</code>'s edges against <code>B</code>'s (similarity).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.network_mutual_information" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">network_mutual_information</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Normalised mutual information between the two edge sets (similarity).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.dc_network_mutual_information" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">dc_network_mutual_information</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Degree-corrected normalised mutual information (similarity).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.spectral_distance_adjacency" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">spectral_distance_adjacency</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>L2 distance between the 50 largest-magnitude adjacency eigenvalues.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.spectral_distance_norm_laplacian" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">spectral_distance_norm_laplacian</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>L2 distance between the 50 smallest normalised-Laplacian eigenvalues.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.netrd_non_backtracking_spectral" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">netrd_non_backtracking_spectral</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Non-backtracking spectral distance (Torres et al., 2019; netrd).</p>
+<p>Earth mover's distance between the leading eigenvalues of the two graphs'
+non-backtracking matrices, taken as points in the complex plane. ARPACK
+makes the eigenvalues vary in their last digits between runs; when an
+eigenvalue sits on the real axis that can move a value by up to about 1%
+(netrd behaves the same).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.net_simile" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">net_simile</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>NetSimile (Berlingerio et al., 2012; netrd): Canberra distance between
+the graphs' signatures of seven local node features.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.resistance" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">resistance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Resistance-perturbation distance (Monnig and Meyer, 2018; netrd): L2
+norm of the difference of the effective-resistance matrices.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.portrait" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">portrait</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Portrait divergence (Bagrow and Bollt, 2019).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.delta_con" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">delta_con</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>DeltaCon: Matusita distance between fast-belief-propagation affinities.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.communicability_corr" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">communicability_corr</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Pearson correlation of the two communicability matrices (similarity).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.communicability_jsd" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">communicability_jsd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Jensen-Shannon divergence between the normalised communicability matrices.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="simba_networks.measures.energy" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">energy</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">distance_matrix</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>KS-based energy: the largest of four KS statistics (degree, clustering,
+betweenness, edge length) between <code>A</code> and <code>B</code>.</p>
+<p>The edge-length term needs the node-to-node distance matrix. When it is not
+given, the Schaefer-100 matrix of the benchmark is used, so this default
+only makes sense for 100-node networks in that parcellation.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
