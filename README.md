@@ -44,11 +44,14 @@ def degree_l1(A, B):
     """Lower = more alike. A: generated network, B: reference (100 x 100, binary)."""
     return float(np.abs(A.sum(0) - B.sum(0)).sum())
 
-# with a reference connectome in place: all five criteria
-report = sb.evaluate(degree_l1)
-
-# without one: accuracy (parameter recovery) only
+# evaluate accuracy (parameter recovery) only: needs no empirical data
 report = sb.evaluate(degree_l1, criteria=["accuracy"])
+
+# evaluate all five criteria: needs the empirical reference connectome (a binary,
+# symmetric (100, 100) array without self-loops). Pass either the path, or the array
+# itself. Or drop the file in `~/simba_networks_data/reference/consensus.npy` and
+# then call `sb.evaluate(degree_l1)` without a reference. 
+report = sb.evaluate(degree_l1, reference="path/to/consensus.npy")
 
 print(report.table)     # every read-out of the paper, next to the eight selected measures
 ```
