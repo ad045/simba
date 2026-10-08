@@ -11,8 +11,11 @@ Poli, Alexa Mousley, Duncan Astle and Kayson Fakhar.
 The paper benchmarks 16 network distance measures for comparing generative
 network model (GNM) output with an empirical human connectome, on five criteria:
 agreement, biological plausibility, computational efficiency, sensitivity and
-robustness, and accuracy. This repository releases all 25,000 generated networks,
-every benchmark table and the full pipeline, as a package that scores a new
+robustness, and accuracy. This repository releases all 25,000 generated networks 
+<!-- , every benchmark table --> 
+and the full pipeline
+<!-- ,  -->
+as a package that scores a new
 measure against the same five criteria.
 
 **Documentation: https://ad045.github.io/simba/**
@@ -21,11 +24,11 @@ measure against the same five criteria.
 
 | You want to | Go to |
 |---|---|
-| Find the code behind a Methods section, figure or number | [Reproducing the paper](docs/paper.md#from-the-paper-to-the-code) |
+<!-- | Find the code behind a Methods section, figure or number | [Reproducing the paper](docs/paper.md#from-the-paper-to-the-code) |
 | Look up a measure (paper name to code) | [`simba_networks/measures.py`](simba_networks/measures.py), table in [Reproducing the paper](docs/paper.md#measure-names) |
-| Recompute every per-measure read-out without the pipeline | `simba_networks.published_readouts()` |
+| Recompute every per-measure read-out without the pipeline | `simba_networks.published_readouts()` | -->
 | Score a new measure on the five criteria | below |
-| Re-run the whole pipeline | [Reproducing the paper](docs/paper.md) |
+<!-- | Re-run the whole pipeline | [Reproducing the paper](docs/paper.md) | -->
 
 ## Score your own measure
 
@@ -41,16 +44,25 @@ def degree_l1(A, B):
     """Lower = more alike. A: generated network, B: reference (100 x 100, binary)."""
     return float(np.abs(A.sum(0) - B.sum(0)).sum())
 
+# with a reference connectome in place: all five criteria
 report = sb.evaluate(degree_l1)
+
+# without one: accuracy (parameter recovery) only
+report = sb.evaluate(degree_l1, criteria=["accuracy"])
+
 print(report.table)     # every read-out of the paper, next to the eight selected measures
 ```
 
+Four of the five criteria compare generated networks against the empirical HCP
+consensus connectome, which we cannot redistribute. Put your copy at
+`~/simba_networks_data/reference/consensus.npy`, or pass it as
+`sb.evaluate(..., reference=my_array)`
+([details](https://ad045.github.io/simba/reference/)). Without it, pass
+`criteria=["accuracy"]`: parameter recovery is generated-against-generated and
+needs no empirical data.
+
 The benchmark data (about 30 MB) ship in `data/`; a pip install downloads the
-same bundle once into `~/simba_networks_data`. Four of the five criteria score
-against the empirical HCP consensus connectome, which we cannot redistribute:
-put your copy at `~/simba_networks_data/reference/consensus.npy`
-([details](https://ad045.github.io/simba/reference/)). Without it, only accuracy
-(parameter recovery) runs.
+same bundle once into `~/simba_networks_data`.
 
 ## Repository layout
 
