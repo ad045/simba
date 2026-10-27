@@ -1,13 +1,14 @@
-# netdistancebench data bundle
+# SimBa data bundle
 
 Data behind *How Similar Are Two Brains? A Comprehensive Benchmark of Brain
 Network Similarity Measures* (Dendorfer, Luppi, Poli, Mousley, Astle, Fakhar).
-Built by `paper/make_publication_data.py`; read by the `netdistancebench`
-package, which downloads and unpacks it on first use.
+Built by `paper/make_publication_data.py` on the `main` branch; read by the
+`simba_networks` package, which downloads and unpacks it on first use outside
+a clone.
 
 Networks are binary, 100 x 100 (Schaefer-100), bit-packed along the last axis.
 Unpack with `np.unpackbits(x, axis=-1, count=100)`, or use
-`netdistancebench.load_networks()`.
+`simba_networks.load_networks()`.
 
 | File | Content |
 |---|---|
@@ -20,7 +21,6 @@ Unpack with `np.unpackbits(x, axis=-1, count=100)`, or use
 | `tables/noise_tolerance_*.csv*`, `tables/effective_degeneration.csv` | Drift of the best-fitting combination when the reference is rewired (per draw, and summarised). |
 | `tables/recovery_wide.csv.gz`, `tables/recovery_window.csv.gz` | Per measure and test network: true parameters, recovered grid cell, and the distance to every grid point (`dist_to_grid_*`). |
 | `tables/real_vs_artificial.csv` | AUCs separating real subjects from GNMs. |
-| `tables/experiments/` | Result tables of the topographic analyses (hub topography, five-map battery, structural gradient). |
 | `reference/distance_matrix.npy` | Euclidean distance (mm) between Schaefer-100 parcel centroids. |
 | `reference/empirical_summary.json` | Group-level statistics of the empirical connectomes (connection length, long-range fraction, degree SD). |
 

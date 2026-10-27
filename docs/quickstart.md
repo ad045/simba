@@ -34,8 +34,10 @@ print(report)
 ```
 
 `report.table` has one row per read-out: the criterion it belongs to, the
-desirable direction, your measure's value, the value of each of the eight
-selected published measures, and your measure's rank among the nine (1 = best).
+desirable direction, your measure's value, the value of each of the 16
+published measures, and your measure's rank among them (1 = best). Read-outs
+the paper ran only for its eight selected measures are empty for the other
+eight.
 [The five criteria](criteria.md) defines every row.
 
 `report.landscape` holds your measure's value and runtime for each of the

@@ -356,9 +356,11 @@ class Report:
 
     Attributes:
         name: the name given to the measure.
-        table: one row per read-out, the new measure next to the eight selected
-            published measures, with each read-out's criterion, direction and
-            the new measure's rank among the nine (1 = best).
+        table: one row per read-out, the new measure next to all 16 published
+            measures, with each read-out's criterion, direction and the new
+            measure's rank among them (1 = best). Read-outs the paper ran only
+            for its eight selected measures (MAE, CV, N*, AUCs) are NaN for the
+            other eight and ranked among the measures that have them.
         landscape: the new measure's value and runtime for every morphospace network.
     """
 
@@ -451,7 +453,7 @@ def evaluate(measure: Callable[[np.ndarray, np.ndarray], float], name: str | Non
 
 
 def _compare(name: str, row: dict, criteria) -> pd.DataFrame:
-    published = published_readouts(SELECTED).rename(columns=NAMES)
+    published = published_readouts(MEASURES).rename(columns=NAMES)
     keep = [(k, c, label, direction) for k, c, label, direction in READOUTS if c in criteria]
     table = pd.DataFrame(
         [{"criterion": c, "readout": label, "direction": {1: "higher", -1: "lower", 0: ""}[direction],

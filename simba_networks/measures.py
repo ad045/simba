@@ -3,8 +3,13 @@
 Every measure is a plain function ``f(A, B) -> float`` on two binary, symmetric
 (N, N) adjacency matrices. ``A`` is the generated network and ``B`` the
 reference. The implementations are ports of the ones that produced the
-published numbers (``paper/src/comparing_connectomes/``) with torch removed;
-``tests/test_measures.py`` checks them against the shipped values.
+published numbers (``paper/src/comparing_connectomes/`` on the ``main``
+branch) with torch removed; ``tests/test_benchmark.py`` checks each of them
+against the shipped values.
+
+Each docstring states exactly what is computed. Where that is more specific
+than the formula in Supplementary Table S1 (e.g. how many eigenvalues), the
+docstring says so; the code is what produced the published numbers.
 
 Five of them are similarities (higher = more alike). They are listed in
 :data:`SIMILARITIES`, and :func:`simba_networks.evaluate` flips them before
@@ -70,7 +75,10 @@ def _upper_edges(A):
 
 
 def network_mutual_information(A, B):
-    """Normalised mutual information between the two edge sets (similarity)."""
+    """Normalised mutual information of the two upper-triangle edge vectors,
+    ``2 MI / (H_b(G) + H_b(G'))`` (Felippe et al., 2024; similarity).
+
+    Natural log; the ratio does not depend on the base."""
     n = len(A)
     e1, e2 = _upper_edges(A), _upper_edges(B)
     pairs = n * (n - 1) / 2
@@ -81,7 +89,12 @@ def network_mutual_information(A, B):
 
 
 def dc_network_mutual_information(A, B):
-    """Degree-corrected normalised mutual information (similarity)."""
+    """Degree-corrected NMI (Felippe et al., 2024; similarity).
+
+    Per node i, the binary entropies of its connection probabilities
+    ``p_i = k_i / n`` and ``p'_i``, and the mutual information of its two rows;
+    returns ``2 sum_i MI_i / sum_i (H_b(p_i) + H_b(p'_i))``. This is the
+    formula of Supplementary Note S1 with the 1/n factors cancelled."""
     n = len(A)
     off_diagonal = ~np.eye(n, dtype=bool)
     a, b = (np.asarray(A) != 0) & off_diagonal, (np.asarray(B) != 0) & off_diagonal
@@ -103,7 +116,10 @@ _K_EIGENVALUES = 50
 
 
 def spectral_distance_adjacency(A, B):
-    """L2 distance between the 50 largest-magnitude adjacency eigenvalues."""
+    """Euclidean distance between adjacency spectra (Wilson and Zhu, 2008).
+
+    Uses the ``k = min(50, n - 2)`` eigenvalues of largest magnitude (ARPACK),
+    each spectrum sorted in decreasing order, not all n eigenvalues."""
     def spectrum(M):
         # float32 as in the published run; ARPACK makes the last digits vary
         vals = eigsh(np.asarray(M, np.float32), k=min(_K_EIGENVALUES, len(M) - 2),
@@ -113,7 +129,8 @@ def spectral_distance_adjacency(A, B):
 
 
 def spectral_distance_norm_laplacian(A, B):
-    """L2 distance between the 50 smallest normalised-Laplacian eigenvalues."""
+    """Euclidean distance between the 50 smallest eigenvalues of the normalised
+    Laplacian ``I - D^-1/2 A D^-1/2`` of each graph (sorted ascending)."""
     def spectrum(M):
         return np.sort(nx.normalized_laplacian_spectrum(nx.from_numpy_array(np.asarray(M, float))))[:_K_EIGENVALUES]
     return float(np.linalg.norm(spectrum(A) - spectrum(B)))
@@ -125,8 +142,12 @@ def spectral_distance_norm_laplacian(A, B):
 def netrd_non_backtracking_spectral(A, B):
     """Non-backtracking spectral distance (Torres et al., 2019; netrd).
 
-    Earth mover's distance between the leading eigenvalues of the two graphs'
-    non-backtracking matrices, taken as points in the complex plane. ARPACK
+    Earth mover's distance (not a Euclidean distance) between the leading
+    eigenvalues of the two graphs' non-backtracking matrices, taken as points in
+    the complex plane. As in netrd, the spectrum is taken from the 2n x 2n
+    Ihara-Bass form of the 2-core, which has the same nonzero eigenvalues as the
+    2m x 2m non-backtracking matrix: the 100 leading ones, keeping those with
+    imaginary part >= 0. ARPACK
     makes the eigenvalues vary in their last digits between runs; when an
     eigenvalue sits on the real axis that can move a value by up to about 1%
     (netrd behaves the same).
@@ -182,7 +203,12 @@ def _earth_mover(p1, p2):
 
 def net_simile(A, B):
     """NetSimile (Berlingerio et al., 2012; netrd): Canberra distance between
-    the graphs' signatures of seven local node features."""
+    the graphs' 35-entry signatures.
+
+    Seven node features (degree, clustering, mean neighbour degree, mean
+    neighbour clustering, edges in the egonet, edges leaving the egonet, nodes
+    adjacent to the egonet), each summarised by mean, median, SD, skewness and
+    kurtosis."""
     from scipy.spatial.distance import canberra
     from scipy.stats import kurtosis, skew
 
@@ -213,8 +239,10 @@ def net_simile(A, B):
 
 
 def resistance(A, B):
-    """Resistance-perturbation distance (Monnig and Meyer, 2018; netrd): L2
-    norm of the difference of the effective-resistance matrices."""
+    """Resistance-perturbation distance (Monnig and Meyer, 2018; netrd): entry-
+    wise L2 norm of ``R - R'``, with ``R_ij = L+_ii + L+_jj - 2 L+_ij`` and
+    ``L+`` the pseudoinverse of ``L = D - A`` (computed as ``(L + J)^-1 - J``,
+    equal to it on connected graphs)."""
     def resistance_matrix(M):
         M = np.asarray(M, float)
         if not nx.is_connected(nx.from_numpy_array(M)):
@@ -257,7 +285,10 @@ def _portrait(M, max_diameter=500):
 
 
 def portrait(A, B):
-    """Portrait divergence (Bagrow and Bollt, 2019)."""
+    """Portrait divergence (Bagrow and Bollt, 2019): Jensen-Shannon divergence
+    (base 2) between the joint distributions P(l, k) proportional to
+    ``k * B[l, k]`` of the two portraits, where ``B[l, k]`` counts the nodes
+    with exactly k nodes at shortest-path distance l."""
     b1, b2 = _portrait(np.asarray(A)), _portrait(np.asarray(B))
     last = max(np.nonzero(b1)[1].max(), np.nonzero(b2)[1].max()) + 1
     rows = max(len(b1), len(b2))
@@ -273,7 +304,13 @@ def portrait(A, B):
 
 
 def delta_con(A, B):
-    """DeltaCon: Matusita distance between fast-belief-propagation affinities."""
+    """DeltaCon (Koutra et al., 2016), exact version, returned as a distance.
+
+    ``S = (I + eps^2 D - eps A)^-1`` per graph, with ``eps = 1 / (1 + max
+    degree)`` of that graph; returns the Matusita distance
+    ``d = sqrt(sum_ij (sqrt(S_ij) - sqrt(S'_ij))^2)``. The paper's similarity
+    ``1 / (1 + d)`` is a monotone transform of it; every published number was
+    computed on ``d``."""
     def affinity(M):
         M = np.asarray(M, float)
         D = np.diag(M.sum(1))
@@ -287,13 +324,15 @@ def delta_con(A, B):
 # ---------------------------------------------------------------------------
 
 def communicability_corr(A, B):
-    """Pearson correlation of the two communicability matrices (similarity)."""
+    """Pearson correlation of the two vectorised communicability matrices
+    ``exp(A)``, diagonal included (similarity)."""
     return float(np.corrcoef(expm(np.asarray(A, float)).ravel(),
                              expm(np.asarray(B, float)).ravel())[0, 1])
 
 
 def communicability_jsd(A, B):
-    """Jensen-Shannon divergence between the normalised communicability matrices."""
+    """Jensen-Shannon divergence (base 2) between the vectorised communicability
+    matrices ``exp(A)``, each normalised to sum to one."""
     p, q = expm(np.asarray(A, float)).ravel(), expm(np.asarray(B, float)).ravel()
     return float(jensenshannon(p / (p.sum() + 1e-10), q / (q.sum() + 1e-10), base=2.0) ** 2)
 
@@ -303,8 +342,9 @@ def communicability_jsd(A, B):
 # ---------------------------------------------------------------------------
 
 def energy(A, B, distance_matrix=None):
-    """KS-based energy: the largest of four KS statistics (degree, clustering,
-    betweenness, edge length) between ``A`` and ``B``.
+    """KS-based energy (Betzel et al., 2016): the largest of four KS statistics
+    between ``A`` and ``B``, over the distributions of degree, clustering,
+    betweenness centrality and edge length (one length per edge).
 
     The edge-length term needs the node-to-node distance matrix. When it is not
     given, the Schaefer-100 matrix of the benchmark is used, so this default

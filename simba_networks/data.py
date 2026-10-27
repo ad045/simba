@@ -111,8 +111,7 @@ def load_networks(which: str = "morphospace") -> tuple[np.ndarray, pd.DataFrame]
 def load_table(name: str) -> pd.DataFrame:
     """Load one of the shipped result tables by name, e.g. ``"landscapes"``,
     ``"timing_ms"``, ``"degeneration"``, ``"recovery_wide"``,
-    ``"noise_tolerance_draws"``, ``"real_vs_artificial"`` or
-    ``"experiments/hub_topography/hub_topography_results"``."""
+    ``"noise_tolerance_draws"`` or ``"real_vs_artificial"``."""
     base = data_dir() / "tables"
     for suffix in (".csv.gz", ".csv"):
         if (base / f"{name}{suffix}").exists():

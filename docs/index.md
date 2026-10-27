@@ -24,7 +24,7 @@ benchmark:
 - **every benchmark table** behind the paper's numbers,
 - the **16 published measures** as plain Python functions,
 - **`evaluate()`**, which takes your measure and returns every read-out of the
-  paper next to the published measures.
+  paper next to all 16 published measures.
 
 ```python
 import simba_networks as sb
@@ -36,6 +36,12 @@ def my_measure(A, B):
 report = sb.evaluate(my_measure)
 report.table
 ```
+
+## Tutorial
+
+[`tutorial.ipynb`](https://github.com/ad045/simba/blob/main/tutorial.ipynb)
+walks through both uses in one notebook: comparing two networks with the 16
+measures, and scoring your own measure against all 16.
 
 ## Install
 

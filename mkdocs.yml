@@ -25,7 +25,6 @@ nav:
   - Reference connectome: reference.md
   - The five criteria: criteria.md
   - Data: data.md
-  - Reproducing the paper: paper.md
   - API: api.md
 
 markdown_extensions:

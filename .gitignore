@@ -16,16 +16,6 @@ site/
 .claude/
 graphify-out/
 
-# The paper's run tree is local: paper/data and paper/output are symlinks into
-# it (about 225 GB). The data bundle is built into paper/publication_data/ and
-# published as a GitHub release asset, never committed.
-paper/data
-paper/output
-paper/publication_data/
-publication_data/
-density_fix/
-wandb/
-
 # generated results never go into git; the tracked figures are the exception
 *.npy
 *.npz
