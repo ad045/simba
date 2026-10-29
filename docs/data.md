@@ -40,7 +40,6 @@ sb.load_table("landscapes")    # 25,000 rows: eta, gamma, replicate, one column 
 | `noise_tolerance_draws`, `noise_tolerance_results`, `effective_degeneration` | Drift of the best fit under rewiring of the reference, per draw and summarised. |
 | `recovery_wide`, `recovery_window` | Per measure and test network: true parameters, recovered cell and the distance to all 100 grid points. |
 | `real_vs_artificial` | AUCs of the eight selected measures. |
-| `experiments/<name>/<table>` | Topographic analyses: hub topography, the five-map battery, the structural gradient. |
 
 Values are the measures' raw output; similarities are not flipped.
 

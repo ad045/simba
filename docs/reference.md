@@ -42,7 +42,8 @@ describe the same experiment.
 
 ## Building it from the HCP release
 
-With HCP access, the preprocessing code in the repository rebuilds the
+With HCP access, the preprocessing code on the repository's
+[`main` branch](https://github.com/ad045/simba/tree/main) rebuilds the
 consensus exactly:
 
 | Step | File |

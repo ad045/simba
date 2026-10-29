@@ -9,84 +9,95 @@ Brain Network Similarity Measures* by Adrian Dendorfer, Andrea Luppi, Francesco
 Poli, Alexa Mousley, Duncan Astle and Kayson Fakhar.
 
 The paper benchmarks 16 network distance measures for comparing generative
-network model (GNM) output with an empirical human connectome, on five criteria:
-agreement, biological plausibility, computational efficiency, sensitivity and
-robustness, and accuracy. This repository releases all 25,000 generated networks 
-<!-- , every benchmark table --> 
-and the full pipeline
-<!-- ,  -->
-as a package that scores a new
-measure against the same five criteria.
+network model (GNM) output with an empirical human connectome on five
+criteria: agreement, biological plausibility, computational efficiency,
+sensitivity and robustness, and accuracy. This package ships the 16 measures,
+all 25,000 generated networks, and `evaluate()`, which scores a new measure on
+the same five criteria and ranks it against the 16.
 
-**Documentation: https://ad045.github.io/simba/**
-
-## Coming from the paper
-
-| You want to | Go to |
-|---|---|
-<!-- | Find the code behind a Methods section, figure or number | [Reproducing the paper](docs/paper.md#from-the-paper-to-the-code) |
-| Look up a measure (paper name to code) | [`simba_networks/measures.py`](simba_networks/measures.py), table in [Reproducing the paper](docs/paper.md#measure-names) |
-| Recompute every per-measure read-out without the pipeline | `simba_networks.published_readouts()` | -->
-| Score a new measure on the five criteria | below |
-<!-- | Re-run the whole pipeline | [Reproducing the paper](docs/paper.md) | -->
-
-## Score your own measure
+**Tutorial:** [`tutorial.ipynb`](tutorial.ipynb) walks through both uses below.
+**Documentation:** https://ad045.github.io/simba/
 
 ```bash
 pip install git+https://github.com/ad045/simba
 ```
 
+## A. Compare two networks
+
+```python
+import simba_networks as sb
+
+networks, meta = sb.load_networks()       # (25000, 100, 100), with eta, gamma per network
+A, B = networks[0].astype(float), networks[1].astype(float)
+
+sb.MEASURES["delta_con"](A, B)                         # one measure
+{name: f(A, B) for name, f in sb.MEASURES.items()}     # all 16
+```
+
+A network is a binary, symmetric `(N, N)` array without self-loops. Five
+measures are similarities (higher = more alike, listed in `sb.SIMILARITIES`);
+the other eleven are distances. `sb.NAMES` gives the name used in the paper.
+Values depend on network size and density, so compare networks on the same
+parcellation.
+
+## B. Score your own measure against all 16
+
 ```python
 import numpy as np
 import simba_networks as sb
 
+# Define your function here 
 def degree_l1(A, B):
     """Lower = more alike. A: generated network, B: reference (100 x 100, binary)."""
     return float(np.abs(A.sum(0) - B.sum(0)).sum())
 
-# evaluate accuracy (parameter recovery) only: needs no empirical data
-report = sb.evaluate(degree_l1, criteria=["accuracy"])
-
-# evaluate all five criteria: needs the empirical reference connectome (a binary,
-# symmetric (100, 100) array without self-loops). Pass either the path, or the array
-# itself. Or drop the file in `~/simba_networks_data/reference/consensus.npy` and
-# then call `sb.evaluate(degree_l1)` without a reference. 
-report = sb.evaluate(degree_l1, reference="path/to/consensus.npy")
-
-print(report.table)     # every read-out of the paper, next to the eight selected measures
+report = sb.evaluate(degree_l1, criteria=["accuracy"])   # needs no empirical data
+report = sb.evaluate(degree_l1)                           # all five criteria
+report.table    # every read-out, your measure next to the 16, and your rank
 ```
 
-Four of the five criteria compare generated networks against the empirical HCP
-consensus connectome, which we cannot redistribute. Put your copy at
-`~/simba_networks_data/reference/consensus.npy`, or pass it as
-`sb.evaluate(..., reference=my_array)`
-([details](https://ad045.github.io/simba/reference/)). Without it, pass
-`criteria=["accuracy"]`: parameter recovery is generated-against-generated and
-needs no empirical data.
+Pass `similarity=True` if higher values of your measure mean more alike.
 
-The benchmark data (about 30 MB) ship in `data/`; a pip install downloads the
-same bundle once into `~/simba_networks_data`.
+Accuracy (parameter recovery) compares generated networks with each other and
+runs anywhere. The other four criteria compare against the empirical HCP
+consensus connectome, which we may not redistribute. Save your copy as
+`~/simba_networks_data/reference/consensus.npy` or pass `reference=`
+([details](https://ad045.github.io/simba/reference/)).
+
+## Verification
+
+All 16 measures reproduce the original research code and the published values
+to float32 precision. The exception is the non-backtracking spectral distance,
+whose eigenvalue solver varies by about 1% between runs, in `netrd` as much as
+here. Table and method: [`docs/verification.md`](docs/verification.md).
+
+## Data
+
+The 25,000 networks are bit-packed into `data/networks/morphospace.npz`
+(16 MB). The whole bundle in `data/` is about 30 MB: the networks, the
+recovery networks, and the published value of every measure on every network.
+A pip install has no `data/`, so it downloads the same bundle once into
+`~/simba_networks_data`. Layout: [`data/README.md`](data/README.md).
 
 ## Repository layout
 
 ```
-simba_networks/   the package: the 16 measures, data access, evaluate()
-data/             the released data: 25,000 generated networks, the recovery
-                  networks, every benchmark table (layout in data/README.md)
-tests/            checks that the package reproduces the published numbers
+simba_networks/   the 16 measures, data access, evaluate()
+data/             25,000 generated networks, recovery networks, result tables
+tutorial.ipynb    parts A and B above, step by step
+tests/            checks that every measure reproduces the published values
+scripts/          check of the 16 measures against the original research code
 docs/             documentation site (mkdocs)
-paper/            the research pipeline behind the paper: GNM generation,
-                  scoring, every analysis and figure script
 ```
 
-`paper/` is documented in [Reproducing the paper](https://ad045.github.io/simba/paper/).
+The research pipeline behind the paper (GNM generation, every analysis and
+figure) is on the [`main` branch](https://github.com/ad045/simba/tree/main).
 
 ## Development
 
 ```bash
 pip install -e ".[test,docs]"
-pytest                       # needs the data bundle; no empirical data
-mkdocs serve                 # documentation at http://127.0.0.1:8000
+pytest
 ```
 
 ## Citing
