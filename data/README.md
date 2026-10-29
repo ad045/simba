@@ -2,11 +2,11 @@
 
 Data behind *How Similar Are Two Brains? A Comprehensive Benchmark of Brain
 Network Similarity Measures* (Dendorfer, Luppi, Poli, Mousley, Astle, Fakhar).
-Built by `paper/make_publication_data.py` on the `main` branch; read by the
+The tables are built by `paper/make_publication_data.py` on the `main` branch. The data can be read by the
 `simba_networks` package, which downloads and unpacks it on first use outside
 a clone.
 
-Networks are binary, 100 x 100 (Schaefer-100), bit-packed along the last axis.
+Networks are binary, 100 x 100 (Schaefer-100), and are bit-packed along the last axis.
 Unpack with `np.unpackbits(x, axis=-1, count=100)`, or use
 `simba_networks.load_networks()`.
 
@@ -23,6 +23,5 @@ Unpack with `np.unpackbits(x, axis=-1, count=100)`, or use
 | `tables/real_vs_artificial.csv` | AUCs separating real subjects from GNMs. |
 | `reference/distance_matrix.npy` | Euclidean distance (mm) between Schaefer-100 parcel centroids. |
 | `reference/empirical_summary.json` | Group-level statistics of the empirical connectomes (connection length, long-range fraction, degree SD). |
-
-Not included: the empirical connectomes (HCP data use terms). The package
+Not included: the empirical connectomes (as by the HCP data use terms). The package
 explains where to drop in your own copy of the consensus.

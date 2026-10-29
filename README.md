@@ -63,6 +63,13 @@ consensus connectome, which we may not redistribute. Save your copy as
 `~/simba_networks_data/reference/consensus.npy` or pass `reference=`
 ([details](https://ad045.github.io/simba/reference/)).
 
+## Verification
+
+All 16 measures reproduce the original research code and the published values
+to float32 precision. The exception is the non-backtracking spectral distance,
+whose eigenvalue solver varies by about 1% between runs, in `netrd` as much as
+here. Table and method: [`docs/verification.md`](docs/verification.md).
+
 ## Data
 
 The 25,000 networks are bit-packed into `data/networks/morphospace.npz`
@@ -78,6 +85,7 @@ simba_networks/   the 16 measures, data access, evaluate()
 data/             25,000 generated networks, recovery networks, result tables
 tutorial.ipynb    parts A and B above, step by step
 tests/            checks that every measure reproduces the published values
+scripts/          check of the 16 measures against the original research code
 docs/             documentation site (mkdocs)
 ```
 
