@@ -36,3 +36,6 @@ CLAUDE.md
 # documentation assets are part of the repository.
 !data/**
 !docs/assets/**
+
+# Files that are not meant to be in the main branch
+X_* 

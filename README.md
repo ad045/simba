@@ -9,7 +9,7 @@ Brain Network Similarity Measures* by Adrian Dendorfer, Andrea Luppi, Francesco
 Poli, Alexa Mousley, Duncan Astle and Kayson Fakhar.
 
 The paper benchmarks 16 network distance measures for comparing generative
-network model (GNM) output with an empirical human connectome, on five
+network model (GNM) output with an empirical human connectome on five
 criteria: agreement, biological plausibility, computational efficiency,
 sensitivity and robustness, and accuracy. This package ships the 16 measures,
 all 25,000 generated networks, and `evaluate()`, which scores a new measure on
@@ -46,6 +46,7 @@ parcellation.
 import numpy as np
 import simba_networks as sb
 
+# Define your function here 
 def degree_l1(A, B):
     """Lower = more alike. A: generated network, B: reference (100 x 100, binary)."""
     return float(np.abs(A.sum(0) - B.sum(0)).sum())
